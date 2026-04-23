@@ -55,6 +55,8 @@ export interface Solicitacao {
   status: PipelineStatus;
   score: number; // 0-100
   notasTecnicas?: string;
+  temIntegracao?: boolean;
+  integracoes?: string[]; // softwares/sistemas integrados
   solicitanteId: string;
   solicitanteNome: string;
   createdAt: string;
