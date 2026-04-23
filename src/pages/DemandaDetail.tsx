@@ -38,6 +38,8 @@ export default function DemandaDetail() {
   const [dificuldade, setDificuldade] = useState(solicitacao?.dificuldade ?? 3);
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
   const [notas, setNotas] = useState(solicitacao?.notasTecnicas ?? "");
+  const [temIntegracao, setTemIntegracao] = useState<boolean>(solicitacao?.temIntegracao ?? false);
+  const [integracoesText, setIntegracoesText] = useState((solicitacao?.integracoes ?? []).join(", "));
 
   const [solucaoTitulo, setSolucaoTitulo] = useState("");
   const [solucaoDesc, setSolucaoDesc] = useState("");
@@ -57,7 +59,18 @@ export default function DemandaDetail() {
   }
 
   function handleSave() {
-    updateSolicitacao(id, { complexidade: complex, retorno, dificuldade, status, notasTecnicas: notas });
+    const integracoes = temIntegracao
+      ? integracoesText.split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+    updateSolicitacao(id, {
+      complexidade: complex,
+      retorno,
+      dificuldade,
+      status,
+      notasTecnicas: notas,
+      temIntegracao,
+      integracoes,
+    });
     toast({ title: "Demanda atualizada" });
   }
 
