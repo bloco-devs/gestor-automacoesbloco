@@ -17,7 +17,7 @@ import type {
 import { calcScore } from "./score";
 
 // 🔧 Email do desenvolvedor fixo (ajuste conforme combinado com a equipe)
-export const DEV_EMAIL = "dev@empresa.com";
+export const DEV_EMAIL = "blococcomercial@gmail.com";
 
 const KEYS = {
   users: "app:users",
