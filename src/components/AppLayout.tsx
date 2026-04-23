@@ -83,9 +83,12 @@ export default function AppLayout() {
             </div>
             <span className="font-semibold">Automation Hub</span>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/auth"); }}>
-            <LogOut className="size-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/auth"); }}>
+              <LogOut className="size-4" />
+            </Button>
+          </div>
         </header>
         <nav className="md:hidden flex gap-1 overflow-x-auto px-3 py-2 border-b border-border">
           {nav.map((item) => (
