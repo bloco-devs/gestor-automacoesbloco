@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { ScorePill } from "@/components/ScorePill";
@@ -38,6 +39,8 @@ export default function DemandaDetail() {
   const [dificuldade, setDificuldade] = useState(solicitacao?.dificuldade ?? 3);
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
   const [notas, setNotas] = useState(solicitacao?.notasTecnicas ?? "");
+  const [temIntegracao, setTemIntegracao] = useState<boolean>(solicitacao?.temIntegracao ?? false);
+  const [integracoesText, setIntegracoesText] = useState((solicitacao?.integracoes ?? []).join(", "));
 
   const [solucaoTitulo, setSolucaoTitulo] = useState("");
   const [solucaoDesc, setSolucaoDesc] = useState("");
@@ -57,7 +60,18 @@ export default function DemandaDetail() {
   }
 
   function handleSave() {
-    updateSolicitacao(id, { complexidade: complex, retorno, dificuldade, status, notasTecnicas: notas });
+    const integracoes = temIntegracao
+      ? integracoesText.split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+    updateSolicitacao(id, {
+      complexidade: complex,
+      retorno,
+      dificuldade,
+      status,
+      notasTecnicas: notas,
+      temIntegracao,
+      integracoes,
+    });
     toast({ title: "Demanda atualizada" });
   }
 
@@ -108,6 +122,22 @@ export default function DemandaDetail() {
               <div><dt className="text-xs text-muted-foreground">Retorno</dt><dd>{solicitacao.retorno}/5</dd></div>
               <div><dt className="text-xs text-muted-foreground">Dificuldade</dt><dd>{solicitacao.dificuldade}/5</dd></div>
             </dl>
+            {solicitacao.temIntegracao && (
+              <div className="pt-3 border-t border-border">
+                <div className="text-xs text-muted-foreground mb-1">Integrações</div>
+                {solicitacao.integracoes && solicitacao.integracoes.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {solicitacao.integracoes.map((nome) => (
+                      <span key={nome} className="text-xs px-2 py-0.5 rounded-md bg-accent/15 text-accent border border-accent/30">
+                        {nome}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Sim, mas sistemas não especificados.</p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -132,6 +162,32 @@ export default function DemandaDetail() {
               <SliderField label="Complexidade" value={complex} onChange={setComplex} />
               <SliderField label="Retorno" value={retorno} onChange={setRetorno} />
               <SliderField label="Dificuldade" value={dificuldade} onChange={setDificuldade} />
+              <div className="space-y-3 pt-3 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="tem-integracao">Possui integração?</Label>
+                    <p className="text-xs text-muted-foreground">Esta solução se conecta a outro sistema ou software.</p>
+                  </div>
+                  <Switch
+                    id="tem-integracao"
+                    checked={temIntegracao}
+                    onCheckedChange={setTemIntegracao}
+                  />
+                </div>
+                {temIntegracao && (
+                  <div>
+                    <Label htmlFor="integracoes">Sistemas / softwares integrados</Label>
+                    <Textarea
+                      id="integracoes"
+                      rows={2}
+                      value={integracoesText}
+                      onChange={(e) => setIntegracoesText(e.target.value)}
+                      placeholder="Ex.: Sienge, WhatsApp, Google Sheets, Pipefy..."
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Separe múltiplos sistemas por vírgula.</p>
+                  </div>
+                )}
+              </div>
               <div>
                 <Label htmlFor="notas">Notas técnicas</Label>
                 <Textarea id="notas" rows={4} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Decisões, dependências, riscos..." />
