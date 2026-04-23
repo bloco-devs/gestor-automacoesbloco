@@ -190,17 +190,17 @@ function MetricCard({
 }) {
   return (
     <Card className="surface-1">
-      <CardContent className="p-4 flex items-center gap-3">
+      <CardContent className="p-2.5 flex items-center gap-2">
         <div
-          className={`size-10 rounded-md flex items-center justify-center ${
+          className={`size-7 rounded-md flex items-center justify-center shrink-0 ${
             accent ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
           }`}
         >
-          <Icon className="size-5" />
+          <Icon className="size-3.5" />
         </div>
-        <div>
-          <div className="text-2xl font-semibold tabular-nums">{value}</div>
-          <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="min-w-0">
+          <div className="text-base font-semibold tabular-nums leading-tight">{value}</div>
+          <div className="text-[11px] text-muted-foreground leading-tight truncate">{label}</div>
         </div>
       </CardContent>
     </Card>
