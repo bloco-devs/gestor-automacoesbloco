@@ -76,7 +76,7 @@ export default function Auth() {
             className="size-10 rounded-lg object-cover"
           />
           <div>
-            <h1 className="text-xl font-brand font-bold">Automation Hub</h1>
+            <h1 className="text-base font-brand font-bold whitespace-nowrap">Gestor de Automações</h1>
             <p className="text-xs text-muted-foreground font-brand font-light">Gestão interna de demandas</p>
           </div>
         </div>
