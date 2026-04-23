@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { SiteHeader } from "@/components/SiteHeader";
 
 const schema = z.object({
   nome: z
@@ -106,7 +107,8 @@ export default function SolicitarSolucao() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-2xl px-4 py-10 sm:py-16">
+      <SiteHeader />
+      <div className="mx-auto max-w-2xl px-4 pt-24 pb-10 sm:pt-28 sm:pb-16">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-6">
           <ArrowLeft className="size-4" /> Voltar
         </Button>
