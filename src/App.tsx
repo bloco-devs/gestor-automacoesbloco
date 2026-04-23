@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import SolicitarSolucao from "./pages/SolicitarSolucao";
 import NovaDemanda from "./pages/NovaDemanda";
 import MinhasDemandas from "./pages/MinhasDemandas";
 import Dashboard from "./pages/Dashboard";
@@ -28,6 +29,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/solicitar" element={<SolicitarSolucao />} />
             <Route path="/" element={<Index />} />
 
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
