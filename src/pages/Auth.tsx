@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Activity } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import blocoLogo from "@/assets/bloco-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,9 +70,11 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-3 mb-8 justify-center">
-          <div className="size-10 rounded-lg bg-accent flex items-center justify-center">
-            <Activity className="size-5 text-accent-foreground" />
-          </div>
+          <img
+            src={blocoLogo}
+            alt="Bloco Construções"
+            className="size-10 rounded-lg object-cover"
+          />
           <div>
             <h1 className="text-xl font-brand font-bold">Automation Hub</h1>
             <p className="text-xs text-muted-foreground font-brand font-light">Gestão interna de demandas</p>
