@@ -3,8 +3,19 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import AppLayout from "@/components/AppLayout";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import NovaDemanda from "./pages/NovaDemanda";
+import MinhasDemandas from "./pages/MinhasDemandas";
+import Dashboard from "./pages/Dashboard";
+import Kanban from "./pages/Kanban";
+import Solucoes from "./pages/Solucoes";
+import Integracoes from "./pages/Integracoes";
+import DemandaDetail from "./pages/DemandaDetail";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -14,11 +25,29 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={<Index />} />
+
+            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              {/* Solicitante */}
+              <Route path="/minhas-demandas" element={<ProtectedRoute role="requester"><MinhasDemandas /></ProtectedRoute>} />
+              <Route path="/nova-demanda" element={<ProtectedRoute role="requester"><NovaDemanda /></ProtectedRoute>} />
+
+              {/* Desenvolvedor */}
+              <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
+              <Route path="/kanban" element={<ProtectedRoute role="developer"><Kanban /></ProtectedRoute>} />
+              <Route path="/solucoes" element={<ProtectedRoute role="developer"><Solucoes /></ProtectedRoute>} />
+              <Route path="/integracoes" element={<ProtectedRoute role="developer"><Integracoes /></ProtectedRoute>} />
+
+              {/* Compartilhado */}
+              <Route path="/demanda/:id" element={<DemandaDetail />} />
+            </Route>
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
