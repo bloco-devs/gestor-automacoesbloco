@@ -1,11 +1,12 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Activity, KanbanSquare, LayoutDashboard, LogOut, Network, Plus, Sparkles, ListTodo } from "lucide-react";
+import { Activity, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Network, Plus, Sparkles, ListTodo } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const devNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/solicitacoes", label: "Solicitações", icon: ListChecks },
   { to: "/kanban", label: "Kanban", icon: KanbanSquare },
   { to: "/solucoes", label: "Soluções", icon: Sparkles },
   { to: "/integracoes", label: "Integrações", icon: Network },

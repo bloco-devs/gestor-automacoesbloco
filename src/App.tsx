@@ -14,6 +14,7 @@ import MinhasDemandas from "./pages/MinhasDemandas";
 import Dashboard from "./pages/Dashboard";
 import Kanban from "./pages/Kanban";
 import Solucoes from "./pages/Solucoes";
+import Solicitacoes from "./pages/Solicitacoes";
 import Integracoes from "./pages/Integracoes";
 import DemandaDetail from "./pages/DemandaDetail";
 import NotFound from "./pages/NotFound";
@@ -39,6 +40,7 @@ const App = () => (
 
               {/* Desenvolvedor */}
               <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
+              <Route path="/solicitacoes" element={<ProtectedRoute role="developer"><Solicitacoes /></ProtectedRoute>} />
               <Route path="/kanban" element={<ProtectedRoute role="developer"><Kanban /></ProtectedRoute>} />
               <Route path="/solucoes" element={<ProtectedRoute role="developer"><Solucoes /></ProtectedRoute>} />
               <Route path="/integracoes" element={<ProtectedRoute role="developer"><Integracoes /></ProtectedRoute>} />
