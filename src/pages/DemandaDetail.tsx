@@ -122,6 +122,22 @@ export default function DemandaDetail() {
               <div><dt className="text-xs text-muted-foreground">Retorno</dt><dd>{solicitacao.retorno}/5</dd></div>
               <div><dt className="text-xs text-muted-foreground">Dificuldade</dt><dd>{solicitacao.dificuldade}/5</dd></div>
             </dl>
+            {solicitacao.temIntegracao && (
+              <div className="pt-3 border-t border-border">
+                <div className="text-xs text-muted-foreground mb-1">Integrações</div>
+                {solicitacao.integracoes && solicitacao.integracoes.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {solicitacao.integracoes.map((nome) => (
+                      <span key={nome} className="text-xs px-2 py-0.5 rounded-md bg-accent/15 text-accent border border-accent/30">
+                        {nome}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Sim, mas sistemas não especificados.</p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
