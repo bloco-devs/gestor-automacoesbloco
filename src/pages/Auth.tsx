@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import blocoLogo from "@/assets/bloco-logo.png";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,7 +68,10 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md">
         <div className="flex items-center gap-3 mb-8 justify-center">
           <img

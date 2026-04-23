@@ -62,18 +62,21 @@ export default function AppLayout() {
               {user?.role === "developer" ? "Desenvolvedor" : "Solicitante"}
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start"
-            onClick={() => {
-              signOut();
-              navigate("/auth");
-            }}
-          >
-            <LogOut className="size-4" />
-            Sair
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 justify-start"
+              onClick={() => {
+                signOut();
+                navigate("/auth");
+              }}
+            >
+              <LogOut className="size-4" />
+              Sair
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
 
