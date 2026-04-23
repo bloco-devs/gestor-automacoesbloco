@@ -26,28 +26,31 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="flex items-center gap-1">
-          {links.map((l) => {
-            const active =
-              l.to === "/"
-                ? location.pathname === "/"
-                : location.pathname.startsWith(l.to);
-            return (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                className={cn(
-                  "px-3 py-1.5 rounded-md text-sm transition-colors",
-                  active
-                    ? "text-foreground bg-muted"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                )}
-              >
-                {l.label}
-              </NavLink>
-            );
-          })}
-        </nav>
+        <div className="flex items-center gap-1">
+          <nav className="flex items-center gap-1">
+            {links.map((l) => {
+              const active =
+                l.to === "/"
+                  ? location.pathname === "/"
+                  : location.pathname.startsWith(l.to);
+              return (
+                <NavLink
+                  key={l.to}
+                  to={l.to}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-sm transition-colors",
+                    active
+                      ? "text-foreground bg-muted"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                  )}
+                >
+                  {l.label}
+                </NavLink>
+              );
+            })}
+          </nav>
+          <ThemeToggle className="ml-1" />
+        </div>
       </div>
     </header>
   );
