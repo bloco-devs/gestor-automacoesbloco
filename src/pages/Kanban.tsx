@@ -41,8 +41,8 @@ const STAGES: Stage[] = [
   {
     id: "aceito",
     label: "Aceito",
-    statuses: ["aprovado", "em_desenvolvimento", "testando"],
-    target: "aprovado",
+    statuses: ["em_desenvolvimento", "testando"],
+    target: "em_desenvolvimento",
   },
   {
     id: "concluido",

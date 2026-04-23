@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ScorePill } from "@/components/ScorePill";
 
-const PENDING_STATUSES: PipelineStatus[] = ["novo", "em_analise", "aprovado"];
+const PENDING_STATUSES: PipelineStatus[] = ["novo", "em_analise"];
 
 export default function Dashboard() {
   const all = useStoreSubscription(() => listSolicitacoes());
@@ -78,11 +78,13 @@ export default function Dashboard() {
               <SelectContent>
                 <SelectItem value="pendentes">Apenas pendentes</SelectItem>
                 <SelectItem value="all">Todos os status</SelectItem>
-                {(Object.keys(STATUS_LABEL) as PipelineStatus[]).map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {STATUS_LABEL[s]}
-                  </SelectItem>
-                ))}
+                {(Object.keys(STATUS_LABEL) as PipelineStatus[])
+                  .filter((s) => s !== "aprovado")
+                  .map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {STATUS_LABEL[s]}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
