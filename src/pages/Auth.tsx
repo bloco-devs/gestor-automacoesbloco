@@ -74,8 +74,8 @@ export default function Auth() {
             <Activity className="size-5 text-accent-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold">Automation Hub</h1>
-            <p className="text-xs text-muted-foreground">Gestão interna de demandas</p>
+            <h1 className="text-xl font-brand font-bold">Automation Hub</h1>
+            <p className="text-xs text-muted-foreground font-brand font-light">Gestão interna de demandas</p>
           </div>
         </div>
 
