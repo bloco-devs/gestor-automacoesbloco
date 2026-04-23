@@ -2,6 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== NewBlackTypeface — fonte da marca Bloco Construções ===== */
+@font-face {
+  font-family: 'NewBlackTypeface';
+  src: url('/src/assets/fonts/NewBlackTypeface-UltraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'NewBlackTypeface';
+  src: url('/src/assets/fonts/NewBlackTypeface-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'NewBlackTypeface';
+  src: url('/src/assets/fonts/NewBlackTypeface-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'NewBlackTypeface';
+  src: url('/src/assets/fonts/NewBlackTypeface-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'NewBlackTypeface';
+  src: url('/src/assets/fonts/NewBlackTypeface-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'NewBlackTypeface';
+  src: url('/src/assets/fonts/NewBlackTypeface-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'NewBlackTypeface';
+  src: url('/src/assets/fonts/NewBlackTypeface-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer utilities {
+  .font-brand {
+    font-family: 'NewBlackTypeface', system-ui, sans-serif;
+  }
+}
+
 /* Design System — Bloco Construções
  * Paleta oficial:
  *   #0C0C0C  preto profundo
