@@ -6,10 +6,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { DEV_EMAIL } from "@/lib/store";
 
 const signInSchema = z.object({
   email: z.string().trim().email("Email inválido").max(255),
@@ -20,14 +25,16 @@ const signUpSchema = signInSchema.extend({
 });
 
 export default function Auth() {
-  const { signIn, signUp, loading } = useAuth();
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [tab, setTab] = useState("login");
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ nome: "", email: "", senha: "" });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitting(true);
     try {
       if (tab === "login") {
         const v = signInSchema.parse({ email: form.email, senha: form.senha });
@@ -36,12 +43,26 @@ export default function Auth() {
       } else {
         const v = signUpSchema.parse(form);
         const u = await signUp(v.nome, v.email, v.senha);
-        toast({ title: "Conta criada", description: `Bem-vindo, ${u.nome}!` });
+        toast({
+          title: "Conta criada",
+          description: `Bem-vindo, ${u.nome}!`,
+        });
         navigate(u.role === "developer" ? "/dashboard" : "/minhas-demandas");
       }
     } catch (err) {
-      const msg = err instanceof z.ZodError ? err.issues[0].message : err instanceof Error ? err.message : "Erro";
-      toast({ title: "Não foi possível continuar", description: msg, variant: "destructive" });
+      const msg =
+        err instanceof z.ZodError
+          ? err.issues[0].message
+          : err instanceof Error
+            ? err.message
+            : "Erro";
+      toast({
+        title: "Não foi possível continuar",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -62,8 +83,7 @@ export default function Auth() {
           <CardHeader>
             <CardTitle className="text-lg">Acesse sua conta</CardTitle>
             <CardDescription>
-              Entre ou crie uma conta. O desenvolvedor é identificado pelo email{" "}
-              <span className="text-accent font-medium">{DEV_EMAIL}</span>.
+              Entre com suas credenciais ou crie uma nova conta.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -105,17 +125,17 @@ export default function Auth() {
                     autoComplete={tab === "login" ? "current-password" : "new-password"}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {tab === "login" ? "Entrar" : "Criar conta"}
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting
+                    ? "Aguarde..."
+                    : tab === "login"
+                      ? "Entrar"
+                      : "Criar conta"}
                 </Button>
               </form>
             </Tabs>
           </CardContent>
         </Card>
-
-        <p className="text-xs text-muted-foreground text-center mt-6">
-          Dados ficam no navegador (modo demo). Conecte o Supabase para persistir.
-        </p>
       </div>
     </div>
   );
