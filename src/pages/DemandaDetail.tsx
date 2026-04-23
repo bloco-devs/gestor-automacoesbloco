@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { ScorePill } from "@/components/ScorePill";
@@ -145,6 +146,32 @@ export default function DemandaDetail() {
               <SliderField label="Complexidade" value={complex} onChange={setComplex} />
               <SliderField label="Retorno" value={retorno} onChange={setRetorno} />
               <SliderField label="Dificuldade" value={dificuldade} onChange={setDificuldade} />
+              <div className="space-y-3 pt-3 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="tem-integracao">Possui integração?</Label>
+                    <p className="text-xs text-muted-foreground">Esta solução se conecta a outro sistema ou software.</p>
+                  </div>
+                  <Switch
+                    id="tem-integracao"
+                    checked={temIntegracao}
+                    onCheckedChange={setTemIntegracao}
+                  />
+                </div>
+                {temIntegracao && (
+                  <div>
+                    <Label htmlFor="integracoes">Sistemas / softwares integrados</Label>
+                    <Textarea
+                      id="integracoes"
+                      rows={2}
+                      value={integracoesText}
+                      onChange={(e) => setIntegracoesText(e.target.value)}
+                      placeholder="Ex.: Sienge, WhatsApp, Google Sheets, Pipefy..."
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Separe múltiplos sistemas por vírgula.</p>
+                  </div>
+                )}
+              </div>
               <div>
                 <Label htmlFor="notas">Notas técnicas</Label>
                 <Textarea id="notas" rows={4} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Decisões, dependências, riscos..." />
