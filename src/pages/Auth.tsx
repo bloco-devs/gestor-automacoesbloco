@@ -1,0 +1,122 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { z } from "zod";
+import { Activity } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { DEV_EMAIL } from "@/lib/store";
+
+const signInSchema = z.object({
+  email: z.string().trim().email("Email inválido").max(255),
+  senha: z.string().min(6, "Mínimo 6 caracteres").max(128),
+});
+const signUpSchema = signInSchema.extend({
+  nome: z.string().trim().min(2, "Informe seu nome").max(80),
+});
+
+export default function Auth() {
+  const { signIn, signUp, loading } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [tab, setTab] = useState("login");
+  const [form, setForm] = useState({ nome: "", email: "", senha: "" });
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      if (tab === "login") {
+        const v = signInSchema.parse({ email: form.email, senha: form.senha });
+        const u = await signIn(v.email, v.senha);
+        navigate(u.role === "developer" ? "/dashboard" : "/minhas-demandas");
+      } else {
+        const v = signUpSchema.parse(form);
+        const u = await signUp(v.nome, v.email, v.senha);
+        toast({ title: "Conta criada", description: `Bem-vindo, ${u.nome}!` });
+        navigate(u.role === "developer" ? "/dashboard" : "/minhas-demandas");
+      }
+    } catch (err) {
+      const msg = err instanceof z.ZodError ? err.errors[0].message : err instanceof Error ? err.message : "Erro";
+      toast({ title: "Não foi possível continuar", description: msg, variant: "destructive" });
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="flex items-center gap-3 mb-8 justify-center">
+          <div className="size-10 rounded-lg bg-accent flex items-center justify-center">
+            <Activity className="size-5 text-accent-foreground" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold">Automation Hub</h1>
+            <p className="text-xs text-muted-foreground">Gestão interna de demandas</p>
+          </div>
+        </div>
+
+        <Card className="surface-1">
+          <CardHeader>
+            <CardTitle className="text-lg">Acesse sua conta</CardTitle>
+            <CardDescription>
+              Entre ou crie uma conta. O desenvolvedor é identificado pelo email{" "}
+              <span className="text-accent font-medium">{DEV_EMAIL}</span>.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={tab} onValueChange={setTab} className="w-full">
+              <TabsList className="grid grid-cols-2 w-full mb-4">
+                <TabsTrigger value="login">Entrar</TabsTrigger>
+                <TabsTrigger value="signup">Criar conta</TabsTrigger>
+              </TabsList>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <TabsContent value="signup" className="m-0">
+                  <Label htmlFor="nome">Nome</Label>
+                  <Input
+                    id="nome"
+                    value={form.nome}
+                    onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                    placeholder="Seu nome"
+                    autoComplete="name"
+                  />
+                </TabsContent>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="voce@empresa.com"
+                    autoComplete="email"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="senha">Senha</Label>
+                  <Input
+                    id="senha"
+                    type="password"
+                    value={form.senha}
+                    onChange={(e) => setForm({ ...form, senha: e.target.value })}
+                    placeholder="••••••••"
+                    autoComplete={tab === "login" ? "current-password" : "new-password"}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {tab === "login" ? "Entrar" : "Criar conta"}
+                </Button>
+              </form>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        <p className="text-xs text-muted-foreground text-center mt-6">
+          Dados ficam no navegador (modo demo). Conecte o Supabase para persistir.
+        </p>
+      </div>
+    </div>
+  );
+}
