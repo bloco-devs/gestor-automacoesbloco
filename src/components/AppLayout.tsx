@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
+import blocoLogo from "@/assets/bloco-logo.png";
 
 const devNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -25,13 +26,15 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen flex">
       <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
-        <div className="px-5 py-6 flex items-center gap-2">
-          <div className="size-8 rounded-md bg-accent flex items-center justify-center">
-            <Activity className="size-4 text-accent-foreground" />
-          </div>
+        <div className="px-5 py-6 flex items-center gap-3">
+          <img
+            src={blocoLogo}
+            alt="Bloco Construções"
+            className="size-10 rounded-lg object-cover"
+          />
           <div>
-            <div className="text-sm font-semibold">Automation Hub</div>
-            <div className="text-xs text-muted-foreground">Gestão de demandas</div>
+            <div className="text-sm font-brand font-bold whitespace-nowrap">Gestor de Automações</div>
+            <div className="text-xs text-muted-foreground font-brand font-light">Gestão interna de demandas</div>
           </div>
         </div>
         <nav className="flex-1 px-3 py-2 space-y-1">
