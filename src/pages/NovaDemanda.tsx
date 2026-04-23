@@ -55,7 +55,7 @@ export default function NovaDemanda() {
       toast({ title: "Demanda registrada", description: "Você poderá acompanhar o status em tempo real." });
       navigate("/minhas-demandas");
     } catch (err) {
-      const msg = err instanceof z.ZodError ? err.errors[0].message : "Erro ao salvar";
+      const msg = err instanceof z.ZodError ? err.issues[0].message : "Erro ao salvar";
       toast({ title: "Verifique os campos", description: msg, variant: "destructive" });
     }
   }

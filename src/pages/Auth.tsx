@@ -40,7 +40,7 @@ export default function Auth() {
         navigate(u.role === "developer" ? "/dashboard" : "/minhas-demandas");
       }
     } catch (err) {
-      const msg = err instanceof z.ZodError ? err.errors[0].message : err instanceof Error ? err.message : "Erro";
+      const msg = err instanceof z.ZodError ? err.issues[0].message : err instanceof Error ? err.message : "Erro";
       toast({ title: "Não foi possível continuar", description: msg, variant: "destructive" });
     }
   }
