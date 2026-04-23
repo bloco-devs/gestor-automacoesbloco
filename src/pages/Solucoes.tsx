@@ -1,0 +1,138 @@
+import { useMemo, useState } from "react";
+import { CalendarPlus, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useStoreSubscription } from "@/hooks/useStore";
+import {
+  createMelhoria,
+  deleteMelhoria,
+  getSolicitacao,
+  listMelhorias,
+  listSolucoes,
+  updateMelhoria,
+} from "@/lib/store";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import type { Melhoria, MelhoriaStatus } from "@/lib/types";
+
+const MELHORIA_STATUS: Record<MelhoriaStatus, string> = {
+  planejada: "Planejada",
+  em_andamento: "Em andamento",
+  concluida: "Concluída",
+};
+
+export default function Solucoes() {
+  const { toast } = useToast();
+  const solucoes = useStoreSubscription(() => listSolucoes());
+  const melhorias = useStoreSubscription(() => listMelhorias());
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold flex items-center gap-2">
+          <Sparkles className="size-5 text-accent" /> Soluções desenvolvidas
+        </h1>
+        <p className="text-sm text-muted-foreground">Catálogo de entregas e histórico de melhorias futuras.</p>
+      </div>
+
+      {solucoes.length === 0 ? (
+        <Card className="surface-1">
+          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+            Nenhuma solução cadastrada. Adicione soluções na página de detalhe de cada demanda.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {solucoes.map((s) => (
+            <SolucaoCard
+              key={s.id}
+              titulo={s.titulo}
+              descricao={s.descricao}
+              demandaTitulo={getSolicitacao(s.solicitacaoId)?.titulo}
+              melhorias={melhorias.filter((m) => m.solucaoId === s.id)}
+              onAdd={(descricao) => {
+                if (!descricao.trim()) return;
+                createMelhoria({ solucaoId: s.id, descricao, status: "planejada", data: new Date().toISOString() });
+                toast({ title: "Melhoria registrada" });
+              }}
+              onUpdateStatus={(mid, status) => updateMelhoria(mid, { status })}
+              onDelete={(mid) => deleteMelhoria(mid)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SolucaoCard({
+  titulo,
+  descricao,
+  demandaTitulo,
+  melhorias,
+  onAdd,
+  onUpdateStatus,
+  onDelete,
+}: {
+  titulo: string;
+  descricao: string;
+  demandaTitulo?: string;
+  melhorias: Melhoria[];
+  onAdd: (s: string) => void;
+  onUpdateStatus: (id: string, s: MelhoriaStatus) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const sorted = useMemo(() => [...melhorias].sort((a, b) => +new Date(b.data) - +new Date(a.data)), [melhorias]);
+
+  return (
+    <Card className="surface-1">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <CardTitle className="text-base">{titulo}</CardTitle>
+            {demandaTitulo && <CardDescription>Demanda: {demandaTitulo}</CardDescription>}
+          </div>
+          <Badge variant="outline" className="border-accent/40 text-accent">
+            {sorted.length} melhoria{sorted.length === 1 ? "" : "s"}
+          </Badge>
+        </div>
+        {descricao && <p className="text-sm text-muted-foreground mt-2">{descricao}</p>}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex gap-2">
+          <Input placeholder="Nova melhoria planejada..." value={draft} onChange={(e) => setDraft(e.target.value)} />
+          <Button onClick={() => { onAdd(draft); setDraft(""); }}>
+            <Plus className="size-4" /> Adicionar
+          </Button>
+        </div>
+        {sorted.length > 0 && (
+          <ul className="divide-y divide-border border border-border rounded-md">
+            {sorted.map((m) => (
+              <li key={m.id} className="p-3 flex items-center gap-3">
+                <CalendarPlus className="size-4 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm truncate">{m.descricao}</div>
+                  <div className="text-xs text-muted-foreground">{new Date(m.data).toLocaleDateString("pt-BR")}</div>
+                </div>
+                <Select value={m.status} onValueChange={(v) => onUpdateStatus(m.id, v as MelhoriaStatus)}>
+                  <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(MELHORIA_STATUS) as MelhoriaStatus[]).map((s) => (
+                      <SelectItem key={s} value={s}>{MELHORIA_STATUS[s]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="icon" onClick={() => onDelete(m.id)}>
+                  <Trash2 className="size-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
