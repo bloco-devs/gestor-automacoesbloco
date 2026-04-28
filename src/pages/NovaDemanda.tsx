@@ -19,6 +19,7 @@ import { ScorePill } from "@/components/ScorePill";
 const schema = z.object({
   titulo: z.string().trim().min(3, "Título muito curto").max(120),
   descricao: z.string().trim().min(10, "Descreva com mais detalhes").max(2000),
+  softwares: z.string().trim().max(500, "Informe no máximo 500 caracteres"),
 });
 
 export default function NovaDemanda() {
@@ -28,6 +29,7 @@ export default function NovaDemanda() {
   const isDeveloper = user?.role === "developer";
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [softwares, setSoftwares] = useState("");
   const [frequencia, setFrequencia] = useState<Frequencia>(3);
   const [complexidade, setComplexidade] = useState(3);
   const [retorno, setRetorno] = useState(3);
@@ -42,10 +44,15 @@ export default function NovaDemanda() {
     e.preventDefault();
     if (!user) return;
     try {
-      const v = schema.parse({ titulo, descricao });
+      const v = schema.parse({ titulo, descricao, softwares });
+      const softwaresList = v.softwares
+        .split(",")
+        .map((software) => software.trim())
+        .filter(Boolean);
       await createSolicitacao({
         titulo: v.titulo,
         descricao: v.descricao,
+        softwares: softwaresList,
         frequencia,
         complexidade,
         retorno,
@@ -91,6 +98,15 @@ export default function NovaDemanda() {
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
                   placeholder="Como você faz hoje? Quais sistemas e passos envolvidos?"
+                />
+              </div>
+              <div>
+                <Label htmlFor="softwares">Softwares envolvidos</Label>
+                <Input
+                  id="softwares"
+                  value={softwares}
+                  onChange={(e) => setSoftwares(e.target.value)}
+                  placeholder="Ex: Excel, SAP, Power BI"
                 />
               </div>
             </CardContent>
