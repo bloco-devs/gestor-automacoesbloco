@@ -109,6 +109,73 @@ export type Database = {
           },
         ]
       }
+      demanda_melhorias: {
+        Row: {
+          data: string
+          descricao: string
+          id: string
+          solucao_id: string
+          status: string
+        }
+        Insert: {
+          data?: string
+          descricao: string
+          id?: string
+          solucao_id: string
+          status?: string
+        }
+        Update: {
+          data?: string
+          descricao?: string
+          id?: string
+          solucao_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demanda_melhorias_solucao_id_fkey"
+            columns: ["solucao_id"]
+            isOneToOne: false
+            referencedRelation: "demanda_solucoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demanda_solucoes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string
+          id: string
+          solicitacao_id: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          id?: string
+          solicitacao_id: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          id?: string
+          solicitacao_id?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demanda_solucoes_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plataformas: {
         Row: {
           created_at: string
@@ -186,38 +253,68 @@ export type Database = {
       }
       solicitacoes: {
         Row: {
+          complexidade: number
           created_at: string
           descricao: string
+          dificuldade: number
           email: string
+          frequencia: number
           id: string
+          integracoes: string[]
           nome: string
+          notas_tecnicas: string | null
+          retorno: number
+          score: number
+          solicitante_nome: string
           status: string
           telefone: string | null
+          tem_integracao: boolean
           tipo: string | null
+          titulo: string
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          complexidade?: number
           created_at?: string
           descricao: string
+          dificuldade?: number
           email: string
+          frequencia?: number
           id?: string
+          integracoes?: string[]
           nome: string
+          notas_tecnicas?: string | null
+          retorno?: number
+          score?: number
+          solicitante_nome?: string
           status?: string
           telefone?: string | null
+          tem_integracao?: boolean
           tipo?: string | null
+          titulo?: string
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          complexidade?: number
           created_at?: string
           descricao?: string
+          dificuldade?: number
           email?: string
+          frequencia?: number
           id?: string
+          integracoes?: string[]
           nome?: string
+          notas_tecnicas?: string | null
+          retorno?: number
+          score?: number
+          solicitante_nome?: string
           status?: string
           telefone?: string | null
+          tem_integracao?: boolean
           tipo?: string | null
+          titulo?: string
           updated_at?: string
           user_id?: string | null
         }
