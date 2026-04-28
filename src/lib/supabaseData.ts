@@ -192,6 +192,14 @@ export async function updateSolicitacao(id: string, patch: Partial<Solicitacao>)
   if (error) throw error;
 }
 
+export async function deleteSolicitacao(id: string): Promise<void> {
+  const { error: solucoesError } = await supabase.from("demanda_solucoes").delete().eq("solicitacao_id", id);
+  if (solucoesError) throw solucoesError;
+
+  const { error } = await supabase.from("solicitacoes").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function listSolucoes(): Promise<Solucao[]> {
   const { data, error } = await supabase
     .from("demanda_solucoes")
