@@ -98,14 +98,14 @@ export default function AppLayout() {
             </Button>
           </div>
         </header>
-        <nav className="md:hidden flex gap-1 overflow-x-auto px-3 py-2 border-b border-border">
+        <nav className="md:hidden flex flex-wrap gap-1 overflow-hidden px-3 py-2 border-b border-border">
           {nav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs whitespace-nowrap",
+                  "flex min-w-0 flex-1 items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs whitespace-nowrap",
                   isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted",
                 )
               }
@@ -115,7 +115,7 @@ export default function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="w-full min-w-0 max-w-7xl mx-auto p-4 md:p-8">
           <Outlet />
         </div>
       </main>

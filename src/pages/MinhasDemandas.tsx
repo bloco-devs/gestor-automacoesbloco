@@ -14,9 +14,9 @@ export default function MinhasDemandas() {
   const solicitacoes = useSupabaseData(() => (user ? listMinhasSolicitacoes(user.id) : Promise.resolve([])), [], [user?.id]);
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-6 overflow-hidden">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold">Minhas demandas</h1>
           <p className="text-sm text-muted-foreground">Acompanhe o status das suas solicitações em tempo real.</p>
         </div>
@@ -45,13 +45,13 @@ export default function MinhasDemandas() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid min-w-0 gap-4">
           {solicitacoes.map((s) => (
-            <Card key={s.id} className="surface-1">
-              <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+            <Card key={s.id} className="surface-1 min-w-0 overflow-hidden">
+              <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 p-4 sm:p-6">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <CardTitle className="text-base truncate">{s.titulo}</CardTitle>
+                    <CardTitle className="min-w-0 max-w-full truncate text-base">{s.titulo}</CardTitle>
                     <StatusBadge status={s.status} />
                   </div>
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{s.descricao}</p>
@@ -63,7 +63,7 @@ export default function MinhasDemandas() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="min-w-0 space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
                 <StatusTimeline current={s.status} compact />
                 <div className="flex flex-wrap gap-2">
                   <Button asChild variant="outline" size="sm">
