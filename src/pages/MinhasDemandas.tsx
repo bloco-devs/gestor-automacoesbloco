@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
-import { ScorePill } from "@/components/ScorePill";
 import { FREQUENCIA_LABEL } from "@/lib/types";
 
 export default function MinhasDemandas() {
@@ -54,7 +53,6 @@ export default function MinhasDemandas() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <CardTitle className="text-base truncate">{s.titulo}</CardTitle>
                     <StatusBadge status={s.status} />
-                    <ScorePill score={s.score} />
                   </div>
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{s.descricao}</p>
                   <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">

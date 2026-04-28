@@ -146,7 +146,7 @@ export default function DemandaDetail() {
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-semibold">{solicitacao.titulo}</h1>
             <StatusBadge status={solicitacao.status} />
-            <ScorePill score={solicitacao.score} />
+            {isDev && <ScorePill score={solicitacao.score} />}
           </div>
           {isOwner && !isEditing && (
             <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
