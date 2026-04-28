@@ -36,7 +36,7 @@ async function loadProfile(authUser: User): Promise<Profile> {
     throw new Error("Este aplicativo aceita apenas os logins autorizados.");
   }
 
-  // Busca nome do perfil (criado por trigger no signup)
+  // Busca nome do perfil, quando existir.
   const { data: prof } = await supabase
     .from("profiles")
     .select("nome, email")
