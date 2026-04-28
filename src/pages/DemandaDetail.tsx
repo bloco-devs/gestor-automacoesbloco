@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,6 +44,17 @@ export default function DemandaDetail() {
 
   const [solucaoTitulo, setSolucaoTitulo] = useState("");
   const [solucaoDesc, setSolucaoDesc] = useState("");
+
+  useEffect(() => {
+    if (!solicitacao) return;
+    setComplex(solicitacao.complexidade);
+    setRetorno(solicitacao.retorno);
+    setDificuldade(solicitacao.dificuldade);
+    setStatus(solicitacao.status);
+    setNotas(solicitacao.notasTecnicas ?? "");
+    setTemIntegracao(solicitacao.temIntegracao ?? false);
+    setIntegracoesText((solicitacao.integracoes ?? []).join(", "));
+  }, [solicitacao]);
 
   const previewScore = useMemo(
     () => (solicitacao ? calcScore({ frequencia: solicitacao.frequencia, complexidade: complex, retorno, dificuldade }) : 0),
