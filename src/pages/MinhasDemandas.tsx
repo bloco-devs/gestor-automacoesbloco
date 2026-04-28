@@ -64,7 +64,7 @@ export default function MinhasDemandas() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <StatusTimeline current={s.status} />
+                <StatusTimeline current={s.status} compact />
                 <div className="flex flex-wrap gap-2">
                   <Button asChild variant="outline" size="sm">
                     <Link to={`/demanda/${s.id}`}>Ver detalhes</Link>
