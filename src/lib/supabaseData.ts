@@ -146,6 +146,7 @@ export async function updateOwnSolicitacao(
     frequencia: Frequencia;
     complexidade: number;
     retorno: number;
+    dificuldade: number;
   },
 ): Promise<void> {
   const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -161,7 +162,7 @@ export async function updateOwnSolicitacao(
     retorno: data.retorno,
     tem_integracao: data.softwares.length > 0,
     integracoes: data.softwares,
-    score: calcScore({ ...data, dificuldade: 3 }),
+    score: calcScore(data),
     updated_at: new Date().toISOString(),
   };
 
