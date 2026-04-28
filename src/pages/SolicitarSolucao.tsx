@@ -215,7 +215,7 @@ export default function SolicitarSolucao() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={submitting}>
+              <Button type="submit" className="w-full" disabled={submitting || loading}>
                 <Send className="size-4" />
                 {submitting ? "Enviando..." : "Enviar solicitação"}
               </Button>
