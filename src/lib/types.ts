@@ -12,11 +12,8 @@ export type PipelineStatus =
 export const PIPELINE_ORDER: PipelineStatus[] = [
   "novo",
   "em_analise",
-  "aprovado",
   "em_desenvolvimento",
-  "testando",
   "pronto",
-  "em_producao",
 ];
 
 export const STATUS_LABEL: Record<PipelineStatus, string> = {
