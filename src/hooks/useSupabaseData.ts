@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState, type DependencyList } from "react";
+import { useCallback, useEffect, useRef, useState, type DependencyList } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useSupabaseData<T>(loader: () => Promise<T>, fallback: T, deps: DependencyList = []): T {
   const [value, setValue] = useState<T>(fallback);
+  const channelNameRef = useRef(`domain-data-changes-${crypto.randomUUID()}`);
 
   const refresh = useCallback(() => {
     let active = true;
@@ -23,7 +24,7 @@ export function useSupabaseData<T>(loader: () => Promise<T>, fallback: T, deps: 
 
   useEffect(() => {
     const channel = supabase
-      .channel("domain-data-changes")
+      .channel(channelNameRef.current)
       .on("postgres_changes", { event: "*", schema: "public", table: "solicitacoes" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "demanda_solucoes" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "demanda_melhorias" }, refresh)
