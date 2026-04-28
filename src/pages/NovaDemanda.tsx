@@ -136,7 +136,6 @@ export default function NovaDemanda() {
 
               <SliderField label="Complexidade / Chato de fazer" value={complexidade} onChange={setComplexidade} hint="1 = simples · 5 = muito chato/complexo" />
               <SliderField label="Retorno esperado" value={retorno} onChange={setRetorno} hint="1 = baixo impacto · 5 = grande economia/impacto" />
-              <SliderField label="Dificuldade estimada de desenvolvimento" value={dificuldade} onChange={setDificuldade} hint="Opcional — o desenvolvedor pode ajustar" />
             </CardContent>
           </Card>
 
