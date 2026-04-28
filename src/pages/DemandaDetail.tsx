@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Pencil, Save, Sparkles, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   createSolucao,
   getSolicitacao,
   listSolucoesBySolicitacao,
+  updateOwnSolicitacao,
   updateSolicitacao,
 } from "@/lib/supabaseData";
-import { FREQUENCIA_LABEL, PIPELINE_ORDER, STATUS_LABEL, type PipelineStatus } from "@/lib/types";
+import { FREQUENCIA_LABEL, PIPELINE_ORDER, STATUS_LABEL, type Frequencia, type PipelineStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,7 @@ export default function DemandaDetail() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isDev = user?.role === "developer";
+  const isOwner = user?.id === solicitacao?.solicitanteId;
 
   const solicitacao = useSupabaseData(() => getSolicitacao(id), null, [id]);
   const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id]);
@@ -41,6 +43,13 @@ export default function DemandaDetail() {
   const [notas, setNotas] = useState(solicitacao?.notasTecnicas ?? "");
   const [temIntegracao, setTemIntegracao] = useState<boolean>(solicitacao?.temIntegracao ?? false);
   const [integracoesText, setIntegracoesText] = useState((solicitacao?.integracoes ?? []).join(", "));
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitulo, setEditTitulo] = useState(solicitacao?.titulo ?? "");
+  const [editDescricao, setEditDescricao] = useState(solicitacao?.descricao ?? "");
+  const [editSoftwares, setEditSoftwares] = useState((solicitacao?.integracoes ?? []).join(", "));
+  const [editFrequencia, setEditFrequencia] = useState<Frequencia>(solicitacao?.frequencia ?? 3);
+  const [editComplexidade, setEditComplexidade] = useState(solicitacao?.complexidade ?? 3);
+  const [editRetorno, setEditRetorno] = useState(solicitacao?.retorno ?? 3);
 
   const [solucaoTitulo, setSolucaoTitulo] = useState("");
   const [solucaoDesc, setSolucaoDesc] = useState("");
@@ -54,6 +63,12 @@ export default function DemandaDetail() {
     setNotas(solicitacao.notasTecnicas ?? "");
     setTemIntegracao(solicitacao.temIntegracao ?? false);
     setIntegracoesText((solicitacao.integracoes ?? []).join(", "));
+    setEditTitulo(solicitacao.titulo);
+    setEditDescricao(solicitacao.descricao);
+    setEditSoftwares((solicitacao.integracoes ?? []).join(", "));
+    setEditFrequencia(solicitacao.frequencia);
+    setEditComplexidade(solicitacao.complexidade);
+    setEditRetorno(solicitacao.retorno);
   }, [solicitacao]);
 
   const previewScore = useMemo(
@@ -83,6 +98,30 @@ export default function DemandaDetail() {
       temIntegracao,
       integracoes,
     });
+    toast({ title: "Demanda atualizada" });
+  }
+
+  async function handleSaveOwn() {
+    if (!editTitulo.trim() || editTitulo.trim().length < 3) {
+      toast({ title: "Verifique os campos", description: "Informe um título válido.", variant: "destructive" });
+      return;
+    }
+    if (!editDescricao.trim() || editDescricao.trim().length < 10) {
+      toast({ title: "Verifique os campos", description: "Descreva a demanda com mais detalhes.", variant: "destructive" });
+      return;
+    }
+
+    const softwares = editSoftwares.split(",").map((s) => s.trim()).filter(Boolean);
+    await updateOwnSolicitacao(id, {
+      titulo: editTitulo.trim(),
+      descricao: editDescricao.trim(),
+      softwares,
+      frequencia: editFrequencia,
+      complexidade: editComplexidade,
+      retorno: editRetorno,
+      dificuldade,
+    });
+    setIsEditing(false);
     toast({ title: "Demanda atualizada" });
   }
 
