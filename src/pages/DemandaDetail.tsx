@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Save, Sparkles, Trash2, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
@@ -40,6 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function DemandaDetail() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const isDev = user?.role === "developer";
@@ -82,6 +83,12 @@ export default function DemandaDetail() {
     setEditComplexidade(solicitacao.complexidade);
     setEditRetorno(solicitacao.retorno);
   }, [solicitacao]);
+
+  useEffect(() => {
+    if (searchParams.get("editar") === "1" && isOwner) {
+      setIsEditing(true);
+    }
+  }, [searchParams, isOwner]);
 
   const previewScore = useMemo(
     () => (solicitacao ? calcScore({ frequencia: solicitacao.frequencia, complexidade: complex, retorno, dificuldade }) : 0),
@@ -134,6 +141,7 @@ export default function DemandaDetail() {
       dificuldade,
     });
     setIsEditing(false);
+    setSearchParams({});
     toast({ title: "Demanda atualizada" });
   }
 
@@ -168,7 +176,10 @@ export default function DemandaDetail() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isOwner && !isEditing && (
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Button variant="outline" size="sm" onClick={() => {
+                setIsEditing(true);
+                setSearchParams({ editar: "1" });
+              }}>
                 <Pencil className="size-4" /> Editar demanda
               </Button>
             )}
@@ -242,7 +253,10 @@ export default function DemandaDetail() {
                 <SliderField label="Retorno esperado" value={editRetorno} onChange={setEditRetorno} />
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button onClick={handleSaveOwn}><Save className="size-4" /> Salvar alterações</Button>
-                  <Button variant="outline" onClick={() => setIsEditing(false)}><X className="size-4" /> Cancelar</Button>
+                  <Button variant="outline" onClick={() => {
+                    setIsEditing(false);
+                    setSearchParams({});
+                  }}><X className="size-4" /> Cancelar</Button>
                 </div>
               </>
             ) : (

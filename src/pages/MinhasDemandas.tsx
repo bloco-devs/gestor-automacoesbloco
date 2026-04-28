@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Plus, Inbox } from "lucide-react";
+import { Pencil, Plus, Inbox } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { listMinhasSolicitacoes } from "@/lib/supabaseData";
@@ -63,8 +63,18 @@ export default function MinhasDemandas() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <StatusTimeline current={s.status} />
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <Link to={`/demanda/${s.id}`}>Ver detalhes</Link>
+                  </Button>
+                  <Button asChild size="sm">
+                    <Link to={`/demanda/${s.id}?editar=1`}>
+                      <Pencil className="size-4" /> Editar demanda
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
