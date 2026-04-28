@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useStoreSubscription } from "@/hooks/useStore";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   createSolucao,
   getSolicitacao,
-  listSolucoes,
+  listSolucoesBySolicitacao,
   updateSolicitacao,
-} from "@/lib/store";
+} from "@/lib/supabaseData";
 import { FREQUENCIA_LABEL, PIPELINE_ORDER, STATUS_LABEL, type PipelineStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,8 +31,8 @@ export default function DemandaDetail() {
   const { toast } = useToast();
   const isDev = user?.role === "developer";
 
-  const solicitacao = useStoreSubscription(() => getSolicitacao(id));
-  const solucoes = useStoreSubscription(() => listSolucoes().filter((s) => s.solicitacaoId === id));
+  const solicitacao = useSupabaseData(() => getSolicitacao(id), null, [id]);
+  const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id]);
 
   const [complex, setComplex] = useState(solicitacao?.complexidade ?? 3);
   const [retorno, setRetorno] = useState(solicitacao?.retorno ?? 3);
@@ -59,11 +59,11 @@ export default function DemandaDetail() {
     );
   }
 
-  function handleSave() {
+  async function handleSave() {
     const integracoes = temIntegracao
       ? integracoesText.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
-    updateSolicitacao(id, {
+    await updateSolicitacao(id, {
       complexidade: complex,
       retorno,
       dificuldade,
@@ -75,12 +75,12 @@ export default function DemandaDetail() {
     toast({ title: "Demanda atualizada" });
   }
 
-  function handleAddSolucao() {
+  async function handleAddSolucao() {
     if (!solucaoTitulo.trim()) {
       toast({ title: "Informe um título para a solução", variant: "destructive" });
       return;
     }
-    createSolucao({ solicitacaoId: id, titulo: solucaoTitulo.trim(), descricao: solucaoDesc.trim() });
+    await createSolucao({ solicitacaoId: id, titulo: solucaoTitulo.trim(), descricao: solucaoDesc.trim(), createdBy: user?.id });
     setSolucaoTitulo("");
     setSolucaoDesc("");
     toast({ title: "Solução registrada" });
