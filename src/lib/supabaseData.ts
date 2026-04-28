@@ -104,6 +104,7 @@ export async function getSolicitacao(id: string): Promise<Solicitacao | null> {
 export async function createSolicitacao(data: {
   titulo: string;
   descricao: string;
+  softwares: string[];
   frequencia: Frequencia;
   complexidade: number;
   retorno: number;
@@ -124,6 +125,8 @@ export async function createSolicitacao(data: {
     solicitante_nome: data.solicitanteNome,
     nome: data.solicitanteNome,
     email: data.email,
+    tem_integracao: data.softwares.length > 0,
+    integracoes: data.softwares,
     status: "novo",
   });
   if (error) throw error;
