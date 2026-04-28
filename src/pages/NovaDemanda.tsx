@@ -88,7 +88,7 @@ export default function NovaDemanda() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="titulo">Título</Label>
-                <Input id="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex: Conciliação mensal de cartões" />
+                <Input id="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
               </div>
               <div>
                 <Label htmlFor="descricao">Descrição da atividade atual</Label>
@@ -97,7 +97,6 @@ export default function NovaDemanda() {
                   rows={6}
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
-                  placeholder="Como você faz hoje? Quais sistemas e passos envolvidos?"
                 />
               </div>
               <div>
@@ -106,7 +105,6 @@ export default function NovaDemanda() {
                   id="softwares"
                   value={softwares}
                   onChange={(e) => setSoftwares(e.target.value)}
-                  placeholder="Ex: Excel, SAP, Power BI"
                 />
               </div>
             </CardContent>
