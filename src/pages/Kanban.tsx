@@ -136,13 +136,7 @@ function Column({ stage, items }: { stage: Stage; items: Solicitacao[] }) {
         </span>
       </div>
       <div className="space-y-2 flex-1">
-        {items.length === 0 ? (
-          <div className="text-xs text-muted-foreground/70 px-1 py-6 text-center">
-            Nada por aqui
-          </div>
-        ) : (
-          items.map((s) => <KanbanCard key={s.id} item={s} />)
-        )}
+        {items.map((s) => <KanbanCard key={s.id} item={s} />)}
       </div>
     </div>
   );
