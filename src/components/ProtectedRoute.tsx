@@ -9,8 +9,9 @@ export function ProtectedRoute({
   children: React.ReactNode;
   role?: Role;
 }) {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/auth" replace />;
+  const { user, session, loading } = useAuth();
+  if (loading) return null;
+  if (!user || !session) return <Navigate to="/auth" replace />;
   if (role && user.role !== role) {
     return <Navigate to={user.role === "developer" ? "/dashboard" : "/minhas-demandas"} replace />;
   }
