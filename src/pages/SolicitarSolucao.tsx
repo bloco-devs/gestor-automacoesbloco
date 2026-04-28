@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { SiteHeader } from "@/components/SiteHeader";
+import { submitPublicSolicitacao } from "@/lib/supabaseData";
 
 const schema = z.object({
   nome: z
@@ -87,8 +88,7 @@ export default function SolicitarSolucao() {
 
     try {
       setSubmitting(true);
-      // TODO: integrar com Supabase (insert em "solicitacoes" público)
-      await new Promise((r) => setTimeout(r, 600));
+      await submitPublicSolicitacao(result.data);
       toast({
         title: "Solicitação enviada",
         description: "Recebemos seu pedido. A equipe Bloco Construções entrará em contato em breve.",

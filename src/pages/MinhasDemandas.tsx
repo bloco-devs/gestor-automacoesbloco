@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { Plus, Inbox } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useStoreSubscription } from "@/hooks/useStore";
-import { listMinhasSolicitacoes } from "@/lib/store";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { listMinhasSolicitacoes } from "@/lib/supabaseData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -12,7 +12,7 @@ import { FREQUENCIA_LABEL } from "@/lib/types";
 
 export default function MinhasDemandas() {
   const { user } = useAuth();
-  const solicitacoes = useStoreSubscription(() => (user ? listMinhasSolicitacoes(user.id) : []));
+  const solicitacoes = useSupabaseData(() => (user ? listMinhasSolicitacoes(user.id) : Promise.resolve([])), [], [user?.id]);
 
   return (
     <div className="space-y-6">

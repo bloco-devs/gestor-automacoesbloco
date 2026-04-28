@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { CalendarPlus, Plus, Sparkles, Trash2 } from "lucide-react";
-import { useStoreSubscription } from "@/hooks/useStore";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   createMelhoria,
   deleteMelhoria,
-  getSolicitacao,
+  listSolicitacoes,
   listMelhorias,
   listSolucoes,
   updateMelhoria,
-} from "@/lib/store";
+} from "@/lib/supabaseData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,8 +25,9 @@ const MELHORIA_STATUS: Record<MelhoriaStatus, string> = {
 
 export default function Solucoes() {
   const { toast } = useToast();
-  const solucoes = useStoreSubscription(() => listSolucoes());
-  const melhorias = useStoreSubscription(() => listMelhorias());
+  const solucoes = useSupabaseData(() => listSolucoes(), []);
+  const melhorias = useSupabaseData(() => listMelhorias(), []);
+  const solicitacoes = useSupabaseData(() => listSolicitacoes(), []);
 
   return (
     <div className="space-y-6">
@@ -50,11 +51,11 @@ export default function Solucoes() {
               key={s.id}
               titulo={s.titulo}
               descricao={s.descricao}
-              demandaTitulo={getSolicitacao(s.solicitacaoId)?.titulo}
+              demandaTitulo={solicitacoes.find((item) => item.id === s.solicitacaoId)?.titulo}
               melhorias={melhorias.filter((m) => m.solucaoId === s.id)}
-              onAdd={(descricao) => {
+              onAdd={async (descricao) => {
                 if (!descricao.trim()) return;
-                createMelhoria({ solucaoId: s.id, descricao, status: "planejada", data: new Date().toISOString() });
+                await createMelhoria({ solucaoId: s.id, descricao, status: "planejada", data: new Date().toISOString() });
                 toast({ title: "Melhoria registrada" });
               }}
               onUpdateStatus={(mid, status) => updateMelhoria(mid, { status })}

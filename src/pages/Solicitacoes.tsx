@@ -9,8 +9,8 @@ import {
   Eye,
   Search,
 } from "lucide-react";
-import { useStoreSubscription } from "@/hooks/useStore";
-import { listSolicitacoes } from "@/lib/store";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { listSolicitacoes } from "@/lib/supabaseData";
 import { STATUS_LABEL, type PipelineStatus, type Solicitacao } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,7 +39,7 @@ type SortDir = "asc" | "desc";
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 export default function Solicitacoes() {
-  const all = useStoreSubscription(() => listSolicitacoes());
+  const all = useSupabaseData(() => listSolicitacoes(), []);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");

@@ -10,8 +10,8 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { Calendar, User } from "lucide-react";
-import { useStoreSubscription } from "@/hooks/useStore";
-import { listSolicitacoes, updateSolicitacao } from "@/lib/store";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { listSolicitacoes, updateSolicitacao } from "@/lib/supabaseData";
 import {
   STATUS_LABEL,
   FREQUENCIA_LABEL,
@@ -54,7 +54,7 @@ const STAGES: Stage[] = [
 ];
 
 export default function Kanban() {
-  const all = useStoreSubscription(() => listSolicitacoes());
+  const all = useSupabaseData(() => listSolicitacoes(), []);
   const { toast } = useToast();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -75,7 +75,7 @@ export default function Kanban() {
     return map;
   }, [all]);
 
-  function handleDragEnd(e: DragEndEvent) {
+  async function handleDragEnd(e: DragEndEvent) {
     const id = String(e.active.id);
     const stageId = e.over?.id as StageId | undefined;
     if (!stageId) return;
@@ -83,7 +83,7 @@ export default function Kanban() {
     const item = all.find((s) => s.id === id);
     if (!stage || !item) return;
     if (stage.statuses.includes(item.status)) return; // already in this stage
-    updateSolicitacao(id, { status: stage.target });
+    await updateSolicitacao(id, { status: stage.target });
     toast({
       title: "Status atualizado",
       description: `${item.titulo} → ${stage.label}`,
