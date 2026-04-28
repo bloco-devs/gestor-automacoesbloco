@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Activity, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Sparkles, ListTodo } from "lucide-react";
+import { KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Sparkles, ListTodo } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -83,10 +83,15 @@ export default function AppLayout() {
       <main className="flex-1 min-w-0">
         <header className="md:hidden border-b border-border px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="size-7 rounded-md bg-accent flex items-center justify-center">
-              <Activity className="size-4 text-accent-foreground" />
+            <img
+              src={blocoLogo}
+              alt="Bloco Construções"
+              className="size-7 rounded-md object-cover"
+            />
+            <div>
+              <div className="text-sm font-brand font-bold whitespace-nowrap">Gestor de Automações</div>
+              <div className="text-xs text-muted-foreground font-brand font-light">Gestão interna de demandas</div>
             </div>
-            <span className="font-semibold">Automation Hub</span>
           </div>
           <div className="flex items-center gap-1">
             <ThemeToggle />
