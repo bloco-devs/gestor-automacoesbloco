@@ -137,6 +137,42 @@ export async function createSolicitacao(data: {
   if (error) throw error;
 }
 
+export async function updateOwnSolicitacao(
+  id: string,
+  data: {
+    titulo: string;
+    descricao: string;
+    softwares: string[];
+    frequencia: Frequencia;
+    complexidade: number;
+    retorno: number;
+  },
+): Promise<void> {
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    throw new Error("Faça login novamente para editar a demanda.");
+  }
+
+  const payload = {
+    titulo: data.titulo,
+    descricao: data.descricao,
+    frequencia: data.frequencia,
+    complexidade: data.complexidade,
+    retorno: data.retorno,
+    tem_integracao: data.softwares.length > 0,
+    integracoes: data.softwares,
+    score: calcScore({ ...data, dificuldade: 3 }),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from("solicitacoes")
+    .update(payload)
+    .eq("id", id)
+    .eq("user_id", authData.user.id);
+  if (error) throw error;
+}
+
 export async function updateSolicitacao(id: string, patch: Partial<Solicitacao>): Promise<void> {
   const current = await getSolicitacao(id);
   const merged = { ...current, ...patch } as Solicitacao;
