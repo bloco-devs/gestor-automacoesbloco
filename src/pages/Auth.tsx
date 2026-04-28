@@ -86,7 +86,6 @@ export default function Auth() {
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="email autorizado"
                   autoComplete="email"
                 />
               </div>
@@ -97,7 +96,6 @@ export default function Auth() {
                   type="password"
                   value={form.senha}
                   onChange={(e) => setForm({ ...form, senha: e.target.value })}
-                  placeholder="••••••••"
                   autoComplete="current-password"
                 />
               </div>

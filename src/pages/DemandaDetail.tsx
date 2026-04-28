@@ -225,7 +225,7 @@ export default function DemandaDetail() {
                 </div>
                 <div>
                   <Label htmlFor="edit-softwares">Softwares envolvidos</Label>
-                  <Input id="edit-softwares" value={editSoftwares} onChange={(e) => setEditSoftwares(e.target.value)} placeholder="Ex: Excel, SAP, Power BI" />
+                  <Input id="edit-softwares" value={editSoftwares} onChange={(e) => setEditSoftwares(e.target.value)} />
                 </div>
                 <div>
                   <Label>Frequência</Label>
@@ -316,7 +316,6 @@ export default function DemandaDetail() {
                       rows={2}
                       value={integracoesText}
                       onChange={(e) => setIntegracoesText(e.target.value)}
-                      placeholder="Ex.: Sienge, WhatsApp, Google Sheets, Pipefy..."
                     />
                     <p className="text-xs text-muted-foreground mt-1">Separe múltiplos sistemas por vírgula.</p>
                   </div>
@@ -324,7 +323,7 @@ export default function DemandaDetail() {
               </div>
               <div>
                 <Label htmlFor="notas">Notas técnicas</Label>
-                <Textarea id="notas" rows={4} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Decisões, dependências, riscos..." />
+                <Textarea id="notas" rows={4} value={notas} onChange={(e) => setNotas(e.target.value)} />
               </div>
               <Button onClick={handleSave} className="w-full">
                 <Save className="size-4" /> Salvar alterações
@@ -342,8 +341,8 @@ export default function DemandaDetail() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-[1fr_1fr_auto] gap-2">
-              <Input placeholder="Título da solução" value={solucaoTitulo} onChange={(e) => setSolucaoTitulo(e.target.value)} />
-              <Input placeholder="Descrição" value={solucaoDesc} onChange={(e) => setSolucaoDesc(e.target.value)} />
+              <Input value={solucaoTitulo} onChange={(e) => setSolucaoTitulo(e.target.value)} />
+              <Input value={solucaoDesc} onChange={(e) => setSolucaoDesc(e.target.value)} />
               <Button onClick={handleAddSolucao}>Adicionar</Button>
             </div>
             {solucoes.length === 0 ? (

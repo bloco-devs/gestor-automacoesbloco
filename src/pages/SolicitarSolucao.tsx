@@ -153,7 +153,6 @@ export default function SolicitarSolucao() {
                   autoComplete="name"
                   value={form.nome}
                   onChange={(e) => update("nome", e.target.value)}
-                  placeholder="Seu nome"
                   aria-invalid={!!errors.nome}
                 />
                 {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
@@ -168,7 +167,6 @@ export default function SolicitarSolucao() {
                     autoComplete="email"
                     value={form.email}
                     onChange={(e) => update("email", e.target.value)}
-                    placeholder="voce@empresa.com"
                     aria-invalid={!!errors.email}
                   />
                   {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
@@ -182,7 +180,6 @@ export default function SolicitarSolucao() {
                     autoComplete="tel"
                     value={form.telefone}
                     onChange={(e) => update("telefone", maskTelefone(e.target.value))}
-                    placeholder="(11) 90000-0000"
                     aria-invalid={!!errors.telefone}
                   />
                   {errors.telefone && (
@@ -198,7 +195,6 @@ export default function SolicitarSolucao() {
                   rows={6}
                   value={form.descricao}
                   onChange={(e) => update("descricao", e.target.value)}
-                  placeholder="Descreva o escopo, objetivos, prazos e qualquer detalhe relevante."
                   aria-invalid={!!errors.descricao}
                 />
                 <div className="flex items-center justify-between">

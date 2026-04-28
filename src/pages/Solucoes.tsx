@@ -104,7 +104,7 @@ function SolucaoCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex gap-2">
-          <Input placeholder="Nova melhoria planejada..." value={draft} onChange={(e) => setDraft(e.target.value)} />
+          <Input value={draft} onChange={(e) => setDraft(e.target.value)} />
           <Button onClick={() => { onAdd(draft); setDraft(""); }}>
             <Plus className="size-4" /> Adicionar
           </Button>
