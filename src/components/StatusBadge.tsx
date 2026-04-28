@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { STATUS_LABEL, type PipelineStatus } from "@/lib/types";
+import { STATUS_LABEL, statusToCategory, type PipelineStatus } from "@/lib/types";
 
 const TONE: Record<PipelineStatus, string> = {
   novo: "bg-muted text-muted-foreground border-border",
@@ -12,15 +12,16 @@ const TONE: Record<PipelineStatus, string> = {
 };
 
 export function StatusBadge({ status, className }: { status: PipelineStatus; className?: string }) {
+  const displayStatus = statusToCategory(status);
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-        TONE[status],
+        TONE[displayStatus],
         className,
       )}
     >
-      {STATUS_LABEL[status]}
+      {STATUS_LABEL[displayStatus]}
     </span>
   );
 }

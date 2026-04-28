@@ -12,11 +12,8 @@ export type PipelineStatus =
 export const PIPELINE_ORDER: PipelineStatus[] = [
   "novo",
   "em_analise",
-  "aprovado",
   "em_desenvolvimento",
-  "testando",
   "pronto",
-  "em_producao",
 ];
 
 export const STATUS_LABEL: Record<PipelineStatus, string> = {
@@ -28,6 +25,12 @@ export const STATUS_LABEL: Record<PipelineStatus, string> = {
   pronto: "Pronto",
   em_producao: "Em Produção",
 };
+
+export function statusToCategory(status: PipelineStatus): PipelineStatus {
+  if (status === "aprovado" || status === "em_desenvolvimento") return "em_desenvolvimento";
+  if (status === "testando" || status === "pronto" || status === "em_producao") return "pronto";
+  return status;
+}
 
 export type Frequencia = 1 | 2 | 3 | 4; // Eventual, Mensal, Semanal, Diária
 export const FREQUENCIA_LABEL: Record<Frequencia, string> = {

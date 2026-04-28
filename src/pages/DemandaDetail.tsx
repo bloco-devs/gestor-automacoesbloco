@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Pencil, Save, Sparkles, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   createSolucao,
   getSolicitacao,
   listSolucoesBySolicitacao,
+  updateOwnSolicitacao,
   updateSolicitacao,
 } from "@/lib/supabaseData";
-import { FREQUENCIA_LABEL, PIPELINE_ORDER, STATUS_LABEL, type PipelineStatus } from "@/lib/types";
+import { FREQUENCIA_LABEL, PIPELINE_ORDER, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,7 @@ export default function DemandaDetail() {
 
   const solicitacao = useSupabaseData(() => getSolicitacao(id), null, [id]);
   const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id]);
+  const isOwner = user?.id === solicitacao?.solicitanteId;
 
   const [complex, setComplex] = useState(solicitacao?.complexidade ?? 3);
   const [retorno, setRetorno] = useState(solicitacao?.retorno ?? 3);
@@ -41,6 +43,13 @@ export default function DemandaDetail() {
   const [notas, setNotas] = useState(solicitacao?.notasTecnicas ?? "");
   const [temIntegracao, setTemIntegracao] = useState<boolean>(solicitacao?.temIntegracao ?? false);
   const [integracoesText, setIntegracoesText] = useState((solicitacao?.integracoes ?? []).join(", "));
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitulo, setEditTitulo] = useState(solicitacao?.titulo ?? "");
+  const [editDescricao, setEditDescricao] = useState(solicitacao?.descricao ?? "");
+  const [editSoftwares, setEditSoftwares] = useState((solicitacao?.integracoes ?? []).join(", "));
+  const [editFrequencia, setEditFrequencia] = useState<Frequencia>(solicitacao?.frequencia ?? 3);
+  const [editComplexidade, setEditComplexidade] = useState(solicitacao?.complexidade ?? 3);
+  const [editRetorno, setEditRetorno] = useState(solicitacao?.retorno ?? 3);
 
   const [solucaoTitulo, setSolucaoTitulo] = useState("");
   const [solucaoDesc, setSolucaoDesc] = useState("");
@@ -54,6 +63,12 @@ export default function DemandaDetail() {
     setNotas(solicitacao.notasTecnicas ?? "");
     setTemIntegracao(solicitacao.temIntegracao ?? false);
     setIntegracoesText((solicitacao.integracoes ?? []).join(", "));
+    setEditTitulo(solicitacao.titulo);
+    setEditDescricao(solicitacao.descricao);
+    setEditSoftwares((solicitacao.integracoes ?? []).join(", "));
+    setEditFrequencia(solicitacao.frequencia);
+    setEditComplexidade(solicitacao.complexidade);
+    setEditRetorno(solicitacao.retorno);
   }, [solicitacao]);
 
   const previewScore = useMemo(
@@ -86,6 +101,30 @@ export default function DemandaDetail() {
     toast({ title: "Demanda atualizada" });
   }
 
+  async function handleSaveOwn() {
+    if (!editTitulo.trim() || editTitulo.trim().length < 3) {
+      toast({ title: "Verifique os campos", description: "Informe um título válido.", variant: "destructive" });
+      return;
+    }
+    if (!editDescricao.trim() || editDescricao.trim().length < 10) {
+      toast({ title: "Verifique os campos", description: "Descreva a demanda com mais detalhes.", variant: "destructive" });
+      return;
+    }
+
+    const softwares = editSoftwares.split(",").map((s) => s.trim()).filter(Boolean);
+    await updateOwnSolicitacao(id, {
+      titulo: editTitulo.trim(),
+      descricao: editDescricao.trim(),
+      softwares,
+      frequencia: editFrequencia,
+      complexidade: editComplexidade,
+      retorno: editRetorno,
+      dificuldade,
+    });
+    setIsEditing(false);
+    toast({ title: "Demanda atualizada" });
+  }
+
   async function handleAddSolucao() {
     if (!solucaoTitulo.trim()) {
       toast({ title: "Informe um título para a solução", variant: "destructive" });
@@ -103,10 +142,17 @@ export default function DemandaDetail() {
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3">
           <ArrowLeft className="size-4" /> Voltar
         </Button>
-        <div className="flex items-center gap-2 flex-wrap">
-          <h1 className="text-2xl font-semibold">{solicitacao.titulo}</h1>
-          <StatusBadge status={solicitacao.status} />
-          <ScorePill score={solicitacao.score} />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-semibold">{solicitacao.titulo}</h1>
+            <StatusBadge status={solicitacao.status} />
+            <ScorePill score={solicitacao.score} />
+          </div>
+          {isOwner && !isEditing && (
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Pencil className="size-4" /> Editar demanda
+            </Button>
+          )}
         </div>
         <p className="text-sm text-muted-foreground mt-1">
           Solicitado por <span className="text-foreground">{solicitacao.solicitanteNome}</span> ·{" "}
@@ -123,17 +169,53 @@ export default function DemandaDetail() {
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="surface-1">
           <CardHeader>
-            <CardTitle className="text-base">Descrição</CardTitle>
+            <CardTitle className="text-base">{isEditing ? "Editar demanda" : "Descrição"}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm whitespace-pre-wrap">{solicitacao.descricao}</p>
-            <dl className="grid grid-cols-2 gap-3 text-sm pt-3 border-t border-border">
-              <div><dt className="text-xs text-muted-foreground">Frequência</dt><dd>{FREQUENCIA_LABEL[solicitacao.frequencia]}</dd></div>
-              <div><dt className="text-xs text-muted-foreground">Complexidade</dt><dd>{solicitacao.complexidade}/5</dd></div>
-              <div><dt className="text-xs text-muted-foreground">Retorno</dt><dd>{solicitacao.retorno}/5</dd></div>
-              <div><dt className="text-xs text-muted-foreground">Dificuldade</dt><dd>{solicitacao.dificuldade}/5</dd></div>
-            </dl>
-            {solicitacao.temIntegracao && (
+          <CardContent className="space-y-4">
+            {isEditing ? (
+              <>
+                <div>
+                  <Label htmlFor="edit-titulo">Título</Label>
+                  <Input id="edit-titulo" value={editTitulo} onChange={(e) => setEditTitulo(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="edit-descricao">Descrição da atividade atual</Label>
+                  <Textarea id="edit-descricao" rows={6} value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="edit-softwares">Softwares envolvidos</Label>
+                  <Input id="edit-softwares" value={editSoftwares} onChange={(e) => setEditSoftwares(e.target.value)} placeholder="Ex: Excel, SAP, Power BI" />
+                </div>
+                <div>
+                  <Label>Frequência</Label>
+                  <Select value={String(editFrequencia)} onValueChange={(v) => setEditFrequencia(Number(v) as Frequencia)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {([4, 3, 2, 1] as Frequencia[]).map((f) => (
+                        <SelectItem key={f} value={String(f)}>{FREQUENCIA_LABEL[f]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <SliderField label="Complexidade / Chato de fazer" value={editComplexidade} onChange={setEditComplexidade} />
+                <SliderField label="Retorno esperado" value={editRetorno} onChange={setEditRetorno} />
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Button onClick={handleSaveOwn}><Save className="size-4" /> Salvar alterações</Button>
+                  <Button variant="outline" onClick={() => setIsEditing(false)}><X className="size-4" /> Cancelar</Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm whitespace-pre-wrap">{solicitacao.descricao}</p>
+                <dl className="grid grid-cols-2 gap-3 text-sm pt-3 border-t border-border">
+                  <div><dt className="text-xs text-muted-foreground">Status</dt><dd>{STATUS_LABEL[statusToCategory(solicitacao.status)]}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Frequência</dt><dd>{FREQUENCIA_LABEL[solicitacao.frequencia]}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Complexidade</dt><dd>{solicitacao.complexidade}/5</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Retorno</dt><dd>{solicitacao.retorno}/5</dd></div>
+                </dl>
+              </>
+            )}
+            {!isEditing && solicitacao.temIntegracao && (
               <div className="pt-3 border-t border-border">
                 <div className="text-xs text-muted-foreground mb-1">Integrações</div>
                 {solicitacao.integracoes && solicitacao.integracoes.length > 0 ? (
