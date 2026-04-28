@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Save, Sparkles, X } from "lucide-react";
+import { ArrowLeft, Pencil, Save, Sparkles, Trash2, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   createSolucao,
+  deleteSolicitacao,
   getSolicitacao,
   listSolucoesBySolicitacao,
   updateOwnSolicitacao,
@@ -22,6 +23,17 @@ import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { ScorePill } from "@/components/ScorePill";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { calcScore } from "@/lib/score";
 import { useToast } from "@/hooks/use-toast";
 
@@ -136,6 +148,12 @@ export default function DemandaDetail() {
     toast({ title: "Solução registrada" });
   }
 
+  async function handleDelete() {
+    await deleteSolicitacao(id);
+    toast({ title: "Solicitação excluída" });
+    navigate("/solicitacoes", { replace: true });
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -148,11 +166,34 @@ export default function DemandaDetail() {
             <StatusBadge status={solicitacao.status} />
             {isDev && <ScorePill score={solicitacao.score} />}
           </div>
-          {isOwner && !isEditing && (
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-              <Pencil className="size-4" /> Editar demanda
-            </Button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {isOwner && !isEditing && (
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Pencil className="size-4" /> Editar demanda
+              </Button>
+            )}
+            {isDev && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    <Trash2 className="size-4" /> Excluir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir solicitação?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. A solicitação e as soluções registradas nela serão removidas permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>Excluir solicitação</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
           Solicitado por <span className="text-foreground">{solicitacao.solicitanteNome}</span> ·{" "}
