@@ -33,7 +33,6 @@ export default function AppLayout() {
           />
           <div>
             <div className="text-sm font-brand font-bold whitespace-nowrap">Gestor de Automações</div>
-            <div className="text-xs text-muted-foreground font-brand font-light">Gestão interna de demandas</div>
           </div>
         </div>
         <nav className="flex-1 px-3 py-2 space-y-1">
@@ -90,7 +89,6 @@ export default function AppLayout() {
             />
             <div>
               <div className="text-sm font-brand font-bold whitespace-nowrap">Gestor de Automações</div>
-              <div className="text-xs text-muted-foreground font-brand font-light">Gestão interna de demandas</div>
             </div>
           </div>
           <div className="flex items-center gap-1">

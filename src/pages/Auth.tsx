@@ -66,7 +66,6 @@ export default function Auth() {
           />
           <div>
             <h1 className="text-base font-brand font-bold whitespace-nowrap">Gestor de Automações</h1>
-            <p className="text-xs text-muted-foreground font-brand font-light">Gestão interna de demandas</p>
           </div>
         </div>
 
