@@ -141,6 +141,7 @@ export default function DemandaDetail() {
       dificuldade,
     });
     setIsEditing(false);
+    setSearchParams({});
     toast({ title: "Demanda atualizada" });
   }
 
