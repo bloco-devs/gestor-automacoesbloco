@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { SiteHeader } from "@/components/SiteHeader";
+import { useAuth } from "@/hooks/useAuth";
 import { submitPublicSolicitacao } from "@/lib/supabaseData";
 
 const schema = z.object({
@@ -47,6 +48,7 @@ const initialState: FormState = {
 export default function SolicitarSolucao() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { session, loading } = useAuth();
   const [form, setForm] = useState<FormState>(initialState);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -70,6 +72,16 @@ export default function SolicitarSolucao() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!session) {
+      toast({
+        title: "Faça login para continuar",
+        description: "Assim sua solicitação fica vinculada à sua conta com segurança.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
     const result = schema.safeParse(form);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormState, string>> = {};
