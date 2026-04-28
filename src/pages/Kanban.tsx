@@ -40,15 +40,15 @@ const STAGES: Stage[] = [
   { id: "em_analise", label: "Em Análise", statuses: ["em_analise"], target: "em_analise" },
   {
     id: "aceito",
-    label: "Aceito",
-    statuses: ["em_desenvolvimento", "testando"],
+    label: "Em Desenvolvimento",
+    statuses: ["em_desenvolvimento"],
     target: "em_desenvolvimento",
   },
   {
     id: "concluido",
-    label: "Concluído",
-    statuses: ["pronto", "em_producao"],
-    target: "em_producao",
+    label: "Pronto",
+    statuses: ["pronto"],
+    target: "pronto",
     accent: true,
   },
 ];
