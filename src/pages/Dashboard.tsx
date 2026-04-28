@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, Filter, Inbox, KanbanSquare, ListChecks, Rocket, TrendingUp, User } from "lucide-react";
-import { useStoreSubscription } from "@/hooks/useStore";
-import { listSolicitacoes } from "@/lib/store";
+import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { listSolicitacoes } from "@/lib/supabaseData";
 import { STATUS_LABEL, type PipelineStatus, FREQUENCIA_LABEL, type Frequencia } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +14,7 @@ import { ScorePill } from "@/components/ScorePill";
 const PENDING_STATUSES: PipelineStatus[] = ["novo", "em_analise"];
 
 export default function Dashboard() {
-  const all = useStoreSubscription(() => listSolicitacoes());
+  const all = useSupabaseData(() => listSolicitacoes(), []);
   const [statusFilter, setStatusFilter] = useState<string>("pendentes");
   const [tipoFilter, setTipoFilter] = useState<string>("all");
 
@@ -133,7 +133,7 @@ export default function Dashboard() {
   );
 }
 
-function SolicitacaoCard({ s }: { s: ReturnType<typeof listSolicitacoes>[number] }) {
+function SolicitacaoCard({ s }: { s: import("@/lib/types").Solicitacao }) {
   const data = new Date(s.createdAt).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "short",
