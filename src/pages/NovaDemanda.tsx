@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { createSolicitacao } from "@/lib/store";
+import { createSolicitacao } from "@/lib/supabaseData";
 import { calcScore, scoreTone } from "@/lib/score";
 import { FREQUENCIA_LABEL, type Frequencia } from "@/lib/types";
 import { ScorePill } from "@/components/ScorePill";
@@ -37,12 +37,12 @@ export default function NovaDemanda() {
     [frequencia, complexidade, retorno, dificuldade],
   );
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
     try {
       const v = schema.parse({ titulo, descricao });
-      createSolicitacao({
+      await createSolicitacao({
         titulo: v.titulo,
         descricao: v.descricao,
         frequencia,
@@ -51,6 +51,7 @@ export default function NovaDemanda() {
         dificuldade,
         solicitanteId: user.id,
         solicitanteNome: user.nome,
+        email: user.email,
       });
       toast({ title: "Demanda registrada", description: "Você poderá acompanhar o status em tempo real." });
       navigate("/minhas-demandas");
