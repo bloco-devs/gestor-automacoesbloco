@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type DependencyList } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export function useSupabaseData<T>(loader: () => Promise<T>, fallback: T, deps: React.DependencyList = []): T {
+export function useSupabaseData<T>(loader: () => Promise<T>, fallback: T, deps: DependencyList = []): T {
   const [value, setValue] = useState<T>(fallback);
 
   const refresh = useCallback(() => {
