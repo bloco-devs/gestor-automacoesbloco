@@ -25,6 +25,7 @@ export default function NovaDemanda() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const isDeveloper = user?.role === "developer";
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [frequencia, setFrequencia] = useState<Frequencia>(3);
@@ -71,7 +72,7 @@ export default function NovaDemanda() {
         <p className="text-sm text-muted-foreground">Descreva a atividade para que o desenvolvedor possa priorizar.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <form onSubmit={handleSubmit} className={isDeveloper ? "grid gap-6 lg:grid-cols-[1fr_320px]" : "space-y-6"}>
         <div className="space-y-6">
           <Card className="surface-1">
             <CardHeader>
@@ -122,9 +123,15 @@ export default function NovaDemanda() {
               <SliderField label="Dificuldade estimada de desenvolvimento" value={dificuldade} onChange={setDificuldade} hint="Opcional — o desenvolvedor pode ajustar" />
             </CardContent>
           </Card>
+
+          {!isDeveloper && (
+            <Button type="submit" className="w-full sm:w-auto">
+              Enviar demanda
+            </Button>
+          )}
         </div>
 
-        <div className="space-y-4">
+        {isDeveloper && <div className="space-y-4">
           <Card className="surface-2 sticky top-4">
             <CardHeader>
               <CardTitle className="text-base">Score estimado</CardTitle>
@@ -145,7 +152,7 @@ export default function NovaDemanda() {
               </Button>
             </CardContent>
           </Card>
-        </div>
+        </div>}
       </form>
     </div>
   );
