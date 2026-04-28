@@ -1,9 +1,10 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PIPELINE_ORDER, STATUS_LABEL, type PipelineStatus } from "@/lib/types";
+import { PIPELINE_ORDER, STATUS_LABEL, statusToCategory, type PipelineStatus } from "@/lib/types";
 
 export function StatusTimeline({ current }: { current: PipelineStatus }) {
-  const currentIdx = PIPELINE_ORDER.indexOf(current);
+  const currentCategory = statusToCategory(current);
+  const currentIdx = PIPELINE_ORDER.indexOf(currentCategory);
   return (
     <ol className="flex flex-wrap items-center gap-2">
       {PIPELINE_ORDER.map((s, i) => {
