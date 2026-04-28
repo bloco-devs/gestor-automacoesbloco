@@ -115,7 +115,7 @@ export default function NovaDemanda() {
           <Card className="surface-1">
             <CardHeader>
               <CardTitle className="text-base">Critérios de priorização</CardTitle>
-              <CardDescription>Esses fatores compõem o score (média 0-100).</CardDescription>
+              {isDeveloper && <CardDescription>Esses fatores compõem o score (média 0-100).</CardDescription>}
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
