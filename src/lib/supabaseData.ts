@@ -203,11 +203,17 @@ export async function deleteMelhoria(id: string): Promise<void> {
 }
 
 export async function submitPublicSolicitacao(data: { nome: string; email: string; telefone: string; descricao: string }): Promise<void> {
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    throw new Error("Faça login para enviar uma solicitação.");
+  }
+
   const { error } = await supabase.from("solicitacoes").insert({
     nome: data.nome,
     solicitante_nome: data.nome,
     email: data.email,
     telefone: data.telefone,
+    user_id: authData.user.id,
     descricao: data.descricao,
     titulo: "Solicitação de solução",
     tipo: "solucao",
