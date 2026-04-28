@@ -113,6 +113,11 @@ export async function createSolicitacao(data: {
   solicitanteNome: string;
   email: string;
 }): Promise<void> {
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    throw new Error("Faça login novamente para enviar uma demanda.");
+  }
+
   const { error } = await supabase.from("solicitacoes").insert({
     titulo: data.titulo,
     descricao: data.descricao,
@@ -121,7 +126,7 @@ export async function createSolicitacao(data: {
     retorno: data.retorno,
     dificuldade: data.dificuldade,
     score: calcScore(data),
-    user_id: data.solicitanteId,
+    user_id: authData.user.id,
     solicitante_nome: data.solicitanteNome,
     nome: data.solicitanteNome,
     email: data.email,
