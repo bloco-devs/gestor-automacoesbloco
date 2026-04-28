@@ -109,7 +109,6 @@ export default function Solicitacoes() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder="Buscar por ID, cliente ou título..."
               className="pl-9"
             />
           </div>
