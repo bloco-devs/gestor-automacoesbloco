@@ -16,37 +16,41 @@ interface AuthContextValue {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, senha: string) => Promise<Profile>;
-  signUp: (nome: string, email: string, senha: string) => Promise<Profile>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const ALLOWED_ACCOUNTS: Record<string, { role: Role; nome: string }> = {
+  "blococcomercial@gmail.com": { role: "developer", nome: "Desenvolvedor" },
+  "atendimentoblocojp@gmail.com": { role: "requester", nome: "Solicitante" },
+};
+
+function getAllowedAccount(email?: string | null) {
+  return email ? ALLOWED_ACCOUNTS[email.trim().toLowerCase()] : undefined;
+}
+
 async function loadProfile(authUser: User): Promise<Profile> {
-  // Busca nome do perfil (criado por trigger no signup)
+  const allowedAccount = getAllowedAccount(authUser.email);
+  if (!allowedAccount) {
+    throw new Error("Este aplicativo aceita apenas os logins autorizados.");
+  }
+
+  // Busca nome do perfil, quando existir.
   const { data: prof } = await supabase
     .from("profiles")
     .select("nome, email")
     .eq("id", authUser.id)
     .maybeSingle();
 
-  // Determina role consultando user_roles (server-side, autoritativo)
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", authUser.id);
-
-  const isAdmin = (roles ?? []).some((r) => r.role === "admin");
-  const role: Role = isAdmin ? "developer" : "requester";
-
   return {
     id: authUser.id,
-    email: prof?.email ?? authUser.email ?? "",
+    email: authUser.email ?? prof?.email ?? "",
     nome:
       prof?.nome ||
       (authUser.user_metadata?.nome as string | undefined) ||
-      (authUser.email?.split("@")[0] ?? "Usuário"),
-    role,
+      allowedAccount.nome,
+    role: allowedAccount.role,
   };
 }
 
@@ -65,7 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       // Defer Supabase calls to avoid deadlock no callback
       setTimeout(() => {
-        loadProfile(newSession.user).then(setUser).catch(() => setUser(null));
+        loadProfile(newSession.user).then(setUser).catch(async () => {
+          setUser(null);
+          await supabase.auth.signOut();
+        });
       }, 0);
     });
 
@@ -77,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(await loadProfile(data.session.user));
         } catch {
           setUser(null);
+          await supabase.auth.signOut();
         }
       }
       setLoading(false);
@@ -86,30 +94,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback(async (email: string, senha: string) => {
+    if (!getAllowedAccount(email)) {
+      throw new Error("Use apenas um dos logins autorizados para acessar o aplicativo.");
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim().toLowerCase(),
       password: senha,
     });
     if (error) throw new Error(error.message);
     if (!data.user) throw new Error("Falha ao entrar.");
-    const profile = await loadProfile(data.user);
-    setUser(profile);
-    return profile;
-  }, []);
-
-  const signUp = useCallback(async (nome: string, email: string, senha: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password: senha,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: { nome },
-      },
-    });
-    if (error) throw new Error(error.message);
-    if (!data.user) throw new Error("Falha ao criar conta.");
-    // Se confirmação de email estiver desativada, já há sessão.
     const profile = await loadProfile(data.user);
     setUser(profile);
     return profile;
@@ -122,8 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, session, loading, signIn, signUp, signOut }),
-    [user, session, loading, signIn, signUp, signOut],
+    () => ({ user, session, loading, signIn, signOut }),
+    [user, session, loading, signIn, signOut],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
