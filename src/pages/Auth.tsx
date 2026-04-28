@@ -14,42 +14,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
 const signInSchema = z.object({
   email: z.string().trim().email("Email inválido").max(255),
   senha: z.string().min(6, "Mínimo 6 caracteres").max(128),
 });
-const signUpSchema = signInSchema.extend({
-  nome: z.string().trim().min(2, "Informe seu nome").max(80),
-});
 
 export default function Auth() {
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [tab, setTab] = useState("login");
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ nome: "", email: "", senha: "" });
+  const [form, setForm] = useState({ email: "", senha: "" });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (tab === "login") {
-        const v = signInSchema.parse({ email: form.email, senha: form.senha });
-        const u = await signIn(v.email, v.senha);
-        navigate(u.role === "developer" ? "/dashboard" : "/minhas-demandas");
-      } else {
-        const v = signUpSchema.parse(form);
-        const u = await signUp(v.nome, v.email, v.senha);
-        toast({
-          title: "Conta criada",
-          description: `Bem-vindo, ${u.nome}!`,
-        });
-        navigate(u.role === "developer" ? "/dashboard" : "/minhas-demandas");
-      }
+      const v = signInSchema.parse({ email: form.email, senha: form.senha });
+      const u = await signIn(v.email, v.senha);
+      navigate(u.role === "developer" ? "/dashboard" : "/minhas-demandas");
     } catch (err) {
       const msg =
         err instanceof z.ZodError
@@ -89,57 +74,37 @@ export default function Auth() {
           <CardHeader>
             <CardTitle className="text-lg">Acesse sua conta</CardTitle>
             <CardDescription>
-              Entre com suas credenciais ou crie uma nova conta.
+              Entre com o login autorizado de desenvolvedor ou solicitante.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={tab} onValueChange={setTab} className="w-full">
-              <TabsList className="grid grid-cols-2 w-full mb-4">
-                <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="signup">Criar conta</TabsTrigger>
-              </TabsList>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <TabsContent value="signup" className="m-0">
-                  <Label htmlFor="nome">Nome</Label>
-                  <Input
-                    id="nome"
-                    value={form.nome}
-                    onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                    placeholder="Seu nome"
-                    autoComplete="name"
-                  />
-                </TabsContent>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="voce@empresa.com"
-                    autoComplete="email"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="senha">Senha</Label>
-                  <Input
-                    id="senha"
-                    type="password"
-                    value={form.senha}
-                    onChange={(e) => setForm({ ...form, senha: e.target.value })}
-                    placeholder="••••••••"
-                    autoComplete={tab === "login" ? "current-password" : "new-password"}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting
-                    ? "Aguarde..."
-                    : tab === "login"
-                      ? "Entrar"
-                      : "Criar conta"}
-                </Button>
-              </form>
-            </Tabs>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="email autorizado"
+                  autoComplete="email"
+                />
+              </div>
+              <div>
+                <Label htmlFor="senha">Senha</Label>
+                <Input
+                  id="senha"
+                  type="password"
+                  value={form.senha}
+                  onChange={(e) => setForm({ ...form, senha: e.target.value })}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting ? "Aguarde..." : "Entrar"}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
