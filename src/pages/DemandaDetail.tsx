@@ -10,7 +10,7 @@ import {
   updateOwnSolicitacao,
   updateSolicitacao,
 } from "@/lib/supabaseData";
-import { FREQUENCIA_LABEL, PIPELINE_ORDER, STATUS_LABEL, type Frequencia, type PipelineStatus } from "@/lib/types";
+import { FREQUENCIA_LABEL, PIPELINE_ORDER, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -208,7 +208,7 @@ export default function DemandaDetail() {
               <>
                 <p className="text-sm whitespace-pre-wrap">{solicitacao.descricao}</p>
                 <dl className="grid grid-cols-2 gap-3 text-sm pt-3 border-t border-border">
-                  <div><dt className="text-xs text-muted-foreground">Status</dt><dd>{STATUS_LABEL[solicitacao.status]}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Status</dt><dd>{STATUS_LABEL[statusToCategory(solicitacao.status)]}</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Frequência</dt><dd>{FREQUENCIA_LABEL[solicitacao.frequencia]}</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Complexidade</dt><dd>{solicitacao.complexidade}/5</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Retorno</dt><dd>{solicitacao.retorno}/5</dd></div>
