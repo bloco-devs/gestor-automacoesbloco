@@ -32,6 +32,18 @@ export function statusToCategory(status: PipelineStatus): PipelineStatus {
   return status;
 }
 
+export const SETORES = [
+  "Comercial",
+  "Marketing",
+  "Financeiro",
+  "CEO",
+  "TI",
+  "Legalização",
+  "Engenharia",
+  "RH",
+] as const;
+export type Setor = typeof SETORES[number];
+
 export type Frequencia = 1 | 2 | 3 | 4; // Eventual, Mensal, Semanal, Diária
 export const FREQUENCIA_LABEL: Record<Frequencia, string> = {
   1: "Eventual",
