@@ -214,7 +214,7 @@ export async function deleteSolicitacao(id: string): Promise<void> {
 export async function listSolucoes(): Promise<Solucao[]> {
   const { data, error } = await supabase
     .from("demanda_solucoes")
-    .select("id,solicitacao_id,titulo,descricao,created_at")
+    .select("id,solicitacao_id,titulo,descricao,link,created_at")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(mapSolucao);
@@ -223,20 +223,30 @@ export async function listSolucoes(): Promise<Solucao[]> {
 export async function listSolucoesBySolicitacao(solicitacaoId: string): Promise<Solucao[]> {
   const { data, error } = await supabase
     .from("demanda_solucoes")
-    .select("id,solicitacao_id,titulo,descricao,created_at")
+    .select("id,solicitacao_id,titulo,descricao,link,created_at")
     .eq("solicitacao_id", solicitacaoId)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(mapSolucao);
 }
 
-export async function createSolucao(data: { solicitacaoId?: string | null; titulo: string; descricao: string; createdBy?: string }): Promise<void> {
+export async function createSolucao(data: { solicitacaoId?: string | null; titulo: string; descricao: string; link?: string | null; createdBy?: string }): Promise<void> {
   const { error } = await supabase.from("demanda_solucoes").insert({
     solicitacao_id: data.solicitacaoId ?? null,
     titulo: data.titulo,
     descricao: data.descricao,
+    link: data.link ?? null,
     created_by: data.createdBy,
   });
+  if (error) throw error;
+}
+
+export async function updateSolucao(id: string, patch: { titulo?: string; descricao?: string; link?: string | null }): Promise<void> {
+  const payload: Record<string, unknown> = {};
+  if (patch.titulo !== undefined) payload.titulo = patch.titulo;
+  if (patch.descricao !== undefined) payload.descricao = patch.descricao;
+  if (patch.link !== undefined) payload.link = patch.link;
+  const { error } = await supabase.from("demanda_solucoes").update(payload as never).eq("id", id);
   if (error) throw error;
 }
 
