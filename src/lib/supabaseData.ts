@@ -179,6 +179,7 @@ export async function updateOwnSolicitacao(
     .eq("user_id", authData.user.id);
   if (error) throw error;
 }
+export async function updateSolicitacao(id: string, patch: Partial<Solicitacao>): Promise<void> {
   const current = await getSolicitacao(id);
   const merged = { ...current, ...patch } as Solicitacao;
   const candidate: Record<string, unknown> = {
@@ -189,6 +190,7 @@ export async function updateOwnSolicitacao(
     dificuldade: patch.dificuldade,
     status: patch.status,
     notas_tecnicas: patch.notasTecnicas,
+    setor: patch.setor,
     tem_integracao: patch.temIntegracao,
     integracoes: patch.integracoes,
   };
