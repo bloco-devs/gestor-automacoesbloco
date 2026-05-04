@@ -66,6 +66,7 @@ export default function Solucoes() {
       });
       setNovoTitulo("");
       setNovoDescricao("");
+      setPopoverOpen(false);
       toast({ title: "Solução cadastrada" });
     } catch (err) {
       toast({
