@@ -33,8 +33,15 @@ export default function Auth() {
     setSubmitting(true);
     try {
       const v = signInSchema.parse({ email: form.email, senha: form.senha });
+      // Limpa qualquer escolha anterior para forçar a tela de seleção em dual
+      localStorage.removeItem("viewAsRole");
       const u = await signIn(v.email, v.senha);
-      navigate(u.role === "developer" ? "/dashboard" : "/minhas-demandas");
+      const dual = v.email.trim().toLowerCase() === "riccellycivil@gmail.com";
+      if (dual) {
+        navigate("/escolher-perfil");
+      } else {
+        navigate(u.role === "developer" ? "/dashboard" : "/minhas-demandas");
+      }
     } catch (err) {
       const msg =
         err instanceof z.ZodError
