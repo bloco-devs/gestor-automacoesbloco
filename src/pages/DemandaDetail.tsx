@@ -69,6 +69,9 @@ export default function DemandaDetail() {
 
   const [solucaoTitulo, setSolucaoTitulo] = useState("");
   const [solucaoDesc, setSolucaoDesc] = useState("");
+  const [solucaoLink, setSolucaoLink] = useState("");
+  const [editingSolucaoId, setEditingSolucaoId] = useState<string | null>(null);
+  const [editLinkValue, setEditLinkValue] = useState("");
 
   useEffect(() => {
     if (!solicitacao) return;
