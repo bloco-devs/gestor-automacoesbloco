@@ -44,6 +44,7 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     status: asStatus(row.status),
     score: row.score,
     notasTecnicas: row.notas_tecnicas ?? undefined,
+    setor: row.setor ?? undefined,
     temIntegracao: row.tem_integracao,
     integracoes: row.integracoes ?? [],
     solicitanteId: row.user_id ?? "",
