@@ -55,7 +55,7 @@ const STAGES: Stage[] = [
 
 export default function Kanban() {
   const all = useSupabaseData(() => listSolicitacoes(), []);
-  const { toast } = useToast();
+  
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
