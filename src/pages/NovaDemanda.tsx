@@ -13,13 +13,14 @@ import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { createSolicitacao } from "@/lib/supabaseData";
 import { calcScore, scoreTone } from "@/lib/score";
-import { FREQUENCIA_LABEL, type Frequencia } from "@/lib/types";
+import { FREQUENCIA_LABEL, SETORES, type Frequencia, type Setor } from "@/lib/types";
 import { ScorePill } from "@/components/ScorePill";
 
 const schema = z.object({
   titulo: z.string().trim().min(3, "Título muito curto").max(120),
   descricao: z.string().trim().max(2000),
   softwares: z.string().trim().max(500, "Informe no máximo 500 caracteres"),
+  setor: z.string().refine((v) => (SETORES as readonly string[]).includes(v), { message: "Selecione o setor" }),
 });
 
 export default function NovaDemanda() {
@@ -30,6 +31,7 @@ export default function NovaDemanda() {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [softwares, setSoftwares] = useState("");
+  const [setor, setSetor] = useState<Setor | "">("");
   const [frequencia, setFrequencia] = useState<Frequencia>(3);
   const [complexidade, setComplexidade] = useState(3);
   const [retorno, setRetorno] = useState(3);
@@ -44,7 +46,7 @@ export default function NovaDemanda() {
     e.preventDefault();
     if (!user) return;
     try {
-      const v = schema.parse({ titulo, descricao, softwares });
+      const v = schema.parse({ titulo, descricao, softwares, setor });
       const softwaresList = v.softwares
         .split(",")
         .map((software) => software.trim())
@@ -57,6 +59,7 @@ export default function NovaDemanda() {
         complexidade,
         retorno,
         dificuldade,
+        setor: v.setor,
         solicitanteId: user.id,
         solicitanteNome: user.nome,
         email: user.email,
@@ -106,6 +109,17 @@ export default function NovaDemanda() {
                   value={softwares}
                   onChange={(e) => setSoftwares(e.target.value)}
                 />
+              </div>
+              <div>
+                <Label>Setor da empresa</Label>
+                <Select value={setor} onValueChange={(v) => setSetor(v as Setor)}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o setor" /></SelectTrigger>
+                  <SelectContent>
+                    {SETORES.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
