@@ -49,6 +49,7 @@ export default function Solucoes() {
   const [novoTitulo, setNovoTitulo] = useState("");
   const [novoDescricao, setNovoDescricao] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   const handleCriarSolucao = async () => {
     if (!novoTitulo.trim()) {
