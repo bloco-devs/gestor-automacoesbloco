@@ -265,6 +265,7 @@ export type Database = {
           notas_tecnicas: string | null
           retorno: number
           score: number
+          setor: string | null
           solicitante_nome: string
           status: string
           telefone: string | null
@@ -287,6 +288,7 @@ export type Database = {
           notas_tecnicas?: string | null
           retorno?: number
           score?: number
+          setor?: string | null
           solicitante_nome?: string
           status?: string
           telefone?: string | null
@@ -309,6 +311,7 @@ export type Database = {
           notas_tecnicas?: string | null
           retorno?: number
           score?: number
+          setor?: string | null
           solicitante_nome?: string
           status?: string
           telefone?: string | null
