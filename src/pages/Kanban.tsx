@@ -20,7 +20,7 @@ import {
 } from "@/lib/types";
 import { ScorePill } from "@/components/ScorePill";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+
 import { cn } from "@/lib/utils";
 
 type StageId = "novo" | "em_analise" | "aceito" | "concluido";
@@ -55,7 +55,7 @@ const STAGES: Stage[] = [
 
 export default function Kanban() {
   const all = useSupabaseData(() => listSolicitacoes(), []);
-  const { toast } = useToast();
+  
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
@@ -84,10 +84,6 @@ export default function Kanban() {
     if (!stage || !item) return;
     if (stage.statuses.includes(item.status)) return; // already in this stage
     await updateSolicitacao(id, { status: stage.target });
-    toast({
-      title: "Status atualizado",
-      description: `${item.titulo} → ${stage.label}`,
-    });
   }
 
   return (
