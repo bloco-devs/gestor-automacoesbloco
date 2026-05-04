@@ -40,9 +40,41 @@ const MELHORIA_STATUS: Record<MelhoriaStatus, string> = {
 
 export default function Solucoes() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const solucoes = useSupabaseData(() => listSolucoes(), []);
   const melhorias = useSupabaseData(() => listMelhorias(), []);
   const solicitacoes = useSupabaseData(() => listSolicitacoes(), []);
+
+  const [novoTitulo, setNovoTitulo] = useState("");
+  const [novoDescricao, setNovoDescricao] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  const handleCriarSolucao = async () => {
+    if (!novoTitulo.trim()) {
+      toast({ title: "Informe um título", variant: "destructive" });
+      return;
+    }
+    setSalvando(true);
+    try {
+      await createSolucao({
+        titulo: novoTitulo.trim(),
+        descricao: novoDescricao.trim(),
+        createdBy: user?.id,
+        solicitacaoId: null,
+      });
+      setNovoTitulo("");
+      setNovoDescricao("");
+      toast({ title: "Solução cadastrada" });
+    } catch (err) {
+      toast({
+        title: "Erro ao cadastrar",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSalvando(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -53,10 +85,35 @@ export default function Solucoes() {
         <p className="text-sm text-muted-foreground">Catálogo de entregas e histórico de melhorias futuras.</p>
       </div>
 
+      <Card className="surface-1">
+        <CardHeader>
+          <CardTitle className="text-base">Cadastrar nova solução</CardTitle>
+          <CardDescription>Registre uma solução avulsa, sem precisar vincular a uma demanda.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input
+            placeholder="Título da solução"
+            value={novoTitulo}
+            onChange={(e) => setNovoTitulo(e.target.value)}
+          />
+          <Textarea
+            placeholder="Descrição (opcional)"
+            value={novoDescricao}
+            onChange={(e) => setNovoDescricao(e.target.value)}
+            rows={3}
+          />
+          <div className="flex justify-end">
+            <Button onClick={handleCriarSolucao} disabled={salvando}>
+              <Plus className="size-4" /> {salvando ? "Salvando..." : "Cadastrar solução"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {solucoes.length === 0 ? (
         <Card className="surface-1">
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            Nenhuma solução cadastrada. Adicione soluções na página de detalhe de cada demanda.
+            Nenhuma solução cadastrada ainda.
           </CardContent>
         </Card>
       ) : (
