@@ -111,6 +111,7 @@ export async function createSolicitacao(data: {
   complexidade: number;
   retorno: number;
   dificuldade: number;
+  setor: string;
   solicitanteId: string;
   solicitanteNome: string;
   email: string;
@@ -127,6 +128,7 @@ export async function createSolicitacao(data: {
     complexidade: data.complexidade,
     retorno: data.retorno,
     dificuldade: data.dificuldade,
+    setor: data.setor,
     score: calcScore(data),
     user_id: authData.user.id,
     solicitante_nome: data.solicitanteNome,
@@ -149,6 +151,7 @@ export async function updateOwnSolicitacao(
     complexidade: number;
     retorno: number;
     dificuldade: number;
+    setor: string;
   },
 ): Promise<void> {
   const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -162,6 +165,7 @@ export async function updateOwnSolicitacao(
     frequencia: data.frequencia,
     complexidade: data.complexidade,
     retorno: data.retorno,
+    setor: data.setor,
     tem_integracao: data.softwares.length > 0,
     integracoes: data.softwares,
     score: calcScore(data),
@@ -175,8 +179,6 @@ export async function updateOwnSolicitacao(
     .eq("user_id", authData.user.id);
   if (error) throw error;
 }
-
-export async function updateSolicitacao(id: string, patch: Partial<Solicitacao>): Promise<void> {
   const current = await getSolicitacao(id);
   const merged = { ...current, ...patch } as Solicitacao;
   const candidate: Record<string, unknown> = {
