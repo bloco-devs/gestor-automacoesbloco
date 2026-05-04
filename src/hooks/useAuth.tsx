@@ -17,13 +17,19 @@ interface AuthContextValue {
   loading: boolean;
   signIn: (email: string, senha: string) => Promise<Profile>;
   signOut: () => Promise<void>;
+  isDual: boolean;
+  setViewAs: (role: Role) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const DUAL_ROLE_EMAILS = new Set(["riccellycivil@gmail.com"]);
+const VIEW_AS_KEY = "viewAsRole";
+
 const ALLOWED_ACCOUNTS: Record<string, { role: Role; nome: string }> = {
   "blococcomercial@gmail.com": { role: "developer", nome: "Desenvolvedor" },
   "atendimentoblocojp@gmail.com": { role: "requester", nome: "Solicitante" },
+  "riccellycivil@gmail.com": { role: "developer", nome: "Riccelly" },
 };
 
 function getAllowedAccount(email?: string | null) {
