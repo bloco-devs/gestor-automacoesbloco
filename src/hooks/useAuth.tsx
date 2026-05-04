@@ -127,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    if (typeof window !== "undefined") localStorage.removeItem(VIEW_AS_KEY);
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
