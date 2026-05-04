@@ -54,6 +54,7 @@ export default function DemandaDetail() {
   const [dificuldade, setDificuldade] = useState(solicitacao?.dificuldade ?? 3);
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
   const [notas, setNotas] = useState(solicitacao?.notasTecnicas ?? "");
+  const [descricaoDev, setDescricaoDev] = useState(solicitacao?.descricao ?? "");
   const [temIntegracao, setTemIntegracao] = useState<boolean>(solicitacao?.temIntegracao ?? false);
   const [integracoesText, setIntegracoesText] = useState((solicitacao?.integracoes ?? []).join(", "));
   const [isEditing, setIsEditing] = useState(false);
