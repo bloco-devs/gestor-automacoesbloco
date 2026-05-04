@@ -229,6 +229,14 @@ export async function createSolucao(data: { solicitacaoId: string; titulo: strin
   if (error) throw error;
 }
 
+export async function deleteSolucao(id: string): Promise<void> {
+  const { error: melhoriasError } = await supabase.from("demanda_melhorias").delete().eq("solucao_id", id);
+  if (melhoriasError) throw melhoriasError;
+
+  const { error } = await supabase.from("demanda_solucoes").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function listMelhorias(): Promise<Melhoria[]> {
   const { data, error } = await supabase.from("demanda_melhorias").select("id,solucao_id,descricao,status,data").order("data", { ascending: false });
   if (error) throw error;

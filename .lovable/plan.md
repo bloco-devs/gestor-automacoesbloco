@@ -1,51 +1,24 @@
+## Objetivo
+Permitir excluir soluções diretamente na aba **Soluções**. Ao excluir, a solução desaparece automaticamente da demanda à qual estava vinculada (e suas melhorias associadas também são removidas).
 
-# Sistema de Gestão de Demandas de Automação
+## Mudanças
 
-Plataforma interna para o setor solicitar automações/aplicativos e o desenvolvedor priorizar e gerenciar o pipeline de entrega.
+### 1. `src/lib/supabaseData.ts`
+Adicionar função `deleteSolucao(id)` que:
+- Apaga primeiro as melhorias vinculadas (`demanda_melhorias` onde `solucao_id = id`)
+- Em seguida apaga a solução em `demanda_solucoes`
 
-## Identidade visual
-- **Fundo principal**: `#0C0C0C` (preto profundo)
-- **Texto/superfícies claras**: `#E5E3DF`
-- **Apoio/secundário**: `#8B796D` (marrom suave)
-- **Destaque sutil**: `#FFDA5B` (apenas em CTAs principais, badges de score alto e indicadores ativos)
-- Tipografia limpa sans-serif, espaçamento generoso, cantos suavemente arredondados, estilo dashboard moderno e sóbrio.
+Isso garante que a tela de detalhe da demanda (que lista soluções por `solicitacao_id`) deixe de exibir essa solução imediatamente, via o realtime já existente em `useSupabaseData`.
 
-## Autenticação e papéis
-- Login/cadastro por **email + senha** (Lovable Cloud).
-- **Um único desenvolvedor fixo** (email definido em constante/role no banco). Todos os outros usuários são solicitantes automaticamente.
-- Roteamento condicional: ao logar, solicitante vai para "Minhas Demandas"; desenvolvedor vai para o "Dashboard Dev".
+### 2. `src/pages/Solucoes.tsx`
+- Adicionar um botão de excluir (ícone lixeira) no cabeçalho de cada `SolucaoCard`.
+- Confirmação via `AlertDialog` antes de excluir, avisando que a ação também remove a solução da demanda vinculada e apaga as melhorias registradas.
+- Ao confirmar, chamar `deleteSolucao(id)` e exibir toast de sucesso/erro.
 
-## Visão Solicitante
-1. **Nova Solicitação** (formulário):
-   - Título da demanda
-   - Descrição da atividade atual
-   - Frequência (Diária / Semanal / Mensal / Eventual) → 1-4
-   - Complexidade / "Chato de fazer" (1-5)
-   - Retorno esperado (1-5: tempo economizado, impacto)
-   - Dificuldade estimada de desenvolvimento (1-5, opcional — dev pode ajustar)
-2. **Minhas Demandas**: lista das próprias solicitações com status atual (badge colorido), score calculado e linha do tempo do pipeline (visual de etapas com a atual destacada em amarelo).
+## Comportamento esperado
+- Usuário clica na lixeira em uma solução → confirma → solução some da aba Soluções, some da página de detalhe da demanda original, e suas melhorias são removidas.
+- Atualização em tempo real já é tratada pelo hook `useSupabaseData` (que escuta `demanda_solucoes` e `demanda_melhorias`).
 
-## Visão Desenvolvedor
-1. **Dashboard de priorização**:
-   - Tabela/cards de todas as solicitações ordenadas por **score** (média dos 4 fatores normalizada 0-100).
-   - Filtros por status, solicitante e faixa de score.
-   - Métricas no topo: total de demandas, em desenvolvimento, prontas, em produção.
-2. **Kanban do pipeline** com 7 colunas: *Novo → Em Análise → Aprovado → Em Desenvolvimento → Testando → Pronto → Em Produção*. Drag-and-drop para mover cartões entre estados; cada card mostra título, solicitante, score e ícone de complexidade.
-3. **Detalhe da demanda**: ajusta dificuldade/complexidade (recalcula score), edita status, adiciona notas técnicas.
-4. **Soluções desenvolvidas**: catálogo das demandas que chegaram em "Pronto"/"Em Produção", com descrição da solução final.
-5. **Integrações entre soluções**: cadastro de relações (solução A consome / alimenta solução B), exibidas como lista de pares com tipo de integração.
-6. **Histórico de melhorias**: para cada solução, registrar melhorias futuras planejadas/aplicadas (data, descrição, status).
-
-## Banco de dados (Lovable Cloud)
-- `profiles` — dados básicos do usuário (id ↔ auth.users)
-- `user_roles` — papel `developer` / `requester` (com função `has_role` security definer)
-- `solicitacoes` — demandas, fatores de score, score calculado, status do pipeline, FK ao solicitante
-- `solucoes` — soluções entregues vinculadas à solicitação
-- `integracoes` — pares de soluções relacionadas + tipo
-- `melhorias` — melhorias por solução (descrição, status, data)
-- RLS: solicitante só vê/edita as próprias solicitações; desenvolvedor vê e gerencia tudo.
-
-## Entregáveis técnicos
-- Páginas: `/auth`, `/` (redirect por papel), `/nova-demanda`, `/minhas-demandas`, `/dashboard`, `/kanban`, `/solucoes`, `/integracoes`, `/demanda/:id`.
-- Componentes-chave: `RequestForm`, `StatusTimeline`, `PriorityTable`, `KanbanBoard`, `SolutionCard`, `IntegrationsManager`, `ImprovementsHistory`.
-- Realtime do Supabase nas tabelas `solicitacoes` para que o solicitante veja mudanças de status em tempo real.
+## Fora de escopo
+- Nenhuma mudança em outras abas além das atualizações automáticas refletidas pelo realtime.
+- Sem alteração de schema/RLS — políticas já permitem DELETE para usuários autorizados.
