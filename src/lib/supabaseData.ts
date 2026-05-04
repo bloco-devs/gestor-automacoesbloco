@@ -54,12 +54,13 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
   };
 }
 
-function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; created_at: string }): Solucao {
+function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; link: string | null; created_at: string }): Solucao {
   return {
     id: row.id,
     solicitacaoId: row.solicitacao_id,
     titulo: row.titulo,
     descricao: row.descricao,
+    link: row.link ?? undefined,
     createdAt: row.created_at,
   };
 }
