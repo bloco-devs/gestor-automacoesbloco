@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -48,6 +49,7 @@ export default function Solucoes() {
   const [novoTitulo, setNovoTitulo] = useState("");
   const [novoDescricao, setNovoDescricao] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   const handleCriarSolucao = async () => {
     if (!novoTitulo.trim()) {
@@ -64,6 +66,7 @@ export default function Solucoes() {
       });
       setNovoTitulo("");
       setNovoDescricao("");
+      setPopoverOpen(false);
       toast({ title: "Solução cadastrada" });
     } catch (err) {
       toast({
@@ -78,37 +81,43 @@ export default function Solucoes() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <Sparkles className="size-5 text-accent" /> Soluções desenvolvidas
-        </h1>
-        <p className="text-sm text-muted-foreground">Catálogo de entregas e histórico de melhorias futuras.</p>
-      </div>
-
-      <Card className="surface-1">
-        <CardHeader>
-          <CardTitle className="text-base">Cadastrar nova solução</CardTitle>
-          <CardDescription>Registre uma solução avulsa, sem precisar vincular a uma demanda.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Input
-            placeholder="Título da solução"
-            value={novoTitulo}
-            onChange={(e) => setNovoTitulo(e.target.value)}
-          />
-          <Textarea
-            placeholder="Descrição (opcional)"
-            value={novoDescricao}
-            onChange={(e) => setNovoDescricao(e.target.value)}
-            rows={3}
-          />
-          <div className="flex justify-end">
-            <Button onClick={handleCriarSolucao} disabled={salvando}>
-              <Plus className="size-4" /> {salvando ? "Salvando..." : "Cadastrar solução"}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold flex items-center gap-2">
+            <Sparkles className="size-5 text-accent" /> Soluções desenvolvidas
+          </h1>
+          <p className="text-sm text-muted-foreground">Catálogo de entregas e histórico de melhorias futuras.</p>
+        </div>
+        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Plus className="size-4" /> Solução avulsa
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-80 space-y-3">
+            <div>
+              <p className="text-sm font-medium">Cadastrar solução avulsa</p>
+              <p className="text-xs text-muted-foreground">Sem vínculo com uma demanda.</p>
+            </div>
+            <Input
+              placeholder="Título da solução"
+              value={novoTitulo}
+              onChange={(e) => setNovoTitulo(e.target.value)}
+            />
+            <Textarea
+              placeholder="Descrição (opcional)"
+              value={novoDescricao}
+              onChange={(e) => setNovoDescricao(e.target.value)}
+              rows={3}
+            />
+            <div className="flex justify-end">
+              <Button size="sm" onClick={handleCriarSolucao} disabled={salvando}>
+                {salvando ? "Salvando..." : "Cadastrar"}
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
 
       {solucoes.length === 0 ? (
         <Card className="surface-1">
