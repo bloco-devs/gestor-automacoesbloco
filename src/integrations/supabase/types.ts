@@ -147,7 +147,7 @@ export type Database = {
           created_by: string | null
           descricao: string
           id: string
-          solicitacao_id: string
+          solicitacao_id: string | null
           titulo: string
         }
         Insert: {
@@ -155,7 +155,7 @@ export type Database = {
           created_by?: string | null
           descricao?: string
           id?: string
-          solicitacao_id: string
+          solicitacao_id?: string | null
           titulo: string
         }
         Update: {
@@ -163,7 +163,7 @@ export type Database = {
           created_by?: string | null
           descricao?: string
           id?: string
-          solicitacao_id?: string
+          solicitacao_id?: string | null
           titulo?: string
         }
         Relationships: [
