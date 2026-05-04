@@ -68,7 +68,7 @@ export interface Solicitacao {
 
 export interface Solucao {
   id: string;
-  solicitacaoId: string;
+  solicitacaoId: string | null;
   titulo: string;
   descricao: string;
   createdAt: string;

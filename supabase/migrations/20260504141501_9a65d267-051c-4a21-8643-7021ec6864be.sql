@@ -1,0 +1,1 @@
+ALTER TABLE public.demanda_solucoes ALTER COLUMN solicitacao_id DROP NOT NULL;
