@@ -164,10 +164,24 @@ export default function DemandaDetail() {
       toast({ title: "Informe um título para a solução", variant: "destructive" });
       return;
     }
-    await createSolucao({ solicitacaoId: id, titulo: solucaoTitulo.trim(), descricao: solucaoDesc.trim(), createdBy: user?.id });
+    await createSolucao({
+      solicitacaoId: id,
+      titulo: solucaoTitulo.trim(),
+      descricao: solucaoDesc.trim(),
+      link: solucaoLink.trim() || null,
+      createdBy: user?.id,
+    });
     setSolucaoTitulo("");
     setSolucaoDesc("");
+    setSolucaoLink("");
     toast({ title: "Solução registrada" });
+  }
+
+  async function handleSaveSolucaoLink(solucaoId: string) {
+    await updateSolucao(solucaoId, { link: editLinkValue.trim() || null });
+    setEditingSolucaoId(null);
+    setEditLinkValue("");
+    toast({ title: "Link atualizado" });
   }
 
   async function handleDelete() {
