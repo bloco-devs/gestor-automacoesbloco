@@ -72,6 +72,18 @@ export default function Solucoes() {
               }}
               onUpdateStatus={(mid, status) => updateMelhoria(mid, { status })}
               onDelete={(mid) => deleteMelhoria(mid)}
+              onDeleteSolucao={async () => {
+                try {
+                  await deleteSolucao(s.id);
+                  toast({ title: "Solução excluída", description: "Removida também da demanda vinculada." });
+                } catch (err) {
+                  toast({
+                    title: "Erro ao excluir",
+                    description: err instanceof Error ? err.message : "Tente novamente.",
+                    variant: "destructive",
+                  });
+                }
+              }}
             />
           ))}
         </div>
