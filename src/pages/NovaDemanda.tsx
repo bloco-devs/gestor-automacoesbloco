@@ -110,6 +110,17 @@ export default function NovaDemanda() {
                   onChange={(e) => setSoftwares(e.target.value)}
                 />
               </div>
+              <div>
+                <Label>Setor da empresa</Label>
+                <Select value={setor} onValueChange={(v) => setSetor(v as Setor)}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o setor" /></SelectTrigger>
+                  <SelectContent>
+                    {SETORES.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
