@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   DndContext,
@@ -55,7 +55,12 @@ const STAGES: Stage[] = [
 
 export default function Kanban() {
   const all = useSupabaseData(() => listSolicitacoes(), []);
-  
+  const [items, setItems] = useState<Solicitacao[]>([]);
+
+  useEffect(() => {
+    setItems(all);
+  }, [all]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
@@ -67,23 +72,29 @@ export default function Kanban() {
       aceito: [],
       concluido: [],
     };
-    const sorted = [...all].sort((a, b) => b.score - a.score);
+    const sorted = [...items].sort((a, b) => b.score - a.score);
     for (const s of sorted) {
       const stage = STAGES.find((st) => st.statuses.includes(s.status));
       if (stage) map[stage.id].push(s);
     }
     return map;
-  }, [all]);
+  }, [items]);
 
   async function handleDragEnd(e: DragEndEvent) {
     const id = String(e.active.id);
     const stageId = e.over?.id as StageId | undefined;
     if (!stageId) return;
     const stage = STAGES.find((st) => st.id === stageId);
-    const item = all.find((s) => s.id === id);
+    const item = items.find((s) => s.id === id);
     if (!stage || !item) return;
-    if (stage.statuses.includes(item.status)) return; // already in this stage
-    await updateSolicitacao(id, { status: stage.target });
+    if (stage.statuses.includes(item.status)) return;
+    const previous = items;
+    setItems((prev) => prev.map((s) => (s.id === id ? { ...s, status: stage.target } : s)));
+    try {
+      await updateSolicitacao(id, { status: stage.target });
+    } catch (err) {
+      setItems(previous);
+    }
   }
 
   return (
