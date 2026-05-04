@@ -1,0 +1,1 @@
+ALTER TABLE public.demanda_solucoes ADD COLUMN link text;
