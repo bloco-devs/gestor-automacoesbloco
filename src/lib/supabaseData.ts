@@ -177,7 +177,7 @@ export async function updateOwnSolicitacao(
 export async function updateSolicitacao(id: string, patch: Partial<Solicitacao>): Promise<void> {
   const current = await getSolicitacao(id);
   const merged = { ...current, ...patch } as Solicitacao;
-  const payload = {
+  const candidate: Record<string, unknown> = {
     complexidade: patch.complexidade,
     retorno: patch.retorno,
     dificuldade: patch.dificuldade,
@@ -185,9 +185,11 @@ export async function updateSolicitacao(id: string, patch: Partial<Solicitacao>)
     notas_tecnicas: patch.notasTecnicas,
     tem_integracao: patch.temIntegracao,
     integracoes: patch.integracoes,
-    score: calcScore(merged),
-    updated_at: new Date().toISOString(),
   };
+  const payload: Record<string, unknown> = { score: calcScore(merged), updated_at: new Date().toISOString() };
+  for (const [key, value] of Object.entries(candidate)) {
+    if (value !== undefined) payload[key] = value;
+  }
   const { error } = await supabase.from("solicitacoes").update(payload).eq("id", id);
   if (error) throw error;
 }
