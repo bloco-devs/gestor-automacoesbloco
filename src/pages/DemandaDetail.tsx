@@ -245,6 +245,17 @@ export default function DemandaDetail() {
                   <Textarea id="edit-descricao" rows={6} value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} />
                 </div>
                 <div>
+                  <Label>Setor da empresa</Label>
+                  <Select value={editSetor} onValueChange={(v) => setEditSetor(v as Setor)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o setor" /></SelectTrigger>
+                    <SelectContent>
+                      {SETORES.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label htmlFor="edit-softwares">Softwares envolvidos</Label>
                   <Input id="edit-softwares" value={editSoftwares} onChange={(e) => setEditSoftwares(e.target.value)} />
                 </div>
