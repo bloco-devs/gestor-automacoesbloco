@@ -132,9 +132,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   }, []);
 
+  const setViewAs = useCallback((role: Role) => {
+    if (typeof window !== "undefined") localStorage.setItem(VIEW_AS_KEY, role);
+    setUser((u) => (u ? { ...u, role } : u));
+  }, []);
+
+  const isDual = isDualEmail(user?.email);
+
   const value = useMemo(
-    () => ({ user, session, loading, signIn, signOut }),
-    [user, session, loading, signIn, signOut],
+    () => ({ user, session, loading, signIn, signOut, isDual, setViewAs }),
+    [user, session, loading, signIn, signOut, isDual, setViewAs],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
