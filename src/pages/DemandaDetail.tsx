@@ -300,6 +300,10 @@ export default function DemandaDetail() {
             </CardHeader>
             <CardContent className="space-y-5">
               <div>
+                <Label htmlFor="dev-descricao">Descrição da demanda</Label>
+                <Textarea id="dev-descricao" rows={5} value={descricaoDev} onChange={(e) => setDescricaoDev(e.target.value)} />
+              </div>
+              <div>
                 <Label>Status do pipeline</Label>
                 <Select value={status} onValueChange={(v) => setStatus(v as PipelineStatus)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
