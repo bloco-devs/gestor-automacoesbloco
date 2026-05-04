@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { CalendarPlus, Plus, Sparkles, Trash2 } from "lucide-react";
+import { CalendarPlus, Plus, Sparkles, Trash, Trash2 } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   createMelhoria,
   deleteMelhoria,
+  deleteSolucao,
   listSolicitacoes,
   listMelhorias,
   listSolucoes,
@@ -14,6 +15,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { Melhoria, MelhoriaStatus } from "@/lib/types";
 
