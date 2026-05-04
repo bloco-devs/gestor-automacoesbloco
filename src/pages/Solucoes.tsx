@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { CalendarPlus, Plus, Sparkles, Trash2 } from "lucide-react";
+import { CalendarPlus, Plus, Sparkles, Trash, Trash2 } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   createMelhoria,
   deleteMelhoria,
+  deleteSolucao,
   listSolicitacoes,
   listMelhorias,
   listSolucoes,
@@ -14,6 +15,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { Melhoria, MelhoriaStatus } from "@/lib/types";
 
@@ -60,6 +72,18 @@ export default function Solucoes() {
               }}
               onUpdateStatus={(mid, status) => updateMelhoria(mid, { status })}
               onDelete={(mid) => deleteMelhoria(mid)}
+              onDeleteSolucao={async () => {
+                try {
+                  await deleteSolucao(s.id);
+                  toast({ title: "Solução excluída", description: "Removida também da demanda vinculada." });
+                } catch (err) {
+                  toast({
+                    title: "Erro ao excluir",
+                    description: err instanceof Error ? err.message : "Tente novamente.",
+                    variant: "destructive",
+                  });
+                }
+              }}
             />
           ))}
         </div>
@@ -76,6 +100,7 @@ function SolucaoCard({
   onAdd,
   onUpdateStatus,
   onDelete,
+  onDeleteSolucao,
 }: {
   titulo: string;
   descricao: string;
@@ -84,6 +109,7 @@ function SolucaoCard({
   onAdd: (s: string) => void;
   onUpdateStatus: (id: string, s: MelhoriaStatus) => void;
   onDelete: (id: string) => void;
+  onDeleteSolucao: () => void;
 }) {
   const [draft, setDraft] = useState("");
   const sorted = useMemo(() => [...melhorias].sort((a, b) => +new Date(b.data) - +new Date(a.data)), [melhorias]);
@@ -92,13 +118,34 @@ function SolucaoCard({
     <Card className="surface-1">
       <CardHeader>
         <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
+          <div className="min-w-0">
             <CardTitle className="text-base">{titulo}</CardTitle>
             {demandaTitulo && <CardDescription>Demanda: {demandaTitulo}</CardDescription>}
           </div>
-          <Badge variant="outline" className="border-accent/40 text-accent">
-            {sorted.length} melhoria{sorted.length === 1 ? "" : "s"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="border-accent/40 text-accent">
+              {sorted.length} melhoria{sorted.length === 1 ? "" : "s"}
+            </Badge>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Excluir solução">
+                  <Trash className="size-4 text-destructive" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir esta solução?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação removerá a solução da demanda vinculada e apagará todas as melhorias registradas. Não é possível desfazer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDeleteSolucao}>Excluir</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
         {descricao && <p className="text-sm text-muted-foreground mt-2">{descricao}</p>}
       </CardHeader>
