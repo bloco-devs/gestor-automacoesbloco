@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import SolicitarSolucao from "./pages/SolicitarSolucao";
 import NovaDemanda from "./pages/NovaDemanda";
 import MinhasDemandas from "./pages/MinhasDemandas";
+import RequesterDashboard from "./pages/RequesterDashboard";
 import Dashboard from "./pages/Dashboard";
 import Kanban from "./pages/Kanban";
 import Solucoes from "./pages/Solucoes";
@@ -35,6 +36,7 @@ const App = () => (
 
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               {/* Solicitante */}
+              <Route path="/dashboard-solicitante" element={<ProtectedRoute role="requester"><RequesterDashboard /></ProtectedRoute>} />
               <Route path="/minhas-demandas" element={<ProtectedRoute role="requester"><MinhasDemandas /></ProtectedRoute>} />
               <Route path="/nova-demanda" element={<ProtectedRoute role="requester"><NovaDemanda /></ProtectedRoute>} />
 

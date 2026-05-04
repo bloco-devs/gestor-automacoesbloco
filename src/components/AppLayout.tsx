@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Sparkles, ListTodo } from "lucide-react";
+import { KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Sparkles, ListTodo, Gauge } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -13,6 +13,7 @@ const devNav = [
   { to: "/solucoes", label: "Soluções", icon: Sparkles },
 ];
 const requesterNav = [
+  { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
   { to: "/minhas-demandas", label: "Minhas Demandas", icon: ListTodo },
   { to: "/nova-demanda", label: "Nova Demanda", icon: Plus },
 ];
