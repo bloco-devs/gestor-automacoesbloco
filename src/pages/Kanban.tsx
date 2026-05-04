@@ -84,10 +84,6 @@ export default function Kanban() {
     if (!stage || !item) return;
     if (stage.statuses.includes(item.status)) return; // already in this stage
     await updateSolicitacao(id, { status: stage.target });
-    toast({
-      title: "Status atualizado",
-      description: `${item.titulo} → ${stage.label}`,
-    });
   }
 
   return (
