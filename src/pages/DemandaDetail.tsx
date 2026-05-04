@@ -288,6 +288,7 @@ export default function DemandaDetail() {
                   <div><dt className="text-xs text-muted-foreground">Frequência</dt><dd>{FREQUENCIA_LABEL[solicitacao.frequencia]}</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Complexidade</dt><dd>{solicitacao.complexidade}/5</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Retorno</dt><dd>{solicitacao.retorno}/5</dd></div>
+                  {solicitacao.setor && <div><dt className="text-xs text-muted-foreground">Setor</dt><dd>{solicitacao.setor}</dd></div>}
                 </dl>
               </>
             )}
