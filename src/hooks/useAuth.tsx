@@ -36,18 +36,29 @@ function getAllowedAccount(email?: string | null) {
   return email ? ALLOWED_ACCOUNTS[email.trim().toLowerCase()] : undefined;
 }
 
+function isDualEmail(email?: string | null) {
+  return !!email && DUAL_ROLE_EMAILS.has(email.trim().toLowerCase());
+}
+
+function getStoredViewAs(): Role | null {
+  const v = typeof window !== "undefined" ? localStorage.getItem(VIEW_AS_KEY) : null;
+  return v === "developer" || v === "requester" ? v : null;
+}
+
 async function loadProfile(authUser: User): Promise<Profile> {
   const allowedAccount = getAllowedAccount(authUser.email);
   if (!allowedAccount) {
     throw new Error("Este aplicativo aceita apenas os logins autorizados.");
   }
 
-  // Busca nome do perfil, quando existir.
   const { data: prof } = await supabase
     .from("profiles")
     .select("nome, email")
     .eq("id", authUser.id)
     .maybeSingle();
+
+  const dual = isDualEmail(authUser.email);
+  const stored = dual ? getStoredViewAs() : null;
 
   return {
     id: authUser.id,
@@ -56,7 +67,7 @@ async function loadProfile(authUser: User): Promise<Profile> {
       prof?.nome ||
       (authUser.user_metadata?.nome as string | undefined) ||
       allowedAccount.nome,
-    role: allowedAccount.role,
+    role: stored ?? allowedAccount.role,
   };
 }
 
