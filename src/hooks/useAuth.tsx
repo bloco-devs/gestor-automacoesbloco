@@ -17,17 +17,32 @@ interface AuthContextValue {
   loading: boolean;
   signIn: (email: string, senha: string) => Promise<Profile>;
   signOut: () => Promise<void>;
+  isDual: boolean;
+  setViewAs: (role: Role) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const DUAL_ROLE_EMAILS = new Set(["riccellycivil@gmail.com"]);
+const VIEW_AS_KEY = "viewAsRole";
+
 const ALLOWED_ACCOUNTS: Record<string, { role: Role; nome: string }> = {
   "blococcomercial@gmail.com": { role: "developer", nome: "Desenvolvedor" },
   "atendimentoblocojp@gmail.com": { role: "requester", nome: "Solicitante" },
+  "riccellycivil@gmail.com": { role: "developer", nome: "Riccelly" },
 };
 
 function getAllowedAccount(email?: string | null) {
   return email ? ALLOWED_ACCOUNTS[email.trim().toLowerCase()] : undefined;
+}
+
+function isDualEmail(email?: string | null) {
+  return !!email && DUAL_ROLE_EMAILS.has(email.trim().toLowerCase());
+}
+
+function getStoredViewAs(): Role | null {
+  const v = typeof window !== "undefined" ? localStorage.getItem(VIEW_AS_KEY) : null;
+  return v === "developer" || v === "requester" ? v : null;
 }
 
 async function loadProfile(authUser: User): Promise<Profile> {
@@ -36,12 +51,14 @@ async function loadProfile(authUser: User): Promise<Profile> {
     throw new Error("Este aplicativo aceita apenas os logins autorizados.");
   }
 
-  // Busca nome do perfil, quando existir.
   const { data: prof } = await supabase
     .from("profiles")
     .select("nome, email")
     .eq("id", authUser.id)
     .maybeSingle();
+
+  const dual = isDualEmail(authUser.email);
+  const stored = dual ? getStoredViewAs() : null;
 
   return {
     id: authUser.id,
@@ -50,7 +67,7 @@ async function loadProfile(authUser: User): Promise<Profile> {
       prof?.nome ||
       (authUser.user_metadata?.nome as string | undefined) ||
       allowedAccount.nome,
-    role: allowedAccount.role,
+    role: stored ?? allowedAccount.role,
   };
 }
 
@@ -110,14 +127,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    if (typeof window !== "undefined") localStorage.removeItem(VIEW_AS_KEY);
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
   }, []);
 
+  const setViewAs = useCallback((role: Role) => {
+    if (typeof window !== "undefined") localStorage.setItem(VIEW_AS_KEY, role);
+    setUser((u) => (u ? { ...u, role } : u));
+  }, []);
+
+  const isDual = isDualEmail(user?.email);
+
   const value = useMemo(
-    () => ({ user, session, loading, signIn, signOut }),
-    [user, session, loading, signIn, signOut],
+    () => ({ user, session, loading, signIn, signOut, isDual, setViewAs }),
+    [user, session, loading, signIn, signOut, isDual, setViewAs],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

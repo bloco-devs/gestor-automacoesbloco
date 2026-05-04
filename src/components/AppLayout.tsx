@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Sparkles, ListTodo, Gauge } from "lucide-react";
+import { KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Sparkles, ListTodo, Gauge, Repeat } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -19,7 +19,7 @@ const requesterNav = [
 ];
 
 export default function AppLayout() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isDual } = useAuth();
   const navigate = useNavigate();
   const nav = user?.role === "developer" ? devNav : requesterNav;
 
@@ -63,6 +63,16 @@ export default function AppLayout() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            {isDual && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/escolher-perfil")}
+                title="Trocar perfil"
+              >
+                <Repeat className="size-4" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
