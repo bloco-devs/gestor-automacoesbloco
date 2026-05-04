@@ -57,6 +57,7 @@ export interface Solicitacao {
   dificuldade: number; // 1-5 (menor = mais fácil = maior score)
   status: PipelineStatus;
   score: number; // 0-100
+  setor?: Setor | string;
   notasTecnicas?: string;
   temIntegracao?: boolean;
   integracoes?: string[]; // softwares/sistemas integrados
