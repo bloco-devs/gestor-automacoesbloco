@@ -398,9 +398,16 @@ export default function DemandaDetail() {
             <CardDescription>Registre a solução final desenvolvida para esta demanda.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-[1fr_1fr_auto] gap-2">
-              <Input value={solucaoTitulo} onChange={(e) => setSolucaoTitulo(e.target.value)} />
-              <Input value={solucaoDesc} onChange={(e) => setSolucaoDesc(e.target.value)} />
+            <div className="grid md:grid-cols-2 gap-2">
+              <Input placeholder="Título" value={solucaoTitulo} onChange={(e) => setSolucaoTitulo(e.target.value)} />
+              <Input placeholder="Descrição" value={solucaoDesc} onChange={(e) => setSolucaoDesc(e.target.value)} />
+            </div>
+            <div className="grid md:grid-cols-[1fr_auto] gap-2">
+              <Input
+                placeholder="Link da solução (GitHub, n8n, sistema, etc.)"
+                value={solucaoLink}
+                onChange={(e) => setSolucaoLink(e.target.value)}
+              />
               <Button onClick={handleAddSolucao}>Adicionar</Button>
             </div>
             {solucoes.length === 0 ? (
@@ -408,9 +415,47 @@ export default function DemandaDetail() {
             ) : (
               <ul className="divide-y divide-border">
                 {solucoes.map((s) => (
-                  <li key={s.id} className="py-3">
-                    <div className="font-medium text-sm">{s.titulo}</div>
-                    {s.descricao && <p className="text-xs text-muted-foreground mt-0.5">{s.descricao}</p>}
+                  <li key={s.id} className="py-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm">{s.titulo}</div>
+                        {s.descricao && <p className="text-xs text-muted-foreground mt-0.5">{s.descricao}</p>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {s.link && (
+                          <Button asChild variant="outline" size="sm">
+                            <a href={s.link} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="size-4" /> Abrir
+                            </a>
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingSolucaoId(editingSolucaoId === s.id ? null : s.id);
+                            setEditLinkValue(s.link ?? "");
+                          }}
+                        >
+                          <Pencil className="size-4" /> {s.link ? "Editar link" : "Adicionar link"}
+                        </Button>
+                      </div>
+                    </div>
+                    {editingSolucaoId === s.id && (
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="https://..."
+                          value={editLinkValue}
+                          onChange={(e) => setEditLinkValue(e.target.value)}
+                        />
+                        <Button size="sm" onClick={() => handleSaveSolucaoLink(s.id)}>
+                          <Save className="size-4" /> Salvar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingSolucaoId(null)}>
+                          <X className="size-4" />
+                        </Button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
