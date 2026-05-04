@@ -52,7 +52,7 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
   };
 }
 
-function mapSolucao(row: { id: string; solicitacao_id: string; titulo: string; descricao: string; created_at: string }): Solucao {
+function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; created_at: string }): Solucao {
   return {
     id: row.id,
     solicitacaoId: row.solicitacao_id,
