@@ -178,6 +178,8 @@ export async function updateSolicitacao(id: string, patch: Partial<Solicitacao>)
   const current = await getSolicitacao(id);
   const merged = { ...current, ...patch } as Solicitacao;
   const candidate: Record<string, unknown> = {
+    descricao: patch.descricao,
+    titulo: patch.titulo,
     complexidade: patch.complexidade,
     retorno: patch.retorno,
     dificuldade: patch.dificuldade,

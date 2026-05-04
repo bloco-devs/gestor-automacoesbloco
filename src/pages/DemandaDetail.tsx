@@ -54,6 +54,7 @@ export default function DemandaDetail() {
   const [dificuldade, setDificuldade] = useState(solicitacao?.dificuldade ?? 3);
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
   const [notas, setNotas] = useState(solicitacao?.notasTecnicas ?? "");
+  const [descricaoDev, setDescricaoDev] = useState(solicitacao?.descricao ?? "");
   const [temIntegracao, setTemIntegracao] = useState<boolean>(solicitacao?.temIntegracao ?? false);
   const [integracoesText, setIntegracoesText] = useState((solicitacao?.integracoes ?? []).join(", "));
   const [isEditing, setIsEditing] = useState(false);
@@ -74,6 +75,7 @@ export default function DemandaDetail() {
     setDificuldade(solicitacao.dificuldade);
     setStatus(solicitacao.status);
     setNotas(solicitacao.notasTecnicas ?? "");
+    setDescricaoDev(solicitacao.descricao);
     setTemIntegracao(solicitacao.temIntegracao ?? false);
     setIntegracoesText((solicitacao.integracoes ?? []).join(", "));
     setEditTitulo(solicitacao.titulo);
@@ -109,6 +111,7 @@ export default function DemandaDetail() {
       ? integracoesText.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
     await updateSolicitacao(id, {
+      descricao: descricaoDev,
       complexidade: complex,
       retorno,
       dificuldade,
@@ -296,6 +299,10 @@ export default function DemandaDetail() {
               <CardDescription>Score recalculado: <ScorePill score={previewScore} /></CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
+              <div>
+                <Label htmlFor="dev-descricao">Descrição da demanda</Label>
+                <Textarea id="dev-descricao" rows={5} value={descricaoDev} onChange={(e) => setDescricaoDev(e.target.value)} />
+              </div>
               <div>
                 <Label>Status do pipeline</Label>
                 <Select value={status} onValueChange={(v) => setStatus(v as PipelineStatus)}>
