@@ -20,7 +20,7 @@ const schema = z.object({
   titulo: z.string().trim().min(3, "Título muito curto").max(120),
   descricao: z.string().trim().max(2000),
   softwares: z.string().trim().max(500, "Informe no máximo 500 caracteres"),
-  setor: z.enum(SETORES as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione o setor" }) }),
+  setor: z.string().refine((v) => (SETORES as readonly string[]).includes(v), { message: "Selecione o setor" }),
 });
 
 export default function NovaDemanda() {
