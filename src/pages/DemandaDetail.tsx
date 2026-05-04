@@ -75,6 +75,7 @@ export default function DemandaDetail() {
     setDificuldade(solicitacao.dificuldade);
     setStatus(solicitacao.status);
     setNotas(solicitacao.notasTecnicas ?? "");
+    setDescricaoDev(solicitacao.descricao);
     setTemIntegracao(solicitacao.temIntegracao ?? false);
     setIntegracoesText((solicitacao.integracoes ?? []).join(", "));
     setEditTitulo(solicitacao.titulo);
