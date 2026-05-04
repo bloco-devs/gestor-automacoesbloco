@@ -84,6 +84,7 @@ export interface Solucao {
   solicitacaoId: string | null;
   titulo: string;
   descricao: string;
+  link?: string | null;
   createdAt: string;
 }
 

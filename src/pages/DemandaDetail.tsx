@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Save, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, Pencil, Save, Sparkles, Trash2, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
@@ -10,6 +10,7 @@ import {
   listSolucoesBySolicitacao,
   updateOwnSolicitacao,
   updateSolicitacao,
+  updateSolucao,
 } from "@/lib/supabaseData";
 import { FREQUENCIA_LABEL, PIPELINE_ORDER, SETORES, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus, type Setor } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,9 @@ export default function DemandaDetail() {
 
   const [solucaoTitulo, setSolucaoTitulo] = useState("");
   const [solucaoDesc, setSolucaoDesc] = useState("");
+  const [solucaoLink, setSolucaoLink] = useState("");
+  const [editingSolucaoId, setEditingSolucaoId] = useState<string | null>(null);
+  const [editLinkValue, setEditLinkValue] = useState("");
 
   useEffect(() => {
     if (!solicitacao) return;
@@ -160,10 +164,24 @@ export default function DemandaDetail() {
       toast({ title: "Informe um título para a solução", variant: "destructive" });
       return;
     }
-    await createSolucao({ solicitacaoId: id, titulo: solucaoTitulo.trim(), descricao: solucaoDesc.trim(), createdBy: user?.id });
+    await createSolucao({
+      solicitacaoId: id,
+      titulo: solucaoTitulo.trim(),
+      descricao: solucaoDesc.trim(),
+      link: solucaoLink.trim() || null,
+      createdBy: user?.id,
+    });
     setSolucaoTitulo("");
     setSolucaoDesc("");
+    setSolucaoLink("");
     toast({ title: "Solução registrada" });
+  }
+
+  async function handleSaveSolucaoLink(solucaoId: string) {
+    await updateSolucao(solucaoId, { link: editLinkValue.trim() || null });
+    setEditingSolucaoId(null);
+    setEditLinkValue("");
+    toast({ title: "Link atualizado" });
   }
 
   async function handleDelete() {
@@ -380,9 +398,16 @@ export default function DemandaDetail() {
             <CardDescription>Registre a solução final desenvolvida para esta demanda.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-[1fr_1fr_auto] gap-2">
-              <Input value={solucaoTitulo} onChange={(e) => setSolucaoTitulo(e.target.value)} />
-              <Input value={solucaoDesc} onChange={(e) => setSolucaoDesc(e.target.value)} />
+            <div className="grid md:grid-cols-2 gap-2">
+              <Input placeholder="Título" value={solucaoTitulo} onChange={(e) => setSolucaoTitulo(e.target.value)} />
+              <Input placeholder="Descrição" value={solucaoDesc} onChange={(e) => setSolucaoDesc(e.target.value)} />
+            </div>
+            <div className="grid md:grid-cols-[1fr_auto] gap-2">
+              <Input
+                placeholder="Link da solução (GitHub, n8n, sistema, etc.)"
+                value={solucaoLink}
+                onChange={(e) => setSolucaoLink(e.target.value)}
+              />
               <Button onClick={handleAddSolucao}>Adicionar</Button>
             </div>
             {solucoes.length === 0 ? (
@@ -390,9 +415,47 @@ export default function DemandaDetail() {
             ) : (
               <ul className="divide-y divide-border">
                 {solucoes.map((s) => (
-                  <li key={s.id} className="py-3">
-                    <div className="font-medium text-sm">{s.titulo}</div>
-                    {s.descricao && <p className="text-xs text-muted-foreground mt-0.5">{s.descricao}</p>}
+                  <li key={s.id} className="py-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm">{s.titulo}</div>
+                        {s.descricao && <p className="text-xs text-muted-foreground mt-0.5">{s.descricao}</p>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {s.link && (
+                          <Button asChild variant="outline" size="sm">
+                            <a href={s.link} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="size-4" /> Abrir
+                            </a>
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingSolucaoId(editingSolucaoId === s.id ? null : s.id);
+                            setEditLinkValue(s.link ?? "");
+                          }}
+                        >
+                          <Pencil className="size-4" /> {s.link ? "Editar link" : "Adicionar link"}
+                        </Button>
+                      </div>
+                    </div>
+                    {editingSolucaoId === s.id && (
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="https://..."
+                          value={editLinkValue}
+                          onChange={(e) => setEditLinkValue(e.target.value)}
+                        />
+                        <Button size="sm" onClick={() => handleSaveSolucaoLink(s.id)}>
+                          <Save className="size-4" /> Salvar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingSolucaoId(null)}>
+                          <X className="size-4" />
+                        </Button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

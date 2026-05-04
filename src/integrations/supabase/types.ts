@@ -147,6 +147,7 @@ export type Database = {
           created_by: string | null
           descricao: string
           id: string
+          link: string | null
           solicitacao_id: string | null
           titulo: string
         }
@@ -155,6 +156,7 @@ export type Database = {
           created_by?: string | null
           descricao?: string
           id?: string
+          link?: string | null
           solicitacao_id?: string | null
           titulo: string
         }
@@ -163,6 +165,7 @@ export type Database = {
           created_by?: string | null
           descricao?: string
           id?: string
+          link?: string | null
           solicitacao_id?: string | null
           titulo?: string
         }
