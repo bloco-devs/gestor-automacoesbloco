@@ -219,9 +219,9 @@ export async function listSolucoesBySolicitacao(solicitacaoId: string): Promise<
   return (data ?? []).map(mapSolucao);
 }
 
-export async function createSolucao(data: { solicitacaoId: string; titulo: string; descricao: string; createdBy?: string }): Promise<void> {
+export async function createSolucao(data: { solicitacaoId?: string | null; titulo: string; descricao: string; createdBy?: string }): Promise<void> {
   const { error } = await supabase.from("demanda_solucoes").insert({
-    solicitacao_id: data.solicitacaoId,
+    solicitacao_id: data.solicitacaoId ?? null,
     titulo: data.titulo,
     descricao: data.descricao,
     created_by: data.createdBy,
