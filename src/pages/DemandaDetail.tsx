@@ -10,6 +10,7 @@ import {
   listSolucoesBySolicitacao,
   updateOwnSolicitacao,
   updateSolicitacao,
+  updateSolucao,
 } from "@/lib/supabaseData";
 import { FREQUENCIA_LABEL, PIPELINE_ORDER, SETORES, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus, type Setor } from "@/lib/types";
 import { Button } from "@/components/ui/button";
