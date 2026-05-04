@@ -190,7 +190,7 @@ export async function updateSolicitacao(id: string, patch: Partial<Solicitacao>)
   for (const [key, value] of Object.entries(candidate)) {
     if (value !== undefined) payload[key] = value;
   }
-  const { error } = await supabase.from("solicitacoes").update(payload).eq("id", id);
+  const { error } = await supabase.from("solicitacoes").update(payload as never).eq("id", id);
   if (error) throw error;
 }
 
