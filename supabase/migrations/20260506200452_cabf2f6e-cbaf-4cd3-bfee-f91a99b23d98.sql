@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.set_activity_log_user_email() FROM PUBLIC, anon, authenticated;
