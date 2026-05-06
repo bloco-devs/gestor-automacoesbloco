@@ -78,9 +78,7 @@ export function TasksChecklist({ solicitacaoId }: { solicitacaoId: string }) {
           </Button>
         </div>
 
-        {tasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma task criada ainda.</p>
-        ) : (
+        {tasks.length === 0 ? null : (
           <ul className="divide-y divide-border">
             {tasks.map((t) => (
               <li key={t.id} className="py-2 flex items-center gap-3">
