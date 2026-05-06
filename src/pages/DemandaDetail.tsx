@@ -426,7 +426,7 @@ export default function DemandaDetail() {
                       <div className="flex items-center gap-2">
                         {s.link && (
                           <Button asChild variant="outline" size="icon" className="h-8 w-8" title="Abrir link">
-                            <a href={s.link} target="_blank" rel="noopener noreferrer" aria-label="Abrir link da solução">
+                            <a href={/^https?:\/\//i.test(s.link) ? s.link : `https://${s.link}`} target="_blank" rel="noopener noreferrer" aria-label="Abrir link da solução">
                               <ExternalLink className="size-4" />
                             </a>
                           </Button>
