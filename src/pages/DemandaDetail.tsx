@@ -118,7 +118,6 @@ export default function DemandaDetail() {
       ? integracoesText.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
     await updateSolicitacao(id, {
-      descricao: descricaoDev,
       complexidade: complex,
       retorno,
       dificuldade,
