@@ -15,6 +15,7 @@ import { createSolicitacao } from "@/lib/supabaseData";
 import { calcScore, scoreTone } from "@/lib/score";
 import { FREQUENCIA_LABEL, SETORES, type Frequencia, type Setor } from "@/lib/types";
 import { ScorePill } from "@/components/ScorePill";
+import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 
 const schema = z.object({
   titulo: z.string().trim().min(3, "Título muito curto").max(120),
@@ -94,7 +95,10 @@ export default function NovaDemanda() {
                 <Input id="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
               </div>
               <div>
-                <Label htmlFor="descricao">Descrição da atividade atual</Label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label htmlFor="descricao">Descrição da atividade atual</Label>
+                  {!isDeveloper && <AssistenteDescricao onAccept={setDescricao} />}
+                </div>
                 <Textarea
                   id="descricao"
                   rows={6}

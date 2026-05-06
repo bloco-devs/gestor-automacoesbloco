@@ -1,68 +1,84 @@
 ## Objetivo
 
-Adicionar um checklist simples de **tasks** dentro de cada solicitação, visível apenas para desenvolvedores, com possibilidade de atribuir cada task a um desenvolvedor cadastrado no sistema.
+Adicionar um mini assistente de IA na página **Nova Demanda** que ajuda o solicitante a escrever uma descrição mais completa e detalhada da sua demanda, através de 3-4 perguntas dinâmicas. Ao final, o assistente preenche **apenas o campo "Descrição da atividade atual"** — todos os outros campos (título, softwares, setor, critérios) continuam sendo preenchidos manualmente pelo usuário.
 
-## Decisões
+## Fluxo do usuário
 
-- **Quem é desenvolvedor**: liberar múltiplos. Vou remover a trava `enforce_single_developer_role` e o `sync_single_developer_role_from_profile` para que qualquer e-mail listado em `allowed_emails` possa receber a role `admin` (=desenvolvedor). A lista de assign mostra todos os usuários com role `admin`.
-- **Tasks mínimas**: título, checkbox concluído, responsável opcional, ordem.
-- **Onde aparece**: nova seção "Tasks" dentro da página `DemandaDetail` (`/demanda/:id`), renderizada apenas quando `user.role === "developer"`. O acesso a essa página já vem do clique nos cards do Dashboard.
+1. Na página `/nova-demanda`, ao lado/acima do campo "Descrição da atividade atual" aparece um botão **"✨ Descrever com ajuda da IA"**.
+2. Ao clicar, abre um **Dialog** com um chat simples.
+3. A IA inicia perguntando algo como: *"Em poucas palavras, qual atividade ou processo você gostaria de automatizar?"*
+4. O usuário responde. A IA analisa a resposta e faz a próxima pergunta dinamicamente (contexto, ferramentas usadas hoje, dor principal, resultado esperado, etc.).
+5. Após **3 a 4 perguntas**, a IA mostra um botão **"Gerar descrição"**.
+6. Ao clicar, a IA consolida tudo em uma descrição estruturada e bem escrita.
+7. Usuário vê preview da descrição com botões **"Usar esta descrição"** (preenche o textarea e fecha o dialog) ou **"Refazer"**.
 
-## Banco de dados (uma migração)
+## Arquitetura técnica
 
-1. Criar tabela `demanda_tasks`:
-   - `id uuid pk`
-   - `solicitacao_id uuid not null` (referência lógica)
-   - `titulo text not null`
-   - `concluida boolean not null default false`
-   - `assigned_to uuid null` (id do desenvolvedor)
-   - `ordem integer not null default 0`
-   - `created_by uuid`, `created_at`, `updated_at` (com trigger `update_updated_at_column`)
-2. RLS: apenas devs (`has_role(auth.uid(), 'admin')`) podem SELECT/INSERT/UPDATE/DELETE. Solicitantes não veem tasks.
-3. Remover triggers `enforce_single_developer_role` e `sync_single_developer_role_from_profile` (e suas funções) para liberar múltiplos devs.
-4. Criar view `public.developers` (security_invoker) expondo apenas `id`, `nome`, `email` de profiles que têm role `admin`, para popular o seletor de assign sem expor a tabela `profiles` inteira. SELECT permitido a qualquer usuário autenticado com role admin.
+### Backend — Edge Function `assistente-demanda`
 
-## Backend helpers (`src/lib/supabaseData.ts`)
+Nova função em `supabase/functions/assistente-demanda/index.ts` que usa **Lovable AI Gateway** (`google/gemini-3-flash-preview`).
 
-- `listTasks(solicitacaoId)`, `createTask({ solicitacaoId, titulo })`, `updateTask(id, patch)`, `deleteTask(id)`.
-- `listDevelopers()` → consulta a view `developers`.
+Dois modos de operação controlados por um campo `action` no body:
 
-## UI
+- `action: "next_question"` — recebe o histórico de mensagens, retorna a próxima pergunta. A IA decide quando já tem informação suficiente e responde com `{ done: true }` (depois da 3ª/4ª pergunta).
+- `action: "generate_description"` — recebe o histórico completo, retorna a descrição final consolidada (texto corrido, 1-2 parágrafos).
 
-### `DemandaDetail.tsx` (apenas se `isDev`)
+System prompt instrui a IA a:
+- Fazer perguntas curtas, em português, uma de cada vez.
+- Cobrir: o que é feito hoje, com qual frequência/contexto, qual a dor principal, qual o resultado esperado.
+- Limite máximo de 4 perguntas.
+- Na geração final, escrever em primeira pessoa do solicitante, de forma objetiva.
 
-Nova `Card` "Tasks" entre "Ajustes do desenvolvedor" e "Soluções entregues":
+Tratamento de erros 429 (rate limit) e 402 (créditos) com mensagens claras retornadas ao cliente.
+
+`verify_jwt = true` (usuário autenticado).
+
+### Frontend
+
+Novo componente `src/components/AssistenteDescricao.tsx`:
+- `Dialog` do shadcn com chat (lista de mensagens user/assistant + input).
+- Estado local: `messages`, `loading`, `phase: "chatting" | "preview"`, `draft`.
+- Chama edge function via `supabase.functions.invoke("assistente-demanda", ...)`.
+- Props: `onAccept(descricao: string)` para devolver o texto ao formulário.
+
+Mudança em `src/pages/NovaDemanda.tsx`:
+- Botão "✨ Descrever com ajuda da IA" acima do `<Textarea>` da descrição.
+- Ao aceitar, faz `setDescricao(textoGerado)`.
+
+## Layout do Dialog
 
 ```text
-┌─ Tasks ────────────────────────────────┐
-│ [+ input título]            [Adicionar]│
-│ ☐ Configurar webhook        [Ana ▾] [x]│
-│ ☑ Validar payload           [Bruno ▾]  │
+┌─ Assistente de demanda ────────────────┐
+│ 🤖 Em poucas palavras, qual atividade  │
+│    você gostaria de automatizar?       │
+│                                        │
+│              Gero relatórios diários…🧑│
+│                                        │
+│ 🤖 Quanto tempo isso costuma levar?    │
+│ ┌────────────────────────────────────┐ │
+│ │ digite sua resposta…       [Enviar]│ │
+│ └────────────────────────────────────┘ │
+│                          [Gerar descrição] (aparece após N perguntas)
 └────────────────────────────────────────┘
 ```
 
-- Lista ordenada por `ordem` / `created_at`.
-- Checkbox marca/desmarca `concluida` (update otimista).
-- Select compacto com lista de devs (`listDevelopers()`) + opção "Sem responsável".
-- Botão lixeira para remover.
-- Input + Enter/botão para criar nova task.
-- Realtime: adicionar a tabela `demanda_tasks` ao channel em `useSupabaseData.ts` para sincronizar entre devs.
-
-### Permissões na UI
-
-- A seção inteira só renderiza se `isDev`. Solicitantes nunca veem nem o título "Tasks".
+Na fase preview:
+```text
+┌─ Pré-visualização ─────────────────────┐
+│ "Atualmente gero manualmente…"         │
+│             [Refazer]  [Usar descrição]│
+└────────────────────────────────────────┘
+```
 
 ## Arquivos afetados
 
-- `supabase/migrations/<novo>.sql` (nova tabela + RLS + view + remoção de triggers)
-- `src/lib/types.ts` — interface `Task`, `Developer`
-- `src/lib/supabaseData.ts` — CRUD de tasks + listDevelopers
-- `src/hooks/useSupabaseData.ts` — incluir `demanda_tasks` no realtime
-- `src/pages/DemandaDetail.tsx` — nova seção Tasks
-- (opcional) `src/components/TasksChecklist.tsx` — componente isolado para manter o arquivo enxuto
+- `supabase/functions/assistente-demanda/index.ts` (novo)
+- `src/components/AssistenteDescricao.tsx` (novo)
+- `src/pages/NovaDemanda.tsx` (botão + integração)
 
 ## Fora do escopo
 
-- Notificações para o responsável.
-- Prazo, prioridade, comentários nas tasks.
-- Reordenação por drag-and-drop (fica para depois; por ora só ordem por criação).
+- Preencher outros campos do formulário (título, setor, softwares, critérios).
+- Persistir as conversas do assistente.
+- Streaming token-a-token (resposta única por pergunta é suficiente para o caso).
+- Disponibilizar o assistente para o desenvolvedor (apenas solicitante).

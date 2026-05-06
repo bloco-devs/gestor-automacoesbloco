@@ -2,3 +2,6 @@ project_id = "cgbhpenkytibgiosksrb"
 
 [functions.bootstrap-dual-user]
 verify_jwt = false
+
+[functions.assistente-demanda]
+verify_jwt = true
