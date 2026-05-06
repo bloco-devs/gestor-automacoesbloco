@@ -179,6 +179,42 @@ export type Database = {
           },
         ]
       }
+      demanda_tasks: {
+        Row: {
+          assigned_to: string | null
+          concluida: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          ordem: number
+          solicitacao_id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          concluida?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ordem?: number
+          solicitacao_id: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          concluida?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ordem?: number
+          solicitacao_id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plataformas: {
         Row: {
           created_at: string
@@ -400,7 +436,14 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      developers: {
+        Row: {
+          email: string | null
+          id: string | null
+          nome: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
