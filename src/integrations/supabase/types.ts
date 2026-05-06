@@ -442,6 +442,16 @@ export type Database = {
           id: string | null
           nome: string | null
         }
+        Insert: {
+          email?: string | null
+          id?: string | null
+          nome?: string | null
+        }
+        Update: {
+          email?: string | null
+          id?: string | null
+          nome?: string | null
+        }
         Relationships: []
       }
     }
