@@ -1,24 +1,68 @@
 ## Objetivo
-Permitir excluir soluções diretamente na aba **Soluções**. Ao excluir, a solução desaparece automaticamente da demanda à qual estava vinculada (e suas melhorias associadas também são removidas).
 
-## Mudanças
+Adicionar um checklist simples de **tasks** dentro de cada solicitação, visível apenas para desenvolvedores, com possibilidade de atribuir cada task a um desenvolvedor cadastrado no sistema.
 
-### 1. `src/lib/supabaseData.ts`
-Adicionar função `deleteSolucao(id)` que:
-- Apaga primeiro as melhorias vinculadas (`demanda_melhorias` onde `solucao_id = id`)
-- Em seguida apaga a solução em `demanda_solucoes`
+## Decisões
 
-Isso garante que a tela de detalhe da demanda (que lista soluções por `solicitacao_id`) deixe de exibir essa solução imediatamente, via o realtime já existente em `useSupabaseData`.
+- **Quem é desenvolvedor**: liberar múltiplos. Vou remover a trava `enforce_single_developer_role` e o `sync_single_developer_role_from_profile` para que qualquer e-mail listado em `allowed_emails` possa receber a role `admin` (=desenvolvedor). A lista de assign mostra todos os usuários com role `admin`.
+- **Tasks mínimas**: título, checkbox concluído, responsável opcional, ordem.
+- **Onde aparece**: nova seção "Tasks" dentro da página `DemandaDetail` (`/demanda/:id`), renderizada apenas quando `user.role === "developer"`. O acesso a essa página já vem do clique nos cards do Dashboard.
 
-### 2. `src/pages/Solucoes.tsx`
-- Adicionar um botão de excluir (ícone lixeira) no cabeçalho de cada `SolucaoCard`.
-- Confirmação via `AlertDialog` antes de excluir, avisando que a ação também remove a solução da demanda vinculada e apaga as melhorias registradas.
-- Ao confirmar, chamar `deleteSolucao(id)` e exibir toast de sucesso/erro.
+## Banco de dados (uma migração)
 
-## Comportamento esperado
-- Usuário clica na lixeira em uma solução → confirma → solução some da aba Soluções, some da página de detalhe da demanda original, e suas melhorias são removidas.
-- Atualização em tempo real já é tratada pelo hook `useSupabaseData` (que escuta `demanda_solucoes` e `demanda_melhorias`).
+1. Criar tabela `demanda_tasks`:
+   - `id uuid pk`
+   - `solicitacao_id uuid not null` (referência lógica)
+   - `titulo text not null`
+   - `concluida boolean not null default false`
+   - `assigned_to uuid null` (id do desenvolvedor)
+   - `ordem integer not null default 0`
+   - `created_by uuid`, `created_at`, `updated_at` (com trigger `update_updated_at_column`)
+2. RLS: apenas devs (`has_role(auth.uid(), 'admin')`) podem SELECT/INSERT/UPDATE/DELETE. Solicitantes não veem tasks.
+3. Remover triggers `enforce_single_developer_role` e `sync_single_developer_role_from_profile` (e suas funções) para liberar múltiplos devs.
+4. Criar view `public.developers` (security_invoker) expondo apenas `id`, `nome`, `email` de profiles que têm role `admin`, para popular o seletor de assign sem expor a tabela `profiles` inteira. SELECT permitido a qualquer usuário autenticado com role admin.
 
-## Fora de escopo
-- Nenhuma mudança em outras abas além das atualizações automáticas refletidas pelo realtime.
-- Sem alteração de schema/RLS — políticas já permitem DELETE para usuários autorizados.
+## Backend helpers (`src/lib/supabaseData.ts`)
+
+- `listTasks(solicitacaoId)`, `createTask({ solicitacaoId, titulo })`, `updateTask(id, patch)`, `deleteTask(id)`.
+- `listDevelopers()` → consulta a view `developers`.
+
+## UI
+
+### `DemandaDetail.tsx` (apenas se `isDev`)
+
+Nova `Card` "Tasks" entre "Ajustes do desenvolvedor" e "Soluções entregues":
+
+```text
+┌─ Tasks ────────────────────────────────┐
+│ [+ input título]            [Adicionar]│
+│ ☐ Configurar webhook        [Ana ▾] [x]│
+│ ☑ Validar payload           [Bruno ▾]  │
+└────────────────────────────────────────┘
+```
+
+- Lista ordenada por `ordem` / `created_at`.
+- Checkbox marca/desmarca `concluida` (update otimista).
+- Select compacto com lista de devs (`listDevelopers()`) + opção "Sem responsável".
+- Botão lixeira para remover.
+- Input + Enter/botão para criar nova task.
+- Realtime: adicionar a tabela `demanda_tasks` ao channel em `useSupabaseData.ts` para sincronizar entre devs.
+
+### Permissões na UI
+
+- A seção inteira só renderiza se `isDev`. Solicitantes nunca veem nem o título "Tasks".
+
+## Arquivos afetados
+
+- `supabase/migrations/<novo>.sql` (nova tabela + RLS + view + remoção de triggers)
+- `src/lib/types.ts` — interface `Task`, `Developer`
+- `src/lib/supabaseData.ts` — CRUD de tasks + listDevelopers
+- `src/hooks/useSupabaseData.ts` — incluir `demanda_tasks` no realtime
+- `src/pages/DemandaDetail.tsx` — nova seção Tasks
+- (opcional) `src/components/TasksChecklist.tsx` — componente isolado para manter o arquivo enxuto
+
+## Fora do escopo
+
+- Notificações para o responsável.
+- Prazo, prioridade, comentários nas tasks.
+- Reordenação por drag-and-drop (fica para depois; por ora só ordem por criação).
