@@ -95,7 +95,10 @@ export default function NovaDemanda() {
                 <Input id="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
               </div>
               <div>
-                <Label htmlFor="descricao">Descrição da atividade atual</Label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label htmlFor="descricao">Descrição da atividade atual</Label>
+                  {!isDeveloper && <AssistenteDescricao onAccept={setDescricao} />}
+                </div>
                 <Textarea
                   id="descricao"
                   rows={6}
