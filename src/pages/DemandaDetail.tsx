@@ -327,6 +327,11 @@ export default function DemandaDetail() {
                 )}
               </div>
             )}
+            {isDev && !isEditing && (
+              <div className="pt-3 border-t border-border">
+                <TasksChecklist solicitacaoId={id} />
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -392,7 +397,6 @@ export default function DemandaDetail() {
         )}
       </div>
 
-      {isDev && <TasksChecklist solicitacaoId={id} />}
 
       {isDev && (
         <Card className="surface-1">
