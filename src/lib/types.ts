@@ -107,3 +107,19 @@ export interface Melhoria {
   status: MelhoriaStatus;
   data: string;
 }
+
+export interface Task {
+  id: string;
+  solicitacaoId: string;
+  titulo: string;
+  concluida: boolean;
+  assignedTo: string | null;
+  ordem: number;
+  createdAt: string;
+}
+
+export interface Developer {
+  id: string;
+  nome: string;
+  email: string;
+}
