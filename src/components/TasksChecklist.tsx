@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Trash2, Plus } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { createTask, deleteTask, listDevelopers, listTasks, updateTask } from "@/lib/supabaseData";
@@ -9,15 +9,21 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Task } from "@/lib/types";
 
 const UNASSIGNED = "__none__";
 
 export function TasksChecklist({ solicitacaoId }: { solicitacaoId: string }) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const tasks = useSupabaseData(() => listTasks(solicitacaoId), [], [solicitacaoId]);
+  const remoteTasks = useSupabaseData(() => listTasks(solicitacaoId), [] as Task[], [solicitacaoId]);
   const devs = useSupabaseData(() => listDevelopers(), []);
+  const [tasks, setTasks] = useState<Task[]>(remoteTasks);
   const [novoTitulo, setNovoTitulo] = useState("");
+
+  useEffect(() => {
+    setTasks(remoteTasks);
+  }, [remoteTasks]);
 
   async function handleAdd() {
     const titulo = novoTitulo.trim();
@@ -31,22 +37,27 @@ export function TasksChecklist({ solicitacaoId }: { solicitacaoId: string }) {
   }
 
   async function handleToggle(id: string, concluida: boolean) {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, concluida } : t)));
     try {
       await updateTask(id, { concluida });
     } catch (err) {
+      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, concluida: !concluida } : t)));
       toast({ title: "Erro ao atualizar", description: (err as Error).message, variant: "destructive" });
     }
   }
 
   async function handleAssign(id: string, value: string) {
+    const assignedTo = value === UNASSIGNED ? null : value;
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, assignedTo } : t)));
     try {
-      await updateTask(id, { assignedTo: value === UNASSIGNED ? null : value });
+      await updateTask(id, { assignedTo });
     } catch (err) {
       toast({ title: "Erro ao atribuir", description: (err as Error).message, variant: "destructive" });
     }
   }
 
   async function handleDelete(id: string) {
+    setTasks((prev) => prev.filter((t) => t.id !== id));
     try {
       await deleteTask(id);
     } catch (err) {

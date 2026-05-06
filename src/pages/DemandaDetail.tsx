@@ -118,7 +118,6 @@ export default function DemandaDetail() {
       ? integracoesText.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
     await updateSolicitacao(id, {
-      descricao: descricaoDev,
       complexidade: complex,
       retorno,
       dificuldade,
@@ -342,10 +341,6 @@ export default function DemandaDetail() {
               <CardDescription>Score recalculado: <ScorePill score={previewScore} /></CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              <div>
-                <Label htmlFor="dev-descricao">Descrição da demanda</Label>
-                <Textarea id="dev-descricao" rows={5} value={descricaoDev} onChange={(e) => setDescricaoDev(e.target.value)} />
-              </div>
               <div>
                 <Label>Status do pipeline</Label>
                 <Select value={status} onValueChange={(v) => setStatus(v as PipelineStatus)}>
