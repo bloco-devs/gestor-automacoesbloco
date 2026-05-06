@@ -28,6 +28,7 @@ export function useSupabaseData<T>(loader: () => Promise<T>, fallback: T, deps: 
       .on("postgres_changes", { event: "*", schema: "public", table: "solicitacoes" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "demanda_solucoes" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "demanda_melhorias" }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "demanda_tasks" }, refresh)
       .subscribe();
 
     return () => {
