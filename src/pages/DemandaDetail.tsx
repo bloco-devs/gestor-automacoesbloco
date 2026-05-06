@@ -425,9 +425,9 @@ export default function DemandaDetail() {
                       </div>
                       <div className="flex items-center gap-2">
                         {s.link && (
-                          <Button asChild variant="outline" size="sm">
-                            <a href={s.link} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="size-4" /> Abrir
+                          <Button asChild variant="outline" size="icon" className="h-8 w-8" title="Abrir link">
+                            <a href={s.link} target="_blank" rel="noopener noreferrer" aria-label="Abrir link da solução">
+                              <ExternalLink className="size-4" />
                             </a>
                           </Button>
                         )}
