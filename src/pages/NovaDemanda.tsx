@@ -15,6 +15,7 @@ import { createSolicitacao } from "@/lib/supabaseData";
 import { calcScore, scoreTone } from "@/lib/score";
 import { FREQUENCIA_LABEL, SETORES, type Frequencia, type Setor } from "@/lib/types";
 import { ScorePill } from "@/components/ScorePill";
+import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 
 const schema = z.object({
   titulo: z.string().trim().min(3, "Título muito curto").max(120),
