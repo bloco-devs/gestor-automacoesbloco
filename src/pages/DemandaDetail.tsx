@@ -327,6 +327,11 @@ export default function DemandaDetail() {
                 )}
               </div>
             )}
+            {isDev && !isEditing && (
+              <div className="pt-3 border-t border-border">
+                <TasksChecklist solicitacaoId={id} />
+              </div>
+            )}
           </CardContent>
         </Card>
 
