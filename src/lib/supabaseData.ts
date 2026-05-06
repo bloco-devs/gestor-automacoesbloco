@@ -303,3 +303,62 @@ export async function submitPublicSolicitacao(data: { nome: string; email: strin
   });
   if (error) throw error;
 }
+
+// ===== Tasks (developer-only checklist) =====
+
+import type { Task, Developer } from "@/lib/types";
+
+export async function listTasks(solicitacaoId: string): Promise<Task[]> {
+  const { data, error } = await supabase
+    .from("demanda_tasks" as never)
+    .select("id,solicitacao_id,titulo,concluida,assigned_to,ordem,created_at")
+    .eq("solicitacao_id", solicitacaoId)
+    .order("ordem", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return ((data ?? []) as Array<{ id: string; solicitacao_id: string; titulo: string; concluida: boolean; assigned_to: string | null; ordem: number; created_at: string }>).map((r) => ({
+    id: r.id,
+    solicitacaoId: r.solicitacao_id,
+    titulo: r.titulo,
+    concluida: r.concluida,
+    assignedTo: r.assigned_to,
+    ordem: r.ordem,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function createTask(data: { solicitacaoId: string; titulo: string; createdBy?: string }): Promise<void> {
+  const { error } = await supabase.from("demanda_tasks" as never).insert({
+    solicitacao_id: data.solicitacaoId,
+    titulo: data.titulo,
+    created_by: data.createdBy ?? null,
+  } as never);
+  if (error) throw error;
+}
+
+export async function updateTask(id: string, patch: { titulo?: string; concluida?: boolean; assignedTo?: string | null; ordem?: number }): Promise<void> {
+  const payload: Record<string, unknown> = {};
+  if (patch.titulo !== undefined) payload.titulo = patch.titulo;
+  if (patch.concluida !== undefined) payload.concluida = patch.concluida;
+  if (patch.assignedTo !== undefined) payload.assigned_to = patch.assignedTo;
+  if (patch.ordem !== undefined) payload.ordem = patch.ordem;
+  const { error } = await supabase.from("demanda_tasks" as never).update(payload as never).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteTask(id: string): Promise<void> {
+  const { error } = await supabase.from("demanda_tasks" as never).delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function listDevelopers(): Promise<Developer[]> {
+  const { data, error } = await supabase
+    .from("developers" as never)
+    .select("id,nome,email");
+  if (error) throw error;
+  return ((data ?? []) as Array<{ id: string; nome: string; email: string }>).map((r) => ({
+    id: r.id,
+    nome: r.nome,
+    email: r.email,
+  }));
+}
