@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
+import { TasksChecklist } from "@/components/TasksChecklist";
 import { ScorePill } from "@/components/ScorePill";
 import {
   AlertDialog,
