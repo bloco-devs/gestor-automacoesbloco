@@ -391,6 +391,8 @@ export default function DemandaDetail() {
         )}
       </div>
 
+      {isDev && <TasksChecklist solicitacaoId={id} />}
+
       {isDev && (
         <Card className="surface-1">
           <CardHeader>
