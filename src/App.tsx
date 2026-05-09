@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import RedefinirSenha from "./pages/RedefinirSenha";
 import EscolherPerfil from "./pages/EscolherPerfil";
 import SolicitarSolucao from "./pages/SolicitarSolucao";
 import NovaDemanda from "./pages/NovaDemanda";
@@ -32,6 +33,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/redefinir-senha" element={<RedefinirSenha />} />
             <Route path="/escolher-perfil" element={<ProtectedRoute><EscolherPerfil /></ProtectedRoute>} />
             <Route path="/solicitar" element={<SolicitarSolucao />} />
             <Route path="/" element={<Index />} />

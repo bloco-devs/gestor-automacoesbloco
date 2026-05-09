@@ -1,84 +1,33 @@
 ## Objetivo
 
-Adicionar um mini assistente de IA na página **Nova Demanda** que ajuda o solicitante a escrever uma descrição mais completa e detalhada da sua demanda, através de 3-4 perguntas dinâmicas. Ao final, o assistente preenche **apenas o campo "Descrição da atividade atual"** — todos os outros campos (título, softwares, setor, critérios) continuam sendo preenchidos manualmente pelo usuário.
+Adicionar fluxo "Esqueci minha senha" usando o sistema nativo do Supabase Auth, restrito aos emails autorizados do app.
 
-## Fluxo do usuário
+## Mudanças
 
-1. Na página `/nova-demanda`, ao lado/acima do campo "Descrição da atividade atual" aparece um botão **"✨ Descrever com ajuda da IA"**.
-2. Ao clicar, abre um **Dialog** com um chat simples.
-3. A IA inicia perguntando algo como: *"Em poucas palavras, qual atividade ou processo você gostaria de automatizar?"*
-4. O usuário responde. A IA analisa a resposta e faz a próxima pergunta dinamicamente (contexto, ferramentas usadas hoje, dor principal, resultado esperado, etc.).
-5. Após **3 a 4 perguntas**, a IA mostra um botão **"Gerar descrição"**.
-6. Ao clicar, a IA consolida tudo em uma descrição estruturada e bem escrita.
-7. Usuário vê preview da descrição com botões **"Usar esta descrição"** (preenche o textarea e fecha o dialog) ou **"Refazer"**.
+### 1. `src/pages/Auth.tsx`
+- Adicionar link **"Esqueci minha senha"** abaixo do campo de senha.
+- Ao clicar, abre um `Dialog` (shadcn) com um input de email e botão "Enviar link de recuperação".
+- Valida com Zod e checa se o email está na lista `ALLOWED_ACCOUNTS` (mesma já usada em `useAuth`); se não estiver, mostra toast de erro sem chamar o Supabase.
+- Chama `supabase.auth.resetPasswordForEmail(email, { redirectTo: ${window.location.origin}/redefinir-senha })`.
+- Toast de sucesso: "Se o email for válido, enviaremos um link de recuperação."
 
-## Arquitetura técnica
+### 2. Nova página `src/pages/RedefinirSenha.tsx`
+- Rota pública `/redefinir-senha`.
+- Detecta sessão de recovery via `supabase.auth.onAuthStateChange` (evento `PASSWORD_RECOVERY`) — Supabase já consome o token do hash da URL.
+- Form com **nova senha** + **confirmar senha** (Zod: mínimo 6, máximo 128, iguais).
+- Submit: `supabase.auth.updateUser({ password })`, depois `signOut()` e redireciona para `/auth` com toast "Senha atualizada".
+- Se o usuário acessar a rota sem token de recovery válido, exibe estado "Link inválido ou expirado" com botão para voltar.
 
-### Backend — Edge Function `assistente-demanda`
+### 3. `src/App.tsx`
+- Registrar rota pública `/redefinir-senha` (fora do `ProtectedRoute`).
 
-Nova função em `supabase/functions/assistente-demanda/index.ts` que usa **Lovable AI Gateway** (`google/gemini-3-flash-preview`).
+### Detalhes técnicos
+- Usar componentes existentes (`Dialog`, `Input`, `Label`, `Button`, `Card`, `useToast`).
+- Sem mudanças no banco, sem novas funções edge, sem novos secrets.
+- Emails de recuperação seguem o template padrão do Supabase (não vamos configurar templates customizados nem domínio próprio agora).
+- Mantém a restrição de logins autorizados: o `loadProfile` já bloqueia qualquer email fora da lista após o login, então mesmo que alguém acione recovery indevidamente, não consegue usar o app.
 
-Dois modos de operação controlados por um campo `action` no body:
-
-- `action: "next_question"` — recebe o histórico de mensagens, retorna a próxima pergunta. A IA decide quando já tem informação suficiente e responde com `{ done: true }` (depois da 3ª/4ª pergunta).
-- `action: "generate_description"` — recebe o histórico completo, retorna a descrição final consolidada (texto corrido, 1-2 parágrafos).
-
-System prompt instrui a IA a:
-- Fazer perguntas curtas, em português, uma de cada vez.
-- Cobrir: o que é feito hoje, com qual frequência/contexto, qual a dor principal, qual o resultado esperado.
-- Limite máximo de 4 perguntas.
-- Na geração final, escrever em primeira pessoa do solicitante, de forma objetiva.
-
-Tratamento de erros 429 (rate limit) e 402 (créditos) com mensagens claras retornadas ao cliente.
-
-`verify_jwt = true` (usuário autenticado).
-
-### Frontend
-
-Novo componente `src/components/AssistenteDescricao.tsx`:
-- `Dialog` do shadcn com chat (lista de mensagens user/assistant + input).
-- Estado local: `messages`, `loading`, `phase: "chatting" | "preview"`, `draft`.
-- Chama edge function via `supabase.functions.invoke("assistente-demanda", ...)`.
-- Props: `onAccept(descricao: string)` para devolver o texto ao formulário.
-
-Mudança em `src/pages/NovaDemanda.tsx`:
-- Botão "✨ Descrever com ajuda da IA" acima do `<Textarea>` da descrição.
-- Ao aceitar, faz `setDescricao(textoGerado)`.
-
-## Layout do Dialog
-
-```text
-┌─ Assistente de demanda ────────────────┐
-│ 🤖 Em poucas palavras, qual atividade  │
-│    você gostaria de automatizar?       │
-│                                        │
-│              Gero relatórios diários…🧑│
-│                                        │
-│ 🤖 Quanto tempo isso costuma levar?    │
-│ ┌────────────────────────────────────┐ │
-│ │ digite sua resposta…       [Enviar]│ │
-│ └────────────────────────────────────┘ │
-│                          [Gerar descrição] (aparece após N perguntas)
-└────────────────────────────────────────┘
-```
-
-Na fase preview:
-```text
-┌─ Pré-visualização ─────────────────────┐
-│ "Atualmente gero manualmente…"         │
-│             [Refazer]  [Usar descrição]│
-└────────────────────────────────────────┘
-```
-
-## Arquivos afetados
-
-- `supabase/functions/assistente-demanda/index.ts` (novo)
-- `src/components/AssistenteDescricao.tsx` (novo)
-- `src/pages/NovaDemanda.tsx` (botão + integração)
-
-## Fora do escopo
-
-- Preencher outros campos do formulário (título, setor, softwares, critérios).
-- Persistir as conversas do assistente.
-- Streaming token-a-token (resposta única por pergunta é suficiente para o caso).
-- Disponibilizar o assistente para o desenvolvedor (apenas solicitante).
+### Fora do escopo
+- Templates de email customizados / domínio próprio.
+- Captcha / rate limiting adicional.
+- Tela de "primeiro acesso" para criação de conta.

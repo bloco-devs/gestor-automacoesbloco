@@ -32,7 +32,7 @@ const ALLOWED_ACCOUNTS: Record<string, { role: Role; nome: string }> = {
   "riccellycivil@gmail.com": { role: "developer", nome: "Riccelly" },
 };
 
-function getAllowedAccount(email?: string | null) {
+export function getAllowedAccount(email?: string | null) {
   return email ? ALLOWED_ACCOUNTS[email.trim().toLowerCase()] : undefined;
 }
 
