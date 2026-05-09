@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import RedefinirSenha from "./pages/RedefinirSenha";
 import EscolherPerfil from "./pages/EscolherPerfil";
 import SolicitarSolucao from "./pages/SolicitarSolucao";
 import NovaDemanda from "./pages/NovaDemanda";
