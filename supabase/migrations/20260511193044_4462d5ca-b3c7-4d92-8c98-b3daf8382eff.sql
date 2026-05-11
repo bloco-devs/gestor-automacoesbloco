@@ -1,0 +1,1 @@
+DELETE FROM public.allowed_emails WHERE email = 'atendimentoblocojp@gmail.com';
