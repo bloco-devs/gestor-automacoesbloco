@@ -1,33 +1,40 @@
 ## Objetivo
 
-Adicionar fluxo "Esqueci minha senha" usando o sistema nativo do Supabase Auth, restrito aos emails autorizados do app.
+Resetar a senha de `riccellycivil@gmail.com` e orientar como definir uma nova.
 
-## Mudanças
+## Opções
 
-### 1. `src/pages/Auth.tsx`
-- Adicionar link **"Esqueci minha senha"** abaixo do campo de senha.
-- Ao clicar, abre um `Dialog` (shadcn) com um input de email e botão "Enviar link de recuperação".
-- Valida com Zod e checa se o email está na lista `ALLOWED_ACCOUNTS` (mesma já usada em `useAuth`); se não estiver, mostra toast de erro sem chamar o Supabase.
-- Chama `supabase.auth.resetPasswordForEmail(email, { redirectTo: ${window.location.origin}/redefinir-senha })`.
-- Toast de sucesso: "Se o email for válido, enviaremos um link de recuperação."
+Existem duas formas. Escolha uma ao aprovar:
 
-### 2. Nova página `src/pages/RedefinirSenha.tsx`
-- Rota pública `/redefinir-senha`.
-- Detecta sessão de recovery via `supabase.auth.onAuthStateChange` (evento `PASSWORD_RECOVERY`) — Supabase já consome o token do hash da URL.
-- Form com **nova senha** + **confirmar senha** (Zod: mínimo 6, máximo 128, iguais).
-- Submit: `supabase.auth.updateUser({ password })`, depois `signOut()` e redireciona para `/auth` com toast "Senha atualizada".
-- Se o usuário acessar a rota sem token de recovery válido, exibe estado "Link inválido ou expirado" com botão para voltar.
+### Opção A — Enviar email de recuperação (recomendada)
+- Eu chamo `supabase.auth.resetPasswordForEmail("riccellycivil@gmail.com")` (via uma execução pontual contra o Supabase do projeto), com `redirectTo` apontando para `/redefinir-senha`.
+- Você recebe um email do Supabase (template padrão) com um link.
+- Clica no link → cai na tela `/redefinir-senha` que já está implementada → define a nova senha você mesmo.
+- Vantagem: você escolhe a senha, sem ninguém ver.
+- Pré-requisito: a caixa do Gmail precisa receber o email (verificar spam).
 
-### 3. `src/App.tsx`
-- Registrar rota pública `/redefinir-senha` (fora do `ProtectedRoute`).
+### Opção B — Regenerar senha aleatória via edge function `bootstrap-dual-user`
+- Eu invoco a função `bootstrap-dual-user` já existente.
+- Ela gera uma senha forte aleatória, atualiza no Supabase Auth e retorna no JSON da resposta.
+- Eu te mostro a senha **uma única vez** no chat.
+- Você loga em `/auth` com essa senha e, se quiser, troca depois pelo fluxo "Esqueci minha senha".
+- Vantagem: não depende de email chegar.
+- Desvantagem: a senha trafega pelo chat.
 
-### Detalhes técnicos
-- Usar componentes existentes (`Dialog`, `Input`, `Label`, `Button`, `Card`, `useToast`).
-- Sem mudanças no banco, sem novas funções edge, sem novos secrets.
-- Emails de recuperação seguem o template padrão do Supabase (não vamos configurar templates customizados nem domínio próprio agora).
-- Mantém a restrição de logins autorizados: o `loadProfile` já bloqueia qualquer email fora da lista após o login, então mesmo que alguém acione recovery indevidamente, não consegue usar o app.
+## Como criar a nova senha (passo a passo, depois do reset)
 
-### Fora do escopo
-- Templates de email customizados / domínio próprio.
-- Captcha / rate limiting adicional.
-- Tela de "primeiro acesso" para criação de conta.
+**Se escolher A:**
+1. Abra o email recebido (assunto padrão Supabase: "Reset Your Password").
+2. Clique no link → abre `https://gestor-automacoesbloco.lovable.app/redefinir-senha`.
+3. Digite a nova senha e a confirmação (mínimo 6 caracteres).
+4. Clique em **Atualizar senha** → você é redirecionado para `/auth`.
+5. Faça login com `riccellycivil@gmail.com` + a nova senha.
+
+**Se escolher B:**
+1. Eu te entrego a senha gerada no chat.
+2. Vá em `/auth`, entre com `riccellycivil@gmail.com` + senha recebida.
+3. Opcional: clique em **Esqueci minha senha** para definir uma sua via email.
+
+## Fora do escopo
+- Alterar templates de email do Supabase.
+- Criar tela de "trocar senha" dentro do app autenticado (hoje só existe via fluxo de recovery).
