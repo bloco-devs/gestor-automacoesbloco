@@ -23,12 +23,14 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const DUAL_ROLE_EMAILS = new Set(["riccellycivil@gmail.com"]);
+const DUAL_ROLE_EMAILS = new Set([
+  "riccellycivil@gmail.com",
+  "blococcomercial@gmail.com",
+]);
 const VIEW_AS_KEY = "viewAsRole";
 
 const ALLOWED_ACCOUNTS: Record<string, { role: Role; nome: string }> = {
-  "blococcomercial@gmail.com": { role: "developer", nome: "Desenvolvedor" },
-  "atendimentoblocojp@gmail.com": { role: "requester", nome: "Solicitante" },
+  "blococcomercial@gmail.com": { role: "developer", nome: "Bloco Comercial" },
   "riccellycivil@gmail.com": { role: "developer", nome: "Riccelly" },
 };
 
