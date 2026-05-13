@@ -88,13 +88,12 @@ export default function Dashboard() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pendentes">Apenas pendentes</SelectItem>
                 <SelectItem value="all">Todos os status</SelectItem>
-                {DASHBOARD_STATUS_FILTERS.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {STATUS_LABEL[s]}
-                    </SelectItem>
-                  ))}
+                {DASHBOARD_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STATUS_LABEL[s]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
