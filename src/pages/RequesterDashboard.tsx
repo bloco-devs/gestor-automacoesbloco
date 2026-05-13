@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Calendar, Filter, Inbox, User } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { listSolicitacoes } from "@/lib/supabaseData";
-import { STATUS_LABEL, statusToCategory, PIPELINE_ORDER, type PipelineStatus } from "@/lib/types";
+import { STATUS_LABEL, statusToCategory, PIPELINE_ORDER, type PipelineStatus, SETORES } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -14,7 +14,7 @@ export default function RequesterDashboard() {
   const [setorFilter, setSetorFilter] = useState<string>("all");
 
   const setoresDisponiveis = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(SETORES as readonly string[]);
     for (const s of all) if (s.setor) set.add(String(s.setor));
     return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
   }, [all]);
