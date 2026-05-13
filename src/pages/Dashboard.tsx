@@ -68,10 +68,21 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MetricCard icon={Inbox} label={STATUS_LABEL.novo} value={metrics.novo} accent />
-        <MetricCard icon={Search} label={STATUS_LABEL.em_analise} value={metrics.em_analise} />
-        <MetricCard icon={TrendingUp} label={STATUS_LABEL.em_desenvolvimento} value={metrics.em_desenvolvimento} />
-        <MetricCard icon={CheckCircle2} label={STATUS_LABEL.pronto} value={metrics.pronto} />
+        {([
+          { status: "novo" as PipelineStatus, icon: Inbox },
+          { status: "em_analise" as PipelineStatus, icon: Search },
+          { status: "em_desenvolvimento" as PipelineStatus, icon: TrendingUp },
+          { status: "pronto" as PipelineStatus, icon: CheckCircle2 },
+        ]).map(({ status, icon }) => (
+          <MetricCard
+            key={status}
+            icon={icon}
+            label={STATUS_LABEL[status]}
+            value={metrics[status as keyof typeof metrics]}
+            active={statusFilter === status}
+            onClick={() => setStatusFilter((prev) => (prev === status ? "all" : status))}
+          />
+        ))}
       </div>
 
       <Card className="surface-1">
