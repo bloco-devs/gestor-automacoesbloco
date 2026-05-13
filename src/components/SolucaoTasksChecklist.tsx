@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { SolucaoTask } from "@/lib/types";
 
@@ -131,11 +131,7 @@ export function SolucaoTasksChecklist({ solucaoId }: { solucaoId: string }) {
 
   return (
     <Card className="surface-1">
-      <CardHeader>
-        <CardTitle className="text-base">Tasks</CardTitle>
-        <CardDescription>Checklist da solução, atribuível aos desenvolvedores.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 pt-6">
         {tasks.map((t) => (
           <div
             key={t.id}
