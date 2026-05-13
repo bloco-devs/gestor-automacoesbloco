@@ -140,7 +140,6 @@ export default function Solicitacoes() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableHead label="ID" k="id" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} className="w-28" />
                   <SortableHead label="Cliente" k="solicitanteNome" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <SortableHead label="Status" k="status" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <SortableHead label="Data" k="createdAt" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
@@ -149,7 +148,7 @@ export default function Solicitacoes() {
               <TableBody>
                 {pageItems.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={3} className="text-center py-12 text-muted-foreground">
                       Nenhuma solicitação encontrada.
                     </TableCell>
                   </TableRow>
@@ -160,9 +159,6 @@ export default function Solicitacoes() {
                       onClick={() => navigate(`/demanda/${s.id}`)}
                       className="cursor-pointer hover:bg-muted/40"
                     >
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        #{s.id.slice(0, 8)}
-                      </TableCell>
                       <TableCell>
                         <div className="font-medium">{s.solicitanteNome}</div>
                         <div className="text-xs text-muted-foreground line-clamp-1">{s.titulo}</div>
