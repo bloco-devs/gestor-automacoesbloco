@@ -69,9 +69,6 @@ export default function DemandaDetail() {
   const [editRetorno, setEditRetorno] = useState(solicitacao?.retorno ?? 3);
   const [editSetor, setEditSetor] = useState<Setor | "">((solicitacao?.setor as Setor) ?? "");
 
-  const [solucaoTitulo, setSolucaoTitulo] = useState("");
-  const [solucaoDesc, setSolucaoDesc] = useState("");
-  const [solucaoLink, setSolucaoLink] = useState("");
   const [editingSolucaoId, setEditingSolucaoId] = useState<string | null>(null);
   const [editLinkValue, setEditLinkValue] = useState("");
 
