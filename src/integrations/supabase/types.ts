@@ -362,6 +362,42 @@ export type Database = {
         }
         Relationships: []
       }
+      solucao_tasks: {
+        Row: {
+          assigned_to: string | null
+          concluida: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          ordem: number
+          solucao_id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          concluida?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ordem?: number
+          solucao_id: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          concluida?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ordem?: number
+          solucao_id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       solucoes: {
         Row: {
           data_atualizacao: string

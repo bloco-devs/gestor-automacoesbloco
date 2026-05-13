@@ -118,6 +118,16 @@ export interface Task {
   createdAt: string;
 }
 
+export interface SolucaoTask {
+  id: string;
+  solucaoId: string;
+  titulo: string;
+  concluida: boolean;
+  assignedTo: string | null;
+  ordem: number;
+  createdAt: string;
+}
+
 export interface Developer {
   id: string;
   nome: string;

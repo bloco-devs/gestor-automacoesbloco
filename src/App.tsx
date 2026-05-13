@@ -20,6 +20,7 @@ import Solucoes from "./pages/Solucoes";
 import Solicitacoes from "./pages/Solicitacoes";
 
 import DemandaDetail from "./pages/DemandaDetail";
+import SolucaoDetail from "./pages/SolucaoDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/solicitacoes" element={<ProtectedRoute role="developer"><Solicitacoes /></ProtectedRoute>} />
               <Route path="/kanban" element={<ProtectedRoute role="developer"><Kanban /></ProtectedRoute>} />
               <Route path="/solucoes" element={<ProtectedRoute role="developer"><Solucoes /></ProtectedRoute>} />
+              <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
               
 
               {/* Compartilhado */}
