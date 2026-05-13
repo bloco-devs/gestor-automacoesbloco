@@ -212,7 +212,7 @@ export default function DemandaDetail() {
       </Card>
 
       <div className="grid lg:grid-cols-2 gap-6 items-stretch">
-        <Card className="surface-1">
+        <Card className="surface-1 h-full flex flex-col">
           <CardHeader>
             <CardTitle className="text-base">{isEditing ? "Editar demanda" : "Descrição"}</CardTitle>
           </CardHeader>
