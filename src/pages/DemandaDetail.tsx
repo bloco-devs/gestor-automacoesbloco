@@ -280,7 +280,7 @@ export default function DemandaDetail() {
             )}
             {!isEditing && solicitacao.temIntegracao && (
               <div className="pt-3 border-t border-border">
-                <div className="text-xs text-muted-foreground mb-1">Integrações</div>
+                <div className="text-xs text-muted-foreground mb-1">Softwares Utilizados</div>
                 {solicitacao.integracoes && solicitacao.integracoes.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
                     {solicitacao.integracoes.map((nome) => (
