@@ -1,40 +1,49 @@
 ## Objetivo
 
-Resetar a senha de `riccellycivil@gmail.com` e orientar como definir uma nova.
+Permitir que você compare visualmente 3 propostas de UX para os cards de demandas em **Minhas Demandas** e ajustar o tom de verde (success) no modo claro para melhor contraste.
 
-## Opções
+## 1. Seletor de mockup na tela
 
-Existem duas formas. Escolha uma ao aprovar:
+No topo da página `/minhas-demandas`, adicionar um pequeno controle (Tabs com 3 opções: "Compacto", "Destaque lateral", "Painel moderno"). A escolha fica salva em `localStorage` apenas para esta fase de avaliação. Os 3 layouts renderizam os mesmos dados — só muda a apresentação. Após sua decisão, removo o seletor e os outros 2 layouts.
 
-### Opção A — Enviar email de recuperação (recomendada)
-- Eu chamo `supabase.auth.resetPasswordForEmail("riccellycivil@gmail.com")` (via uma execução pontual contra o Supabase do projeto), com `redirectTo` apontando para `/redefinir-senha`.
-- Você recebe um email do Supabase (template padrão) com um link.
-- Clica no link → cai na tela `/redefinir-senha` que já está implementada → define a nova senha você mesmo.
-- Vantagem: você escolhe a senha, sem ninguém ver.
-- Pré-requisito: a caixa do Gmail precisa receber o email (verificar spam).
+## 2. Os 3 layouts
 
-### Opção B — Regenerar senha aleatória via edge function `bootstrap-dual-user`
-- Eu invoco a função `bootstrap-dual-user` já existente.
-- Ela gera uma senha forte aleatória, atualiza no Supabase Auth e retorna no JSON da resposta.
-- Eu te mostro a senha **uma única vez** no chat.
-- Você loga em `/auth` com essa senha e, se quiser, troca depois pelo fluxo "Esqueci minha senha".
-- Vantagem: não depende de email chegar.
-- Desvantagem: a senha trafega pelo chat.
+**A — Compacto e denso**
+- Linha única por card: título + StatusBadge à esquerda, métricas como chips pequenos no centro, ações em ícones (Editar, Abrir chamado) à direita.
+- Timeline em barra ultra-fina (4px) abaixo, sem labels.
+- Descrição truncada em 1 linha, aparece em tooltip.
+- Padding reduzido (`p-3`), bom para listas longas.
 
-## Como criar a nova senha (passo a passo, depois do reset)
+**B — Destaque lateral por status**
+- Barra colorida vertical de 4px na borda esquerda do card, na cor do status (`bg-info`, `bg-warning`, `bg-success` etc.).
+- Header com título grande + StatusBadge; descrição em 2 linhas.
+- Métricas como chips arredondados em linha (Frequência, Complexidade, Retorno, Dificuldade).
+- Timeline horizontal compacta + ações como botões outline no rodapé.
 
-**Se escolher A:**
-1. Abra o email recebido (assunto padrão Supabase: "Reset Your Password").
-2. Clique no link → abre `https://gestor-automacoesbloco.lovable.app/redefinir-senha`.
-3. Digite a nova senha e a confirmação (mínimo 6 caracteres).
-4. Clique em **Atualizar senha** → você é redirecionado para `/auth`.
-5. Faça login com `riccellycivil@gmail.com` + a nova senha.
+**C — Painel moderno**
+- Header com fundo `bg-muted/40` arredondado contendo título, badge e timestamp.
+- Grid 2x2 (mobile) / 4x1 (desktop) de chips de métricas com ícones.
+- Timeline com marcos numerados e rótulos curtos.
+- Rodapé separado por `border-t` com ações alinhadas à direita.
 
-**Se escolher B:**
-1. Eu te entrego a senha gerada no chat.
-2. Vá em `/auth`, entre com `riccellycivil@gmail.com` + senha recebida.
-3. Opcional: clique em **Esqueci minha senha** para definir uma sua via email.
+Todos respeitam tokens semânticos (sem cores hard-coded), mantém o clique no card abrindo detalhes e `stopPropagation` nas ações.
 
-## Fora do escopo
-- Alterar templates de email do Supabase.
-- Criar tela de "trocar senha" dentro do app autenticado (hoje só existe via fluxo de recovery).
+## 3. Ajuste do verde no light mode
+
+Em `src/index.css`, alterar apenas no bloco `:root` (light):
+- `--success: 142 55% 38%` → `142 65% 26%` (verde mais escuro e saturado, contraste AA sobre fundo areia).
+- `--success-foreground` mantém-se claro.
+- Dark mode permanece inalterado.
+
+Isto afeta `StatusBadge` (status "pronto"), `StatusTimeline` (etapas concluídas) e qualquer uso de `bg-success/text-success`.
+
+## Detalhes técnicos
+
+- Novos componentes: `src/components/minhas-demandas/CardCompacto.tsx`, `CardDestaqueLateral.tsx`, `CardPainelModerno.tsx`.
+- `MinhasDemandas.tsx` passa a renderizar o card escolhido pelo `Tabs`. Estado e dialog de "Abrir chamado" permanecem onde estão.
+- Nenhuma mudança em dados, rotas ou Supabase.
+
+## Fora de escopo
+
+- Outras abas (Dashboard, Solicitações, Kanban, Soluções).
+- Mudanças em status, dados, ou regras de negócio.

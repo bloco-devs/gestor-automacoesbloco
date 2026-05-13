@@ -1,20 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Pencil, Plus, Inbox, LifeBuoy } from "lucide-react";
+import { Plus, Inbox } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { listMinhasSolicitacoes, listSolucoesBySolicitacao, createSolucaoTask } from "@/lib/supabaseData";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { StatusBadge } from "@/components/StatusBadge";
-import { StatusTimeline } from "@/components/StatusTimeline";
-import { FREQUENCIA_LABEL } from "@/lib/types";
+import { CardCompacto } from "@/components/minhas-demandas/CardCompacto";
+import { CardDestaqueLateral } from "@/components/minhas-demandas/CardDestaqueLateral";
+import { CardPainelModerno } from "@/components/minhas-demandas/CardPainelModerno";
 import type { Solucao } from "@/lib/types";
 import { toast } from "@/hooks/use-toast";
+
+type Layout = "compacto" | "lateral" | "painel";
+const LAYOUT_KEY = "minhas-demandas:layout";
 
 export default function MinhasDemandas() {
   const { user } = useAuth();
@@ -27,6 +31,16 @@ export default function MinhasDemandas() {
   const [chamadoSolucaoId, setChamadoSolucaoId] = useState<string>("");
   const [chamadoLoading, setChamadoLoading] = useState(false);
   const [chamadoSubmitting, setChamadoSubmitting] = useState(false);
+
+  const [layout, setLayoutState] = useState<Layout>(() => {
+    if (typeof window === "undefined") return "lateral";
+    return ((localStorage.getItem(LAYOUT_KEY) as Layout) || "lateral");
+  });
+  const setLayout = (v: Layout) => {
+    setLayoutState(v);
+    try { localStorage.setItem(LAYOUT_KEY, v); } catch { /* noop */ }
+  };
+  useEffect(() => { /* keep in sync if needed */ }, [layout]);
 
   async function handleAbrirChamado(solicitacaoId: string) {
     setChamadoTitulo("");
@@ -98,52 +112,28 @@ export default function MinhasDemandas() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid min-w-0 gap-4">
-          {solicitacoes.map((s) => (
-            <Card
-              key={s.id}
-              role="link"
-              tabIndex={0}
-              onClick={() => navigate(`/demanda/${s.id}`)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  navigate(`/demanda/${s.id}`);
-                }
-              }}
-              className="surface-1 min-w-0 overflow-hidden cursor-pointer transition-colors hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 p-4 sm:p-6">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <CardTitle className="min-w-0 max-w-full truncate text-base">{s.titulo}</CardTitle>
-                    <StatusBadge status={s.status} />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{s.descricao}</p>
-                  <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
-                    <span>Frequência: <span className="text-foreground">{FREQUENCIA_LABEL[s.frequencia]}</span></span>
-                    <span>Complexidade: <span className="text-foreground">{s.complexidade}/5</span></span>
-                    <span>Retorno: <span className="text-foreground">{s.retorno}/5</span></span>
-                    <span>Dificuldade: <span className="text-foreground">{s.dificuldade}/5</span></span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="min-w-0 space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
-                <StatusTimeline current={s.status} compact />
-                <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-                  <Button asChild size="sm">
-                    <Link to={`/demanda/${s.id}?editar=1`}>
-                      <Pencil className="size-4" /> Editar demanda
-                    </Link>
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleAbrirChamado(s.id)}>
-                    <LifeBuoy className="size-4" /> Abrir chamado
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <>
+          <Tabs value={layout} onValueChange={(v) => setLayout(v as Layout)}>
+            <TabsList>
+              <TabsTrigger value="compacto">Compacto</TabsTrigger>
+              <TabsTrigger value="lateral">Destaque lateral</TabsTrigger>
+              <TabsTrigger value="painel">Painel moderno</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="grid min-w-0 gap-4">
+            {solicitacoes.map((s) => {
+              const props = {
+                solicitacao: s,
+                onOpen: () => navigate(`/demanda/${s.id}`),
+                onAbrirChamado: () => handleAbrirChamado(s.id),
+                editHref: `/demanda/${s.id}?editar=1`,
+              };
+              if (layout === "compacto") return <CardCompacto key={s.id} {...props} />;
+              if (layout === "lateral") return <CardDestaqueLateral key={s.id} {...props} />;
+              return <CardPainelModerno key={s.id} {...props} />;
+            })}
+          </div>
+        </>
       )}
 
       <Dialog open={chamadoOpen} onOpenChange={setChamadoOpen}>
