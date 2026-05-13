@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, Filter, Inbox, KanbanSquare, ListChecks, Rocket, TrendingUp, User } from "lucide-react";
+import { Calendar, CheckCircle2, Filter, Inbox, KanbanSquare, Search, TrendingUp, User } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { listSolicitacoes } from "@/lib/supabaseData";
 import { STATUS_LABEL, type PipelineStatus, FREQUENCIA_LABEL, type Frequencia, SETORES } from "@/lib/types";
@@ -11,8 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ScorePill } from "@/components/ScorePill";
 
-const PENDING_STATUSES: PipelineStatus[] = ["novo", "em_analise"];
-const DASHBOARD_STATUS_FILTERS: PipelineStatus[] = [
+const DASHBOARD_STATUSES: PipelineStatus[] = [
   "novo",
   "em_analise",
   "em_desenvolvimento",
@@ -21,7 +20,7 @@ const DASHBOARD_STATUS_FILTERS: PipelineStatus[] = [
 
 export default function Dashboard() {
   const all = useSupabaseData(() => listSolicitacoes(), []);
-  const [statusFilter, setStatusFilter] = useState<string>("pendentes");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [tipoFilter, setTipoFilter] = useState<string>("all");
   const [setorFilter, setSetorFilter] = useState<string>("all");
 
@@ -34,8 +33,7 @@ export default function Dashboard() {
   const filtered = useMemo(() => {
     return all
       .filter((s) => {
-        if (statusFilter === "all") return true;
-        if (statusFilter === "pendentes") return PENDING_STATUSES.includes(s.status);
+        if (statusFilter === "all") return DASHBOARD_STATUSES.includes(s.status);
         return s.status === statusFilter;
       })
       .filter((s) => tipoFilter === "all" || String(s.frequencia) === tipoFilter)
@@ -45,10 +43,10 @@ export default function Dashboard() {
 
   const metrics = useMemo(
     () => ({
-      pendentes: all.filter((s) => PENDING_STATUSES.includes(s.status)).length,
-      dev: all.filter((s) => s.status === "em_desenvolvimento").length,
+      novo: all.filter((s) => s.status === "novo").length,
+      em_analise: all.filter((s) => s.status === "em_analise").length,
+      em_desenvolvimento: all.filter((s) => s.status === "em_desenvolvimento").length,
       pronto: all.filter((s) => s.status === "pronto").length,
-      prod: all.filter((s) => s.status === "em_producao").length,
     }),
     [all],
   );
@@ -59,7 +57,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-semibold">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            Solicitações pendentes ordenadas por prioridade.
+            Solicitações ordenadas por prioridade.
           </p>
         </div>
         <Button asChild variant="outline">
@@ -70,10 +68,10 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MetricCard icon={Inbox} label="Pendentes" value={metrics.pendentes} accent />
-        <MetricCard icon={TrendingUp} label="Em desenvolvimento" value={metrics.dev} />
-        <MetricCard icon={ListChecks} label="Prontas" value={metrics.pronto} />
-        <MetricCard icon={Rocket} label="Em produção" value={metrics.prod} />
+        <MetricCard icon={Inbox} label={STATUS_LABEL.novo} value={metrics.novo} accent />
+        <MetricCard icon={Search} label={STATUS_LABEL.em_analise} value={metrics.em_analise} />
+        <MetricCard icon={TrendingUp} label={STATUS_LABEL.em_desenvolvimento} value={metrics.em_desenvolvimento} />
+        <MetricCard icon={CheckCircle2} label={STATUS_LABEL.pronto} value={metrics.pronto} />
       </div>
 
       <Card className="surface-1">
