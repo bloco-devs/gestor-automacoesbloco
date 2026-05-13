@@ -308,11 +308,6 @@ export default function DemandaDetail() {
                 )}
               </div>
             )}
-            {isDev && !isEditing && (
-              <div className="pt-3 border-t border-border">
-                <TasksChecklist solicitacaoId={id} />
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -337,10 +332,6 @@ export default function DemandaDetail() {
               <SliderField label="Complexidade" value={complex} onChange={setComplex} />
               <SliderField label="Retorno" value={retorno} onChange={setRetorno} />
               <SliderField label="Dificuldade" value={dificuldade} onChange={setDificuldade} />
-              <div>
-                <Label htmlFor="notas">Notas técnicas</Label>
-                <Textarea id="notas" rows={4} value={notas} onChange={(e) => setNotas(e.target.value)} />
-              </div>
               <Button onClick={handleSave} className="w-full">
                 <Save className="size-4" /> Salvar alterações
               </Button>
