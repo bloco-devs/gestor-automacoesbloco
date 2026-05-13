@@ -156,7 +156,9 @@ export default function Solucoes() {
               id={s.id}
               titulo={s.titulo}
               descricao={s.descricao}
+              link={s.link ?? null}
               demandaTitulo={solicitacoes.find((item) => item.id === s.solicitacaoId)?.titulo}
+              onSaveLink={(link) => handleSaveLink(s.id, link)}
               onDeleteSolucao={async () => {
                 try {
                   await deleteSolucao(s.id);
