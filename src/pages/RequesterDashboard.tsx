@@ -11,6 +11,13 @@ import { StatusTimeline } from "@/components/StatusTimeline";
 export default function RequesterDashboard() {
   const all = useSupabaseData(() => listSolicitacoes(), []);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [setorFilter, setSetorFilter] = useState<string>("all");
+
+  const setoresDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of all) if (s.setor) set.add(String(s.setor));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [all]);
 
   const filtered = useMemo(() => {
     return all
@@ -18,8 +25,9 @@ export default function RequesterDashboard() {
         if (statusFilter === "all") return true;
         return statusToCategory(s.status) === statusFilter;
       })
+      .filter((s) => setorFilter === "all" || String(s.setor ?? "") === setorFilter)
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  }, [all, statusFilter]);
+  }, [all, statusFilter, setorFilter]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { novo: 0, em_analise: 0, em_desenvolvimento: 0, pronto: 0 };
@@ -53,23 +61,40 @@ export default function RequesterDashboard() {
       <Card className="surface-1">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Filter className="size-4" /> Filtrar por status
+            <Filter className="size-4" /> Filtros
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os status</SelectItem>
-              {PIPELINE_ORDER.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {STATUS_LABEL[s]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground">Status</label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                {PIPELINE_ORDER.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STATUS_LABEL[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground">Departamento</label>
+            <Select value={setorFilter} onValueChange={setSetorFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os departamentos</SelectItem>
+                {setoresDisponiveis.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
