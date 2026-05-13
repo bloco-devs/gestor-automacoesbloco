@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Filter, Inbox, User } from "lucide-react";
+import { Calendar, CheckCircle2, Filter, Inbox, Search, TrendingUp, User } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { listSolicitacoes } from "@/lib/supabaseData";
 import { STATUS_LABEL, statusToCategory, PIPELINE_ORDER, type PipelineStatus, SETORES } from "@/lib/types";
@@ -8,6 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
+
+const STATUS_ICONS: Record<PipelineStatus, React.ComponentType<{ className?: string }>> = {
+  novo: Inbox,
+  em_analise: Search,
+  aprovado: TrendingUp,
+  em_desenvolvimento: TrendingUp,
+  testando: TrendingUp,
+  pronto: CheckCircle2,
+  em_producao: CheckCircle2,
+};
 
 export default function RequesterDashboard() {
   const navigate = useNavigate();
@@ -51,12 +61,14 @@ export default function RequesterDashboard() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {PIPELINE_ORDER.map((s) => (
-          <Card key={s} className="surface-1">
-            <CardContent className="p-3">
-              <div className="text-xs text-muted-foreground">{STATUS_LABEL[s]}</div>
-              <div className="text-2xl font-semibold tabular-nums">{counts[s] ?? 0}</div>
-            </CardContent>
-          </Card>
+          <MetricCard
+            key={s}
+            icon={STATUS_ICONS[s]}
+            label={STATUS_LABEL[s]}
+            value={counts[s] ?? 0}
+            active={statusFilter === s}
+            onClick={() => setStatusFilter((prev) => (prev === s ? "all" : s))}
+          />
         ))}
       </div>
 
@@ -154,5 +166,50 @@ export default function RequesterDashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  active,
+  onClick,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <Card
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`surface-1 transition-colors ${
+        onClick ? "cursor-pointer hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""
+      } ${active ? "border-accent ring-1 ring-accent" : ""}`}
+    >
+      <CardContent className="p-3 flex items-center gap-2">
+        <div
+          className={`size-8 rounded-md flex items-center justify-center shrink-0 ${
+            active ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
+          }`}
+        >
+          <Icon className="size-4" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-xl font-semibold tabular-nums leading-tight">{value}</div>
+          <div className="text-xs text-muted-foreground leading-tight truncate">{label}</div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
