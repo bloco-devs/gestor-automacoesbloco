@@ -117,6 +117,11 @@ export default function Solucoes() {
               onChange={(e) => setNovoDescricao(e.target.value)}
               rows={3}
             />
+            <Input
+              placeholder="Link (opcional, ex: https://...)"
+              value={novoLink}
+              onChange={(e) => setNovoLink(e.target.value)}
+            />
             <Select value={novoSolicitacaoId} onValueChange={setNovoSolicitacaoId}>
               <SelectTrigger>
                 <SelectValue placeholder="Vincular a uma demanda (opcional)" />
