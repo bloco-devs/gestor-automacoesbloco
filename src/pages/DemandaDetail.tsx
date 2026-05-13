@@ -341,7 +341,16 @@ export default function DemandaDetail() {
                   <li key={s.id} className="py-3 space-y-2">
                     <div className="flex items-start justify-between gap-2 flex-wrap">
                       <div className="min-w-0">
-                        <div className="font-medium text-sm">{s.titulo}</div>
+                        {isDev ? (
+                          <Link
+                            to={`/solucoes/${s.id}`}
+                            className="font-medium text-sm hover:text-accent hover:underline underline-offset-4"
+                          >
+                            {s.titulo}
+                          </Link>
+                        ) : (
+                          <div className="font-medium text-sm">{s.titulo}</div>
+                        )}
                         {s.descricao && <p className="text-xs text-muted-foreground mt-0.5">{s.descricao}</p>}
                       </div>
                       <div className="flex items-center gap-2">
