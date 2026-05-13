@@ -23,6 +23,13 @@ export default function Dashboard() {
   const all = useSupabaseData(() => listSolicitacoes(), []);
   const [statusFilter, setStatusFilter] = useState<string>("pendentes");
   const [tipoFilter, setTipoFilter] = useState<string>("all");
+  const [setorFilter, setSetorFilter] = useState<string>("all");
+
+  const setoresDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of all) if (s.setor) set.add(String(s.setor));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [all]);
 
   const filtered = useMemo(() => {
     return all
@@ -32,8 +39,9 @@ export default function Dashboard() {
         return s.status === statusFilter;
       })
       .filter((s) => tipoFilter === "all" || String(s.frequencia) === tipoFilter)
+      .filter((s) => setorFilter === "all" || String(s.setor ?? "") === setorFilter)
       .sort((a, b) => b.score - a.score);
-  }, [all, statusFilter, tipoFilter]);
+  }, [all, statusFilter, tipoFilter, setorFilter]);
 
   const metrics = useMemo(
     () => ({
