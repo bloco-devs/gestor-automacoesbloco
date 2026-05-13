@@ -1,18 +1,70 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Pencil, Plus, Inbox } from "lucide-react";
+import { Pencil, Plus, Inbox, LifeBuoy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
-import { listMinhasSolicitacoes } from "@/lib/supabaseData";
+import { listMinhasSolicitacoes, listSolucoesBySolicitacao, createSolucaoTask } from "@/lib/supabaseData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { FREQUENCIA_LABEL } from "@/lib/types";
+import type { Solucao } from "@/lib/types";
+import { toast } from "@/hooks/use-toast";
 
 export default function MinhasDemandas() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const solicitacoes = useSupabaseData(() => (user ? listMinhasSolicitacoes(user.id) : Promise.resolve([])), [], [user?.id]);
+
+  const [chamadoOpen, setChamadoOpen] = useState(false);
+  const [chamadoTitulo, setChamadoTitulo] = useState("");
+  const [chamadoSolucoes, setChamadoSolucoes] = useState<Solucao[]>([]);
+  const [chamadoSolucaoId, setChamadoSolucaoId] = useState<string>("");
+  const [chamadoLoading, setChamadoLoading] = useState(false);
+  const [chamadoSubmitting, setChamadoSubmitting] = useState(false);
+
+  async function handleAbrirChamado(solicitacaoId: string) {
+    setChamadoTitulo("");
+    setChamadoSolucaoId("");
+    setChamadoSolucoes([]);
+    setChamadoOpen(true);
+    setChamadoLoading(true);
+    try {
+      const solucoes = await listSolucoesBySolicitacao(solicitacaoId);
+      setChamadoSolucoes(solucoes);
+      if (solucoes.length === 1) setChamadoSolucaoId(solucoes[0].id);
+    } catch {
+      toast({ title: "Erro ao carregar soluções", variant: "destructive" });
+    } finally {
+      setChamadoLoading(false);
+    }
+  }
+
+  async function submitChamado() {
+    if (!chamadoSolucaoId) {
+      toast({ title: "Selecione uma solução", variant: "destructive" });
+      return;
+    }
+    if (!chamadoTitulo.trim()) {
+      toast({ title: "Descreva o chamado", variant: "destructive" });
+      return;
+    }
+    setChamadoSubmitting(true);
+    try {
+      await createSolucaoTask({ solucaoId: chamadoSolucaoId, titulo: chamadoTitulo.trim(), createdBy: user?.id });
+      toast({ title: "Chamado aberto com sucesso" });
+      setChamadoOpen(false);
+    } catch {
+      toast({ title: "Erro ao abrir chamado", variant: "destructive" });
+    } finally {
+      setChamadoSubmitting(false);
+    }
+  }
 
   return (
     <div className="w-full min-w-0 space-y-6 overflow-hidden">
@@ -84,12 +136,68 @@ export default function MinhasDemandas() {
                       <Pencil className="size-4" /> Editar demanda
                     </Link>
                   </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleAbrirChamado(s.id)}>
+                    <LifeBuoy className="size-4" /> Abrir chamado
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <Dialog open={chamadoOpen} onOpenChange={setChamadoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Abrir chamado</DialogTitle>
+            <DialogDescription>Cadastre uma task na solução vinculada a esta demanda.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {chamadoLoading ? (
+              <p className="text-sm text-muted-foreground">Carregando soluções...</p>
+            ) : chamadoSolucoes.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma solução vinculada a esta demanda ainda. Aguarde a equipe cadastrar uma solução.
+              </p>
+            ) : (
+              <>
+                {chamadoSolucoes.length > 1 && (
+                  <div className="space-y-2">
+                    <Label>Solução</Label>
+                    <Select value={chamadoSolucaoId} onValueChange={setChamadoSolucaoId}>
+                      <SelectTrigger><SelectValue placeholder="Selecione a solução" /></SelectTrigger>
+                      <SelectContent>
+                        {chamadoSolucoes.map((sol) => (
+                          <SelectItem key={sol.id} value={sol.id}>{sol.titulo}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="chamado-titulo">Descrição do chamado</Label>
+                  <Textarea
+                    id="chamado-titulo"
+                    value={chamadoTitulo}
+                    onChange={(e) => setChamadoTitulo(e.target.value)}
+                    placeholder="Descreva resumidamente o chamado..."
+                    rows={3}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChamadoOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={submitChamado}
+              disabled={chamadoSubmitting || chamadoLoading || chamadoSolucoes.length === 0}
+            >
+              {chamadoSubmitting ? "Abrindo..." : "Abrir chamado"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
