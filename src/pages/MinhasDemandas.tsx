@@ -47,7 +47,19 @@ export default function MinhasDemandas() {
       ) : (
         <div className="grid min-w-0 gap-4">
           {solicitacoes.map((s) => (
-            <Card key={s.id} className="surface-1 min-w-0 overflow-hidden">
+            <Card
+              key={s.id}
+              role="link"
+              tabIndex={0}
+              onClick={() => { window.location.href = `/demanda/${s.id}`; }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  window.location.href = `/demanda/${s.id}`;
+                }
+              }}
+              className="surface-1 min-w-0 overflow-hidden cursor-pointer transition-colors hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 p-4 sm:p-6">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
