@@ -60,8 +60,7 @@ export default function SolucaoDetail() {
           </CardTitle>
           {demanda && (
             <CardDescription>
-              Demanda vinculada:{" "}
-              <Link to={`/demanda/${demanda.id}`} className="underline hover:text-accent">
+              <Link to={`/demanda/${demanda.id}`} className="text-accent font-medium hover:underline underline-offset-4">
                 {demanda.titulo}
               </Link>
             </CardDescription>
