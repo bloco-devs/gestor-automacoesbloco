@@ -152,13 +152,6 @@ export default function DemandaDetail() {
     toast({ title: "Demanda atualizada" });
   }
 
-  async function handleSaveSolucaoLink(solucaoId: string) {
-    await updateSolucao(solucaoId, { link: editLinkValue.trim() || null });
-    setEditingSolucaoId(null);
-    setEditLinkValue("");
-    toast({ title: "Link atualizado" });
-  }
-
   async function handleDelete() {
     await deleteSolicitacao(id);
     toast({ title: "Solicitação excluída" });
