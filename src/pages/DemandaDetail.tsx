@@ -53,7 +53,6 @@ export default function DemandaDetail() {
 
   const [complex, setComplex] = useState(solicitacao?.complexidade ?? 3);
   const [retorno, setRetorno] = useState(solicitacao?.retorno ?? 3);
-  const [dificuldade, setDificuldade] = useState(solicitacao?.dificuldade ?? 3);
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
   const [notas, setNotas] = useState(solicitacao?.notasTecnicas ?? "");
   const [descricaoDev, setDescricaoDev] = useState(solicitacao?.descricao ?? "");
@@ -75,7 +74,6 @@ export default function DemandaDetail() {
     if (!solicitacao) return;
     setComplex(solicitacao.complexidade);
     setRetorno(solicitacao.retorno);
-    setDificuldade(solicitacao.dificuldade);
     setStatus(solicitacao.status);
     setNotas(solicitacao.notasTecnicas ?? "");
     setDescricaoDev(solicitacao.descricao);
@@ -97,8 +95,8 @@ export default function DemandaDetail() {
   }, [searchParams, isOwner]);
 
   const previewScore = useMemo(
-    () => (solicitacao ? calcScore({ frequencia: solicitacao.frequencia, complexidade: complex, retorno, dificuldade }) : 0),
-    [solicitacao, complex, retorno, dificuldade],
+    () => (solicitacao ? calcScore({ frequencia: solicitacao.frequencia, complexidade: complex, retorno }) : 0),
+    [solicitacao, complex, retorno],
   );
 
   if (!solicitacao) {
@@ -117,7 +115,6 @@ export default function DemandaDetail() {
     await updateSolicitacao(id, {
       complexidade: complex,
       retorno,
-      dificuldade,
       status,
       notasTecnicas: notas,
       temIntegracao,
@@ -148,7 +145,6 @@ export default function DemandaDetail() {
       frequencia: editFrequencia,
       complexidade: editComplexidade,
       retorno: editRetorno,
-      dificuldade,
       setor: editSetor,
     });
     setIsEditing(false);
@@ -331,7 +327,6 @@ export default function DemandaDetail() {
               </div>
               <SliderField label="Complexidade" value={complex} onChange={setComplex} />
               <SliderField label="Retorno" value={retorno} onChange={setRetorno} />
-              <SliderField label="Dificuldade" value={dificuldade} onChange={setDificuldade} />
               <Button onClick={handleSave} className="w-full">
                 <Save className="size-4" /> Salvar alterações
               </Button>

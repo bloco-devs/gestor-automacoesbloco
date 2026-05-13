@@ -36,11 +36,10 @@ export default function NovaDemanda() {
   const [frequencia, setFrequencia] = useState<Frequencia>(3);
   const [complexidade, setComplexidade] = useState(3);
   const [retorno, setRetorno] = useState(3);
-  const [dificuldade, setDificuldade] = useState(3);
 
   const previewScore = useMemo(
-    () => calcScore({ frequencia, complexidade, retorno, dificuldade }),
-    [frequencia, complexidade, retorno, dificuldade],
+    () => calcScore({ frequencia, complexidade, retorno }),
+    [frequencia, complexidade, retorno],
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -59,7 +58,6 @@ export default function NovaDemanda() {
         frequencia,
         complexidade,
         retorno,
-        dificuldade,
         setor: v.setor,
         solicitanteId: user.id,
         solicitanteNome: user.nome,

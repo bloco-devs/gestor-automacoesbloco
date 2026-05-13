@@ -66,7 +66,6 @@ export interface Solicitacao {
   frequencia: Frequencia;
   complexidade: number; // 1-5
   retorno: number; // 1-5
-  dificuldade: number; // 1-5 (menor = mais fácil = maior score)
   status: PipelineStatus;
   score: number; // 0-100
   setor?: Setor | string;
