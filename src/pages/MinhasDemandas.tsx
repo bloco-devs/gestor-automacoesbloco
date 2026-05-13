@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Pencil, Plus, Inbox } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
@@ -11,6 +11,7 @@ import { FREQUENCIA_LABEL } from "@/lib/types";
 
 export default function MinhasDemandas() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const solicitacoes = useSupabaseData(() => (user ? listMinhasSolicitacoes(user.id) : Promise.resolve([])), [], [user?.id]);
 
   return (
@@ -47,7 +48,19 @@ export default function MinhasDemandas() {
       ) : (
         <div className="grid min-w-0 gap-4">
           {solicitacoes.map((s) => (
-            <Card key={s.id} className="surface-1 min-w-0 overflow-hidden">
+            <Card
+              key={s.id}
+              role="link"
+              tabIndex={0}
+              onClick={() => navigate(`/demanda/${s.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  navigate(`/demanda/${s.id}`);
+                }
+              }}
+              className="surface-1 min-w-0 overflow-hidden cursor-pointer transition-colors hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 p-4 sm:p-6">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -65,10 +78,7 @@ export default function MinhasDemandas() {
               </CardHeader>
               <CardContent className="min-w-0 space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
                 <StatusTimeline current={s.status} compact />
-                <div className="flex flex-wrap gap-2">
-                  <Button asChild variant="outline" size="sm">
-                    <Link to={`/demanda/${s.id}`}>Ver detalhes</Link>
-                  </Button>
+                <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                   <Button asChild size="sm">
                     <Link to={`/demanda/${s.id}?editar=1`}>
                       <Pencil className="size-4" /> Editar demanda
