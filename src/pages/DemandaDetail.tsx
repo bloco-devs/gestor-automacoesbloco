@@ -4,7 +4,6 @@ import { ArrowLeft, ExternalLink, Pencil, Save, Sparkles, Trash2, X } from "luci
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
-  createSolucao,
   deleteSolicitacao,
   getSolicitacao,
   listSolucoesBySolicitacao,
@@ -69,9 +68,6 @@ export default function DemandaDetail() {
   const [editRetorno, setEditRetorno] = useState(solicitacao?.retorno ?? 3);
   const [editSetor, setEditSetor] = useState<Setor | "">((solicitacao?.setor as Setor) ?? "");
 
-  const [solucaoTitulo, setSolucaoTitulo] = useState("");
-  const [solucaoDesc, setSolucaoDesc] = useState("");
-  const [solucaoLink, setSolucaoLink] = useState("");
   const [editingSolucaoId, setEditingSolucaoId] = useState<string | null>(null);
   const [editLinkValue, setEditLinkValue] = useState("");
 
@@ -158,24 +154,6 @@ export default function DemandaDetail() {
     setIsEditing(false);
     setSearchParams({});
     toast({ title: "Demanda atualizada" });
-  }
-
-  async function handleAddSolucao() {
-    if (!solucaoTitulo.trim()) {
-      toast({ title: "Informe um título para a solução", variant: "destructive" });
-      return;
-    }
-    await createSolucao({
-      solicitacaoId: id,
-      titulo: solucaoTitulo.trim(),
-      descricao: solucaoDesc.trim(),
-      link: solucaoLink.trim() || null,
-      createdBy: user?.id,
-    });
-    setSolucaoTitulo("");
-    setSolucaoDesc("");
-    setSolucaoLink("");
-    toast({ title: "Solução registrada" });
   }
 
   async function handleSaveSolucaoLink(solucaoId: string) {
@@ -376,21 +354,9 @@ export default function DemandaDetail() {
         <Card className="surface-1">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções entregues</CardTitle>
-            <CardDescription>Registre a solução final desenvolvida para esta demanda.</CardDescription>
+            <CardDescription>Soluções vinculadas a esta demanda. Cadastre novas pela aba Soluções.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-2">
-              <Input placeholder="Título" value={solucaoTitulo} onChange={(e) => setSolucaoTitulo(e.target.value)} />
-              <Input placeholder="Descrição" value={solucaoDesc} onChange={(e) => setSolucaoDesc(e.target.value)} />
-            </div>
-            <div className="grid md:grid-cols-[1fr_auto] gap-2">
-              <Input
-                placeholder="Link da solução (GitHub, n8n, sistema, etc.)"
-                value={solucaoLink}
-                onChange={(e) => setSolucaoLink(e.target.value)}
-              />
-              <Button onClick={handleAddSolucao}>Adicionar</Button>
-            </div>
             {solucoes.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhuma solução registrada ainda.</p>
             ) : (

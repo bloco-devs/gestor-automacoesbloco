@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +36,7 @@ export default function Solucoes() {
 
   const [novoTitulo, setNovoTitulo] = useState("");
   const [novoDescricao, setNovoDescricao] = useState("");
+  const [novoSolicitacaoId, setNovoSolicitacaoId] = useState<string>("none");
   const [salvando, setSalvando] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
@@ -49,10 +51,11 @@ export default function Solucoes() {
         titulo: novoTitulo.trim(),
         descricao: novoDescricao.trim(),
         createdBy: user?.id,
-        solicitacaoId: null,
+        solicitacaoId: novoSolicitacaoId === "none" ? null : novoSolicitacaoId,
       });
       setNovoTitulo("");
       setNovoDescricao("");
+      setNovoSolicitacaoId("none");
       setPopoverOpen(false);
       toast({ title: "Solução cadastrada" });
     } catch (err) {
@@ -78,13 +81,13 @@ export default function Solucoes() {
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm">
-              <Plus className="size-4" /> Solução avulsa
+              <Plus className="size-4" /> Cadastrar solução
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-80 space-y-3">
             <div>
-              <p className="text-sm font-medium">Cadastrar solução avulsa</p>
-              <p className="text-xs text-muted-foreground">Sem vínculo com uma demanda.</p>
+              <p className="text-sm font-medium">Cadastrar solução</p>
+              <p className="text-xs text-muted-foreground">Vincule a uma demanda existente, se desejar.</p>
             </div>
             <Input
               placeholder="Título da solução"
@@ -97,6 +100,17 @@ export default function Solucoes() {
               onChange={(e) => setNovoDescricao(e.target.value)}
               rows={3}
             />
+            <Select value={novoSolicitacaoId} onValueChange={setNovoSolicitacaoId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Vincular a uma demanda (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem vínculo</SelectItem>
+                {solicitacoes.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.titulo}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="flex justify-end">
               <Button size="sm" onClick={handleCriarSolucao} disabled={salvando}>
                 {salvando ? "Salvando..." : "Cadastrar"}
