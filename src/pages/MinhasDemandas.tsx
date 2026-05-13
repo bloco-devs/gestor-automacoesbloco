@@ -102,52 +102,28 @@ export default function MinhasDemandas() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid min-w-0 gap-4">
-          {solicitacoes.map((s) => (
-            <Card
-              key={s.id}
-              role="link"
-              tabIndex={0}
-              onClick={() => navigate(`/demanda/${s.id}`)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  navigate(`/demanda/${s.id}`);
-                }
-              }}
-              className="surface-1 min-w-0 overflow-hidden cursor-pointer transition-colors hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 p-4 sm:p-6">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <CardTitle className="min-w-0 max-w-full truncate text-base">{s.titulo}</CardTitle>
-                    <StatusBadge status={s.status} />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{s.descricao}</p>
-                  <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
-                    <span>Frequência: <span className="text-foreground">{FREQUENCIA_LABEL[s.frequencia]}</span></span>
-                    <span>Complexidade: <span className="text-foreground">{s.complexidade}/5</span></span>
-                    <span>Retorno: <span className="text-foreground">{s.retorno}/5</span></span>
-                    <span>Dificuldade: <span className="text-foreground">{s.dificuldade}/5</span></span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="min-w-0 space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
-                <StatusTimeline current={s.status} compact />
-                <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-                  <Button asChild size="sm">
-                    <Link to={`/demanda/${s.id}?editar=1`}>
-                      <Pencil className="size-4" /> Editar demanda
-                    </Link>
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleAbrirChamado(s.id)}>
-                    <LifeBuoy className="size-4" /> Abrir chamado
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <>
+          <Tabs value={layout} onValueChange={(v) => setLayout(v as Layout)}>
+            <TabsList>
+              <TabsTrigger value="compacto">Compacto</TabsTrigger>
+              <TabsTrigger value="lateral">Destaque lateral</TabsTrigger>
+              <TabsTrigger value="painel">Painel moderno</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="grid min-w-0 gap-4">
+            {solicitacoes.map((s) => {
+              const props = {
+                solicitacao: s,
+                onOpen: () => navigate(`/demanda/${s.id}`),
+                onAbrirChamado: () => handleAbrirChamado(s.id),
+                editHref: `/demanda/${s.id}?editar=1`,
+              };
+              if (layout === "compacto") return <CardCompacto key={s.id} {...props} />;
+              if (layout === "lateral") return <CardDestaqueLateral key={s.id} {...props} />;
+              return <CardPainelModerno key={s.id} {...props} />;
+            })}
+          </div>
+        </>
       )}
 
       <Dialog open={chamadoOpen} onOpenChange={setChamadoOpen}>
