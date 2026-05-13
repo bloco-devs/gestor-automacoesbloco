@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Sparkles, Trash } from "lucide-react";
+import { ExternalLink, Pencil, Plus, Save, Sparkles, Trash, X } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   createSolucao,
   deleteSolucao,
   listSolicitacoes,
   listSolucoes,
+  updateSolucao,
 } from "@/lib/supabaseData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
