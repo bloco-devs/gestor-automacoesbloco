@@ -295,7 +295,6 @@ export type Database = {
           complexidade: number
           created_at: string
           descricao: string
-          dificuldade: number
           email: string
           frequencia: number
           id: string
@@ -318,7 +317,6 @@ export type Database = {
           complexidade?: number
           created_at?: string
           descricao: string
-          dificuldade?: number
           email: string
           frequencia?: number
           id?: string
@@ -341,7 +339,6 @@ export type Database = {
           complexidade?: number
           created_at?: string
           descricao?: string
-          dificuldade?: number
           email?: string
           frequencia?: number
           id?: string
