@@ -225,19 +225,34 @@ function MetricCard({
   icon: Icon,
   label,
   value,
-  accent,
+  active,
+  onClick,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: number;
-  accent?: boolean;
+  active?: boolean;
+  onClick?: () => void;
 }) {
   return (
-    <Card className="surface-1">
+    <Card
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`surface-1 transition-colors ${
+        onClick ? "cursor-pointer hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""
+      } ${active ? "border-accent ring-1 ring-accent" : ""}`}
+    >
       <CardContent className="p-2.5 flex items-center gap-2">
         <div
           className={`size-7 rounded-md flex items-center justify-center shrink-0 ${
-            accent ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
+            active ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
           }`}
         >
           <Icon className="size-3.5" />
