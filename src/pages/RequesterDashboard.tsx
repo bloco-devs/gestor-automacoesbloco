@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Calendar, Filter, Inbox, User } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { listSolicitacoes } from "@/lib/supabaseData";
@@ -9,6 +10,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
 
 export default function RequesterDashboard() {
+  const navigate = useNavigate();
   const all = useSupabaseData(() => listSolicitacoes(), []);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [setorFilter, setSetorFilter] = useState<string>("all");
@@ -112,7 +114,19 @@ export default function RequesterDashboard() {
               day: "2-digit", month: "short", year: "numeric",
             });
             return (
-              <Card key={s.id} className="surface-1">
+              <Card
+                key={s.id}
+                role="link"
+                tabIndex={0}
+                onClick={() => navigate(`/demanda/${s.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate(`/demanda/${s.id}`);
+                  }
+                }}
+                className="surface-1 cursor-pointer hover:border-accent/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-medium leading-snug line-clamp-2">{s.titulo}</h3>

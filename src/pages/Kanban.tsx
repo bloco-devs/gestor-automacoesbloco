@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   DndContext,
   PointerSensor,
@@ -150,6 +150,7 @@ function Column({ stage, items }: { stage: Stage; items: Solicitacao[] }) {
 }
 
 function KanbanCard({ item }: { item: Solicitacao }) {
+  const navigate = useNavigate();
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id: item.id });
   const style = transform
@@ -167,19 +168,28 @@ function KanbanCard({ item }: { item: Solicitacao }) {
       style={style}
       {...listeners}
       {...attributes}
+      onClick={(e) => {
+        if (isDragging) return;
+        e.stopPropagation();
+        navigate(`/demanda/${item.id}`);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          navigate(`/demanda/${item.id}`);
+        }
+      }}
+      role="link"
+      tabIndex={0}
       className={cn(
-        "group rounded-md border border-border bg-background p-3 cursor-grab active:cursor-grabbing transition-shadow",
+        "group rounded-md border border-border bg-background p-3 cursor-grab active:cursor-grabbing transition-shadow hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         isDragging && "shadow-lg opacity-80",
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <Link
-          to={`/demanda/${item.id}`}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="text-sm font-medium leading-snug line-clamp-2 hover:text-accent transition-colors"
-        >
+        <span className="text-sm font-medium leading-snug line-clamp-2 group-hover:text-accent transition-colors">
           {item.titulo}
-        </Link>
+        </span>
         <ScorePill score={item.score} />
       </div>
 
@@ -201,7 +211,6 @@ function KanbanCard({ item }: { item: Solicitacao }) {
         >
           {FREQUENCIA_LABEL[item.frequencia]}
         </Badge>
-        {/* sub-status real (útil quando "Aceito" agrupa vários) */}
         <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground/80">
           {STATUS_LABEL[item.status]}
         </span>
