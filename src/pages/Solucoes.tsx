@@ -36,6 +36,7 @@ export default function Solucoes() {
 
   const [novoTitulo, setNovoTitulo] = useState("");
   const [novoDescricao, setNovoDescricao] = useState("");
+  const [novoSolicitacaoId, setNovoSolicitacaoId] = useState<string>("none");
   const [salvando, setSalvando] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
@@ -50,10 +51,11 @@ export default function Solucoes() {
         titulo: novoTitulo.trim(),
         descricao: novoDescricao.trim(),
         createdBy: user?.id,
-        solicitacaoId: null,
+        solicitacaoId: novoSolicitacaoId === "none" ? null : novoSolicitacaoId,
       });
       setNovoTitulo("");
       setNovoDescricao("");
+      setNovoSolicitacaoId("none");
       setPopoverOpen(false);
       toast({ title: "Solução cadastrada" });
     } catch (err) {
