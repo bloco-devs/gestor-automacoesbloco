@@ -32,6 +32,16 @@ export default function MinhasDemandas() {
   const [chamadoLoading, setChamadoLoading] = useState(false);
   const [chamadoSubmitting, setChamadoSubmitting] = useState(false);
 
+  const [layout, setLayoutState] = useState<Layout>(() => {
+    if (typeof window === "undefined") return "lateral";
+    return ((localStorage.getItem(LAYOUT_KEY) as Layout) || "lateral");
+  });
+  const setLayout = (v: Layout) => {
+    setLayoutState(v);
+    try { localStorage.setItem(LAYOUT_KEY, v); } catch { /* noop */ }
+  };
+  useEffect(() => { /* keep in sync if needed */ }, [layout]);
+
   async function handleAbrirChamado(solicitacaoId: string) {
     setChamadoTitulo("");
     setChamadoSolucaoId("");
