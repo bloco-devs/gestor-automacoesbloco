@@ -11,6 +11,13 @@ import { StatusTimeline } from "@/components/StatusTimeline";
 export default function RequesterDashboard() {
   const all = useSupabaseData(() => listSolicitacoes(), []);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [setorFilter, setSetorFilter] = useState<string>("all");
+
+  const setoresDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of all) if (s.setor) set.add(String(s.setor));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [all]);
 
   const filtered = useMemo(() => {
     return all
@@ -18,8 +25,9 @@ export default function RequesterDashboard() {
         if (statusFilter === "all") return true;
         return statusToCategory(s.status) === statusFilter;
       })
+      .filter((s) => setorFilter === "all" || String(s.setor ?? "") === setorFilter)
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  }, [all, statusFilter]);
+  }, [all, statusFilter, setorFilter]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { novo: 0, em_analise: 0, em_desenvolvimento: 0, pronto: 0 };
