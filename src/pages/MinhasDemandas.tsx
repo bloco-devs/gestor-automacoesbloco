@@ -145,6 +145,59 @@ export default function MinhasDemandas() {
           ))}
         </div>
       )}
+
+      <Dialog open={chamadoOpen} onOpenChange={setChamadoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Abrir chamado</DialogTitle>
+            <DialogDescription>Cadastre uma task na solução vinculada a esta demanda.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {chamadoLoading ? (
+              <p className="text-sm text-muted-foreground">Carregando soluções...</p>
+            ) : chamadoSolucoes.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma solução vinculada a esta demanda ainda. Aguarde a equipe cadastrar uma solução.
+              </p>
+            ) : (
+              <>
+                {chamadoSolucoes.length > 1 && (
+                  <div className="space-y-2">
+                    <Label>Solução</Label>
+                    <Select value={chamadoSolucaoId} onValueChange={setChamadoSolucaoId}>
+                      <SelectTrigger><SelectValue placeholder="Selecione a solução" /></SelectTrigger>
+                      <SelectContent>
+                        {chamadoSolucoes.map((sol) => (
+                          <SelectItem key={sol.id} value={sol.id}>{sol.titulo}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="chamado-titulo">Descrição do chamado</Label>
+                  <Textarea
+                    id="chamado-titulo"
+                    value={chamadoTitulo}
+                    onChange={(e) => setChamadoTitulo(e.target.value)}
+                    placeholder="Descreva resumidamente o chamado..."
+                    rows={3}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChamadoOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={submitChamado}
+              disabled={chamadoSubmitting || chamadoLoading || chamadoSolucoes.length === 0}
+            >
+              {chamadoSubmitting ? "Abrindo..." : "Abrir chamado"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
