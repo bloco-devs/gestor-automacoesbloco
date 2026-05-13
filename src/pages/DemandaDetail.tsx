@@ -259,7 +259,10 @@ export default function DemandaDetail() {
                   <Input id="edit-titulo" value={editTitulo} onChange={(e) => setEditTitulo(e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="edit-descricao">Descrição da atividade atual</Label>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <Label htmlFor="edit-descricao">Descrição da atividade atual</Label>
+                    {!isDev && <AssistenteDescricao onAccept={setEditDescricao} />}
+                  </div>
                   <Textarea id="edit-descricao" rows={6} value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} />
                 </div>
                 <div>
