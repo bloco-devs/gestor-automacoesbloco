@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-  Eye,
   Search,
 } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
@@ -39,6 +38,7 @@ type SortDir = "asc" | "desc";
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 export default function Solicitacoes() {
+  const navigate = useNavigate();
   const all = useSupabaseData(() => listSolicitacoes(), []);
 
   const [search, setSearch] = useState("");
@@ -144,19 +144,22 @@ export default function Solicitacoes() {
                   <SortableHead label="Cliente" k="solicitanteNome" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <SortableHead label="Status" k="status" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <SortableHead label="Data" k="createdAt" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pageItems.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
                       Nenhuma solicitação encontrada.
                     </TableCell>
                   </TableRow>
                 ) : (
                   pageItems.map((s) => (
-                    <TableRow key={s.id}>
+                    <TableRow
+                      key={s.id}
+                      onClick={() => navigate(`/demanda/${s.id}`)}
+                      className="cursor-pointer hover:bg-muted/40"
+                    >
                       <TableCell className="font-mono text-xs text-muted-foreground">
                         #{s.id.slice(0, 8)}
                       </TableCell>
@@ -169,13 +172,6 @@ export default function Solicitacoes() {
                       </TableCell>
                       <TableCell className="text-sm tabular-nums">
                         {formatDate(s.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button asChild size="sm" variant="ghost">
-                          <Link to={`/demanda/${s.id}`}>
-                            <Eye className="size-4" /> Ver
-                          </Link>
-                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
