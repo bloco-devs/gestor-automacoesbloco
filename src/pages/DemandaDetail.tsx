@@ -4,7 +4,6 @@ import { ArrowLeft, ExternalLink, Pencil, Save, Sparkles, Trash2, X } from "luci
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
-  createSolucao,
   deleteSolicitacao,
   getSolicitacao,
   listSolucoesBySolicitacao,
