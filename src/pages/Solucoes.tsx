@@ -175,7 +175,7 @@ function SolucaoCard({
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <CardTitle className="text-base">{titulo}</CardTitle>
-            {demandaTitulo && <CardDescription>Demanda: {demandaTitulo}</CardDescription>}
+            {demandaTitulo && <CardDescription>{demandaTitulo}</CardDescription>}
           </div>
           <div className="flex items-center gap-2" onClick={stop} onKeyDown={stop}>
             <AlertDialog>
