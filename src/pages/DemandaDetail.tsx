@@ -362,33 +362,8 @@ export default function DemandaDetail() {
                             </a>
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingSolucaoId(editingSolucaoId === s.id ? null : s.id);
-                            setEditLinkValue(s.link ?? "");
-                          }}
-                        >
-                          <Pencil className="size-4" /> {s.link ? "Editar link" : "Adicionar link"}
-                        </Button>
                       </div>
                     </div>
-                    {editingSolucaoId === s.id && (
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="https://..."
-                          value={editLinkValue}
-                          onChange={(e) => setEditLinkValue(e.target.value)}
-                        />
-                        <Button size="sm" onClick={() => handleSaveSolucaoLink(s.id)}>
-                          <Save className="size-4" /> Salvar
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setEditingSolucaoId(null)}>
-                          <X className="size-4" />
-                        </Button>
-                      </div>
-                    )}
                   </li>
                 ))}
               </ul>
