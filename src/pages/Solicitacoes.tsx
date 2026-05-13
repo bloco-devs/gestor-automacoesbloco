@@ -46,7 +46,7 @@ export default function Solicitacoes() {
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(25);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
