@@ -191,14 +191,25 @@ function SolucaoCard({
   const stop = (e: React.SyntheticEvent) => e.stopPropagation();
 
   return (
-    <Card className="surface-1">
+    <Card
+      className="surface-1 cursor-pointer hover:border-accent/50 transition-colors"
+      role="link"
+      tabIndex={0}
+      onClick={open}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          open();
+        }
+      }}
+    >
       <CardHeader>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <CardTitle className="text-base">{titulo}</CardTitle>
             {demandaTitulo && <CardDescription>Demanda: {demandaTitulo}</CardDescription>}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" onClick={stop} onKeyDown={stop}>
             <Badge variant="outline" className="border-accent/40 text-accent">
               {sorted.length} melhoria{sorted.length === 1 ? "" : "s"}
             </Badge>
@@ -225,7 +236,7 @@ function SolucaoCard({
         </div>
         {descricao && <p className="text-sm text-muted-foreground mt-2">{descricao}</p>}
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4" onClick={stop} onKeyDown={stop}>
         <div className="flex gap-2">
           <Input value={draft} onChange={(e) => setDraft(e.target.value)} />
           <Button onClick={() => { onAdd(draft); setDraft(""); }}>
