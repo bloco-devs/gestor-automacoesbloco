@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Sparkles, ListTodo, Gauge, Repeat } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,22 +19,75 @@ const requesterNav = [
   { to: "/nova-demanda", label: "Nova Demanda", icon: Plus },
 ];
 
+const SIDEBAR_MIN = 160;
+const SIDEBAR_MAX = 480;
+const SIDEBAR_DEFAULT = 256;
+const SIDEBAR_STORAGE_KEY = "app:sidebarWidth";
+
 export default function AppLayout() {
   const { user, signOut, isDual } = useAuth();
   const navigate = useNavigate();
   const nav = user?.role === "developer" ? devNav : requesterNav;
 
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    if (typeof window === "undefined") return SIDEBAR_DEFAULT;
+    const stored = Number(window.localStorage.getItem(SIDEBAR_STORAGE_KEY));
+    return Number.isFinite(stored) && stored >= SIDEBAR_MIN && stored <= SIDEBAR_MAX
+      ? stored
+      : SIDEBAR_DEFAULT;
+  });
+  const draggingRef = useRef(false);
+
+  useEffect(() => {
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarWidth));
+  }, [sidebarWidth]);
+
+  const startDrag = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    draggingRef.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const onMove = (ev: PointerEvent) => {
+      if (!draggingRef.current) return;
+      const next = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, ev.clientX));
+      setSidebarWidth(next);
+    };
+    const onUp = () => {
+      draggingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }, []);
+
+  const onResizerKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      setSidebarWidth((w) => Math.max(SIDEBAR_MIN, w - 16));
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      setSidebarWidth((w) => Math.min(SIDEBAR_MAX, w + 16));
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
-      <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
-        <div className="px-5 py-6 flex items-center gap-3">
+      <aside
+        className="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar relative shrink-0"
+        style={{ width: sidebarWidth }}
+      >
+        <div className="px-5 py-6 flex items-center gap-3 min-w-0">
           <img
             src={blocoLogo}
             alt="Bloco Construções"
-            className="size-10 rounded-lg object-cover"
+            className="size-10 rounded-lg object-cover shrink-0"
           />
-          <div>
-            <div className="text-sm font-brand font-bold whitespace-nowrap">Gestor de Automações</div>
+          <div className="min-w-0">
+            <div className="text-sm font-brand font-bold truncate">Gestor de Automações</div>
           </div>
         </div>
         <nav className="flex-1 px-3 py-2 space-y-1">
@@ -43,20 +97,20 @@ export default function AppLayout() {
               to={item.to}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border"
                     : "text-sidebar-foreground hover:bg-sidebar-accent/60",
                 )
               }
             >
-              <item.icon className="size-4" />
-              {item.label}
+              <item.icon className="size-4 shrink-0" />
+              <span className="truncate">{item.label}</span>
             </NavLink>
           ))}
         </nav>
         <div className="p-3 border-t border-sidebar-border">
-          <div className="px-2 py-1.5 mb-2">
+          <div className="px-2 py-1.5 mb-2 min-w-0">
             <div className="text-sm font-medium truncate">{user?.nome}</div>
             <div className="text-xs text-muted-foreground truncate">
               {user?.role === "developer" ? "Desenvolvedor" : "Solicitante"}
@@ -76,18 +130,30 @@ export default function AppLayout() {
             <Button
               variant="ghost"
               size="sm"
-              className="flex-1 justify-start"
+              className="flex-1 justify-start min-w-0"
               onClick={() => {
                 signOut();
                 navigate("/auth");
               }}
             >
-              <LogOut className="size-4" />
-              Sair
+              <LogOut className="size-4 shrink-0" />
+              <span className="truncate">Sair</span>
             </Button>
             <ThemeToggle />
           </div>
         </div>
+
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Redimensionar barra lateral"
+          tabIndex={0}
+          onPointerDown={startDrag}
+          onKeyDown={onResizerKeyDown}
+          onDoubleClick={() => setSidebarWidth(SIDEBAR_DEFAULT)}
+          className="hidden md:block absolute top-0 right-0 h-full w-1.5 -mr-0.5 cursor-col-resize bg-transparent hover:bg-accent/40 active:bg-accent/60 transition-colors focus-visible:outline-none focus-visible:bg-accent/60"
+          title="Arraste para redimensionar (duplo clique para resetar)"
+        />
       </aside>
 
       <main className="flex-1 min-w-0">
@@ -126,7 +192,7 @@ export default function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="w-full min-w-0 max-w-7xl mx-auto p-4 md:p-8">
+        <div className="w-full min-w-0 p-4 md:p-8">
           <Outlet />
         </div>
       </main>
