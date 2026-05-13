@@ -82,7 +82,7 @@ export default function Dashboard() {
             <Filter className="size-4" /> Filtros
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="space-y-1.5">
             <label className="text-xs text-muted-foreground">Status</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -97,6 +97,20 @@ export default function Dashboard() {
                       {STATUS_LABEL[s]}
                     </SelectItem>
                   ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground">Departamento</label>
+            <Select value={setorFilter} onValueChange={setSetorFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os departamentos</SelectItem>
+                {setoresDisponiveis.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
