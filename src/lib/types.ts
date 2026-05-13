@@ -37,10 +37,10 @@ export const SETORES = [
   "Marketing",
   "Financeiro",
   "CEO",
-  "TI",
+  "Tecnologia",
   "Legalização",
   "Engenharia",
-  "RH",
+  "Recursos Humanos",
 ] as const;
 export type Setor = typeof SETORES[number];
 
