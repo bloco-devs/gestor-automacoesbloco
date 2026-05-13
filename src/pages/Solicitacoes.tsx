@@ -32,7 +32,7 @@ import {
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
 
-type SortKey = "id" | "solicitanteNome" | "status" | "createdAt";
+type SortKey = "id" | "titulo" | "solicitanteNome" | "status" | "createdAt";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
@@ -140,7 +140,7 @@ export default function Solicitacoes() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableHead label="Cliente" k="solicitanteNome" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <SortableHead label="Solicitação" k="titulo" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <SortableHead label="Status" k="status" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <SortableHead label="Data" k="createdAt" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                 </TableRow>
@@ -160,8 +160,8 @@ export default function Solicitacoes() {
                       className="cursor-pointer hover:bg-muted/40"
                     >
                       <TableCell>
-                        <div className="font-medium">{s.solicitanteNome}</div>
-                        <div className="text-xs text-muted-foreground line-clamp-1">{s.titulo}</div>
+                        <div className="font-medium">{s.titulo}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-1">{s.solicitanteNome}</div>
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={s.status} />
@@ -270,6 +270,8 @@ function readSortable(s: Solicitacao, key: SortKey): string | number {
   switch (key) {
     case "id":
       return s.id;
+    case "titulo":
+      return s.titulo.toLowerCase();
     case "solicitanteNome":
       return s.solicitanteNome.toLowerCase();
     case "status":
