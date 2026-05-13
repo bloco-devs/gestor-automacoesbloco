@@ -25,6 +25,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { TasksChecklist } from "@/components/TasksChecklist";
 import { ScorePill } from "@/components/ScorePill";
+import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 import {
   AlertDialog,
   AlertDialogAction,
