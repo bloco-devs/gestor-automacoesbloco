@@ -211,7 +211,7 @@ export default function DemandaDetail() {
         </CardContent>
       </Card>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6 items-start">
         <Card className="surface-1">
           <CardHeader>
             <CardTitle className="text-base">{isEditing ? "Editar demanda" : "Descrição"}</CardTitle>
@@ -297,76 +297,77 @@ export default function DemandaDetail() {
           </CardContent>
         </Card>
 
-        {isDev && (
+        {(isDev || isOwner) && (
           <Card className="surface-1">
             <CardHeader>
-              <CardTitle className="text-base">Ajustes do desenvolvedor</CardTitle>
-              <CardDescription>Score recalculado: <ScorePill score={previewScore} /></CardDescription>
+              <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções</CardTitle>
+              <CardDescription>{isDev ? "Soluções vinculadas a esta demanda. Cadastre novas pela aba Soluções." : "Soluções vinculadas a esta demanda."}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-5">
-              <div>
-                <Label>Status do pipeline</Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as PipelineStatus)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PIPELINE_ORDER.map((s) => (
-                      <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <SliderField label="Complexidade" value={complex} onChange={setComplex} />
-              <SliderField label="Retorno financeiro" value={retorno} onChange={setRetorno} />
-              <Button onClick={handleSave} className="w-full">
-                <Save className="size-4" /> Salvar alterações
-              </Button>
+            <CardContent className="space-y-4">
+              {solucoes.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma solução registrada ainda.</p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {solucoes.map((s) => (
+                    <li key={s.id} className="py-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <div className="min-w-0">
+                          {isDev ? (
+                            <Link
+                              to={`/solucoes/${s.id}`}
+                              className="font-medium text-sm hover:text-accent hover:underline underline-offset-4"
+                            >
+                              {s.titulo}
+                            </Link>
+                          ) : (
+                            <div className="font-medium text-sm">{s.titulo}</div>
+                          )}
+                          {s.descricao && <p className="text-xs text-muted-foreground mt-0.5">{s.descricao}</p>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {s.link && (
+                            <Button asChild variant="outline" size="icon" className="h-8 w-8" title="Abrir link">
+                              <a href={/^https?:\/\//i.test(s.link) ? s.link : `https://${s.link}`} target="_blank" rel="noopener noreferrer" aria-label="Abrir link da solução">
+                                <ExternalLink className="size-4" />
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </CardContent>
           </Card>
         )}
       </div>
 
-
-      {(isDev || isOwner) && (
+      {isDev && (
         <Card className="surface-1">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções</CardTitle>
-            <CardDescription>{isDev ? "Soluções vinculadas a esta demanda. Cadastre novas pela aba Soluções." : "Soluções vinculadas a esta demanda."}</CardDescription>
+            <CardTitle className="text-base">Ajustes do desenvolvedor</CardTitle>
+            <CardDescription>Score recalculado: <ScorePill score={previewScore} /></CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {solucoes.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma solução registrada ainda.</p>
-            ) : (
-              <ul className="divide-y divide-border">
-                {solucoes.map((s) => (
-                  <li key={s.id} className="py-3 space-y-2">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <div className="min-w-0">
-                        {isDev ? (
-                          <Link
-                            to={`/solucoes/${s.id}`}
-                            className="font-medium text-sm hover:text-accent hover:underline underline-offset-4"
-                          >
-                            {s.titulo}
-                          </Link>
-                        ) : (
-                          <div className="font-medium text-sm">{s.titulo}</div>
-                        )}
-                        {s.descricao && <p className="text-xs text-muted-foreground mt-0.5">{s.descricao}</p>}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {s.link && (
-                          <Button asChild variant="outline" size="icon" className="h-8 w-8" title="Abrir link">
-                            <a href={/^https?:\/\//i.test(s.link) ? s.link : `https://${s.link}`} target="_blank" rel="noopener noreferrer" aria-label="Abrir link da solução">
-                              <ExternalLink className="size-4" />
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <CardContent className="grid md:grid-cols-2 gap-5">
+            <div className="md:col-span-2">
+              <Label>Status do pipeline</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as PipelineStatus)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PIPELINE_ORDER.map((s) => (
+                    <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <SliderField label="Complexidade" value={complex} onChange={setComplex} />
+            <SliderField label="Retorno financeiro" value={retorno} onChange={setRetorno} />
+            <div className="md:col-span-2">
+              <Button onClick={handleSave} className="w-full">
+                <Save className="size-4" /> Salvar alterações
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
