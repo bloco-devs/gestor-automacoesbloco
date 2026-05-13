@@ -183,18 +183,25 @@ function SolucaoCard({
   id,
   titulo,
   descricao,
+  link,
   demandaTitulo,
+  onSaveLink,
   onDeleteSolucao,
 }: {
   id: string;
   titulo: string;
   descricao: string;
+  link: string | null;
   demandaTitulo?: string;
+  onSaveLink: (link: string) => void | Promise<void>;
   onDeleteSolucao: () => void;
 }) {
   const navigate = useNavigate();
+  const [editing, setEditing] = useState(false);
+  const [linkDraft, setLinkDraft] = useState(link ?? "");
   const open = () => navigate(`/solucoes/${id}`);
   const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+  const href = link ? (/^https?:\/\//i.test(link) ? link : `https://${link}`) : "#";
 
   return (
     <Card
@@ -216,6 +223,23 @@ function SolucaoCard({
             {demandaTitulo && <CardDescription>{demandaTitulo}</CardDescription>}
           </div>
           <div className="flex items-center gap-2" onClick={stop} onKeyDown={stop}>
+            {link && (
+              <Button asChild variant="outline" size="icon" className="h-8 w-8" title="Abrir link">
+                <a href={href} target="_blank" rel="noopener noreferrer" aria-label="Abrir link da solução">
+                  <ExternalLink className="size-4" />
+                </a>
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setLinkDraft(link ?? "");
+                setEditing((v) => !v);
+              }}
+            >
+              <Pencil className="size-4" /> {link ? "Editar link" : "Adicionar link"}
+            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="Excluir solução">
@@ -238,6 +262,27 @@ function SolucaoCard({
           </div>
         </div>
         {descricao && <p className="text-sm text-muted-foreground mt-2">{descricao}</p>}
+        {editing && (
+          <div className="flex gap-2 mt-3" onClick={stop} onKeyDown={stop}>
+            <Input
+              placeholder="https://..."
+              value={linkDraft}
+              onChange={(e) => setLinkDraft(e.target.value)}
+            />
+            <Button
+              size="sm"
+              onClick={async () => {
+                await onSaveLink(linkDraft);
+                setEditing(false);
+              }}
+            >
+              <Save className="size-4" /> Salvar
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
+              <X className="size-4" />
+            </Button>
+          </div>
+        )}
       </CardHeader>
     </Card>
   );
