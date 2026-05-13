@@ -376,7 +376,7 @@ export default function DemandaDetail() {
         <Card className="surface-1">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções entregues</CardTitle>
-            <CardDescription>Registre a solução final desenvolvida para esta demanda.</CardDescription>
+            <CardDescription>Soluções vinculadas a esta demanda. Cadastre novas pela aba Soluções.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {solucoes.length === 0 ? (
