@@ -136,6 +136,9 @@ export default function MinhasDemandas() {
                       <Pencil className="size-4" /> Editar demanda
                     </Link>
                   </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleAbrirChamado(s.id)}>
+                    <LifeBuoy className="size-4" /> Abrir chamado
+                  </Button>
                 </div>
               </CardContent>
             </Card>
