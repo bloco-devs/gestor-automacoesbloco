@@ -329,7 +329,7 @@ export default function DemandaDetail() {
       {(isDev || isOwner) && (
         <Card className="surface-1">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções entregues</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções</CardTitle>
             <CardDescription>{isDev ? "Soluções vinculadas a esta demanda. Cadastre novas pela aba Soluções." : "Soluções vinculadas a esta demanda."}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
