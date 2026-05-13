@@ -280,7 +280,7 @@ export default function DemandaDetail() {
             )}
             {!isEditing && solicitacao.temIntegracao && (
               <div className="pt-3 border-t border-border">
-                <div className="text-xs text-muted-foreground mb-1">Integrações</div>
+                <div className="text-xs text-muted-foreground mb-1">Softwares Utilizados</div>
                 {solicitacao.integracoes && solicitacao.integracoes.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
                     {solicitacao.integracoes.map((nome) => (
@@ -329,7 +329,7 @@ export default function DemandaDetail() {
       {(isDev || isOwner) && (
         <Card className="surface-1">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções entregues</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções</CardTitle>
             <CardDescription>{isDev ? "Soluções vinculadas a esta demanda. Cadastre novas pela aba Soluções." : "Soluções vinculadas a esta demanda."}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
