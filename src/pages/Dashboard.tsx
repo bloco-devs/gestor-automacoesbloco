@@ -68,10 +68,21 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MetricCard icon={Inbox} label={STATUS_LABEL.novo} value={metrics.novo} accent />
-        <MetricCard icon={Search} label={STATUS_LABEL.em_analise} value={metrics.em_analise} />
-        <MetricCard icon={TrendingUp} label={STATUS_LABEL.em_desenvolvimento} value={metrics.em_desenvolvimento} />
-        <MetricCard icon={CheckCircle2} label={STATUS_LABEL.pronto} value={metrics.pronto} />
+        {([
+          { status: "novo" as PipelineStatus, icon: Inbox },
+          { status: "em_analise" as PipelineStatus, icon: Search },
+          { status: "em_desenvolvimento" as PipelineStatus, icon: TrendingUp },
+          { status: "pronto" as PipelineStatus, icon: CheckCircle2 },
+        ]).map(({ status, icon }) => (
+          <MetricCard
+            key={status}
+            icon={icon}
+            label={STATUS_LABEL[status]}
+            value={metrics[status as keyof typeof metrics]}
+            active={statusFilter === status}
+            onClick={() => setStatusFilter((prev) => (prev === status ? "all" : status))}
+          />
+        ))}
       </div>
 
       <Card className="surface-1">
@@ -214,19 +225,34 @@ function MetricCard({
   icon: Icon,
   label,
   value,
-  accent,
+  active,
+  onClick,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: number;
-  accent?: boolean;
+  active?: boolean;
+  onClick?: () => void;
 }) {
   return (
-    <Card className="surface-1">
+    <Card
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`surface-1 transition-colors ${
+        onClick ? "cursor-pointer hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""
+      } ${active ? "border-accent ring-1 ring-accent" : ""}`}
+    >
       <CardContent className="p-2.5 flex items-center gap-2">
         <div
           className={`size-7 rounded-md flex items-center justify-center shrink-0 ${
-            accent ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
+            active ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
           }`}
         >
           <Icon className="size-3.5" />
