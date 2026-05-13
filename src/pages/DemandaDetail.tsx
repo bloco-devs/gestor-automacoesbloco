@@ -379,18 +379,6 @@ export default function DemandaDetail() {
             <CardDescription>Registre a solução final desenvolvida para esta demanda.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-2">
-              <Input placeholder="Título" value={solucaoTitulo} onChange={(e) => setSolucaoTitulo(e.target.value)} />
-              <Input placeholder="Descrição" value={solucaoDesc} onChange={(e) => setSolucaoDesc(e.target.value)} />
-            </div>
-            <div className="grid md:grid-cols-[1fr_auto] gap-2">
-              <Input
-                placeholder="Link da solução (GitHub, n8n, sistema, etc.)"
-                value={solucaoLink}
-                onChange={(e) => setSolucaoLink(e.target.value)}
-              />
-              <Button onClick={handleAddSolucao}>Adicionar</Button>
-            </div>
             {solucoes.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhuma solução registrada ainda.</p>
             ) : (
