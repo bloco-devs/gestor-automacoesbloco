@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Inbox } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,19 +6,13 @@ import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { listMinhasSolicitacoes, listSolucoesBySolicitacao, createSolucaoTask } from "@/lib/supabaseData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CardCompacto } from "@/components/minhas-demandas/CardCompacto";
 import { CardDestaqueLateral } from "@/components/minhas-demandas/CardDestaqueLateral";
-import { CardPainelModerno } from "@/components/minhas-demandas/CardPainelModerno";
 import type { Solucao } from "@/lib/types";
 import { toast } from "@/hooks/use-toast";
-
-type Layout = "compacto" | "lateral" | "painel";
-const LAYOUT_KEY = "minhas-demandas:layout";
 
 export default function MinhasDemandas() {
   const { user } = useAuth();
@@ -31,16 +25,6 @@ export default function MinhasDemandas() {
   const [chamadoSolucaoId, setChamadoSolucaoId] = useState<string>("");
   const [chamadoLoading, setChamadoLoading] = useState(false);
   const [chamadoSubmitting, setChamadoSubmitting] = useState(false);
-
-  const [layout, setLayoutState] = useState<Layout>(() => {
-    if (typeof window === "undefined") return "lateral";
-    return ((localStorage.getItem(LAYOUT_KEY) as Layout) || "lateral");
-  });
-  const setLayout = (v: Layout) => {
-    setLayoutState(v);
-    try { localStorage.setItem(LAYOUT_KEY, v); } catch { /* noop */ }
-  };
-  useEffect(() => { /* keep in sync if needed */ }, [layout]);
 
   async function handleAbrirChamado(solicitacaoId: string) {
     setChamadoTitulo("");
