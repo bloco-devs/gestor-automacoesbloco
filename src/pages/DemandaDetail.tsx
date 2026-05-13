@@ -216,7 +216,7 @@ export default function DemandaDetail() {
           <CardHeader>
             <CardTitle className="text-base">{isEditing ? "Editar demanda" : "Descrição"}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 flex-1">
             {isEditing ? (
               <>
                 <div>
