@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Calendar, Filter, Inbox, KanbanSquare, ListChecks, Rocket, TrendingUp, User } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { listSolicitacoes } from "@/lib/supabaseData";
@@ -160,6 +160,7 @@ export default function Dashboard() {
 }
 
 function SolicitacaoCard({ s }: { s: import("@/lib/types").Solicitacao }) {
+  const navigate = useNavigate();
   const data = new Date(s.createdAt).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "short",
@@ -167,7 +168,18 @@ function SolicitacaoCard({ s }: { s: import("@/lib/types").Solicitacao }) {
   });
 
   return (
-    <Card className="surface-1 hover:border-accent/50 transition-colors group">
+    <Card
+      role="link"
+      tabIndex={0}
+      onClick={() => navigate(`/demanda/${s.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          navigate(`/demanda/${s.id}`);
+        }
+      }}
+      className="surface-1 hover:border-accent/50 transition-colors group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <CardContent className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <StatusBadge status={s.status} />
@@ -196,10 +208,6 @@ function SolicitacaoCard({ s }: { s: import("@/lib/types").Solicitacao }) {
             {FREQUENCIA_LABEL[s.frequencia]}
           </Badge>
         </div>
-
-        <Button asChild size="sm" variant="ghost" className="w-full justify-center -mb-1">
-          <Link to={`/demanda/${s.id}`}>Ver detalhes</Link>
-        </Button>
       </CardContent>
     </Card>
   );
