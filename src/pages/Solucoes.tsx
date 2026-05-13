@@ -130,6 +130,7 @@ export default function Solucoes() {
           {solucoes.map((s) => (
             <SolucaoCard
               key={s.id}
+              id={s.id}
               titulo={s.titulo}
               descricao={s.descricao}
               demandaTitulo={solicitacoes.find((item) => item.id === s.solicitacaoId)?.titulo}
