@@ -298,12 +298,12 @@ export default function DemandaDetail() {
         </Card>
 
         {(isDev || isOwner) && (
-          <Card className="surface-1">
+          <Card className="surface-1 h-full flex flex-col">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções</CardTitle>
               <CardDescription>{isDev ? "Soluções vinculadas a esta demanda. Cadastre novas pela aba Soluções." : "Soluções vinculadas a esta demanda."}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 flex-1 overflow-auto">
               {solucoes.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nenhuma solução registrada ainda.</p>
               ) : (
