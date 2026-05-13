@@ -266,8 +266,8 @@ export default function DemandaDetail() {
                     </SelectContent>
                   </Select>
                 </div>
-                <SliderField label="Complexidade / Chato de fazer" value={editComplexidade} onChange={setEditComplexidade} />
-                <SliderField label="Retorno esperado" value={editRetorno} onChange={setEditRetorno} />
+                <SliderField label="Complexidade" value={editComplexidade} onChange={setEditComplexidade} />
+                <SliderField label="Retorno financeiro" value={editRetorno} onChange={setEditRetorno} />
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button onClick={handleSaveOwn}><Save className="size-4" /> Salvar alterações</Button>
                   <Button variant="outline" onClick={() => {
@@ -283,7 +283,7 @@ export default function DemandaDetail() {
                   <div><dt className="text-xs text-muted-foreground">Status</dt><dd>{STATUS_LABEL[statusToCategory(solicitacao.status)]}</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Frequência</dt><dd>{FREQUENCIA_LABEL[solicitacao.frequencia]}</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Complexidade</dt><dd>{solicitacao.complexidade}/5</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Retorno</dt><dd>{solicitacao.retorno}/5</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Retorno financeiro</dt><dd>{solicitacao.retorno}/5</dd></div>
                   {solicitacao.setor && <div><dt className="text-xs text-muted-foreground">Setor</dt><dd>{solicitacao.setor}</dd></div>}
                 </dl>
               </>
@@ -326,7 +326,7 @@ export default function DemandaDetail() {
                 </Select>
               </div>
               <SliderField label="Complexidade" value={complex} onChange={setComplex} />
-              <SliderField label="Retorno" value={retorno} onChange={setRetorno} />
+              <SliderField label="Retorno financeiro" value={retorno} onChange={setRetorno} />
               <Button onClick={handleSave} className="w-full">
                 <Save className="size-4" /> Salvar alterações
               </Button>
