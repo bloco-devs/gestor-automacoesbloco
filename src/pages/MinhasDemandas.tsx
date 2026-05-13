@@ -96,28 +96,17 @@ export default function MinhasDemandas() {
           </CardContent>
         </Card>
       ) : (
-        <>
-          <Tabs value={layout} onValueChange={(v) => setLayout(v as Layout)}>
-            <TabsList>
-              <TabsTrigger value="compacto">Compacto</TabsTrigger>
-              <TabsTrigger value="lateral">Destaque lateral</TabsTrigger>
-              <TabsTrigger value="painel">Painel moderno</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="grid min-w-0 gap-4">
-            {solicitacoes.map((s) => {
-              const props = {
-                solicitacao: s,
-                onOpen: () => navigate(`/demanda/${s.id}`),
-                onAbrirChamado: () => handleAbrirChamado(s.id),
-                editHref: `/demanda/${s.id}?editar=1`,
-              };
-              if (layout === "compacto") return <CardCompacto key={s.id} {...props} />;
-              if (layout === "lateral") return <CardDestaqueLateral key={s.id} {...props} />;
-              return <CardPainelModerno key={s.id} {...props} />;
-            })}
-          </div>
-        </>
+        <div className="grid min-w-0 gap-4">
+          {solicitacoes.map((s) => (
+            <CardDestaqueLateral
+              key={s.id}
+              solicitacao={s}
+              onOpen={() => navigate(`/demanda/${s.id}`)}
+              onAbrirChamado={() => handleAbrirChamado(s.id)}
+              editHref={`/demanda/${s.id}?editar=1`}
+            />
+          ))}
+        </div>
       )}
 
       <Dialog open={chamadoOpen} onOpenChange={setChamadoOpen}>
