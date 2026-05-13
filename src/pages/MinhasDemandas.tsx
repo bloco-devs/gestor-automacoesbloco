@@ -21,6 +21,51 @@ export default function MinhasDemandas() {
   const navigate = useNavigate();
   const solicitacoes = useSupabaseData(() => (user ? listMinhasSolicitacoes(user.id) : Promise.resolve([])), [], [user?.id]);
 
+  const [chamadoOpen, setChamadoOpen] = useState(false);
+  const [chamadoTitulo, setChamadoTitulo] = useState("");
+  const [chamadoSolucoes, setChamadoSolucoes] = useState<Solucao[]>([]);
+  const [chamadoSolucaoId, setChamadoSolucaoId] = useState<string>("");
+  const [chamadoLoading, setChamadoLoading] = useState(false);
+  const [chamadoSubmitting, setChamadoSubmitting] = useState(false);
+
+  async function handleAbrirChamado(solicitacaoId: string) {
+    setChamadoTitulo("");
+    setChamadoSolucaoId("");
+    setChamadoSolucoes([]);
+    setChamadoOpen(true);
+    setChamadoLoading(true);
+    try {
+      const solucoes = await listSolucoesBySolicitacao(solicitacaoId);
+      setChamadoSolucoes(solucoes);
+      if (solucoes.length === 1) setChamadoSolucaoId(solucoes[0].id);
+    } catch {
+      toast({ title: "Erro ao carregar soluções", variant: "destructive" });
+    } finally {
+      setChamadoLoading(false);
+    }
+  }
+
+  async function submitChamado() {
+    if (!chamadoSolucaoId) {
+      toast({ title: "Selecione uma solução", variant: "destructive" });
+      return;
+    }
+    if (!chamadoTitulo.trim()) {
+      toast({ title: "Descreva o chamado", variant: "destructive" });
+      return;
+    }
+    setChamadoSubmitting(true);
+    try {
+      await createSolucaoTask({ solucaoId: chamadoSolucaoId, titulo: chamadoTitulo.trim(), createdBy: user?.id });
+      toast({ title: "Chamado aberto com sucesso" });
+      setChamadoOpen(false);
+    } catch {
+      toast({ title: "Erro ao abrir chamado", variant: "destructive" });
+    } finally {
+      setChamadoSubmitting(false);
+    }
+  }
+
   return (
     <div className="w-full min-w-0 space-y-6 overflow-hidden">
       <div className="flex items-center justify-between gap-4 flex-wrap">
