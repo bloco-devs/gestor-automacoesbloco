@@ -37,6 +37,7 @@ export default function Solucoes() {
 
   const [novoTitulo, setNovoTitulo] = useState("");
   const [novoDescricao, setNovoDescricao] = useState("");
+  const [novoLink, setNovoLink] = useState("");
   const [novoSolicitacaoId, setNovoSolicitacaoId] = useState<string>("none");
   const [salvando, setSalvando] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -51,11 +52,13 @@ export default function Solucoes() {
       await createSolucao({
         titulo: novoTitulo.trim(),
         descricao: novoDescricao.trim(),
+        link: novoLink.trim() || null,
         createdBy: user?.id,
         solicitacaoId: novoSolicitacaoId === "none" ? null : novoSolicitacaoId,
       });
       setNovoTitulo("");
       setNovoDescricao("");
+      setNovoLink("");
       setNovoSolicitacaoId("none");
       setPopoverOpen(false);
       toast({ title: "Solução cadastrada" });
@@ -67,6 +70,19 @@ export default function Solucoes() {
       });
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const handleSaveLink = async (id: string, link: string) => {
+    try {
+      await updateSolucao(id, { link: link.trim() || null });
+      toast({ title: "Link atualizado" });
+    } catch (err) {
+      toast({
+        title: "Erro ao atualizar link",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
