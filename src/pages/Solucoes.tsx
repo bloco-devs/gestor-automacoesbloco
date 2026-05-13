@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Sparkles, Trash } from "lucide-react";
+import { ExternalLink, Pencil, Plus, Save, Sparkles, Trash, X } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   createSolucao,
   deleteSolucao,
   listSolicitacoes,
   listSolucoes,
+  updateSolucao,
 } from "@/lib/supabaseData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ export default function Solucoes() {
 
   const [novoTitulo, setNovoTitulo] = useState("");
   const [novoDescricao, setNovoDescricao] = useState("");
+  const [novoLink, setNovoLink] = useState("");
   const [novoSolicitacaoId, setNovoSolicitacaoId] = useState<string>("none");
   const [salvando, setSalvando] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -50,11 +52,13 @@ export default function Solucoes() {
       await createSolucao({
         titulo: novoTitulo.trim(),
         descricao: novoDescricao.trim(),
+        link: novoLink.trim() || null,
         createdBy: user?.id,
         solicitacaoId: novoSolicitacaoId === "none" ? null : novoSolicitacaoId,
       });
       setNovoTitulo("");
       setNovoDescricao("");
+      setNovoLink("");
       setNovoSolicitacaoId("none");
       setPopoverOpen(false);
       toast({ title: "Solução cadastrada" });
@@ -66,6 +70,19 @@ export default function Solucoes() {
       });
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const handleSaveLink = async (id: string, link: string) => {
+    try {
+      await updateSolucao(id, { link: link.trim() || null });
+      toast({ title: "Link atualizado" });
+    } catch (err) {
+      toast({
+        title: "Erro ao atualizar link",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -99,6 +116,11 @@ export default function Solucoes() {
               value={novoDescricao}
               onChange={(e) => setNovoDescricao(e.target.value)}
               rows={3}
+            />
+            <Input
+              placeholder="Link (opcional, ex: https://...)"
+              value={novoLink}
+              onChange={(e) => setNovoLink(e.target.value)}
             />
             <Select value={novoSolicitacaoId} onValueChange={setNovoSolicitacaoId}>
               <SelectTrigger>
@@ -134,7 +156,9 @@ export default function Solucoes() {
               id={s.id}
               titulo={s.titulo}
               descricao={s.descricao}
+              link={s.link ?? null}
               demandaTitulo={solicitacoes.find((item) => item.id === s.solicitacaoId)?.titulo}
+              onSaveLink={(link) => handleSaveLink(s.id, link)}
               onDeleteSolucao={async () => {
                 try {
                   await deleteSolucao(s.id);
@@ -159,18 +183,25 @@ function SolucaoCard({
   id,
   titulo,
   descricao,
+  link,
   demandaTitulo,
+  onSaveLink,
   onDeleteSolucao,
 }: {
   id: string;
   titulo: string;
   descricao: string;
+  link: string | null;
   demandaTitulo?: string;
+  onSaveLink: (link: string) => void | Promise<void>;
   onDeleteSolucao: () => void;
 }) {
   const navigate = useNavigate();
+  const [editing, setEditing] = useState(false);
+  const [linkDraft, setLinkDraft] = useState(link ?? "");
   const open = () => navigate(`/solucoes/${id}`);
   const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+  const href = link ? (/^https?:\/\//i.test(link) ? link : `https://${link}`) : "#";
 
   return (
     <Card
@@ -192,6 +223,23 @@ function SolucaoCard({
             {demandaTitulo && <CardDescription>{demandaTitulo}</CardDescription>}
           </div>
           <div className="flex items-center gap-2" onClick={stop} onKeyDown={stop}>
+            {link && (
+              <Button asChild variant="outline" size="icon" className="h-8 w-8" title="Abrir link">
+                <a href={href} target="_blank" rel="noopener noreferrer" aria-label="Abrir link da solução">
+                  <ExternalLink className="size-4" />
+                </a>
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setLinkDraft(link ?? "");
+                setEditing((v) => !v);
+              }}
+            >
+              <Pencil className="size-4" /> {link ? "Editar link" : "Adicionar link"}
+            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="Excluir solução">
@@ -214,6 +262,27 @@ function SolucaoCard({
           </div>
         </div>
         {descricao && <p className="text-sm text-muted-foreground mt-2">{descricao}</p>}
+        {editing && (
+          <div className="flex gap-2 mt-3" onClick={stop} onKeyDown={stop}>
+            <Input
+              placeholder="https://..."
+              value={linkDraft}
+              onChange={(e) => setLinkDraft(e.target.value)}
+            />
+            <Button
+              size="sm"
+              onClick={async () => {
+                await onSaveLink(linkDraft);
+                setEditing(false);
+              }}
+            >
+              <Save className="size-4" /> Salvar
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
+              <X className="size-4" />
+            </Button>
+          </div>
+        )}
       </CardHeader>
     </Card>
   );

@@ -9,7 +9,6 @@ import {
   listSolucoesBySolicitacao,
   updateOwnSolicitacao,
   updateSolicitacao,
-  updateSolucao,
 } from "@/lib/supabaseData";
 import { FREQUENCIA_LABEL, PIPELINE_ORDER, SETORES, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus, type Setor } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -67,8 +66,6 @@ export default function DemandaDetail() {
   const [editRetorno, setEditRetorno] = useState(solicitacao?.retorno ?? 3);
   const [editSetor, setEditSetor] = useState<Setor | "">((solicitacao?.setor as Setor) ?? "");
 
-  const [editingSolucaoId, setEditingSolucaoId] = useState<string | null>(null);
-  const [editLinkValue, setEditLinkValue] = useState("");
 
   useEffect(() => {
     if (!solicitacao) return;
@@ -150,13 +147,6 @@ export default function DemandaDetail() {
     setIsEditing(false);
     setSearchParams({});
     toast({ title: "Demanda atualizada" });
-  }
-
-  async function handleSaveSolucaoLink(solucaoId: string) {
-    await updateSolucao(solucaoId, { link: editLinkValue.trim() || null });
-    setEditingSolucaoId(null);
-    setEditLinkValue("");
-    toast({ title: "Link atualizado" });
   }
 
   async function handleDelete() {
@@ -362,33 +352,8 @@ export default function DemandaDetail() {
                             </a>
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingSolucaoId(editingSolucaoId === s.id ? null : s.id);
-                            setEditLinkValue(s.link ?? "");
-                          }}
-                        >
-                          <Pencil className="size-4" /> {s.link ? "Editar link" : "Adicionar link"}
-                        </Button>
                       </div>
                     </div>
-                    {editingSolucaoId === s.id && (
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="https://..."
-                          value={editLinkValue}
-                          onChange={(e) => setEditLinkValue(e.target.value)}
-                        />
-                        <Button size="sm" onClick={() => handleSaveSolucaoLink(s.id)}>
-                          <Save className="size-4" /> Salvar
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setEditingSolucaoId(null)}>
-                          <X className="size-4" />
-                        </Button>
-                      </div>
-                    )}
                   </li>
                 ))}
               </ul>
