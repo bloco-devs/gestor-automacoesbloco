@@ -362,3 +362,61 @@ export async function listDevelopers(): Promise<Developer[]> {
     email: r.email,
   }));
 }
+
+// ===== Solucao Tasks =====
+
+import type { SolucaoTask } from "@/lib/types";
+
+export async function listSolucaoTasks(solucaoId: string): Promise<SolucaoTask[]> {
+  const { data, error } = await supabase
+    .from("solucao_tasks" as never)
+    .select("id,solucao_id,titulo,concluida,assigned_to,ordem,created_at")
+    .eq("solucao_id", solucaoId)
+    .order("ordem", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return ((data ?? []) as Array<{ id: string; solucao_id: string; titulo: string; concluida: boolean; assigned_to: string | null; ordem: number; created_at: string }>).map((r) => ({
+    id: r.id,
+    solucaoId: r.solucao_id,
+    titulo: r.titulo,
+    concluida: r.concluida,
+    assignedTo: r.assigned_to,
+    ordem: r.ordem,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function createSolucaoTask(data: { solucaoId: string; titulo: string; createdBy?: string }): Promise<void> {
+  const { error } = await supabase.from("solucao_tasks" as never).insert({
+    solucao_id: data.solucaoId,
+    titulo: data.titulo,
+    created_by: data.createdBy ?? null,
+  } as never);
+  if (error) throw error;
+}
+
+export async function updateSolucaoTask(id: string, patch: { titulo?: string; concluida?: boolean; assignedTo?: string | null; ordem?: number }): Promise<void> {
+  const payload: Record<string, unknown> = {};
+  if (patch.titulo !== undefined) payload.titulo = patch.titulo;
+  if (patch.concluida !== undefined) payload.concluida = patch.concluida;
+  if (patch.assignedTo !== undefined) payload.assigned_to = patch.assignedTo;
+  if (patch.ordem !== undefined) payload.ordem = patch.ordem;
+  const { error } = await supabase.from("solucao_tasks" as never).update(payload as never).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteSolucaoTask(id: string): Promise<void> {
+  const { error } = await supabase.from("solucao_tasks" as never).delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function getSolucao(id: string): Promise<Solucao | null> {
+  const { data, error } = await supabase
+    .from("demanda_solucoes")
+    .select("id,solicitacao_id,titulo,descricao,link,created_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapSolucao(data) : null;
+}
+
