@@ -1,13 +1,20 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Pencil, Plus, Inbox } from "lucide-react";
+import { Pencil, Plus, Inbox, LifeBuoy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
-import { listMinhasSolicitacoes } from "@/lib/supabaseData";
+import { listMinhasSolicitacoes, listSolucoesBySolicitacao, createSolucaoTask } from "@/lib/supabaseData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { FREQUENCIA_LABEL } from "@/lib/types";
+import type { Solucao } from "@/lib/types";
+import { toast } from "@/hooks/use-toast";
 
 export default function MinhasDemandas() {
   const { user } = useAuth();
