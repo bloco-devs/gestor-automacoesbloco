@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { CalendarPlus, Plus, Sparkles, Trash, Trash2 } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
@@ -163,6 +164,7 @@ export default function Solucoes() {
 }
 
 function SolucaoCard({
+  id,
   titulo,
   descricao,
   demandaTitulo,
@@ -172,6 +174,7 @@ function SolucaoCard({
   onDelete,
   onDeleteSolucao,
 }: {
+  id: string;
   titulo: string;
   descricao: string;
   demandaTitulo?: string;
@@ -181,8 +184,11 @@ function SolucaoCard({
   onDelete: (id: string) => void;
   onDeleteSolucao: () => void;
 }) {
+  const navigate = useNavigate();
   const [draft, setDraft] = useState("");
   const sorted = useMemo(() => [...melhorias].sort((a, b) => +new Date(b.data) - +new Date(a.data)), [melhorias]);
+  const open = () => navigate(`/solucoes/${id}`);
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
 
   return (
     <Card className="surface-1">
