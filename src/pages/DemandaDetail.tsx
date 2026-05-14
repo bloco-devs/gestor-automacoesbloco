@@ -80,6 +80,8 @@ export default function DemandaDetail() {
     setDescricaoDev(solicitacao.descricao);
     setTemIntegracao(solicitacao.temIntegracao ?? false);
     setIntegracoesText((solicitacao.integracoes ?? []).join(", "));
+    setComplexidadeDev(solicitacao.complexidadeDev ?? 5);
+    setNotasComplexDev(solicitacao.notasTecnicas ?? "");
     setEditTitulo(solicitacao.titulo);
     setEditDescricao(solicitacao.descricao);
     setEditSoftwares((solicitacao.integracoes ?? []).join(", "));
