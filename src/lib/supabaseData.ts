@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { calcScore } from "@/lib/score";
+import { computeScoreFinal, computeScoreSolicitante } from "@/lib/scoreV2";
 import type { Frequencia, Melhoria, MelhoriaStatus, PipelineStatus, Solicitacao, Solucao } from "@/lib/types";
 
 type SolicitacaoRow = {
