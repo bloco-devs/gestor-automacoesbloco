@@ -198,6 +198,7 @@ export async function updateSolicitacao(id: string, patch: Partial<Solicitacao>)
     setor: patch.setor,
     tem_integracao: patch.temIntegracao,
     integracoes: patch.integracoes,
+    complexidade_dev: patch.complexidadeDev,
   };
   const payload: Record<string, unknown> = { score: calcScore(merged), updated_at: new Date().toISOString() };
   for (const [key, value] of Object.entries(candidate)) {
