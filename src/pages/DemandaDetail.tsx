@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Pencil, Save, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ExternalLink, Lightbulb, Pencil, Save, Sparkles, Trash2, X } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
@@ -456,9 +457,37 @@ export default function DemandaDetail() {
                 value={[complexidadeDev]}
                 onValueChange={(v) => setComplexidadeDev(v[0])}
               />
-              <p className="text-xs text-muted-foreground mt-2">
-                0 = Trivial · 5 = Moderada · 10 = Muito Complexa
-              </p>
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  { v: 0, label: "Trivial", desc: "Integração plug-and-play existente, <2h" },
+                  { v: 2, label: "Simples", desc: "1-2 APIs, fluxo linear, <1 dia" },
+                  { v: 4, label: "Moderada", desc: "Múltiplas APIs, lógica condicional, 2-5 dias" },
+                  { v: 6, label: "Complexa", desc: "Integrações custom, regras de negócio, 1-2 semanas" },
+                  { v: 8, label: "Muito Complexa", desc: "Arquitetura custom, múltiplos serviços, 2-4 semanas" },
+                  { v: 10, label: "Extremamente Complexa", desc: "Novo sistema, IA/ML, >1 mês" },
+                ].map((a) => {
+                  const active = complexidadeDev === a.v;
+                  return (
+                    <button
+                      key={a.v}
+                      type="button"
+                      onClick={() => setComplexidadeDev(a.v)}
+                      className={`text-left rounded-md border p-2 transition-colors ${
+                        active
+                          ? "border-accent bg-accent/10"
+                          : "border-border bg-muted/30 hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold tabular-nums text-accent">{a.v}</span>
+                        <span className="text-xs font-medium">{a.label}</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{a.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
+              <FormulaImpactCard complexidade={complexidadeDev} />
             </div>
             <div>
               <Label htmlFor="notas-complex-dev">Notas técnicas (opcional)</Label>
@@ -500,5 +529,60 @@ function SliderField({ label, value, onChange }: { label: string; value: number;
       </div>
       <Slider min={1} max={5} step={1} value={[value]} onValueChange={(v) => onChange(v[0])} />
     </div>
+  );
+}
+
+function FormulaImpactCard({ complexidade }: { complexidade: number }) {
+  const [open, setOpen] = useState(false);
+  const mult = Math.max(0, (10 - complexidade) / 10);
+  const pct = Math.round(mult * 100);
+  const rows = [
+    { c: 0, m: "1,0", p: "100%" },
+    { c: 2, m: "0,8", p: "80%" },
+    { c: 5, m: "0,5", p: "50%" },
+    { c: 8, m: "0,2", p: "20%" },
+    { c: 10, m: "0,0", p: "0%" },
+  ];
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="mt-3 rounded-md border border-border bg-muted/30">
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 p-3 text-left">
+        <div className="flex items-center gap-2 min-w-0">
+          <Lightbulb className="size-4 text-accent shrink-0" />
+          <span className="text-sm font-medium truncate">Como sua avaliação afeta o score final</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs tabular-nums text-muted-foreground">
+            atual: ×{mult.toFixed(1).replace(".", ",")} ({pct}%)
+          </span>
+          <ChevronDown className={`size-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="px-3 pb-3 space-y-3">
+        <div className="rounded-md bg-background border border-border p-2 text-xs font-mono text-foreground">
+          Score Final = Score Solicitante × (10 − Complexidade) ÷ 10
+        </div>
+        <ul className="space-y-1">
+          {rows.map((r) => {
+            const active = complexidade === r.c;
+            return (
+              <li
+                key={r.c}
+                className={`flex items-center justify-between gap-2 rounded px-2 py-1 text-xs tabular-nums ${
+                  active ? "bg-accent/10 text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                <span>Complexidade {r.c}</span>
+                <span>Multiplicador {r.m}</span>
+                <span>Score Solicitante × {r.p}</span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="text-xs text-muted-foreground leading-snug">
+          Quanto mais complexa a solução técnica, menor a prioridade final, priorizando assim
+          soluções que combinam alto impacto + baixa complexidade.
+        </p>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
