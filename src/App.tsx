@@ -51,8 +51,12 @@ const App = () => (
               {/* Desenvolvedor */}
               <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
               <Route path="/solicitacoes" element={<ProtectedRoute role="developer"><Solicitacoes /></ProtectedRoute>} />
-              <Route path="/kanban" element={<ProtectedRoute role="developer"><Kanban /></ProtectedRoute>} />
+              <Route path="/solicitacoes/kanban" element={<ProtectedRoute role="developer"><Kanban /></ProtectedRoute>} />
+              <Route path="/solicitacoes/gantt" element={<ProtectedRoute role="developer"><SolicitacoesGantt /></ProtectedRoute>} />
+              <Route path="/kanban" element={<Navigate to="/solicitacoes/kanban" replace />} />
               <Route path="/solucoes" element={<ProtectedRoute role="developer"><Solucoes /></ProtectedRoute>} />
+              <Route path="/solucoes/kanban" element={<ProtectedRoute role="developer"><SolucoesKanban /></ProtectedRoute>} />
+              <Route path="/solucoes/gantt" element={<ProtectedRoute role="developer"><SolucoesGantt /></ProtectedRoute>} />
               <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
               
 
