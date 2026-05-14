@@ -220,6 +220,16 @@ export default function AppLayout() {
           className="hidden md:block absolute top-0 right-0 h-full w-1.5 -mr-0.5 cursor-col-resize bg-transparent hover:bg-accent/40 active:bg-accent/60 transition-colors focus-visible:outline-none focus-visible:bg-accent/60"
           title="Arraste para redimensionar (duplo clique para resetar)"
         />
+
+        <button
+          type="button"
+          onClick={() => setSidebarHidden(true)}
+          title="Esconder barra lateral"
+          aria-label="Esconder barra lateral"
+          className="hidden md:flex absolute top-2 right-1 z-10 items-center justify-center size-5 rounded text-muted-foreground/40 hover:text-foreground hover:bg-muted/60 transition-colors"
+        >
+          <PanelLeftClose className="size-3.5" />
+        </button>
       </aside>
       )}
 
