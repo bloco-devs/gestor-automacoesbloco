@@ -56,6 +56,7 @@ const ALLOWED_ACCOUNTS: Record<string, { role: Role; nome: string }> = {
   "fabiopb78@gmail.com": { role: "requester", nome: "Fabio PB" },
   "luispaulodelux@gmail.com": { role: "requester", nome: "Luis Paulo" },
   "lianaslacerda@gmail.com": { role: "requester", nome: "Liana Lacerda" },
+  "mariacorretoramacedo@gmail.com": { role: "requester", nome: "Fernanda" },
 };
 
 export function getAllowedAccount(email?: string | null) {
