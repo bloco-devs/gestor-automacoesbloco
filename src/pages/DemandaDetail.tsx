@@ -52,6 +52,7 @@ export default function DemandaDetail() {
 
   const solicitacao = useSupabaseData(() => getSolicitacao(id), null, [id]);
   const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id]);
+  const scoreHistory = useSupabaseData(() => listScoreHistory(id), [], [id, solicitacao?.complexidadeDev, solicitacao?.notasTecnicasComplexidade]);
   const isOwner = user?.id === solicitacao?.solicitanteId;
 
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
