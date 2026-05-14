@@ -445,6 +445,7 @@ export default function DemandaDetail() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <ChecklistAvaliacao />
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Complexidade Técnica (0-10)</Label>
