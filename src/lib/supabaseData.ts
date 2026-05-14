@@ -13,6 +13,7 @@ type SolicitacaoRow = {
   status: string;
   score: number;
   notas_tecnicas: string | null;
+  notas_tecnicas_complexidade: string | null;
   setor: string | null;
   tem_integracao: boolean;
   integracoes: string[];
@@ -56,6 +57,7 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     scoreSolicitante,
     scoreFinal,
     notasTecnicas: row.notas_tecnicas ?? undefined,
+    notasTecnicasComplexidade: row.notas_tecnicas_complexidade ?? null,
     setor: row.setor ?? undefined,
     temIntegracao: row.tem_integracao,
     integracoes: row.integracoes ?? [],
@@ -90,7 +92,7 @@ function mapMelhoria(row: { id: string; solucao_id: string; descricao: string; s
 export async function listSolicitacoes(): Promise<Solicitacao[]> {
   const { data, error } = await supabase
     .from("solicitacoes")
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row) => mapSolicitacao(row as SolicitacaoRow));
@@ -99,7 +101,7 @@ export async function listSolicitacoes(): Promise<Solicitacao[]> {
 export async function listMinhasSolicitacoes(userId: string): Promise<Solicitacao[]> {
   const { data, error } = await supabase
     .from("solicitacoes")
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -109,7 +111,7 @@ export async function listMinhasSolicitacoes(userId: string): Promise<Solicitaca
 export async function getSolicitacao(id: string): Promise<Solicitacao | null> {
   const { data, error } = await supabase
     .from("solicitacoes")
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -166,7 +168,7 @@ export async function createSolicitacao(data: {
       integracoes: data.softwares,
       status: "novo",
     })
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
     .single();
   if (error) throw error;
   return mapSolicitacao(inserted as SolicitacaoRow);
@@ -234,6 +236,7 @@ export async function updateSolicitacao(
     retorno: patch.retorno,
     status: patch.status,
     notas_tecnicas: patch.notasTecnicas,
+    notas_tecnicas_complexidade: patch.notasTecnicasComplexidade,
     setor: patch.setor,
     tem_integracao: patch.temIntegracao,
     integracoes: patch.integracoes,

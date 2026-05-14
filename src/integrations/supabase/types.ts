@@ -302,6 +302,7 @@ export type Database = {
           integracoes: string[]
           nome: string
           notas_tecnicas: string | null
+          notas_tecnicas_complexidade: string | null
           retorno: number
           score: number
           setor: string | null
@@ -325,6 +326,7 @@ export type Database = {
           integracoes?: string[]
           nome: string
           notas_tecnicas?: string | null
+          notas_tecnicas_complexidade?: string | null
           retorno?: number
           score?: number
           setor?: string | null
@@ -348,6 +350,7 @@ export type Database = {
           integracoes?: string[]
           nome?: string
           notas_tecnicas?: string | null
+          notas_tecnicas_complexidade?: string | null
           retorno?: number
           score?: number
           setor?: string | null

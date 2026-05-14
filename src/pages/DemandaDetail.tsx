@@ -37,7 +37,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { calcScore } from "@/lib/score";
+
 import { computeScoreFinal, computeScoreSolicitante } from "@/lib/scoreV2";
 import { useToast } from "@/hooks/use-toast";
 
@@ -53,15 +53,12 @@ export default function DemandaDetail() {
   const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id]);
   const isOwner = user?.id === solicitacao?.solicitanteId;
 
-  const [complex, setComplex] = useState(solicitacao?.complexidade ?? 3);
-  const [retorno, setRetorno] = useState(solicitacao?.retorno ?? 3);
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
-  const [notas, setNotas] = useState(solicitacao?.notasTecnicas ?? "");
-  const [descricaoDev, setDescricaoDev] = useState(solicitacao?.descricao ?? "");
-  const [temIntegracao, setTemIntegracao] = useState<boolean>(solicitacao?.temIntegracao ?? false);
-  const [integracoesText, setIntegracoesText] = useState((solicitacao?.integracoes ?? []).join(", "));
-  const [complexidadeDev, setComplexidadeDev] = useState<number>(solicitacao?.complexidadeDev ?? 5);
-  const [notasComplexDev, setNotasComplexDev] = useState<string>(solicitacao?.notasTecnicas ?? "");
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [complexidadeDev, setComplexidadeDev] = useState<number | null>(solicitacao?.complexidadeDev ?? null);
+  const [notasTecnicasComplexidade, setNotasTecnicasComplexidade] = useState<string>(
+    solicitacao?.notasTecnicasComplexidade ?? "",
+  );
   const [savingComplexDev, setSavingComplexDev] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitulo, setEditTitulo] = useState(solicitacao?.titulo ?? "");
@@ -75,15 +72,9 @@ export default function DemandaDetail() {
 
   useEffect(() => {
     if (!solicitacao) return;
-    setComplex(solicitacao.complexidade);
-    setRetorno(solicitacao.retorno);
     setStatus(solicitacao.status);
-    setNotas(solicitacao.notasTecnicas ?? "");
-    setDescricaoDev(solicitacao.descricao);
-    setTemIntegracao(solicitacao.temIntegracao ?? false);
-    setIntegracoesText((solicitacao.integracoes ?? []).join(", "));
-    setComplexidadeDev(solicitacao.complexidadeDev ?? 5);
-    setNotasComplexDev(solicitacao.notasTecnicas ?? "");
+    setComplexidadeDev(solicitacao.complexidadeDev);
+    setNotasTecnicasComplexidade(solicitacao.notasTecnicasComplexidade ?? "");
     setEditTitulo(solicitacao.titulo);
     setEditDescricao(solicitacao.descricao);
     setEditSoftwares((solicitacao.integracoes ?? []).join(", "));
@@ -99,11 +90,6 @@ export default function DemandaDetail() {
     }
   }, [searchParams, isOwner]);
 
-  const previewScore = useMemo(
-    () => (solicitacao ? calcScore({ frequencia: solicitacao.frequencia, complexidade: complex, retorno }) : 0),
-    [solicitacao, complex, retorno],
-  );
-
   if (!solicitacao) {
     return (
       <div className="text-center py-20 space-y-4">
@@ -113,21 +99,21 @@ export default function DemandaDetail() {
     );
   }
 
-  async function handleSave() {
-    const integracoes = temIntegracao
-      ? integracoesText.split(",").map((s) => s.trim()).filter(Boolean)
-      : [];
-    await updateSolicitacao(id, {
-      complexidade: complex,
-      retorno,
-      status,
-      notasTecnicas: notas,
-      temIntegracao,
-      integracoes,
-    });
-    toast({ title: "Demanda atualizada" });
+  async function handleSaveStatus() {
+    setSavingStatus(true);
+    try {
+      await updateSolicitacao(id, { status });
+      toast({ title: "Status atualizado" });
+    } catch (e) {
+      toast({
+        title: "Erro ao salvar",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingStatus(false);
+    }
   }
-
   async function handleSaveOwn() {
     if (!editTitulo.trim() || editTitulo.trim().length < 3) {
       toast({ title: "Verifique os campos", description: "Informe um título válido.", variant: "destructive" });
@@ -165,14 +151,15 @@ export default function DemandaDetail() {
 
   async function handleSaveComplexidadeDev() {
     if (
+      complexidadeDev === null ||
       typeof complexidadeDev !== "number" ||
       Number.isNaN(complexidadeDev) ||
       complexidadeDev < 0 ||
       complexidadeDev > 10
     ) {
       toast({
-        title: "Valor inválido",
-        description: "A complexidade técnica deve estar entre 0 e 10.",
+        title: "Avaliação incompleta",
+        description: "Defina a complexidade técnica (0-10) antes de salvar.",
         variant: "destructive",
       });
       return;
@@ -181,13 +168,12 @@ export default function DemandaDetail() {
     try {
       await updateSolicitacao(id, {
         complexidadeDev,
-        notasTecnicas: notasComplexDev,
+        notasTecnicasComplexidade: notasTecnicasComplexidade || null,
       });
       toast({
         title: "Avaliação técnica salva",
         description: "Score final recalculado.",
       });
-      // useSupabaseData já refaz a query via realtime postgres_changes em `solicitacoes`.
     } catch (e) {
       toast({
         title: "Erro ao salvar",
@@ -406,12 +392,12 @@ export default function DemandaDetail() {
       {isDev && (
         <Card className="surface-1">
           <CardHeader>
-            <CardTitle className="text-base">Ajustes do desenvolvedor</CardTitle>
-            <CardDescription>Score recalculado: <ScorePill score={previewScore} /></CardDescription>
+            <CardTitle className="text-base">Status do Pipeline</CardTitle>
+            <CardDescription>Atualize apenas o estágio do pipeline. Demais campos do solicitante não são editáveis pelo dev.</CardDescription>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-5">
-            <div className="md:col-span-2">
-              <Label>Status do pipeline</Label>
+          <CardContent className="space-y-3">
+            <div>
+              <Label>Status</Label>
               <Select value={status} onValueChange={(v) => setStatus(v as PipelineStatus)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -421,13 +407,9 @@ export default function DemandaDetail() {
                 </SelectContent>
               </Select>
             </div>
-            <SliderField label="Complexidade" value={complex} onChange={setComplex} />
-            <SliderField label="Retorno financeiro" value={retorno} onChange={setRetorno} />
-            <div className="md:col-span-2">
-              <Button onClick={handleSave} className="w-full">
-                <Save className="size-4" /> Salvar alterações
-              </Button>
-            </div>
+            <Button onClick={handleSaveStatus} disabled={savingStatus || status === solicitacao.status}>
+              <Save className="size-4" /> Salvar status
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -447,17 +429,25 @@ export default function DemandaDetail() {
           </CardHeader>
           <CardContent className="space-y-4">
             <ChecklistAvaliacao />
+            {complexidadeDev === null && (
+              <div className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                Complexidade não avaliada ainda. Use o checklist e mova o slider abaixo para começar.
+              </div>
+            )}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Complexidade Técnica (0-10)</Label>
-                <span className="text-sm tabular-nums text-accent font-medium">{complexidadeDev}/10</span>
+                <span className="text-sm tabular-nums text-accent font-medium">
+                  {complexidadeDev === null ? "—/10" : `${complexidadeDev}/10`}
+                </span>
               </div>
               <Slider
                 min={0}
                 max={10}
                 step={1}
-                value={[complexidadeDev]}
+                value={[complexidadeDev ?? 0]}
                 onValueChange={(v) => setComplexidadeDev(v[0])}
+                className={complexidadeDev === null ? "opacity-60" : undefined}
               />
               <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
@@ -489,29 +479,37 @@ export default function DemandaDetail() {
                   );
                 })}
               </div>
-              <FormulaImpactCard complexidade={complexidadeDev} />
+              <FormulaImpactCard complexidade={complexidadeDev ?? 0} />
             </div>
             <div>
-              <Label htmlFor="notas-complex-dev">Notas técnicas (opcional)</Label>
+              <Label htmlFor="notas-tecnicas-complexidade">Notas da Avaliação Técnica</Label>
               <Textarea
-                id="notas-complex-dev"
-                rows={3}
-                placeholder="Justifique a avaliação, dependências, riscos…"
-                value={notasComplexDev}
-                onChange={(e) => setNotasComplexDev(e.target.value)}
+                id="notas-tecnicas-complexidade"
+                rows={4}
+                placeholder="Justifique sua avaliação: por que essa complexidade? Quais são as principais dificuldades técnicas? Há riscos ou dependências a destacar? Sugestões de abordagem?"
+                value={notasTecnicasComplexidade}
+                onChange={(e) => setNotasTecnicasComplexidade(e.target.value)}
                 maxLength={2000}
               />
+              <p className="text-[11px] text-muted-foreground mt-1 text-right tabular-nums">
+                {notasTecnicasComplexidade.length}/2000
+              </p>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border">
               <div className="text-sm text-muted-foreground">
                 Preview do score final:{" "}
                 <span className="text-foreground font-medium tabular-nums">
-                  {Math.round(
-                    computeScoreFinal(solicitacao.scoreSolicitante, complexidadeDev) ?? 0,
-                  )}
+                  {complexidadeDev === null
+                    ? "—"
+                    : Math.round(
+                        computeScoreFinal(solicitacao.scoreSolicitante, complexidadeDev) ?? 0,
+                      )}
                 </span>
               </div>
-              <Button onClick={handleSaveComplexidadeDev} disabled={savingComplexDev}>
+              <Button
+                onClick={handleSaveComplexidadeDev}
+                disabled={savingComplexDev || complexidadeDev === null}
+              >
                 <Save className="size-4" /> Salvar Avaliação Técnica
               </Button>
             </div>
