@@ -1,85 +1,45 @@
-# Sub-navegação e novas visões para Solicitações e Soluções
+## Objetivo
 
-## O que muda
+Permitir que qualquer usuário autenticado e autorizado (presente em `allowed_emails`) consiga **visualizar todas** as solicitações e soluções já cadastradas — incluindo as criadas anteriormente por `blococcomercial@gmail.com` e `riccellycivil@gmail.com`. A capacidade de **criar/editar/excluir** continua exatamente como está hoje (dono edita o próprio; admin edita tudo).
 
-A barra lateral do desenvolvedor passa a ter dois itens expansíveis:
+## Diagnóstico
 
-```text
-Dashboard
-Solicitações  ▾
-   ├─ Lista
-   ├─ Kanban
-   └─ Gantt
-Soluções  ▾
-   ├─ Lista
-   ├─ Kanban
-   └─ Gantt
-```
+Hoje, na tabela `solicitacoes`, as únicas políticas de SELECT são:
+- `Admins can view all solicitacoes` → só admins
+- `Owners can view their solicitacoes` → só o dono (`auth.uid() = user_id`)
 
-- Clicar no item pai apenas expande/colapsa (não navega).
-- O item top-level "Kanban" atual é removido (vira sub-item de Solicitações).
-- Sub-item ativo fica destacado; o pai correspondente abre automaticamente quando a rota atual pertence a ele.
-- O badge "⚙ N" de avaliações pendentes continua aparecendo, agora ao lado de "Solicitações" (pai) e replicado no sub-item Lista.
+Como os novos emails (Adriano, Ailton, Vitória, …, Fernanda) **não são admin** e **não são donos** das solicitações antigas, eles simplesmente não enxergam nada criado por blococcomercial/riccellycivil. O mesmo padrão se repete em `demanda_solucoes`, `demanda_tasks`, `solucao_tasks`, `demanda_melhorias` (várias dessas hoje são restritas a admin).
 
-## Rotas
+## Mudanças no banco (migração SQL)
 
-Novas rotas (todas protegidas, role developer):
+Adicionar uma política **permissiva** de SELECT em cada tabela do domínio para qualquer usuário autorizado (`private.is_allowed_user()`). Não removemos nenhuma política existente — só ampliamos a leitura.
 
-- `/solicitacoes` → Lista (atual)
-- `/solicitacoes/kanban` → Kanban (componente atual movido)
-- `/solicitacoes/gantt` → Gantt (novo)
-- `/solucoes` → Lista (atual)
-- `/solucoes/kanban` → Kanban (novo, agrupado por solicitação vinculada)
-- `/solucoes/gantt` → Gantt (novo)
+Tabelas afetadas:
 
-A rota antiga `/kanban` redireciona para `/solicitacoes/kanban`.
+- `public.solicitacoes` → nova policy SELECT: `private.is_allowed_user()`
+- `public.demanda_solucoes` → já existe policy equivalente, **sem alteração**
+- `public.demanda_tasks` → nova policy SELECT: `private.is_allowed_user()` (hoje só admin lê)
+- `public.solucao_tasks` → nova policy SELECT: `private.is_allowed_user()` (hoje só admin/dono lê)
+- `public.demanda_melhorias` → já permite, **sem alteração**
+- `public.solicitacoes_score_history` → nova policy SELECT: `private.is_allowed_user()` (opcional, para coerência do histórico exibido)
 
-## Visões novas
+Políticas de INSERT/UPDATE/DELETE permanecem intactas, então:
+- Solicitante continua só editando as próprias solicitações.
+- Apenas admin segue podendo alterar tasks, score, etc.
 
-### Kanban de Soluções (por solicitação vinculada)
-Colunas dinâmicas, uma por `solicitacao` que possua soluções vinculadas, mais uma coluna "Sem solicitação" para soluções com `solicitacao_id = null`. Cada card mostra título, descrição curta, link externo, botão para abrir `/solucoes/:id`. Sem drag-and-drop nesta primeira versão (mover entre colunas exigiria reatribuir a solicitação, fora do escopo).
+## Mudanças no frontend
 
-### Gantt (Solicitações e Soluções)
-Timeline horizontal com barras posicionadas por `data_inicio_prevista` e `data_fim_prevista`. Header com escala de tempo (semanas/meses, com zoom simples: semana / mês / trimestre). Linhas agrupadas por status. Itens sem datas planejadas aparecem em uma seção "Sem cronograma" no topo, com CTA para definir datas.
+Nenhuma mudança estrutural obrigatória. Pontos a confirmar depois da migração:
 
-Edição: clicar em uma barra abre um popover com dois date pickers (início/fim) e botão Salvar. Sem drag-and-drop nesta versão.
+- `MinhasDemandas` / `RequesterDashboard` continuam filtrando por `user_id = auth.uid()` no código, então o solicitante **continua vendo apenas as próprias** nessas telas (comportamento esperado).
+- Caso você queira que o Solicitante tenha uma tela "Todas as solicitações / Catálogo de soluções" para enxergar o histórico geral, isso vira um passo seguinte (nova rota + listagem somente leitura). Hoje as rotas `/solicitacoes` e `/solucoes` são restritas a `developer`.
 
-## Backend (migration)
+## Riscos / observações
 
-Adicionar colunas de planejamento em `solicitacoes` e `demanda_solucoes`:
+- Estamos expondo conteúdo de **todas** as solicitações (título, descrição, solicitante, etc.) para qualquer usuário autorizado. Confirmado pela sua escolha de "ver TODAS (somente leitura)".
+- Não há exposição de dados sensíveis tipo senha — `profiles` e `user_roles` continuam com as políticas atuais.
+- A função `private.is_allowed_user()` já é `SECURITY DEFINER` e é usada em várias outras tabelas, então o padrão é consistente.
 
-```sql
-alter table public.solicitacoes
-  add column data_inicio_prevista date,
-  add column data_fim_prevista date;
+## Próximo passo
 
-alter table public.demanda_solucoes
-  add column data_inicio_prevista date,
-  add column data_fim_prevista date;
-```
-
-RLS: as policies existentes já cobrem update por admin/owner — sem mudanças. Trigger `enforce_dev_only_columns` não precisa proteger essas colunas (planejamento é compartilhado dev/solicitante? — se quiser restringir a dev, posso adicionar; default proposto: editável por admin apenas no UI, mas tecnicamente owner também pode via RLS atual).
-
-## Frontend — arquivos
-
-- `src/App.tsx` — registrar novas rotas + redirect `/kanban` → `/solicitacoes/kanban`.
-- `src/components/AppLayout.tsx` — refatorar `devNav` para suportar `children`; adicionar estado de expansão (auto-abre quando rota filha está ativa); remover item Kanban top-level.
-- `src/pages/Kanban.tsx` — mantido, agora montado em `/solicitacoes/kanban`.
-- `src/pages/SolucoesKanban.tsx` *(novo)* — Kanban agrupado por solicitação.
-- `src/pages/SolicitacoesGantt.tsx` *(novo)* — Gantt das solicitações.
-- `src/pages/SolucoesGantt.tsx` *(novo)* — Gantt das soluções.
-- `src/components/GanttChart.tsx` *(novo, reutilizável)* — recebe `items: { id, title, status, start, end }[]` e callbacks de edição.
-- `src/lib/types.ts` + `src/lib/supabaseData.ts` — incluir `dataInicioPrevista`/`dataFimPrevista` no mapeamento e no update.
-
-## Detalhes técnicos do Gantt
-
-- Renderizado em SVG ou via grid CSS (linhas absolutas posicionadas por `left%`/`width%`).
-- Eixo X calculado a partir de `min(start)` e `max(end)` de todos os itens (com padding de 1 semana).
-- Toggle de zoom (Semana / Mês / Trimestre) altera a granularidade do header.
-- Barras coloridas pelo `status` (mesmas cores do `StatusBadge`).
-- Linhas vazias (sem datas) listadas em uma seção destacada acima da timeline.
-
-## Pontos a confirmar (não bloqueantes)
-
-- Datas de planejamento: editáveis também pelo solicitante ou apenas pelo dev? (default proposto: apenas dev, sem trigger novo — UI restringe).
-- Drag-and-drop nas barras do Gantt: fora do escopo desta entrega; clique abre popover de edição.
+Ao aprovar este plano, eu gero a migração SQL com as novas policies de SELECT e, em seguida, valido entrando como um dos novos usuários para confirmar que ele passa a ver as solicitações/soluções antigas.
