@@ -60,14 +60,11 @@ export default function Dashboard() {
             Solicitações ordenadas por prioridade.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <BulkCreateRequestersButton />
-          <Button asChild variant="outline">
-            <Link to="/kanban">
-              <KanbanSquare className="size-4" /> Abrir Kanban
-            </Link>
-          </Button>
-        </div>
+        <Button asChild variant="outline">
+          <Link to="/kanban">
+            <KanbanSquare className="size-4" /> Abrir Kanban
+          </Link>
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
