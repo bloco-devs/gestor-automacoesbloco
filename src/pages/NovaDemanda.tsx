@@ -175,9 +175,15 @@ export default function NovaDemanda() {
           </Card>
 
           {!isDeveloper && (
-            <Button type="submit" className="w-full sm:w-auto">
-              Enviar demanda
-            </Button>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-border bg-card/40 p-4">
+              <div>
+                <div className="text-sm font-medium">Score estimado: <span className="tabular-nums">{previewScore}/100</span></div>
+                <div className="text-xs text-muted-foreground">Será ajustado quando o dev fizer a avaliação técnica.</div>
+              </div>
+              <Button type="submit" className="w-full sm:w-auto">
+                Enviar demanda
+              </Button>
+            </div>
           )}
         </div>
 
