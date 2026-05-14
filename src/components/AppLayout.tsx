@@ -66,6 +66,13 @@ export default function AppLayout() {
       ? stored
       : SIDEBAR_DEFAULT;
   });
+  const [sidebarHidden, setSidebarHidden] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("app:sidebarHidden") === "1";
+  });
+  useEffect(() => {
+    window.localStorage.setItem("app:sidebarHidden", sidebarHidden ? "1" : "0");
+  }, [sidebarHidden]);
   const draggingRef = useRef(false);
   const isDeveloper = user?.role === "developer";
   const [pendingEvalCount, setPendingEvalCount] = useState<number>(0);
