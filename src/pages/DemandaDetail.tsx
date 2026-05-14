@@ -185,9 +185,7 @@ export default function DemandaDetail() {
         title: "Avaliação técnica salva",
         description: "Score final recalculado.",
       });
-      // Força recarga da solicitação para refletir score_final atualizado
-      // (useSupabaseData re-busca quando `id` muda; aqui usamos mutação manual)
-      window.dispatchEvent(new Event("solicitacao:refetch"));
+      // useSupabaseData já refaz a query via realtime postgres_changes em `solicitacoes`.
     } catch (e) {
       toast({
         title: "Erro ao salvar",
