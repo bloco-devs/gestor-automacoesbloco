@@ -120,9 +120,9 @@ export async function createSolicitacao(data: {
   titulo: string;
   descricao: string;
   softwares: string[];
-  frequencia: Frequencia;
-  complexidade: number;
-  retorno: number;
+  frequencia: number; // 0-10 na nova escala
+  dificuldade: number; // 0-10 — substitui semanticamente "complexidade"
+  retorno: number; // 0-10
   setor: string;
   solicitanteId: string;
   solicitanteNome: string;
@@ -133,14 +133,18 @@ export async function createSolicitacao(data: {
     throw new Error("Faça login novamente para enviar uma demanda.");
   }
 
+  // Score legado (`score`) mantido durante a transição até o trigger SQL do Prompt 4.
+  // A coluna `complexidade` no banco passa a armazenar o valor de `dificuldade` (0-10),
+  // até a migration que renomeia/cria a coluna dedicada.
+  const scoreSolicitante = computeScoreSolicitante(data.frequencia, data.dificuldade, data.retorno);
   const { error } = await supabase.from("solicitacoes").insert({
     titulo: data.titulo,
     descricao: data.descricao,
     frequencia: data.frequencia,
-    complexidade: data.complexidade,
+    complexidade: data.dificuldade,
     retorno: data.retorno,
     setor: data.setor,
-    score: calcScore(data),
+    score: Math.round(scoreSolicitante),
     user_id: authData.user.id,
     solicitante_nome: data.solicitanteNome,
     nome: data.solicitanteNome,
