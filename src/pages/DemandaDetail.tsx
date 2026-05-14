@@ -58,6 +58,9 @@ export default function DemandaDetail() {
   const [descricaoDev, setDescricaoDev] = useState(solicitacao?.descricao ?? "");
   const [temIntegracao, setTemIntegracao] = useState<boolean>(solicitacao?.temIntegracao ?? false);
   const [integracoesText, setIntegracoesText] = useState((solicitacao?.integracoes ?? []).join(", "));
+  const [complexidadeDev, setComplexidadeDev] = useState<number>(solicitacao?.complexidadeDev ?? 5);
+  const [notasComplexDev, setNotasComplexDev] = useState<string>(solicitacao?.notasTecnicas ?? "");
+  const [savingComplexDev, setSavingComplexDev] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitulo, setEditTitulo] = useState(solicitacao?.titulo ?? "");
   const [editDescricao, setEditDescricao] = useState(solicitacao?.descricao ?? "");
