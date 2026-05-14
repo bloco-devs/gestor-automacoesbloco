@@ -102,7 +102,7 @@ function mapMelhoria(row: { id: string; solucao_id: string; descricao: string; s
 export async function listSolicitacoes(): Promise<Solicitacao[]> {
   const { data, error } = await supabase
     .from("solicitacoes")
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select(SOLICITACAO_COLS)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row) => mapSolicitacao(row as SolicitacaoRow));
@@ -111,7 +111,7 @@ export async function listSolicitacoes(): Promise<Solicitacao[]> {
 export async function listMinhasSolicitacoes(userId: string): Promise<Solicitacao[]> {
   const { data, error } = await supabase
     .from("solicitacoes")
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select(SOLICITACAO_COLS)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -121,7 +121,7 @@ export async function listMinhasSolicitacoes(userId: string): Promise<Solicitaca
 export async function getSolicitacao(id: string): Promise<Solicitacao | null> {
   const { data, error } = await supabase
     .from("solicitacoes")
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select(SOLICITACAO_COLS)
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -178,7 +178,7 @@ export async function createSolicitacao(data: {
       integracoes: data.softwares,
       status: "novo",
     })
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select(SOLICITACAO_COLS)
     .single();
   if (error) throw error;
   return mapSolicitacao(inserted as SolicitacaoRow);
@@ -305,7 +305,7 @@ export async function deleteSolicitacao(id: string): Promise<void> {
 export async function listSolucoes(): Promise<Solucao[]> {
   const { data, error } = await supabase
     .from("demanda_solucoes")
-    .select("id,solicitacao_id,titulo,descricao,link,created_at")
+    .select(SOLUCAO_COLS)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(mapSolucao);
@@ -314,7 +314,7 @@ export async function listSolucoes(): Promise<Solucao[]> {
 export async function listSolucoesBySolicitacao(solicitacaoId: string): Promise<Solucao[]> {
   const { data, error } = await supabase
     .from("demanda_solucoes")
-    .select("id,solicitacao_id,titulo,descricao,link,created_at")
+    .select(SOLUCAO_COLS)
     .eq("solicitacao_id", solicitacaoId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -504,7 +504,7 @@ export async function deleteSolucaoTask(id: string): Promise<void> {
 export async function getSolucao(id: string): Promise<Solucao | null> {
   const { data, error } = await supabase
     .from("demanda_solucoes")
-    .select("id,solicitacao_id,titulo,descricao,link,created_at")
+    .select(SOLUCAO_COLS)
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
