@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, GanttChartSquare, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Plus, Repeat, Sparkles, Gauge } from "lucide-react";
+import { ChevronDown, GanttChartSquare, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Plus, Repeat, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +66,13 @@ export default function AppLayout() {
       ? stored
       : SIDEBAR_DEFAULT;
   });
+  const [sidebarHidden, setSidebarHidden] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("app:sidebarHidden") === "1";
+  });
+  useEffect(() => {
+    window.localStorage.setItem("app:sidebarHidden", sidebarHidden ? "1" : "0");
+  }, [sidebarHidden]);
   const draggingRef = useRef(false);
   const isDeveloper = user?.role === "developer";
   const [pendingEvalCount, setPendingEvalCount] = useState<number>(0);
@@ -133,11 +140,21 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen flex">
+      {!sidebarHidden && (
       <aside
         className="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar relative shrink-0"
         style={{ width: sidebarWidth }}
       >
         <div className="px-5 py-6 flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={() => setSidebarHidden(true)}
+            title="Esconder barra lateral"
+            aria-label="Esconder barra lateral"
+            className="text-muted-foreground/60 hover:text-foreground transition-colors -ml-1 p-1 rounded"
+          >
+            <PanelLeftClose className="size-3.5" />
+          </button>
           <img
             src={blocoLogo}
             alt="Bloco Construções"
@@ -203,8 +220,20 @@ export default function AppLayout() {
           title="Arraste para redimensionar (duplo clique para resetar)"
         />
       </aside>
+      )}
 
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 relative">
+        {sidebarHidden && (
+          <button
+            type="button"
+            onClick={() => setSidebarHidden(false)}
+            title="Mostrar barra lateral"
+            aria-label="Mostrar barra lateral"
+            className="hidden md:flex fixed top-2 left-2 z-40 items-center justify-center size-7 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 transition-colors"
+          >
+            <PanelLeftOpen className="size-3.5" />
+          </button>
+        )}
         <header className="md:hidden border-b border-border px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img
