@@ -88,7 +88,10 @@ export interface Solicitacao {
   /** Score final com penalização de complexidade técnica (0-100). NULL enquanto dev não avaliou. */
   scoreFinal: number | null; // 0-100 ou null
   setor?: Setor | string;
+  /** @deprecated Use `notasTecnicasComplexidade`. Mantido apenas para leitura de dados legados. */
   notasTecnicas?: string;
+  /** Notas/justificativa da avaliação técnica do dev (0-2000 chars). NULL enquanto não avaliado. */
+  notasTecnicasComplexidade?: string | null;
   temIntegracao?: boolean;
   integracoes?: string[]; // softwares/sistemas integrados
   solicitanteId: string;
