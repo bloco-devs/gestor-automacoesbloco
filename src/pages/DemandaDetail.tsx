@@ -171,7 +171,23 @@ export default function DemandaDetail() {
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-semibold">{solicitacao.titulo}</h1>
             <StatusBadge status={solicitacao.status} />
-            {isDev && <ScorePill score={solicitacao.score} />}
+            {isDev && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs text-muted-foreground">Solicitante:</span>
+                <ScorePill score={Math.round(solicitacao.scoreSolicitante)} />
+                <span className="text-xs text-muted-foreground ml-1">Final:</span>
+                {solicitacao.scoreFinal !== null ? (
+                  <ScorePill score={Math.round(solicitacao.scoreFinal)} />
+                ) : (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border border-dashed border-border bg-muted/40 text-muted-foreground"
+                    title="O dev ainda não avaliou a complexidade técnica"
+                  >
+                    ⚙ Aguardando avaliação técnica
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isOwner && !isEditing && (
