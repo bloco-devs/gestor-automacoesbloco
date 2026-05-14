@@ -164,7 +164,14 @@ export default function Solicitacoes() {
                         <div className="text-xs text-muted-foreground line-clamp-1">{s.solicitanteNome}</div>
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={s.status} />
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <StatusBadge status={s.status} />
+                          {s.complexidadeDev === null && (
+                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-5 border-dashed">
+                              ⚙ Avaliar
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-sm tabular-nums">
                         {formatDate(s.createdAt)}
