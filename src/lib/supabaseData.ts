@@ -25,7 +25,11 @@ type SolicitacaoRow = {
 };
 
 function asFrequencia(value: number): Frequencia {
-  return ([1, 2, 3, 4] as number[]).includes(value) ? (value as Frequencia) : 3;
+  // Aceita escala legada (1-4) e a nova (0-10). O backfill no Prompt 4
+  // unifica os dois universos no banco.
+  const n = Number(value);
+  if (Number.isNaN(n)) return 3;
+  return Math.max(0, Math.min(10, n));
 }
 
 function asStatus(value: string): PipelineStatus {
