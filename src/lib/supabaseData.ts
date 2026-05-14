@@ -69,18 +69,22 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     integracoes: row.integracoes ?? [],
     solicitanteId: row.user_id ?? "",
     solicitanteNome: row.solicitante_nome || row.nome || "Solicitante",
+    dataInicioPrevista: row.data_inicio_prevista,
+    dataFimPrevista: row.data_fim_prevista,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; link: string | null; created_at: string }): Solucao {
+function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; link: string | null; created_at: string; data_inicio_prevista?: string | null; data_fim_prevista?: string | null }): Solucao {
   return {
     id: row.id,
     solicitacaoId: row.solicitacao_id,
     titulo: row.titulo,
     descricao: row.descricao,
     link: row.link ?? undefined,
+    dataInicioPrevista: row.data_inicio_prevista ?? null,
+    dataFimPrevista: row.data_fim_prevista ?? null,
     createdAt: row.created_at,
   };
 }
