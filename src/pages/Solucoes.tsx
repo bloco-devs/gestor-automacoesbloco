@@ -1,39 +1,62 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { ExternalLink, Pencil, Plus, Save, Sparkles, Trash, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Search,
+} from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   createSolucao,
-  deleteSolucao,
   listSolicitacoes,
   listSolucoes,
-  updateSolucao,
 } from "@/lib/supabaseData";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Solucao } from "@/lib/types";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+
+type SortKey = "titulo" | "demanda" | "createdAt";
+type SortDir = "asc" | "desc";
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 export default function Solucoes() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const solucoes = useSupabaseData(() => listSolucoes(), []);
   const solicitacoes = useSupabaseData(() => listSolicitacoes(), []);
+
+  const demandaTituloById = useMemo(() => {
+    const map = new Map<string, string>();
+    solicitacoes.forEach((s) => map.set(s.id, s.titulo));
+    return map;
+  }, [solicitacoes]);
 
   const [novoTitulo, setNovoTitulo] = useState("");
   const [novoDescricao, setNovoDescricao] = useState("");
@@ -41,6 +64,57 @@ export default function Solucoes() {
   const [novoSolicitacaoId, setNovoSolicitacaoId] = useState<string>("none");
   const [salvando, setSalvando] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [vinculoFilter, setVinculoFilter] = useState<string>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return solucoes.filter((s) => {
+      if (vinculoFilter === "linked" && !s.solicitacaoId) return false;
+      if (vinculoFilter === "unlinked" && s.solicitacaoId) return false;
+      if (!q) return true;
+      const demanda = s.solicitacaoId ? demandaTituloById.get(s.solicitacaoId) ?? "" : "";
+      return (
+        s.titulo.toLowerCase().includes(q) ||
+        s.descricao.toLowerCase().includes(q) ||
+        demanda.toLowerCase().includes(q)
+      );
+    });
+  }, [solucoes, search, vinculoFilter, demandaTituloById]);
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      const va = readSortable(a, sortKey, demandaTituloById);
+      const vb = readSortable(b, sortKey, demandaTituloById);
+      if (va < vb) return sortDir === "asc" ? -1 : 1;
+      if (va > vb) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir, demandaTituloById]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = useMemo(
+    () => sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [sorted, currentPage, pageSize],
+  );
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "createdAt" ? "desc" : "asc");
+    }
+    setPage(1);
+  }
 
   const handleCriarSolucao = async () => {
     if (!novoTitulo.trim()) {
@@ -73,27 +147,14 @@ export default function Solucoes() {
     }
   };
 
-  const handleSaveLink = async (id: string, link: string) => {
-    try {
-      await updateSolucao(id, { link: link.trim() || null });
-      toast({ title: "Link atualizado" });
-    } catch (err) {
-      toast({
-        title: "Erro ao atualizar link",
-        description: err instanceof Error ? err.message : "Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Sparkles className="size-5 text-accent" /> Soluções desenvolvidas
-          </h1>
-          <p className="text-sm text-muted-foreground">Catálogo de entregas vinculadas às demandas.</p>
+          <h1 className="text-2xl font-semibold">Todas as soluções</h1>
+          <p className="text-sm text-muted-foreground">
+            Lista completa com ordenação e paginação.
+          </p>
         </div>
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
           <PopoverTrigger asChild>
@@ -142,148 +203,190 @@ export default function Solucoes() {
         </Popover>
       </div>
 
-      {solucoes.length === 0 ? (
-        <Card className="surface-1">
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            Nenhuma solução cadastrada ainda.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {solucoes.map((s) => (
-            <SolucaoCard
-              key={s.id}
-              id={s.id}
-              titulo={s.titulo}
-              descricao={s.descricao}
-              link={s.link ?? null}
-              demandaTitulo={solicitacoes.find((item) => item.id === s.solicitacaoId)?.titulo}
-              onSaveLink={(link) => handleSaveLink(s.id, link)}
-              onDeleteSolucao={async () => {
-                try {
-                  await deleteSolucao(s.id);
-                  toast({ title: "Solução excluída", description: "Removida também da demanda vinculada." });
-                } catch (err) {
-                  toast({
-                    title: "Erro ao excluir",
-                    description: err instanceof Error ? err.message : "Tente novamente.",
-                    variant: "destructive",
-                  });
-                }
+      <Card className="surface-1">
+        <CardContent className="p-3 grid gap-3 md:grid-cols-[1fr_220px]">
+          <div className="relative">
+            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
               }}
+              className="pl-9"
             />
-          ))}
-        </div>
-      )}
+          </div>
+          <Select
+            value={vinculoFilter}
+            onValueChange={(v) => {
+              setVinculoFilter(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os vínculos</SelectItem>
+              <SelectItem value="linked">Com demanda vinculada</SelectItem>
+              <SelectItem value="unlinked">Sem vínculo</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      <Card className="surface-1">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <SortableHead label="Solução" k="titulo" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <SortableHead label="Demanda vinculada" k="demanda" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <SortableHead label="Data" k="createdAt" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pageItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-12 text-muted-foreground">
+                      Nenhuma solução encontrada.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  pageItems.map((s) => {
+                    const demanda = s.solicitacaoId ? demandaTituloById.get(s.solicitacaoId) : undefined;
+                    return (
+                      <TableRow
+                        key={s.id}
+                        onClick={() => navigate(`/solucoes/${s.id}`)}
+                        className="cursor-pointer hover:bg-muted/40"
+                      >
+                        <TableCell>
+                          <div className="font-medium">{s.titulo}</div>
+                          {s.descricao && (
+                            <div className="text-xs text-muted-foreground line-clamp-1">{s.descricao}</div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {demanda ?? <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="text-sm tabular-nums">
+                          {formatDate(s.createdAt)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border text-sm">
+            <div className="text-muted-foreground">
+              {sorted.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}–
+              {Math.min(currentPage * pageSize, sorted.length)} de {sorted.length}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-xs">Por página</span>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(v) => {
+                    setPageSize(Number(v));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-[80px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAGE_SIZE_OPTIONS.map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <span className="text-xs tabular-nums px-2">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-function SolucaoCard({
-  id,
-  titulo,
-  descricao,
-  link,
-  demandaTitulo,
-  onSaveLink,
-  onDeleteSolucao,
+function SortableHead({
+  label,
+  k,
+  sortKey,
+  sortDir,
+  onSort,
+  className,
 }: {
-  id: string;
-  titulo: string;
-  descricao: string;
-  link: string | null;
-  demandaTitulo?: string;
-  onSaveLink: (link: string) => void | Promise<void>;
-  onDeleteSolucao: () => void;
+  label: string;
+  k: SortKey;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (k: SortKey) => void;
+  className?: string;
 }) {
-  const navigate = useNavigate();
-  const [editing, setEditing] = useState(false);
-  const [linkDraft, setLinkDraft] = useState(link ?? "");
-  const open = () => navigate(`/solucoes/${id}`);
-  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
-  const href = link ? (/^https?:\/\//i.test(link) ? link : `https://${link}`) : "#";
-
+  const active = sortKey === k;
+  const Icon = !active ? ArrowUpDown : sortDir === "asc" ? ArrowUp : ArrowDown;
   return (
-    <Card
-      className="surface-1 cursor-pointer hover:border-accent/50 transition-colors"
-      role="link"
-      tabIndex={0}
-      onClick={open}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          open();
-        }
-      }}
-    >
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <CardTitle className="text-base">{titulo}</CardTitle>
-            {demandaTitulo && <CardDescription>{demandaTitulo}</CardDescription>}
-          </div>
-          <div className="flex items-center gap-2" onClick={stop} onKeyDown={stop}>
-            {link && (
-              <Button asChild variant="outline" size="icon" className="h-8 w-8" title="Abrir link">
-                <a href={href} target="_blank" rel="noopener noreferrer" aria-label="Abrir link da solução">
-                  <ExternalLink className="size-4" />
-                </a>
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setLinkDraft(link ?? "");
-                setEditing((v) => !v);
-              }}
-            >
-              <Pencil className="size-4" /> {link ? "Editar link" : "Adicionar link"}
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Excluir solução">
-                  <Trash className="size-4 text-destructive" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir esta solução?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação removerá a solução da demanda vinculada. Não é possível desfazer.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={onDeleteSolucao}>Excluir</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
-        {descricao && <p className="text-sm text-muted-foreground mt-2">{descricao}</p>}
-        {editing && (
-          <div className="flex gap-2 mt-3" onClick={stop} onKeyDown={stop}>
-            <Input
-              placeholder="https://..."
-              value={linkDraft}
-              onChange={(e) => setLinkDraft(e.target.value)}
-            />
-            <Button
-              size="sm"
-              onClick={async () => {
-                await onSaveLink(linkDraft);
-                setEditing(false);
-              }}
-            >
-              <Save className="size-4" /> Salvar
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
-              <X className="size-4" />
-            </Button>
-          </div>
+    <TableHead className={className}>
+      <button
+        type="button"
+        onClick={() => onSort(k)}
+        className={cn(
+          "inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide transition-colors",
+          active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
         )}
-      </CardHeader>
-    </Card>
+      >
+        {label}
+        <Icon className={cn("size-3.5", active ? "opacity-100" : "opacity-50")} />
+      </button>
+    </TableHead>
   );
+}
+
+function readSortable(s: Solucao, key: SortKey, demandaMap: Map<string, string>): string | number {
+  switch (key) {
+    case "titulo":
+      return s.titulo.toLowerCase();
+    case "demanda":
+      return (s.solicitacaoId ? demandaMap.get(s.solicitacaoId) ?? "" : "").toLowerCase();
+    case "createdAt":
+      return new Date(s.createdAt).getTime();
+  }
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
