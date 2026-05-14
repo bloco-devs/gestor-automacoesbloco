@@ -39,8 +39,14 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     frequencia: asFrequencia(row.frequencia),
     complexidade: row.complexidade,
     retorno: row.retorno,
+    // Campos novos (escala 0-10) — backfill real virá no Prompt 2.
+    // Por enquanto, projeção temporária a partir do legado para manter os tipos válidos.
+    dificuldade: row.complexidade,
+    complexidadeDev: null,
     status: asStatus(row.status),
     score: row.score,
+    scoreSolicitante: row.score,
+    scoreFinal: null,
     notasTecnicas: row.notas_tecnicas ?? undefined,
     setor: row.setor ?? undefined,
     temIntegracao: row.tem_integracao,
