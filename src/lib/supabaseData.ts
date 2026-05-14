@@ -13,6 +13,7 @@ type SolicitacaoRow = {
   status: string;
   score: number;
   notas_tecnicas: string | null;
+  notas_tecnicas_complexidade: string | null;
   setor: string | null;
   tem_integracao: boolean;
   integracoes: string[];
