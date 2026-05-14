@@ -588,3 +588,68 @@ function FormulaImpactCard({ complexidade }: { complexidade: number }) {
     </Collapsible>
   );
 }
+
+const CHECKLIST_ITENS: { id: string; label: string; pontos: number; hint: string }[] = [
+  { id: "apis", label: "Quantas APIs/sistemas precisam ser integrados?", hint: ">3 sistemas", pontos: 2 },
+  { id: "logica", label: "Envolve lógica condicional complexa ou regras de negócio?", hint: "sim", pontos: 1 },
+  { id: "tempo", label: "Quanto tempo um desenvolvedor sênior levaria do zero?", hint: ">1 semana", pontos: 3 },
+  { id: "auth", label: "Requer autenticação/autorização custom?", hint: "sim", pontos: 1 },
+  { id: "tech", label: "Depende de bibliotecas/tecnologias novas ou instáveis?", hint: "sim", pontos: 2 },
+  { id: "errors", label: "Envolve tratamento complexo de erros ou edge cases?", hint: "sim", pontos: 1 },
+  { id: "testes", label: "Requer testes automatizados específicos?", hint: "sim", pontos: 1 },
+  { id: "impacto", label: "Impacta em outras automações/integrações?", hint: "sim", pontos: 2 },
+];
+
+function ChecklistAvaliacao() {
+  const [open, setOpen] = useState(false);
+  const [marcados, setMarcados] = useState<Record<string, boolean>>({});
+  const total = CHECKLIST_ITENS.reduce((acc, i) => acc + (marcados[i.id] ? i.pontos : 0), 0);
+  const sugestao = Math.min(10, total);
+  return (
+    <Collapsible
+      open={open}
+      onOpenChange={setOpen}
+      className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900/60 dark:bg-blue-950/30"
+    >
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 p-3 text-left">
+        <div className="flex items-center gap-2 min-w-0">
+          <ClipboardList className="size-4 text-blue-600 dark:text-blue-300 shrink-0" />
+          <span className="text-sm font-medium truncate">Checklist de avaliação</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs tabular-nums text-blue-700 dark:text-blue-300">
+            sugestão: {sugestao}/10
+          </span>
+          <ChevronDown className={`size-4 text-blue-700 dark:text-blue-300 transition-transform ${open ? "rotate-180" : ""}`} />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="px-3 pb-3 space-y-2">
+        <ul className="space-y-2">
+          {CHECKLIST_ITENS.map((item) => (
+            <li key={item.id} className="flex items-start gap-2">
+              <Checkbox
+                id={`chk-${item.id}`}
+                checked={!!marcados[item.id]}
+                onCheckedChange={(v) =>
+                  setMarcados((m) => ({ ...m, [item.id]: v === true }))
+                }
+                className="mt-0.5"
+              />
+              <label htmlFor={`chk-${item.id}`} className="text-xs leading-snug cursor-pointer">
+                <span className="text-foreground">{item.label}</span>{" "}
+                <span className="text-muted-foreground">
+                  ({item.hint} = +{item.pontos} {item.pontos === 1 ? "ponto" : "pontos"})
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-blue-700 dark:text-blue-300 pt-2 border-t border-blue-200 dark:border-blue-900/60">
+          Dica: some aproximadamente os pontos para guiar sua avaliação no slider. Soma atual:{" "}
+          <span className="font-semibold tabular-nums">{total}</span> → sugestão{" "}
+          <span className="font-semibold tabular-nums">{sugestao}/10</span>.
+        </p>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
