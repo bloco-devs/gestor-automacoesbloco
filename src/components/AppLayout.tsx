@@ -248,3 +248,103 @@ export default function AppLayout() {
     </div>
   );
 }
+
+function SidebarNavItem({
+  item,
+  isDeveloper,
+  pendingEvalCount,
+}: {
+  item: NavItem;
+  isDeveloper: boolean;
+  pendingEvalCount: number;
+}) {
+  const { pathname } = useLocation();
+  const hasChildren = !!item.children?.length;
+
+  // Pai está "ativo" se a rota atual cai sob seu prefixo
+  const isParentActive = useMemo(() => {
+    if (!item.matchPrefix) return false;
+    return pathname === item.matchPrefix || pathname.startsWith(item.matchPrefix + "/");
+  }, [pathname, item.matchPrefix]);
+
+  const [open, setOpen] = useState<boolean>(isParentActive);
+  useEffect(() => {
+    if (isParentActive) setOpen(true);
+  }, [isParentActive]);
+
+  const showBadge =
+    isDeveloper && item.matchPrefix === "/solicitacoes" && pendingEvalCount > 0;
+
+  if (!hasChildren) {
+    return (
+      <NavLink
+        to={item.to!}
+        end
+        className={({ isActive }) =>
+          cn(
+            "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0",
+            isActive
+              ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border"
+              : "text-sidebar-foreground hover:bg-sidebar-accent/60",
+          )
+        }
+      >
+        <item.icon className="size-4 shrink-0" />
+        <span className="truncate flex-1">{item.label}</span>
+      </NavLink>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0",
+          isParentActive
+            ? "text-sidebar-accent-foreground bg-sidebar-accent/40"
+            : "text-sidebar-foreground hover:bg-sidebar-accent/60",
+        )}
+      >
+        <item.icon className="size-4 shrink-0" />
+        <span className="truncate flex-1 text-left">{item.label}</span>
+        {showBadge && (
+          <Badge
+            variant="outline"
+            className="text-[10px] py-0 px-1.5 h-5 border-dashed shrink-0"
+            title="Solicitações aguardando avaliação técnica"
+          >
+            ⚙ {pendingEvalCount}
+          </Badge>
+        )}
+        <ChevronDown
+          className={cn("size-3.5 shrink-0 transition-transform text-muted-foreground", open && "rotate-180")}
+        />
+      </button>
+      {open && (
+        <div className="mt-1 ml-3 pl-3 border-l border-sidebar-border/60 space-y-0.5">
+          {item.children!.map((child) => (
+            <NavLink
+              key={child.to}
+              to={child.to!}
+              end
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-colors min-w-0",
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
+                )
+              }
+            >
+              <child.icon className="size-3.5 shrink-0" />
+              <span className="truncate">{child.label}</span>
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
