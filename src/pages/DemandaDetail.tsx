@@ -36,6 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { calcScore } from "@/lib/score";
+import { computeScoreFinal, computeScoreSolicitante } from "@/lib/scoreV2";
 import { useToast } from "@/hooks/use-toast";
 
 export default function DemandaDetail() {
