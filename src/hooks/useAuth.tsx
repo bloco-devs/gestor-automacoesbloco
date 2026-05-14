@@ -32,6 +32,12 @@ const VIEW_AS_KEY = "viewAsRole";
 const ALLOWED_ACCOUNTS: Record<string, { role: Role; nome: string }> = {
   "blococcomercial@gmail.com": { role: "developer", nome: "Bloco Comercial" },
   "riccellycivil@gmail.com": { role: "developer", nome: "Riccelly" },
+  "atendimentoblocojp@gmail.com": { role: "requester", nome: "Atendimento JP" },
+  "admblococonstrucoes@gmail.com": { role: "requester", nome: "Administrativo" },
+  "planejamentoblococonstrucoes@gmail.com": { role: "requester", nome: "Planejamento" },
+  "producaoblococonstrucoes@gmail.com": { role: "requester", nome: "Produção" },
+  "rh@grupobloco.com.br": { role: "requester", nome: "Recursos Humanos" },
+  "blocolegalizacao@gmail.com": { role: "requester", nome: "Legalização" },
 };
 
 export function getAllowedAccount(email?: string | null) {
