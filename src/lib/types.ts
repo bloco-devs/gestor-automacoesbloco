@@ -44,13 +44,22 @@ export const SETORES = [
 ] as const;
 export type Setor = typeof SETORES[number];
 
-export type Frequencia = 1 | 2 | 3 | 4; // Eventual, Mensal, Semanal, Diária
-export const FREQUENCIA_LABEL: Record<Frequencia, string> = {
+/**
+ * Frequência de utilização. Após a migração para escala unificada, é um número 0-10.
+ * Valores legados (1-4) ainda existem em registros antigos até o backfill do Prompt 4.
+ */
+export type Frequencia = number;
+export const FREQUENCIA_LABEL: Record<number, string> = {
   1: "Eventual",
   2: "Mensal",
   3: "Semanal",
   4: "Diária",
 };
+
+/** Label seguro para qualquer valor de frequência (legado 1-4 ou novo 0-10). */
+export function freqLabel(n: number): string {
+  return FREQUENCIA_LABEL[n] ?? `${n}/10`;
+}
 
 export interface Profile {
   id: string;
