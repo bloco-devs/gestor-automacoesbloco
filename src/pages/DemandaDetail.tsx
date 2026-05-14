@@ -8,6 +8,7 @@ import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   deleteSolicitacao,
   getSolicitacao,
+  listScoreHistory,
   listSolucoesBySolicitacao,
   updateOwnSolicitacao,
   updateSolicitacao,
