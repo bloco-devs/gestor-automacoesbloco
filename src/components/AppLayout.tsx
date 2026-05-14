@@ -47,6 +47,16 @@ const requesterNav: NavItem[] = [
   { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
   { to: "/minhas-demandas", label: "Minhas Demandas", icon: ListTodo },
   { to: "/nova-demanda", label: "Nova Demanda", icon: Plus },
+  {
+    label: "Solicitações",
+    icon: ListChecks,
+    matchPrefix: "/solicitacoes",
+    children: [
+      { to: "/solicitacoes", label: "Lista", icon: List },
+      { to: "/solicitacoes/kanban", label: "Kanban", icon: KanbanSquare },
+      { to: "/solicitacoes/gantt", label: "Gantt", icon: GanttChartSquare },
+    ],
+  },
 ];
 
 const SIDEBAR_MIN = 160;
