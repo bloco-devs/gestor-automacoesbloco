@@ -3,8 +3,11 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Sparkles, ListTodo, Gauge, Repeat } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
+import { countPendingDevEvaluations } from "@/lib/supabaseData";
+import { supabase } from "@/integrations/supabase/client";
 import blocoLogo from "@/assets/bloco-logo.png";
 
 const devNav = [
