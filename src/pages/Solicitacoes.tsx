@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 type SortKey = "id" | "titulo" | "solicitanteNome" | "status" | "createdAt";
