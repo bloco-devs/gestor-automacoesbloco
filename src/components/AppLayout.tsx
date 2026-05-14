@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Sparkles, ListTodo, Gauge, Repeat } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { ChevronDown, GanttChartSquare, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Plus, Repeat, Sparkles, Gauge } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,13 +10,40 @@ import { countPendingDevEvaluations } from "@/lib/supabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import blocoLogo from "@/assets/bloco-logo.png";
 
-const devNav = [
+type NavItem = {
+  to?: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  /** Quando definido, o item é um pai colapsável e não navega ao clique. */
+  children?: NavItem[];
+  /** Routes que mantêm o pai marcado como ativo (para realçar e auto-abrir). */
+  matchPrefix?: string;
+};
+
+const devNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/solicitacoes", label: "Solicitações", icon: ListChecks },
-  { to: "/kanban", label: "Kanban", icon: KanbanSquare },
-  { to: "/solucoes", label: "Soluções", icon: Sparkles },
+  {
+    label: "Solicitações",
+    icon: ListChecks,
+    matchPrefix: "/solicitacoes",
+    children: [
+      { to: "/solicitacoes", label: "Lista", icon: List },
+      { to: "/solicitacoes/kanban", label: "Kanban", icon: KanbanSquare },
+      { to: "/solicitacoes/gantt", label: "Gantt", icon: GanttChartSquare },
+    ],
+  },
+  {
+    label: "Soluções",
+    icon: Sparkles,
+    matchPrefix: "/solucoes",
+    children: [
+      { to: "/solucoes", label: "Lista", icon: List },
+      { to: "/solucoes/kanban", label: "Kanban", icon: KanbanSquare },
+      { to: "/solucoes/gantt", label: "Gantt", icon: GanttChartSquare },
+    ],
+  },
 ];
-const requesterNav = [
+const requesterNav: NavItem[] = [
   { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
   { to: "/minhas-demandas", label: "Minhas Demandas", icon: ListTodo },
   { to: "/nova-demanda", label: "Nova Demanda", icon: Plus },
