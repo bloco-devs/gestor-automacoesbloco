@@ -33,13 +33,13 @@ export default function NovaDemanda() {
   const [descricao, setDescricao] = useState("");
   const [softwares, setSoftwares] = useState("");
   const [setor, setSetor] = useState<Setor | "">("");
-  const [frequencia, setFrequencia] = useState<Frequencia>(3);
-  const [complexidade, setComplexidade] = useState(3);
-  const [retorno, setRetorno] = useState(3);
+  const [frequencia, setFrequencia] = useState<number>(5);
+  const [dificuldade, setDificuldade] = useState<number>(5);
+  const [retorno, setRetorno] = useState<number>(5);
 
   const previewScore = useMemo(
-    () => calcScore({ frequencia, complexidade, retorno }),
-    [frequencia, complexidade, retorno],
+    () => Math.round(computeScoreSolicitante(frequencia, dificuldade, retorno)),
+    [frequencia, dificuldade, retorno],
   );
 
   async function handleSubmit(e: React.FormEvent) {
