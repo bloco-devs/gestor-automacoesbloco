@@ -135,7 +135,12 @@ export default function AppLayout() {
               }
             >
               <item.icon className="size-4 shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <span className="truncate flex-1">{item.label}</span>
+              {isDeveloper && item.to === "/solicitacoes" && pendingEvalCount > 0 && (
+                <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1.5 h-5 border-dashed shrink-0" title="Solicitações aguardando avaliação técnica">
+                  ⚙ {pendingEvalCount}
+                </Badge>
+              )}
             </NavLink>
           ))}
         </nav>
