@@ -56,7 +56,7 @@ export default function NovaDemanda() {
         descricao: v.descricao,
         softwares: softwaresList,
         frequencia,
-        complexidade,
+        dificuldade,
         retorno,
         setor: v.setor,
         solicitanteId: user.id,
