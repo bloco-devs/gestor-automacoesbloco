@@ -84,8 +84,15 @@ export default function DemandaDetail() {
   useEffect(() => {
     if (!solicitacao) return;
     setStatus(solicitacao.status);
-    setComplexidadeDev(solicitacao.complexidadeDev);
     setNotasTecnicasComplexidade(solicitacao.notasTecnicasComplexidade ?? "");
+    // Quando há valor salvo, ativamos o modo override (porque não temos o checklist original).
+    if (solicitacao.complexidadeDev !== null && solicitacao.complexidadeDev !== undefined) {
+      setHasOverride(true);
+      setOverrideComplexidade(solicitacao.complexidadeDev);
+    } else {
+      setHasOverride(false);
+      setOverrideComplexidade(0);
+    }
     setEditTitulo(solicitacao.titulo);
     setEditDescricao(solicitacao.descricao);
     setEditSoftwares((solicitacao.integracoes ?? []).join(", "));
