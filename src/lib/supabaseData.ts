@@ -20,6 +20,7 @@ type SolicitacaoRow = {
   nome: string;
   created_at: string;
   updated_at: string;
+  complexidade_dev: number | null;
 };
 
 function asFrequencia(value: number): Frequencia {
