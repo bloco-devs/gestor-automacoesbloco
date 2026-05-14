@@ -1,0 +1,21 @@
+UPDATE public.profiles SET nome = CASE email
+  WHEN 'adrianocoattipt@gmail.com' THEN 'Adriano'
+  WHEN 'ailton.apd@gmail.com' THEN 'Ailton'
+  WHEN 'eng.vitoriaoliveira@gmail.com' THEN 'Vitoria'
+  WHEN 'fabiopb78@gmail.com' THEN 'Fabio'
+  WHEN 'julianovicente.arquiteto@gmail.com' THEN 'Juliano'
+  WHEN 'kamilly.lourdes@gmail.com' THEN 'Kamilly'
+  WHEN 'karollainemont@gmail.com' THEN 'Karolaine'
+  WHEN 'lccarneiro2@gmail.com' THEN 'Lucas'
+  WHEN 'lianaslacerda@gmail.com' THEN 'Liana'
+  WHEN 'luispaulodelux@gmail.com' THEN 'Luis'
+  WHEN 'marianaporto827@gmail.com' THEN 'Mariana'
+  WHEN 'matheussdn@live.com' THEN 'Matheus'
+  WHEN 'pdutra60@gmail.com' THEN 'Paulo'
+  WHEN 'raystefanyhingrid@gmail.com' THEN 'Raystefany'
+  WHEN 'rodrigosarmento777@gmail.com' THEN 'Rodrigo'
+  WHEN 'thaisalmedeiros@gmail.com' THEN 'Thaisa'
+  WHEN 'thaywanfelipe02@gmail.com' THEN 'Thaywan'
+  WHEN 'vitor.urtiga@gmail.com' THEN 'João Vitor'
+END
+WHERE email IN ('adrianocoattipt@gmail.com','ailton.apd@gmail.com','eng.vitoriaoliveira@gmail.com','fabiopb78@gmail.com','julianovicente.arquiteto@gmail.com','kamilly.lourdes@gmail.com','karollainemont@gmail.com','lccarneiro2@gmail.com','lianaslacerda@gmail.com','luispaulodelux@gmail.com','marianaporto827@gmail.com','matheussdn@live.com','pdutra60@gmail.com','raystefanyhingrid@gmail.com','rodrigosarmento777@gmail.com','thaisalmedeiros@gmail.com','thaywanfelipe02@gmail.com','vitor.urtiga@gmail.com');
