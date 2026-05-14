@@ -45,8 +45,8 @@ const devNav: NavItem[] = [
 ];
 const requesterNav: NavItem[] = [
   { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
-  { to: "/minhas-demandas", label: "Minhas Demandas", icon: ListTodo },
-  { to: "/nova-demanda", label: "Nova Demanda", icon: Plus },
+  { to: "/minhas-demandas", label: "Minhas Solicitações", icon: ListTodo },
+  { to: "/nova-demanda", label: "Nova Solicitação", icon: Plus },
 ];
 
 const SIDEBAR_MIN = 160;
