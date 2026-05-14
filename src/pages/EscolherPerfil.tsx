@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+
 import { Navigate, useNavigate } from "react-router-dom";
 import { Code2, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
