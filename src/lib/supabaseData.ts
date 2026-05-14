@@ -236,6 +236,7 @@ export async function updateSolicitacao(
     retorno: patch.retorno,
     status: patch.status,
     notas_tecnicas: patch.notasTecnicas,
+    notas_tecnicas_complexidade: patch.notasTecnicasComplexidade,
     setor: patch.setor,
     tem_integracao: patch.temIntegracao,
     integracoes: patch.integracoes,
