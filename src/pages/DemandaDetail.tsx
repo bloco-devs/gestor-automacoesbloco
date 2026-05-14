@@ -457,9 +457,37 @@ export default function DemandaDetail() {
                 value={[complexidadeDev]}
                 onValueChange={(v) => setComplexidadeDev(v[0])}
               />
-              <p className="text-xs text-muted-foreground mt-2">
-                0 = Trivial · 5 = Moderada · 10 = Muito Complexa
-              </p>
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  { v: 0, label: "Trivial", desc: "Integração plug-and-play existente, <2h" },
+                  { v: 2, label: "Simples", desc: "1-2 APIs, fluxo linear, <1 dia" },
+                  { v: 4, label: "Moderada", desc: "Múltiplas APIs, lógica condicional, 2-5 dias" },
+                  { v: 6, label: "Complexa", desc: "Integrações custom, regras de negócio, 1-2 semanas" },
+                  { v: 8, label: "Muito Complexa", desc: "Arquitetura custom, múltiplos serviços, 2-4 semanas" },
+                  { v: 10, label: "Extremamente Complexa", desc: "Novo sistema, IA/ML, >1 mês" },
+                ].map((a) => {
+                  const active = complexidadeDev === a.v;
+                  return (
+                    <button
+                      key={a.v}
+                      type="button"
+                      onClick={() => setComplexidadeDev(a.v)}
+                      className={`text-left rounded-md border p-2 transition-colors ${
+                        active
+                          ? "border-accent bg-accent/10"
+                          : "border-border bg-muted/30 hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold tabular-nums text-accent">{a.v}</span>
+                        <span className="text-xs font-medium">{a.label}</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{a.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
+              <FormulaImpactCard complexidade={complexidadeDev} />
             </div>
             <div>
               <Label htmlFor="notas-complex-dev">Notas técnicas (opcional)</Label>
