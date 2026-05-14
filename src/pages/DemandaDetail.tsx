@@ -57,11 +57,20 @@ export default function DemandaDetail() {
 
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
   const [savingStatus, setSavingStatus] = useState(false);
-  const [complexidadeDev, setComplexidadeDev] = useState<number | null>(solicitacao?.complexidadeDev ?? null);
   const [notasTecnicasComplexidade, setNotasTecnicasComplexidade] = useState<string>(
     solicitacao?.notasTecnicasComplexidade ?? "",
   );
   const [savingComplexDev, setSavingComplexDev] = useState(false);
+  const [marcados, setMarcados] = useState<Record<string, boolean>>({});
+  const [hasOverride, setHasOverride] = useState<boolean>(false);
+  const [overrideComplexidade, setOverrideComplexidade] = useState<number>(0);
+  const [overrideMotivo, setOverrideMotivo] = useState<string>("");
+
+  const calculatedComplexidade = useMemo(
+    () => computeComplexidadeFromChecklist(marcados),
+    [marcados],
+  );
+  const effectiveComplexidade: number = hasOverride ? overrideComplexidade : calculatedComplexidade;
   const [isEditing, setIsEditing] = useState(false);
   const [editTitulo, setEditTitulo] = useState(solicitacao?.titulo ?? "");
   const [editDescricao, setEditDescricao] = useState(solicitacao?.descricao ?? "");
