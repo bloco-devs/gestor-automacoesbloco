@@ -365,6 +365,53 @@ export type Database = {
         }
         Relationships: []
       }
+      solicitacoes_score_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          changed_by_email: string | null
+          id: string
+          new_complexidade_dev: number | null
+          new_notas: string | null
+          old_complexidade_dev: number | null
+          old_notas: string | null
+          solicitacao_id: string
+          trigger_source: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_email?: string | null
+          id?: string
+          new_complexidade_dev?: number | null
+          new_notas?: string | null
+          old_complexidade_dev?: number | null
+          old_notas?: string | null
+          solicitacao_id: string
+          trigger_source?: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_email?: string | null
+          id?: string
+          new_complexidade_dev?: number | null
+          new_notas?: string | null
+          old_complexidade_dev?: number | null
+          old_notas?: string | null
+          solicitacao_id?: string
+          trigger_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_score_history_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solucao_tasks: {
         Row: {
           assigned_to: string | null

@@ -3,8 +3,11 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Sparkles, ListTodo, Gauge, Repeat } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
+import { countPendingDevEvaluations } from "@/lib/supabaseData";
+import { supabase } from "@/integrations/supabase/client";
 import blocoLogo from "@/assets/bloco-logo.png";
 
 const devNav = [
@@ -37,10 +40,37 @@ export default function AppLayout() {
       : SIDEBAR_DEFAULT;
   });
   const draggingRef = useRef(false);
+  const isDeveloper = user?.role === "developer";
+  const [pendingEvalCount, setPendingEvalCount] = useState<number>(0);
 
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarWidth));
   }, [sidebarWidth]);
+
+  useEffect(() => {
+    if (!isDeveloper) {
+      setPendingEvalCount(0);
+      return;
+    }
+    let cancelled = false;
+    const refresh = async () => {
+      const n = await countPendingDevEvaluations();
+      if (!cancelled) setPendingEvalCount(n);
+    };
+    refresh();
+    const channel = supabase
+      .channel("pending-dev-evals")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "solicitacoes" },
+        () => refresh(),
+      )
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [isDeveloper]);
 
   const startDrag = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
@@ -105,7 +135,12 @@ export default function AppLayout() {
               }
             >
               <item.icon className="size-4 shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <span className="truncate flex-1">{item.label}</span>
+              {isDeveloper && item.to === "/solicitacoes" && pendingEvalCount > 0 && (
+                <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1.5 h-5 border-dashed shrink-0" title="Solicitações aguardando avaliação técnica">
+                  ⚙ {pendingEvalCount}
+                </Badge>
+              )}
             </NavLink>
           ))}
         </nav>
