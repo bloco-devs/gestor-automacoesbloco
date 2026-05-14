@@ -18,6 +18,9 @@ import Dashboard from "./pages/Dashboard";
 import Kanban from "./pages/Kanban";
 import Solucoes from "./pages/Solucoes";
 import Solicitacoes from "./pages/Solicitacoes";
+import SolucoesKanban from "./pages/SolucoesKanban";
+import SolicitacoesGantt from "./pages/SolicitacoesGantt";
+import SolucoesGantt from "./pages/SolucoesGantt";
 
 import DemandaDetail from "./pages/DemandaDetail";
 import SolucaoDetail from "./pages/SolucaoDetail";
