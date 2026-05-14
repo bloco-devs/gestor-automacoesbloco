@@ -12,8 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { createSolicitacao } from "@/lib/supabaseData";
-import { calcScore, scoreTone } from "@/lib/score";
-import { FREQUENCIA_LABEL, SETORES, type Frequencia, type Setor } from "@/lib/types";
+import { computeScoreSolicitante, scoreTone } from "@/lib/scoreV2";
+import { SETORES, type Setor } from "@/lib/types";
 import { ScorePill } from "@/components/ScorePill";
 import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 
