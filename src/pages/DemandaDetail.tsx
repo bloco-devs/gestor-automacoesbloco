@@ -161,6 +161,44 @@ export default function DemandaDetail() {
     navigate("/solicitacoes", { replace: true });
   }
 
+  async function handleSaveComplexidadeDev() {
+    if (
+      typeof complexidadeDev !== "number" ||
+      Number.isNaN(complexidadeDev) ||
+      complexidadeDev < 0 ||
+      complexidadeDev > 10
+    ) {
+      toast({
+        title: "Valor inválido",
+        description: "A complexidade técnica deve estar entre 0 e 10.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSavingComplexDev(true);
+    try {
+      await updateSolicitacao(id, {
+        complexidadeDev,
+        notasTecnicas: notasComplexDev,
+      });
+      toast({
+        title: "Avaliação técnica salva",
+        description: "Score final recalculado.",
+      });
+      // Força recarga da solicitação para refletir score_final atualizado
+      // (useSupabaseData re-busca quando `id` muda; aqui usamos mutação manual)
+      window.dispatchEvent(new Event("solicitacao:refetch"));
+    } catch (e) {
+      toast({
+        title: "Erro ao salvar",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingComplexDev(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
