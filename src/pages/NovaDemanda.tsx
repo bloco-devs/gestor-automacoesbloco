@@ -129,27 +129,48 @@ export default function NovaDemanda() {
           <Card className="surface-1">
             <CardHeader>
               <CardTitle className="text-base">Critérios de priorização</CardTitle>
-              {isDeveloper && <CardDescription>Esses fatores compõem o score (média 0-100).</CardDescription>}
+              <CardDescription>Tudo na escala 0-10. O score final será ajustado quando o dev fizer a avaliação técnica.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div>
-                <Label>Frequência</Label>
-                <Select value={String(frequencia)} onValueChange={(v) => setFrequencia(Number(v) as Frequencia)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {([4, 3, 2, 1] as Frequencia[]).map((f) => (
-                      <SelectItem key={f} value={String(f)}>
-                        {FREQUENCIA_LABEL[f]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <SliderField label="Complexidade / Chato de fazer" value={complexidade} onChange={setComplexidade} hint="1 = simples · 5 = muito chato/complexo" />
-              <SliderField label="Retorno esperado" value={retorno} onChange={setRetorno} hint="1 = baixo impacto · 5 = grande economia/impacto" />
+              <ScaleSlider
+                label="Frequência de utilização"
+                value={frequencia}
+                onChange={setFrequencia}
+                anchors={[
+                  [0, "Nunca"],
+                  [2, "Raro (<1×/mês)"],
+                  [4, "Mensal"],
+                  [6, "Semanal"],
+                  [8, "Diário"],
+                  [10, "Várias vezes/dia"],
+                ]}
+              />
+              <ScaleSlider
+                label="Dificuldade"
+                value={dificuldade}
+                onChange={setDificuldade}
+                anchors={[
+                  [0, "Trivial"],
+                  [2, "Fácil"],
+                  [4, "Moderada"],
+                  [6, "Difícil"],
+                  [8, "Muito difícil"],
+                  [10, "Crítica"],
+                ]}
+              />
+              <ScaleSlider
+                label="Retorno financeiro"
+                value={retorno}
+                onChange={setRetorno}
+                anchors={[
+                  [0, "Nenhum (R$ 0)"],
+                  [2, "Baixo (R$ 0–500/mês)"],
+                  [4, "Médio (R$ 500–2,5k/mês)"],
+                  [6, "Médio-alto (R$ 2,5k–10k/mês)"],
+                  [8, "Alto (R$ 10k–50k/mês)"],
+                  [10, "Muito alto (R$ 50k+/mês)"],
+                ]}
+              />
             </CardContent>
           </Card>
 
