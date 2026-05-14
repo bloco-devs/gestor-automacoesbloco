@@ -151,14 +151,15 @@ export default function DemandaDetail() {
 
   async function handleSaveComplexidadeDev() {
     if (
+      complexidadeDev === null ||
       typeof complexidadeDev !== "number" ||
       Number.isNaN(complexidadeDev) ||
       complexidadeDev < 0 ||
       complexidadeDev > 10
     ) {
       toast({
-        title: "Valor inválido",
-        description: "A complexidade técnica deve estar entre 0 e 10.",
+        title: "Avaliação incompleta",
+        description: "Defina a complexidade técnica (0-10) antes de salvar.",
         variant: "destructive",
       });
       return;
@@ -167,13 +168,12 @@ export default function DemandaDetail() {
     try {
       await updateSolicitacao(id, {
         complexidadeDev,
-        notasTecnicas: notasComplexDev,
+        notasTecnicasComplexidade: notasTecnicasComplexidade || null,
       });
       toast({
         title: "Avaliação técnica salva",
         description: "Score final recalculado.",
       });
-      // useSupabaseData já refaz a query via realtime postgres_changes em `solicitacoes`.
     } catch (e) {
       toast({
         title: "Erro ao salvar",
