@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ScorePill } from "@/components/ScorePill";
-import { BulkCreateRequestersButton } from "@/components/BulkCreateRequestersButton";
 
 const DASHBOARD_STATUSES: PipelineStatus[] = [
   "novo",
