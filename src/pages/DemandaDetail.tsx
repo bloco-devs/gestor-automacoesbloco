@@ -714,11 +714,36 @@ const CHECKLIST_ITENS: { id: string; label: string; pontos: number; hint: string
   { id: "impacto", label: "Impacta em outras automações/integrações?", hint: "sim", pontos: 2 },
 ];
 
-function ChecklistAvaliacao() {
-  const [open, setOpen] = useState(false);
-  const [marcados, setMarcados] = useState<Record<string, boolean>>({});
-  const total = CHECKLIST_ITENS.reduce((acc, i) => acc + (marcados[i.id] ? i.pontos : 0), 0);
-  const sugestao = Math.min(10, total);
+const COMPLEXIDADE_ANCORAS = [
+  { v: 0, label: "Trivial", desc: "Integração plug-and-play existente, <2h" },
+  { v: 2, label: "Simples", desc: "1-2 APIs, fluxo linear, <1 dia" },
+  { v: 4, label: "Moderada", desc: "Múltiplas APIs, lógica condicional, 2-5 dias" },
+  { v: 6, label: "Complexa", desc: "Integrações custom, regras de negócio, 1-2 semanas" },
+  { v: 8, label: "Muito Complexa", desc: "Arquitetura custom, múltiplos serviços, 2-4 semanas" },
+  { v: 10, label: "Extremamente Complexa", desc: "Novo sistema, IA/ML, >1 mês" },
+];
+
+function checklistSum(marcados: Record<string, boolean>): number {
+  return CHECKLIST_ITENS.reduce((acc, i) => acc + (marcados[i.id] ? i.pontos : 0), 0);
+}
+
+function computeComplexidadeFromChecklist(marcados: Record<string, boolean>): number {
+  const sum = checklistSum(marcados);
+  if (sum <= 0) return 0;
+  if (sum >= 10) return 10;
+  return sum;
+}
+
+function ChecklistAvaliacao({
+  marcados,
+  onToggle,
+}: {
+  marcados: Record<string, boolean>;
+  onToggle: (id: string, val: boolean) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  const total = checklistSum(marcados);
+  const sugestao = computeComplexidadeFromChecklist(marcados);
   return (
     <Collapsible
       open={open}
@@ -732,7 +757,7 @@ function ChecklistAvaliacao() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs tabular-nums text-blue-700 dark:text-blue-300">
-            sugestão: {sugestao}/10
+            soma: {total} → {sugestao}/10
           </span>
           <ChevronDown className={`size-4 text-blue-700 dark:text-blue-300 transition-transform ${open ? "rotate-180" : ""}`} />
         </div>
@@ -744,9 +769,7 @@ function ChecklistAvaliacao() {
               <Checkbox
                 id={`chk-${item.id}`}
                 checked={!!marcados[item.id]}
-                onCheckedChange={(v) =>
-                  setMarcados((m) => ({ ...m, [item.id]: v === true }))
-                }
+                onCheckedChange={(v) => onToggle(item.id, v === true)}
                 className="mt-0.5"
               />
               <label htmlFor={`chk-${item.id}`} className="text-xs leading-snug cursor-pointer">
@@ -758,11 +781,13 @@ function ChecklistAvaliacao() {
             </li>
           ))}
         </ul>
-        <p className="text-xs text-blue-700 dark:text-blue-300 pt-2 border-t border-blue-200 dark:border-blue-900/60">
-          Dica: some aproximadamente os pontos para guiar sua avaliação no slider. Soma atual:{" "}
-          <span className="font-semibold tabular-nums">{total}</span> → sugestão{" "}
-          <span className="font-semibold tabular-nums">{sugestao}/10</span>.
-        </p>
+        <div className="text-xs text-blue-700 dark:text-blue-300 pt-2 border-t border-blue-200 dark:border-blue-900/60">
+          Soma dos pontos:{" "}
+          <span className="font-semibold tabular-nums">{total}</span>
+          {" — "}
+          Equivalente a complexidade{" "}
+          <span className="font-semibold tabular-nums">{sugestao}/10</span>
+        </div>
       </CollapsibleContent>
     </Collapsible>
   );
