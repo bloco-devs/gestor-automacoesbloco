@@ -40,10 +40,37 @@ export default function AppLayout() {
       : SIDEBAR_DEFAULT;
   });
   const draggingRef = useRef(false);
+  const isDeveloper = user?.role === "developer";
+  const [pendingEvalCount, setPendingEvalCount] = useState<number>(0);
 
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarWidth));
   }, [sidebarWidth]);
+
+  useEffect(() => {
+    if (!isDeveloper) {
+      setPendingEvalCount(0);
+      return;
+    }
+    let cancelled = false;
+    const refresh = async () => {
+      const n = await countPendingDevEvaluations();
+      if (!cancelled) setPendingEvalCount(n);
+    };
+    refresh();
+    const channel = supabase
+      .channel("pending-dev-evals")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "solicitacoes" },
+        () => refresh(),
+      )
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [isDeveloper]);
 
   const startDrag = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
