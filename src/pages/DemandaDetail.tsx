@@ -53,15 +53,12 @@ export default function DemandaDetail() {
   const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id]);
   const isOwner = user?.id === solicitacao?.solicitanteId;
 
-  const [complex, setComplex] = useState(solicitacao?.complexidade ?? 3);
-  const [retorno, setRetorno] = useState(solicitacao?.retorno ?? 3);
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
-  const [notas, setNotas] = useState(solicitacao?.notasTecnicas ?? "");
-  const [descricaoDev, setDescricaoDev] = useState(solicitacao?.descricao ?? "");
-  const [temIntegracao, setTemIntegracao] = useState<boolean>(solicitacao?.temIntegracao ?? false);
-  const [integracoesText, setIntegracoesText] = useState((solicitacao?.integracoes ?? []).join(", "));
-  const [complexidadeDev, setComplexidadeDev] = useState<number>(solicitacao?.complexidadeDev ?? 5);
-  const [notasComplexDev, setNotasComplexDev] = useState<string>(solicitacao?.notasTecnicas ?? "");
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [complexidadeDev, setComplexidadeDev] = useState<number | null>(solicitacao?.complexidadeDev ?? null);
+  const [notasTecnicasComplexidade, setNotasTecnicasComplexidade] = useState<string>(
+    solicitacao?.notasTecnicasComplexidade ?? "",
+  );
   const [savingComplexDev, setSavingComplexDev] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitulo, setEditTitulo] = useState(solicitacao?.titulo ?? "");
