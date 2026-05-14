@@ -184,8 +184,8 @@ export default function NovaDemanda() {
         {isDeveloper && <div className="space-y-4">
           <Card className="surface-2 sticky top-4">
             <CardHeader>
-              <CardTitle className="text-base">Score estimado</CardTitle>
-              <CardDescription>Recalculado automaticamente.</CardDescription>
+              <CardTitle className="text-base">Score estimado: {previewScore}/100</CardTitle>
+              <CardDescription>Será ajustado quando o dev fizer a avaliação técnica.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-3">
@@ -193,9 +193,9 @@ export default function NovaDemanda() {
                 <ScorePill score={previewScore} />
               </div>
               <div className="mt-4 text-sm text-muted-foreground">
-                {scoreTone(previewScore) === "high" && "Alta prioridade prevista."}
-                {scoreTone(previewScore) === "mid" && "Prioridade média."}
-                {scoreTone(previewScore) === "low" && "Baixa prioridade."}
+                {scoreTone(previewScore, "solicitante") === "high" && "Alta prioridade prevista."}
+                {scoreTone(previewScore, "solicitante") === "mid" && "Prioridade média."}
+                {scoreTone(previewScore, "solicitante") === "low" && "Baixa prioridade."}
               </div>
               <Button type="submit" className="w-full mt-6">
                 Enviar demanda
@@ -208,15 +208,41 @@ export default function NovaDemanda() {
   );
 }
 
-function SliderField({ label, value, onChange, hint }: { label: string; value: number; onChange: (n: number) => void; hint: string }) {
+/**
+ * Slider 0-10 com âncoras textuais. Mostra o rótulo da âncora mais próxima
+ * abaixo do valor selecionado para dar contexto qualitativo ao número.
+ */
+function ScaleSlider({
+  label,
+  value,
+  onChange,
+  anchors,
+}: {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+  anchors: Array<[number, string]>;
+}) {
+  const nearest = anchors.reduce((acc, cur) =>
+    Math.abs(cur[0] - value) < Math.abs(acc[0] - value) ? cur : acc,
+  );
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
         <Label>{label}</Label>
-        <span className="text-sm tabular-nums text-accent font-medium">{value}/5</span>
+        <span className="text-sm tabular-nums text-accent font-medium">
+          {value}/10 · <span className="text-muted-foreground font-normal">{nearest[1]}</span>
+        </span>
       </div>
-      <Slider min={1} max={5} step={1} value={[value]} onValueChange={(v) => onChange(v[0])} />
-      <p className="text-xs text-muted-foreground mt-1.5">{hint}</p>
+      <Slider min={0} max={10} step={1} value={[value]} onValueChange={(v) => onChange(v[0])} />
+      <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground tabular-nums">
+        {anchors.map(([n, lab]) => (
+          <span key={n} className="flex flex-col items-center">
+            <span>{n}</span>
+            <span className="hidden sm:block max-w-[7ch] text-center leading-tight">{lab}</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
