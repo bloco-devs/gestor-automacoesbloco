@@ -33,6 +33,10 @@ function asStatus(value: string): PipelineStatus {
 }
 
 function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
+  // scoreV2 espelha a futura função SQL compute_scores(); migrar para RPC após o trigger.
+  const dificuldade = row.complexidade; // TODO Prompt 2: usar coluna `dificuldade` própria após backfill
+  const scoreSolicitante = computeScoreSolicitante(row.frequencia, dificuldade, row.retorno);
+  const scoreFinal = computeScoreFinal(scoreSolicitante, row.complexidade_dev);
   return {
     id: row.id,
     titulo: row.titulo || row.descricao.slice(0, 80) || "Solicitação",
@@ -40,14 +44,12 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     frequencia: asFrequencia(row.frequencia),
     complexidade: row.complexidade,
     retorno: row.retorno,
-    // Campos novos (escala 0-10) — backfill real virá no Prompt 2.
-    // Por enquanto, projeção temporária a partir do legado para manter os tipos válidos.
-    dificuldade: row.complexidade,
-    complexidadeDev: null,
+    dificuldade,
+    complexidadeDev: row.complexidade_dev,
     status: asStatus(row.status),
     score: row.score,
-    scoreSolicitante: row.score,
-    scoreFinal: null,
+    scoreSolicitante,
+    scoreFinal,
     notasTecnicas: row.notas_tecnicas ?? undefined,
     setor: row.setor ?? undefined,
     temIntegracao: row.tem_integracao,
