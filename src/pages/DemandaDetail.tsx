@@ -429,6 +429,64 @@ export default function DemandaDetail() {
           </CardContent>
         </Card>
       )}
+
+      {isDev && (
+        <Card className="surface-1">
+          <CardHeader>
+            <CardTitle className="text-base">Avaliação Técnica do Dev</CardTitle>
+            <CardDescription>
+              Define o fator de penalização aplicado ao score do solicitante para gerar o score final.
+              {solicitacao.complexidadeDev === null && (
+                <span className="ml-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border border-dashed border-border bg-muted/40 text-muted-foreground">
+                  ⚙ Aguardando avaliação técnica
+                </span>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Complexidade Técnica (0-10)</Label>
+                <span className="text-sm tabular-nums text-accent font-medium">{complexidadeDev}/10</span>
+              </div>
+              <Slider
+                min={0}
+                max={10}
+                step={1}
+                value={[complexidadeDev]}
+                onValueChange={(v) => setComplexidadeDev(v[0])}
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                0 = Trivial · 5 = Moderada · 10 = Muito Complexa
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="notas-complex-dev">Notas técnicas (opcional)</Label>
+              <Textarea
+                id="notas-complex-dev"
+                rows={3}
+                placeholder="Justifique a avaliação, dependências, riscos…"
+                value={notasComplexDev}
+                onChange={(e) => setNotasComplexDev(e.target.value)}
+                maxLength={2000}
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border">
+              <div className="text-sm text-muted-foreground">
+                Preview do score final:{" "}
+                <span className="text-foreground font-medium tabular-nums">
+                  {Math.round(
+                    computeScoreFinal(solicitacao.scoreSolicitante, complexidadeDev) ?? 0,
+                  )}
+                </span>
+              </div>
+              <Button onClick={handleSaveComplexidadeDev} disabled={savingComplexDev}>
+                <Save className="size-4" /> Salvar Avaliação Técnica
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
