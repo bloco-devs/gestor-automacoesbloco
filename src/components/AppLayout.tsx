@@ -147,28 +147,14 @@ export default function AppLayout() {
             <div className="text-sm font-brand font-bold truncate">Gestor de Automações</div>
           </div>
         </div>
-        <nav className="flex-1 px-3 py-2 space-y-1">
+        <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
           {nav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/60",
-                )
-              }
-            >
-              <item.icon className="size-4 shrink-0" />
-              <span className="truncate flex-1">{item.label}</span>
-              {isDeveloper && item.to === "/solicitacoes" && pendingEvalCount > 0 && (
-                <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1.5 h-5 border-dashed shrink-0" title="Solicitações aguardando avaliação técnica">
-                  ⚙ {pendingEvalCount}
-                </Badge>
-              )}
-            </NavLink>
+            <SidebarNavItem
+              key={item.label}
+              item={item}
+              isDeveloper={isDeveloper}
+              pendingEvalCount={pendingEvalCount}
+            />
           ))}
         </nav>
         <div className="p-3 border-t border-sidebar-border">
