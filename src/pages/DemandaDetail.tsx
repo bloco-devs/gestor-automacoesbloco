@@ -57,11 +57,20 @@ export default function DemandaDetail() {
 
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
   const [savingStatus, setSavingStatus] = useState(false);
-  const [complexidadeDev, setComplexidadeDev] = useState<number | null>(solicitacao?.complexidadeDev ?? null);
   const [notasTecnicasComplexidade, setNotasTecnicasComplexidade] = useState<string>(
     solicitacao?.notasTecnicasComplexidade ?? "",
   );
   const [savingComplexDev, setSavingComplexDev] = useState(false);
+  const [marcados, setMarcados] = useState<Record<string, boolean>>({});
+  const [hasOverride, setHasOverride] = useState<boolean>(false);
+  const [overrideComplexidade, setOverrideComplexidade] = useState<number>(0);
+  const [overrideMotivo, setOverrideMotivo] = useState<string>("");
+
+  const calculatedComplexidade = useMemo(
+    () => computeComplexidadeFromChecklist(marcados),
+    [marcados],
+  );
+  const effectiveComplexidade: number = hasOverride ? overrideComplexidade : calculatedComplexidade;
   const [isEditing, setIsEditing] = useState(false);
   const [editTitulo, setEditTitulo] = useState(solicitacao?.titulo ?? "");
   const [editDescricao, setEditDescricao] = useState(solicitacao?.descricao ?? "");
@@ -75,8 +84,15 @@ export default function DemandaDetail() {
   useEffect(() => {
     if (!solicitacao) return;
     setStatus(solicitacao.status);
-    setComplexidadeDev(solicitacao.complexidadeDev);
     setNotasTecnicasComplexidade(solicitacao.notasTecnicasComplexidade ?? "");
+    // Quando há valor salvo, ativamos o modo override (porque não temos o checklist original).
+    if (solicitacao.complexidadeDev !== null && solicitacao.complexidadeDev !== undefined) {
+      setHasOverride(true);
+      setOverrideComplexidade(solicitacao.complexidadeDev);
+    } else {
+      setHasOverride(false);
+      setOverrideComplexidade(0);
+    }
     setEditTitulo(solicitacao.titulo);
     setEditDescricao(solicitacao.descricao);
     setEditSoftwares((solicitacao.integracoes ?? []).join(", "));
@@ -152,25 +168,28 @@ export default function DemandaDetail() {
   }
 
   async function handleSaveComplexidadeDev() {
+    const final = effectiveComplexidade;
     if (
-      complexidadeDev === null ||
-      typeof complexidadeDev !== "number" ||
-      Number.isNaN(complexidadeDev) ||
-      complexidadeDev < 0 ||
-      complexidadeDev > 10
+      typeof final !== "number" ||
+      Number.isNaN(final) ||
+      final < 0 ||
+      final > 10
     ) {
       toast({
         title: "Avaliação incompleta",
-        description: "Defina a complexidade técnica (0-10) antes de salvar.",
+        description: "Marque ao menos um item do checklist ou ative o override antes de salvar.",
         variant: "destructive",
       });
       return;
     }
+    const notasFinal = hasOverride && overrideMotivo
+      ? `${notasTecnicasComplexidade}${notasTecnicasComplexidade ? "\n\n" : ""}[Override] ${overrideMotivo}`
+      : notasTecnicasComplexidade;
     setSavingComplexDev(true);
     try {
       await updateSolicitacao(id, {
-        complexidadeDev,
-        notasTecnicasComplexidade: notasTecnicasComplexidade || null,
+        complexidadeDev: final,
+        notasTecnicasComplexidade: notasFinal || null,
       });
       toast({
         title: "Avaliação técnica salva",
@@ -430,46 +449,49 @@ export default function DemandaDetail() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <ChecklistAvaliacao />
-            {complexidadeDev === null && (
-              <div className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                Complexidade não avaliada ainda. Use o checklist e mova o slider abaixo para começar.
+            <ChecklistAvaliacao
+              marcados={marcados}
+              onToggle={(id, val) => setMarcados((m) => ({ ...m, [id]: val }))}
+            />
+
+            {/* Display read-only da complexidade calculada */}
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Complexidade Técnica
+                  </p>
+                  <p className="text-2xl font-bold tabular-nums">
+                    {effectiveComplexidade}/10
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {hasOverride
+                      ? "Definida manualmente pelo dev (override)"
+                      : "Calculada automaticamente pelo checklist"}
+                  </p>
+                </div>
+                <div className="text-right text-xs text-muted-foreground">
+                  Soma do checklist:{" "}
+                  <span className="font-semibold tabular-nums">
+                    {checklistSum(marcados)}
+                  </span>
+                  <br />
+                  Equivalente a{" "}
+                  <span className="font-semibold tabular-nums">
+                    {calculatedComplexidade}/10
+                  </span>
+                </div>
               </div>
-            )}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label>Complexidade Técnica (0-10)</Label>
-                <span className="text-sm tabular-nums text-accent font-medium">
-                  {complexidadeDev === null ? "—/10" : `${complexidadeDev}/10`}
-                </span>
-              </div>
-              <Slider
-                min={0}
-                max={10}
-                step={1}
-                value={[complexidadeDev ?? 0]}
-                onValueChange={(v) => setComplexidadeDev(v[0])}
-                className={complexidadeDev === null ? "opacity-60" : undefined}
-              />
               <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {[
-                  { v: 0, label: "Trivial", desc: "Integração plug-and-play existente, <2h" },
-                  { v: 2, label: "Simples", desc: "1-2 APIs, fluxo linear, <1 dia" },
-                  { v: 4, label: "Moderada", desc: "Múltiplas APIs, lógica condicional, 2-5 dias" },
-                  { v: 6, label: "Complexa", desc: "Integrações custom, regras de negócio, 1-2 semanas" },
-                  { v: 8, label: "Muito Complexa", desc: "Arquitetura custom, múltiplos serviços, 2-4 semanas" },
-                  { v: 10, label: "Extremamente Complexa", desc: "Novo sistema, IA/ML, >1 mês" },
-                ].map((a) => {
-                  const active = complexidadeDev === a.v;
+                {COMPLEXIDADE_ANCORAS.map((a) => {
+                  const active = effectiveComplexidade === a.v;
                   return (
-                    <button
+                    <div
                       key={a.v}
-                      type="button"
-                      onClick={() => setComplexidadeDev(a.v)}
-                      className={`text-left rounded-md border p-2 transition-colors ${
+                      className={`text-left rounded-md border p-2 ${
                         active
                           ? "border-accent bg-accent/10"
-                          : "border-border bg-muted/30 hover:bg-muted/50"
+                          : "border-border bg-muted/20"
                       }`}
                     >
                       <div className="flex items-center gap-1.5">
@@ -477,12 +499,56 @@ export default function DemandaDetail() {
                         <span className="text-xs font-medium">{a.label}</span>
                       </div>
                       <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{a.desc}</p>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
-              <FormulaImpactCard complexidade={complexidadeDev ?? 0} />
+              <FormulaImpactCard complexidade={effectiveComplexidade} />
             </div>
+
+            {/* Override opcional */}
+            <div className="rounded-md border border-border bg-muted/20 p-3 space-y-3">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <Checkbox
+                  checked={hasOverride}
+                  onCheckedChange={(v) => setHasOverride(v === true)}
+                  className="mt-0.5"
+                />
+                <span className="text-sm">
+                  Minha avaliação difere da soma do checklist
+                  <span className="block text-[11px] text-muted-foreground">
+                    Ative para definir manualmente a complexidade e justificar.
+                  </span>
+                </span>
+              </label>
+              {hasOverride && (
+                <div className="space-y-3 pl-6">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Complexidade (override) (0-10)</Label>
+                      <span className="text-sm tabular-nums text-accent font-medium">
+                        {overrideComplexidade}/10
+                      </span>
+                    </div>
+                    <Slider
+                      min={0}
+                      max={10}
+                      step={1}
+                      value={[overrideComplexidade]}
+                      onValueChange={(v) => setOverrideComplexidade(v[0])}
+                    />
+                  </div>
+                  <Textarea
+                    rows={3}
+                    placeholder="Explique por que sua avaliação difere da soma sugerida pelo checklist..."
+                    value={overrideMotivo}
+                    onChange={(e) => setOverrideMotivo(e.target.value)}
+                    maxLength={1000}
+                  />
+                </div>
+              )}
+            </div>
+
             <div>
               <Label htmlFor="notas-tecnicas-complexidade">Notas da Avaliação Técnica</Label>
               <Textarea
@@ -501,16 +567,14 @@ export default function DemandaDetail() {
               <div className="text-sm text-muted-foreground">
                 Preview do score final:{" "}
                 <span className="text-foreground font-medium tabular-nums">
-                  {complexidadeDev === null
-                    ? "—"
-                    : Math.round(
-                        computeScoreFinal(solicitacao.scoreSolicitante, complexidadeDev) ?? 0,
-                      )}
+                  {Math.round(
+                    computeScoreFinal(solicitacao.scoreSolicitante, effectiveComplexidade) ?? 0,
+                  )}
                 </span>
               </div>
               <Button
                 onClick={handleSaveComplexidadeDev}
-                disabled={savingComplexDev || complexidadeDev === null}
+                disabled={savingComplexDev}
               >
                 <Save className="size-4" /> Salvar Avaliação Técnica
               </Button>
@@ -650,11 +714,36 @@ const CHECKLIST_ITENS: { id: string; label: string; pontos: number; hint: string
   { id: "impacto", label: "Impacta em outras automações/integrações?", hint: "sim", pontos: 2 },
 ];
 
-function ChecklistAvaliacao() {
-  const [open, setOpen] = useState(false);
-  const [marcados, setMarcados] = useState<Record<string, boolean>>({});
-  const total = CHECKLIST_ITENS.reduce((acc, i) => acc + (marcados[i.id] ? i.pontos : 0), 0);
-  const sugestao = Math.min(10, total);
+const COMPLEXIDADE_ANCORAS = [
+  { v: 0, label: "Trivial", desc: "Integração plug-and-play existente, <2h" },
+  { v: 2, label: "Simples", desc: "1-2 APIs, fluxo linear, <1 dia" },
+  { v: 4, label: "Moderada", desc: "Múltiplas APIs, lógica condicional, 2-5 dias" },
+  { v: 6, label: "Complexa", desc: "Integrações custom, regras de negócio, 1-2 semanas" },
+  { v: 8, label: "Muito Complexa", desc: "Arquitetura custom, múltiplos serviços, 2-4 semanas" },
+  { v: 10, label: "Extremamente Complexa", desc: "Novo sistema, IA/ML, >1 mês" },
+];
+
+function checklistSum(marcados: Record<string, boolean>): number {
+  return CHECKLIST_ITENS.reduce((acc, i) => acc + (marcados[i.id] ? i.pontos : 0), 0);
+}
+
+function computeComplexidadeFromChecklist(marcados: Record<string, boolean>): number {
+  const sum = checklistSum(marcados);
+  if (sum <= 0) return 0;
+  if (sum >= 10) return 10;
+  return sum;
+}
+
+function ChecklistAvaliacao({
+  marcados,
+  onToggle,
+}: {
+  marcados: Record<string, boolean>;
+  onToggle: (id: string, val: boolean) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  const total = checklistSum(marcados);
+  const sugestao = computeComplexidadeFromChecklist(marcados);
   return (
     <Collapsible
       open={open}
@@ -668,7 +757,7 @@ function ChecklistAvaliacao() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs tabular-nums text-blue-700 dark:text-blue-300">
-            sugestão: {sugestao}/10
+            soma: {total} → {sugestao}/10
           </span>
           <ChevronDown className={`size-4 text-blue-700 dark:text-blue-300 transition-transform ${open ? "rotate-180" : ""}`} />
         </div>
@@ -680,9 +769,7 @@ function ChecklistAvaliacao() {
               <Checkbox
                 id={`chk-${item.id}`}
                 checked={!!marcados[item.id]}
-                onCheckedChange={(v) =>
-                  setMarcados((m) => ({ ...m, [item.id]: v === true }))
-                }
+                onCheckedChange={(v) => onToggle(item.id, v === true)}
                 className="mt-0.5"
               />
               <label htmlFor={`chk-${item.id}`} className="text-xs leading-snug cursor-pointer">
@@ -694,11 +781,13 @@ function ChecklistAvaliacao() {
             </li>
           ))}
         </ul>
-        <p className="text-xs text-blue-700 dark:text-blue-300 pt-2 border-t border-blue-200 dark:border-blue-900/60">
-          Dica: some aproximadamente os pontos para guiar sua avaliação no slider. Soma atual:{" "}
-          <span className="font-semibold tabular-nums">{total}</span> → sugestão{" "}
-          <span className="font-semibold tabular-nums">{sugestao}/10</span>.
-        </p>
+        <div className="text-xs text-blue-700 dark:text-blue-300 pt-2 border-t border-blue-200 dark:border-blue-900/60">
+          Soma dos pontos:{" "}
+          <span className="font-semibold tabular-nums">{total}</span>
+          {" — "}
+          Equivalente a complexidade{" "}
+          <span className="font-semibold tabular-nums">{sugestao}/10</span>
+        </div>
       </CollapsibleContent>
     </Collapsible>
   );
