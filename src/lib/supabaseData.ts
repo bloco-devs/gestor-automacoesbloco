@@ -116,44 +116,60 @@ export async function getSolicitacao(id: string): Promise<Solicitacao | null> {
   return data ? mapSolicitacao(data as SolicitacaoRow) : null;
 }
 
+/**
+ * Cria uma nova solicitação na escala unificada 0-10.
+ *
+ * IMPORTANTE: o cálculo de `score_solicitante` / `score_final` será feito por
+ * trigger SQL (`compute_scores()`) a partir do Prompt 5. Enquanto o trigger não
+ * existir, espelhamos a fórmula localmente via `scoreV2` e gravamos o `score`
+ * legado para manter os componentes antigos funcionando. Após o trigger:
+ *   - remover a coluna `score` da insert
+ *   - remover a chamada local a `computeScoreSolicitante`
+ *   - confiar 100% no valor devolvido pelo `.select()` pós-insert.
+ */
 export async function createSolicitacao(data: {
   titulo: string;
   descricao: string;
   softwares: string[];
-  frequencia: number; // 0-10 na nova escala
+  frequencia: number; // 0-10
   dificuldade: number; // 0-10 — substitui semanticamente "complexidade"
   retorno: number; // 0-10
   setor: string;
   solicitanteId: string;
   solicitanteNome: string;
   email: string;
-}): Promise<void> {
+}): Promise<Solicitacao> {
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError || !authData.user) {
     throw new Error("Faça login novamente para enviar uma demanda.");
   }
 
-  // Score legado (`score`) mantido durante a transição até o trigger SQL do Prompt 4.
-  // A coluna `complexidade` no banco passa a armazenar o valor de `dificuldade` (0-10),
-  // até a migration que renomeia/cria a coluna dedicada.
-  const scoreSolicitante = computeScoreSolicitante(data.frequencia, data.dificuldade, data.retorno);
-  const { error } = await supabase.from("solicitacoes").insert({
-    titulo: data.titulo,
-    descricao: data.descricao,
-    frequencia: data.frequencia,
-    complexidade: data.dificuldade,
-    retorno: data.retorno,
-    setor: data.setor,
-    score: Math.round(scoreSolicitante),
-    user_id: authData.user.id,
-    solicitante_nome: data.solicitanteNome,
-    nome: data.solicitanteNome,
-    email: data.email,
-    tem_integracao: data.softwares.length > 0,
-    integracoes: data.softwares,
-    status: "novo",
-  });
+  // Espelho local — remover quando o trigger SQL existir.
+  const scoreSolicitanteLocal = computeScoreSolicitante(data.frequencia, data.dificuldade, data.retorno);
+
+  const { data: inserted, error } = await supabase
+    .from("solicitacoes")
+    .insert({
+      titulo: data.titulo,
+      descricao: data.descricao,
+      frequencia: data.frequencia,
+      // `dificuldade` ainda é gravada na coluna `complexidade` até a migration do Prompt 5.
+      complexidade: data.dificuldade,
+      retorno: data.retorno,
+      setor: data.setor,
+      score: Math.round(scoreSolicitanteLocal),
+      user_id: authData.user.id,
+      solicitante_nome: data.solicitanteNome,
+      nome: data.solicitanteNome,
+      email: data.email,
+      tem_integracao: data.softwares.length > 0,
+      integracoes: data.softwares,
+      status: "novo",
+    })
+    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .single();
   if (error) throw error;
+  return mapSolicitacao(inserted as SolicitacaoRow);
 }
 
 export async function updateOwnSolicitacao(
@@ -163,8 +179,8 @@ export async function updateOwnSolicitacao(
     descricao: string;
     softwares: string[];
     frequencia: Frequencia;
-    complexidade: number;
-    retorno: number;
+    complexidade: number; // 0-10 (recebido como `dificuldade` na UI nova)
+    retorno: number; // 0-10
     setor: string;
   },
 ): Promise<void> {
@@ -172,6 +188,11 @@ export async function updateOwnSolicitacao(
   if (authError || !authData.user) {
     throw new Error("Faça login novamente para editar a demanda.");
   }
+
+  // Espelho local do score — substituído por trigger SQL no Prompt 5.
+  const scoreLocal = Math.round(
+    computeScoreSolicitante(data.frequencia, data.complexidade, data.retorno),
+  );
 
   const payload = {
     titulo: data.titulo,
@@ -182,7 +203,7 @@ export async function updateOwnSolicitacao(
     setor: data.setor,
     tem_integracao: data.softwares.length > 0,
     integracoes: data.softwares,
-    score: calcScore(data),
+    score: scoreLocal,
     updated_at: new Date().toISOString(),
   };
 
@@ -193,13 +214,23 @@ export async function updateOwnSolicitacao(
     .eq("user_id", authData.user.id);
   if (error) throw error;
 }
-export async function updateSolicitacao(id: string, patch: Partial<Solicitacao>): Promise<void> {
+
+/**
+ * Atualiza campos arbitrários da solicitação (uso do dev, ou setores admin).
+ * Quando o trigger SQL do Prompt 5 estiver ativo, os campos `score`,
+ * `score_solicitante` e `score_final` deixam de ser gravados aqui — o banco
+ * recalcula automaticamente a partir dos fatores.
+ */
+export async function updateSolicitacao(
+  id: string,
+  patch: Partial<Solicitacao>,
+): Promise<Solicitacao | null> {
   const current = await getSolicitacao(id);
   const merged = { ...current, ...patch } as Solicitacao;
   const candidate: Record<string, unknown> = {
     descricao: patch.descricao,
     titulo: patch.titulo,
-    complexidade: patch.complexidade,
+    complexidade: patch.complexidade ?? patch.dificuldade,
     retorno: patch.retorno,
     status: patch.status,
     notas_tecnicas: patch.notasTecnicas,
@@ -208,12 +239,46 @@ export async function updateSolicitacao(id: string, patch: Partial<Solicitacao>)
     integracoes: patch.integracoes,
     complexidade_dev: patch.complexidadeDev,
   };
-  const payload: Record<string, unknown> = { score: calcScore(merged), updated_at: new Date().toISOString() };
+  // Score legado recalculado localmente — substituído pelo trigger SQL no Prompt 5.
+  const payload: Record<string, unknown> = {
+    score: Math.round(
+      computeScoreSolicitante(
+        merged.frequencia,
+        merged.dificuldade ?? merged.complexidade,
+        merged.retorno,
+      ),
+    ),
+    updated_at: new Date().toISOString(),
+  };
   for (const [key, value] of Object.entries(candidate)) {
     if (value !== undefined) payload[key] = value;
   }
   const { error } = await supabase.from("solicitacoes").update(payload as never).eq("id", id);
   if (error) throw error;
+  return await getSolicitacao(id);
+}
+
+/**
+ * Busca uma solicitação com TODOS os campos relevantes para a nova UI de score
+ * (frequência, dificuldade, retorno, complexidade técnica do dev e os dois scores).
+ *
+ * Hoje é apenas um alias de `getSolicitacao` — após o Prompt 5 (migration que cria
+ * as colunas `dificuldade`, `score_solicitante`, `score_final`), esta função passa
+ * a selecionar esses campos diretamente do banco em vez de derivá-los no client.
+ */
+export async function fetchSolicitacaoCompleta(id: string): Promise<Solicitacao | null> {
+  return getSolicitacao(id);
+}
+
+/**
+ * Valor canônico de prioridade para ordenação de listas/Kanban:
+ *   COALESCE(score_final, score_solicitante, score legado, 0)
+ * Garante compatibilidade enquanto o backend ainda não populou os novos campos.
+ */
+export function prioridadeAtual(s: Pick<Solicitacao, "scoreFinal" | "scoreSolicitante" | "score">): number {
+  if (s.scoreFinal !== null && s.scoreFinal !== undefined) return s.scoreFinal;
+  if (typeof s.scoreSolicitante === "number") return s.scoreSolicitante;
+  return s.score ?? 0;
 }
 
 export async function deleteSolicitacao(id: string): Promise<void> {
