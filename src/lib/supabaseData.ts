@@ -57,6 +57,7 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     scoreSolicitante,
     scoreFinal,
     notasTecnicas: row.notas_tecnicas ?? undefined,
+    notasTecnicasComplexidade: row.notas_tecnicas_complexidade ?? null,
     setor: row.setor ?? undefined,
     temIntegracao: row.tem_integracao,
     integracoes: row.integracoes ?? [],
