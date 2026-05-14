@@ -72,15 +72,9 @@ export default function DemandaDetail() {
 
   useEffect(() => {
     if (!solicitacao) return;
-    setComplex(solicitacao.complexidade);
-    setRetorno(solicitacao.retorno);
     setStatus(solicitacao.status);
-    setNotas(solicitacao.notasTecnicas ?? "");
-    setDescricaoDev(solicitacao.descricao);
-    setTemIntegracao(solicitacao.temIntegracao ?? false);
-    setIntegracoesText((solicitacao.integracoes ?? []).join(", "));
-    setComplexidadeDev(solicitacao.complexidadeDev ?? 5);
-    setNotasComplexDev(solicitacao.notasTecnicas ?? "");
+    setComplexidadeDev(solicitacao.complexidadeDev);
+    setNotasTecnicasComplexidade(solicitacao.notasTecnicasComplexidade ?? "");
     setEditTitulo(solicitacao.titulo);
     setEditDescricao(solicitacao.descricao);
     setEditSoftwares((solicitacao.integracoes ?? []).join(", "));
@@ -96,11 +90,6 @@ export default function DemandaDetail() {
     }
   }, [searchParams, isOwner]);
 
-  const previewScore = useMemo(
-    () => (solicitacao ? calcScore({ frequencia: solicitacao.frequencia, complexidade: complex, retorno }) : 0),
-    [solicitacao, complex, retorno],
-  );
-
   if (!solicitacao) {
     return (
       <div className="text-center py-20 space-y-4">
@@ -110,21 +99,21 @@ export default function DemandaDetail() {
     );
   }
 
-  async function handleSave() {
-    const integracoes = temIntegracao
-      ? integracoesText.split(",").map((s) => s.trim()).filter(Boolean)
-      : [];
-    await updateSolicitacao(id, {
-      complexidade: complex,
-      retorno,
-      status,
-      notasTecnicas: notas,
-      temIntegracao,
-      integracoes,
-    });
-    toast({ title: "Demanda atualizada" });
+  async function handleSaveStatus() {
+    setSavingStatus(true);
+    try {
+      await updateSolicitacao(id, { status });
+      toast({ title: "Status atualizado" });
+    } catch (e) {
+      toast({
+        title: "Erro ao salvar",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingStatus(false);
+    }
   }
-
   async function handleSaveOwn() {
     if (!editTitulo.trim() || editTitulo.trim().length < 3) {
       toast({ title: "Verifique os campos", description: "Informe um título válido.", variant: "destructive" });
