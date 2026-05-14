@@ -251,6 +251,8 @@ export async function updateSolicitacao(
     tem_integracao: patch.temIntegracao,
     integracoes: patch.integracoes,
     complexidade_dev: patch.complexidadeDev,
+    data_inicio_prevista: patch.dataInicioPrevista,
+    data_fim_prevista: patch.dataFimPrevista,
   };
   // Score legado recalculado localmente — substituído pelo trigger SQL no Prompt 5.
   const payload: Record<string, unknown> = {
