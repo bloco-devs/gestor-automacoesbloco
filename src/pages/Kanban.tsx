@@ -191,11 +191,6 @@ function KanbanCard({ item }: { item: Solicitacao }) {
           {item.titulo}
         </span>
         <div className="flex items-center gap-1 shrink-0">
-          {item.complexidadeDev === null && (
-            <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-5 border-dashed">
-              ⚙ Avaliar
-            </Badge>
-          )}
           <ScorePill score={item.score} />
         </div>
       </div>
