@@ -220,8 +220,20 @@ export default function AppLayout() {
           title="Arraste para redimensionar (duplo clique para resetar)"
         />
       </aside>
+      )}
 
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 relative">
+        {sidebarHidden && (
+          <button
+            type="button"
+            onClick={() => setSidebarHidden(false)}
+            title="Mostrar barra lateral"
+            aria-label="Mostrar barra lateral"
+            className="hidden md:flex fixed top-2 left-2 z-40 items-center justify-center size-7 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 transition-colors"
+          >
+            <PanelLeftOpen className="size-3.5" />
+          </button>
+        )}
         <header className="md:hidden border-b border-border px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img
