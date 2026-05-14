@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { Code2, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import blocoLogo from "@/assets/bloco-logo.png";
 
 export default function EscolherPerfil() {
-  const { user, setViewAs } = useAuth();
+  const { user, isDual, setViewAs } = useAuth();
   const navigate = useNavigate();
 
   if (!user) return null;
+  // Only dual-role accounts may pick a profile. Others go straight to their default view.
+  if (!isDual) {
+    return <Navigate to={user.role === "developer" ? "/dashboard" : "/minhas-demandas"} replace />;
+  }
 
   function choose(role: "developer" | "requester") {
     setViewAs(role);
