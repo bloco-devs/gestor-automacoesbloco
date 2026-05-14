@@ -501,3 +501,41 @@ export async function getSolucao(id: string): Promise<Solucao | null> {
   return data ? mapSolucao(data) : null;
 }
 
+export type ScoreHistoryEntry = {
+  id: string;
+  solicitacao_id: string;
+  old_complexidade_dev: number | null;
+  new_complexidade_dev: number | null;
+  old_notas: string | null;
+  new_notas: string | null;
+  changed_by: string | null;
+  changed_by_email: string | null;
+  changed_at: string;
+  trigger_source: string;
+};
+
+export async function listScoreHistory(solicitacaoId: string): Promise<ScoreHistoryEntry[]> {
+  const { data, error } = await supabase
+    .from("solicitacoes_score_history" as never)
+    .select("*")
+    .eq("solicitacao_id", solicitacaoId)
+    .order("changed_at", { ascending: false });
+  if (error) {
+    console.warn("listScoreHistory falhou:", error.message);
+    return [];
+  }
+  return (data ?? []) as unknown as ScoreHistoryEntry[];
+}
+
+export async function countPendingDevEvaluations(): Promise<number> {
+  const { count, error } = await supabase
+    .from("solicitacoes")
+    .select("id", { count: "exact", head: true })
+    .is("complexidade_dev", null);
+  if (error) {
+    console.warn("countPendingDevEvaluations falhou:", error.message);
+    return 0;
+  }
+  return count ?? 0;
+}
+
