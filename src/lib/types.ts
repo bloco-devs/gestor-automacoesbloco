@@ -64,10 +64,20 @@ export interface Solicitacao {
   titulo: string;
   descricao: string;
   frequencia: Frequencia;
-  complexidade: number; // 1-5
-  retorno: number; // 1-5
+  /** @deprecated Use `dificuldade` (0-10). Mantido para backward compatibility durante a migração. */
+  complexidade: number; // 1-5 (legado)
+  retorno: number; // 0-10 na nova escala (legado: 1-5)
+  /** Percepção de dificuldade pelo solicitante (0-10). Substitui semanticamente `complexidade`. */
+  dificuldade: number; // 0-10
+  /** Complexidade técnica avaliada pelo dev (0-10). NULL = ainda não triada. */
+  complexidadeDev: number | null; // 0-10 ou null
   status: PipelineStatus;
-  score: number; // 0-100
+  /** @deprecated Use `scoreSolicitante` / `scoreFinal`. */
+  score: number; // 0-100 (legado)
+  /** Score parcial calculado a partir dos 3 fatores do solicitante (0-100). */
+  scoreSolicitante: number; // 0-100
+  /** Score final com penalização de complexidade técnica (0-100). NULL enquanto dev não avaliou. */
+  scoreFinal: number | null; // 0-100 ou null
   setor?: Setor | string;
   notasTecnicas?: string;
   temIntegracao?: boolean;
