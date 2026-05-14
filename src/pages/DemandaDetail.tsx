@@ -168,25 +168,28 @@ export default function DemandaDetail() {
   }
 
   async function handleSaveComplexidadeDev() {
+    const final = effectiveComplexidade;
     if (
-      complexidadeDev === null ||
-      typeof complexidadeDev !== "number" ||
-      Number.isNaN(complexidadeDev) ||
-      complexidadeDev < 0 ||
-      complexidadeDev > 10
+      typeof final !== "number" ||
+      Number.isNaN(final) ||
+      final < 0 ||
+      final > 10
     ) {
       toast({
         title: "Avaliação incompleta",
-        description: "Defina a complexidade técnica (0-10) antes de salvar.",
+        description: "Marque ao menos um item do checklist ou ative o override antes de salvar.",
         variant: "destructive",
       });
       return;
     }
+    const notasFinal = hasOverride && overrideMotivo
+      ? `${notasTecnicasComplexidade}${notasTecnicasComplexidade ? "\n\n" : ""}[Override] ${overrideMotivo}`
+      : notasTecnicasComplexidade;
     setSavingComplexDev(true);
     try {
       await updateSolicitacao(id, {
-        complexidadeDev,
-        notasTecnicasComplexidade: notasTecnicasComplexidade || null,
+        complexidadeDev: final,
+        notasTecnicasComplexidade: notasFinal || null,
       });
       toast({
         title: "Avaliação técnica salva",
