@@ -140,11 +140,21 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen flex">
+      {!sidebarHidden && (
       <aside
         className="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar relative shrink-0"
         style={{ width: sidebarWidth }}
       >
         <div className="px-5 py-6 flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={() => setSidebarHidden(true)}
+            title="Esconder barra lateral"
+            aria-label="Esconder barra lateral"
+            className="text-muted-foreground/60 hover:text-foreground transition-colors -ml-1 p-1 rounded"
+          >
+            <PanelLeftClose className="size-3.5" />
+          </button>
           <img
             src={blocoLogo}
             alt="Bloco Construções"
