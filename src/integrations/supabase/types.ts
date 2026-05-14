@@ -293,6 +293,7 @@ export type Database = {
       solicitacoes: {
         Row: {
           complexidade: number
+          complexidade_dev: number | null
           created_at: string
           descricao: string
           email: string
@@ -315,6 +316,7 @@ export type Database = {
         }
         Insert: {
           complexidade?: number
+          complexidade_dev?: number | null
           created_at?: string
           descricao: string
           email: string
@@ -337,6 +339,7 @@ export type Database = {
         }
         Update: {
           complexidade?: number
+          complexidade_dev?: number | null
           created_at?: string
           descricao?: string
           email?: string

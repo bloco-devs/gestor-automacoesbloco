@@ -36,6 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { calcScore } from "@/lib/score";
+import { computeScoreFinal, computeScoreSolicitante } from "@/lib/scoreV2";
 import { useToast } from "@/hooks/use-toast";
 
 export default function DemandaDetail() {
@@ -57,6 +58,9 @@ export default function DemandaDetail() {
   const [descricaoDev, setDescricaoDev] = useState(solicitacao?.descricao ?? "");
   const [temIntegracao, setTemIntegracao] = useState<boolean>(solicitacao?.temIntegracao ?? false);
   const [integracoesText, setIntegracoesText] = useState((solicitacao?.integracoes ?? []).join(", "));
+  const [complexidadeDev, setComplexidadeDev] = useState<number>(solicitacao?.complexidadeDev ?? 5);
+  const [notasComplexDev, setNotasComplexDev] = useState<string>(solicitacao?.notasTecnicas ?? "");
+  const [savingComplexDev, setSavingComplexDev] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitulo, setEditTitulo] = useState(solicitacao?.titulo ?? "");
   const [editDescricao, setEditDescricao] = useState(solicitacao?.descricao ?? "");
@@ -76,6 +80,8 @@ export default function DemandaDetail() {
     setDescricaoDev(solicitacao.descricao);
     setTemIntegracao(solicitacao.temIntegracao ?? false);
     setIntegracoesText((solicitacao.integracoes ?? []).join(", "));
+    setComplexidadeDev(solicitacao.complexidadeDev ?? 5);
+    setNotasComplexDev(solicitacao.notasTecnicas ?? "");
     setEditTitulo(solicitacao.titulo);
     setEditDescricao(solicitacao.descricao);
     setEditSoftwares((solicitacao.integracoes ?? []).join(", "));
@@ -155,6 +161,42 @@ export default function DemandaDetail() {
     navigate("/solicitacoes", { replace: true });
   }
 
+  async function handleSaveComplexidadeDev() {
+    if (
+      typeof complexidadeDev !== "number" ||
+      Number.isNaN(complexidadeDev) ||
+      complexidadeDev < 0 ||
+      complexidadeDev > 10
+    ) {
+      toast({
+        title: "Valor inválido",
+        description: "A complexidade técnica deve estar entre 0 e 10.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSavingComplexDev(true);
+    try {
+      await updateSolicitacao(id, {
+        complexidadeDev,
+        notasTecnicas: notasComplexDev,
+      });
+      toast({
+        title: "Avaliação técnica salva",
+        description: "Score final recalculado.",
+      });
+      // useSupabaseData já refaz a query via realtime postgres_changes em `solicitacoes`.
+    } catch (e) {
+      toast({
+        title: "Erro ao salvar",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingComplexDev(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -165,7 +207,23 @@ export default function DemandaDetail() {
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-semibold">{solicitacao.titulo}</h1>
             <StatusBadge status={solicitacao.status} />
-            {isDev && <ScorePill score={solicitacao.score} />}
+            {isDev && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs text-muted-foreground">Solicitante:</span>
+                <ScorePill score={Math.round(solicitacao.scoreSolicitante)} />
+                <span className="text-xs text-muted-foreground ml-1">Final:</span>
+                {solicitacao.scoreFinal !== null ? (
+                  <ScorePill score={Math.round(solicitacao.scoreFinal)} />
+                ) : (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border border-dashed border-border bg-muted/40 text-muted-foreground"
+                    title="O dev ainda não avaliou a complexidade técnica"
+                  >
+                    ⚙ Aguardando avaliação técnica
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isOwner && !isEditing && (
@@ -366,6 +424,64 @@ export default function DemandaDetail() {
             <div className="md:col-span-2">
               <Button onClick={handleSave} className="w-full">
                 <Save className="size-4" /> Salvar alterações
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isDev && (
+        <Card className="surface-1">
+          <CardHeader>
+            <CardTitle className="text-base">Avaliação Técnica do Dev</CardTitle>
+            <CardDescription>
+              Define o fator de penalização aplicado ao score do solicitante para gerar o score final.
+              {solicitacao.complexidadeDev === null && (
+                <span className="ml-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border border-dashed border-border bg-muted/40 text-muted-foreground">
+                  ⚙ Aguardando avaliação técnica
+                </span>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Complexidade Técnica (0-10)</Label>
+                <span className="text-sm tabular-nums text-accent font-medium">{complexidadeDev}/10</span>
+              </div>
+              <Slider
+                min={0}
+                max={10}
+                step={1}
+                value={[complexidadeDev]}
+                onValueChange={(v) => setComplexidadeDev(v[0])}
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                0 = Trivial · 5 = Moderada · 10 = Muito Complexa
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="notas-complex-dev">Notas técnicas (opcional)</Label>
+              <Textarea
+                id="notas-complex-dev"
+                rows={3}
+                placeholder="Justifique a avaliação, dependências, riscos…"
+                value={notasComplexDev}
+                onChange={(e) => setNotasComplexDev(e.target.value)}
+                maxLength={2000}
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border">
+              <div className="text-sm text-muted-foreground">
+                Preview do score final:{" "}
+                <span className="text-foreground font-medium tabular-nums">
+                  {Math.round(
+                    computeScoreFinal(solicitacao.scoreSolicitante, complexidadeDev) ?? 0,
+                  )}
+                </span>
+              </div>
+              <Button onClick={handleSaveComplexidadeDev} disabled={savingComplexDev}>
+                <Save className="size-4" /> Salvar Avaliação Técnica
               </Button>
             </div>
           </CardContent>
