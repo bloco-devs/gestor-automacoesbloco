@@ -12,8 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { createSolicitacao } from "@/lib/supabaseData";
-import { calcScore, scoreTone } from "@/lib/score";
-import { FREQUENCIA_LABEL, SETORES, type Frequencia, type Setor } from "@/lib/types";
+import { computeScoreSolicitante, scoreTone } from "@/lib/scoreV2";
+import { SETORES, type Setor } from "@/lib/types";
 import { ScorePill } from "@/components/ScorePill";
 import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 
@@ -33,13 +33,13 @@ export default function NovaDemanda() {
   const [descricao, setDescricao] = useState("");
   const [softwares, setSoftwares] = useState("");
   const [setor, setSetor] = useState<Setor | "">("");
-  const [frequencia, setFrequencia] = useState<Frequencia>(3);
-  const [complexidade, setComplexidade] = useState(3);
-  const [retorno, setRetorno] = useState(3);
+  const [frequencia, setFrequencia] = useState<number>(5);
+  const [dificuldade, setDificuldade] = useState<number>(5);
+  const [retorno, setRetorno] = useState<number>(5);
 
   const previewScore = useMemo(
-    () => calcScore({ frequencia, complexidade, retorno }),
-    [frequencia, complexidade, retorno],
+    () => Math.round(computeScoreSolicitante(frequencia, dificuldade, retorno)),
+    [frequencia, dificuldade, retorno],
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -56,7 +56,7 @@ export default function NovaDemanda() {
         descricao: v.descricao,
         softwares: softwaresList,
         frequencia,
-        complexidade,
+        dificuldade,
         retorno,
         setor: v.setor,
         solicitanteId: user.id,
@@ -129,42 +129,69 @@ export default function NovaDemanda() {
           <Card className="surface-1">
             <CardHeader>
               <CardTitle className="text-base">Critérios de priorização</CardTitle>
-              {isDeveloper && <CardDescription>Esses fatores compõem o score (média 0-100).</CardDescription>}
+              <CardDescription>Tudo na escala 0-10. O score final será ajustado quando o dev fizer a avaliação técnica.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div>
-                <Label>Frequência</Label>
-                <Select value={String(frequencia)} onValueChange={(v) => setFrequencia(Number(v) as Frequencia)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {([4, 3, 2, 1] as Frequencia[]).map((f) => (
-                      <SelectItem key={f} value={String(f)}>
-                        {FREQUENCIA_LABEL[f]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <SliderField label="Complexidade / Chato de fazer" value={complexidade} onChange={setComplexidade} hint="1 = simples · 5 = muito chato/complexo" />
-              <SliderField label="Retorno esperado" value={retorno} onChange={setRetorno} hint="1 = baixo impacto · 5 = grande economia/impacto" />
+              <ScaleSlider
+                label="Frequência de utilização"
+                value={frequencia}
+                onChange={setFrequencia}
+                anchors={[
+                  [0, "Nunca"],
+                  [2, "Raro (<1×/mês)"],
+                  [4, "Mensal"],
+                  [6, "Semanal"],
+                  [8, "Diário"],
+                  [10, "Várias vezes/dia"],
+                ]}
+              />
+              <ScaleSlider
+                label="Dificuldade"
+                value={dificuldade}
+                onChange={setDificuldade}
+                anchors={[
+                  [0, "Trivial"],
+                  [2, "Fácil"],
+                  [4, "Moderada"],
+                  [6, "Difícil"],
+                  [8, "Muito difícil"],
+                  [10, "Crítica"],
+                ]}
+              />
+              <ScaleSlider
+                label="Retorno financeiro"
+                value={retorno}
+                onChange={setRetorno}
+                anchors={[
+                  [0, "Nenhum (R$ 0)"],
+                  [2, "Baixo (R$ 0–500/mês)"],
+                  [4, "Médio (R$ 500–2,5k/mês)"],
+                  [6, "Médio-alto (R$ 2,5k–10k/mês)"],
+                  [8, "Alto (R$ 10k–50k/mês)"],
+                  [10, "Muito alto (R$ 50k+/mês)"],
+                ]}
+              />
             </CardContent>
           </Card>
 
           {!isDeveloper && (
-            <Button type="submit" className="w-full sm:w-auto">
-              Enviar demanda
-            </Button>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-border bg-card/40 p-4">
+              <div>
+                <div className="text-sm font-medium">Score estimado: <span className="tabular-nums">{previewScore}/100</span></div>
+                <div className="text-xs text-muted-foreground">Será ajustado quando o dev fizer a avaliação técnica.</div>
+              </div>
+              <Button type="submit" className="w-full sm:w-auto">
+                Enviar demanda
+              </Button>
+            </div>
           )}
         </div>
 
         {isDeveloper && <div className="space-y-4">
           <Card className="surface-2 sticky top-4">
             <CardHeader>
-              <CardTitle className="text-base">Score estimado</CardTitle>
-              <CardDescription>Recalculado automaticamente.</CardDescription>
+              <CardTitle className="text-base">Score estimado: {previewScore}/100</CardTitle>
+              <CardDescription>Será ajustado quando o dev fizer a avaliação técnica.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-3">
@@ -172,9 +199,9 @@ export default function NovaDemanda() {
                 <ScorePill score={previewScore} />
               </div>
               <div className="mt-4 text-sm text-muted-foreground">
-                {scoreTone(previewScore) === "high" && "Alta prioridade prevista."}
-                {scoreTone(previewScore) === "mid" && "Prioridade média."}
-                {scoreTone(previewScore) === "low" && "Baixa prioridade."}
+                {scoreTone(previewScore, "solicitante") === "high" && "Alta prioridade prevista."}
+                {scoreTone(previewScore, "solicitante") === "mid" && "Prioridade média."}
+                {scoreTone(previewScore, "solicitante") === "low" && "Baixa prioridade."}
               </div>
               <Button type="submit" className="w-full mt-6">
                 Enviar demanda
@@ -187,15 +214,41 @@ export default function NovaDemanda() {
   );
 }
 
-function SliderField({ label, value, onChange, hint }: { label: string; value: number; onChange: (n: number) => void; hint: string }) {
+/**
+ * Slider 0-10 com âncoras textuais. Mostra o rótulo da âncora mais próxima
+ * abaixo do valor selecionado para dar contexto qualitativo ao número.
+ */
+function ScaleSlider({
+  label,
+  value,
+  onChange,
+  anchors,
+}: {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+  anchors: Array<[number, string]>;
+}) {
+  const nearest = anchors.reduce((acc, cur) =>
+    Math.abs(cur[0] - value) < Math.abs(acc[0] - value) ? cur : acc,
+  );
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
         <Label>{label}</Label>
-        <span className="text-sm tabular-nums text-accent font-medium">{value}/5</span>
+        <span className="text-sm tabular-nums text-accent font-medium">
+          {value}/10 · <span className="text-muted-foreground font-normal">{nearest[1]}</span>
+        </span>
       </div>
-      <Slider min={1} max={5} step={1} value={[value]} onValueChange={(v) => onChange(v[0])} />
-      <p className="text-xs text-muted-foreground mt-1.5">{hint}</p>
+      <Slider min={0} max={10} step={1} value={[value]} onValueChange={(v) => onChange(v[0])} />
+      <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground tabular-nums">
+        {anchors.map(([n, lab]) => (
+          <span key={n} className="flex flex-col items-center">
+            <span>{n}</span>
+            <span className="hidden sm:block max-w-[7ch] text-center leading-tight">{lab}</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
