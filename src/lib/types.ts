@@ -96,6 +96,10 @@ export interface Solicitacao {
   integracoes?: string[]; // softwares/sistemas integrados
   solicitanteId: string;
   solicitanteNome: string;
+  /** Data planejada de início (ISO date YYYY-MM-DD). Usada na visão Gantt. */
+  dataInicioPrevista?: string | null;
+  /** Data planejada de fim (ISO date YYYY-MM-DD). Usada na visão Gantt. */
+  dataFimPrevista?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -106,6 +110,10 @@ export interface Solucao {
   titulo: string;
   descricao: string;
   link?: string | null;
+  /** Data planejada de início (ISO date YYYY-MM-DD). Usada na visão Gantt. */
+  dataInicioPrevista?: string | null;
+  /** Data planejada de fim (ISO date YYYY-MM-DD). Usada na visão Gantt. */
+  dataFimPrevista?: string | null;
   createdAt: string;
 }
 

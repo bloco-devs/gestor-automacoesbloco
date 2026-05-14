@@ -145,6 +145,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          data_fim_prevista: string | null
+          data_inicio_prevista: string | null
           descricao: string
           id: string
           link: string | null
@@ -154,6 +156,8 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          data_fim_prevista?: string | null
+          data_inicio_prevista?: string | null
           descricao?: string
           id?: string
           link?: string | null
@@ -163,6 +167,8 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          data_fim_prevista?: string | null
+          data_inicio_prevista?: string | null
           descricao?: string
           id?: string
           link?: string | null
@@ -295,6 +301,8 @@ export type Database = {
           complexidade: number
           complexidade_dev: number | null
           created_at: string
+          data_fim_prevista: string | null
+          data_inicio_prevista: string | null
           descricao: string
           email: string
           frequencia: number
@@ -319,6 +327,8 @@ export type Database = {
           complexidade?: number
           complexidade_dev?: number | null
           created_at?: string
+          data_fim_prevista?: string | null
+          data_inicio_prevista?: string | null
           descricao: string
           email: string
           frequencia?: number
@@ -343,6 +353,8 @@ export type Database = {
           complexidade?: number
           complexidade_dev?: number | null
           created_at?: string
+          data_fim_prevista?: string | null
+          data_inicio_prevista?: string | null
           descricao?: string
           email?: string
           frequencia?: number

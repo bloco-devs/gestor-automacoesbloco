@@ -23,7 +23,13 @@ type SolicitacaoRow = {
   created_at: string;
   updated_at: string;
   complexidade_dev: number | null;
+  data_inicio_prevista: string | null;
+  data_fim_prevista: string | null;
 };
+
+const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista";
+
+const SOLUCAO_COLS = "id,solicitacao_id,titulo,descricao,link,created_at,data_inicio_prevista,data_fim_prevista";
 
 function asFrequencia(value: number): Frequencia {
   // Aceita escala legada (1-4) e a nova (0-10). O backfill no Prompt 4
@@ -63,18 +69,22 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     integracoes: row.integracoes ?? [],
     solicitanteId: row.user_id ?? "",
     solicitanteNome: row.solicitante_nome || row.nome || "Solicitante",
+    dataInicioPrevista: row.data_inicio_prevista,
+    dataFimPrevista: row.data_fim_prevista,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; link: string | null; created_at: string }): Solucao {
+function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; link: string | null; created_at: string; data_inicio_prevista?: string | null; data_fim_prevista?: string | null }): Solucao {
   return {
     id: row.id,
     solicitacaoId: row.solicitacao_id,
     titulo: row.titulo,
     descricao: row.descricao,
     link: row.link ?? undefined,
+    dataInicioPrevista: row.data_inicio_prevista ?? null,
+    dataFimPrevista: row.data_fim_prevista ?? null,
     createdAt: row.created_at,
   };
 }
@@ -92,7 +102,7 @@ function mapMelhoria(row: { id: string; solucao_id: string; descricao: string; s
 export async function listSolicitacoes(): Promise<Solicitacao[]> {
   const { data, error } = await supabase
     .from("solicitacoes")
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select(SOLICITACAO_COLS)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row) => mapSolicitacao(row as SolicitacaoRow));
@@ -101,7 +111,7 @@ export async function listSolicitacoes(): Promise<Solicitacao[]> {
 export async function listMinhasSolicitacoes(userId: string): Promise<Solicitacao[]> {
   const { data, error } = await supabase
     .from("solicitacoes")
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select(SOLICITACAO_COLS)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -111,7 +121,7 @@ export async function listMinhasSolicitacoes(userId: string): Promise<Solicitaca
 export async function getSolicitacao(id: string): Promise<Solicitacao | null> {
   const { data, error } = await supabase
     .from("solicitacoes")
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select(SOLICITACAO_COLS)
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -168,7 +178,7 @@ export async function createSolicitacao(data: {
       integracoes: data.softwares,
       status: "novo",
     })
-    .select("id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev")
+    .select(SOLICITACAO_COLS)
     .single();
   if (error) throw error;
   return mapSolicitacao(inserted as SolicitacaoRow);
@@ -241,6 +251,8 @@ export async function updateSolicitacao(
     tem_integracao: patch.temIntegracao,
     integracoes: patch.integracoes,
     complexidade_dev: patch.complexidadeDev,
+    data_inicio_prevista: patch.dataInicioPrevista,
+    data_fim_prevista: patch.dataFimPrevista,
   };
   // Score legado recalculado localmente — substituído pelo trigger SQL no Prompt 5.
   const payload: Record<string, unknown> = {
@@ -295,7 +307,7 @@ export async function deleteSolicitacao(id: string): Promise<void> {
 export async function listSolucoes(): Promise<Solucao[]> {
   const { data, error } = await supabase
     .from("demanda_solucoes")
-    .select("id,solicitacao_id,titulo,descricao,link,created_at")
+    .select(SOLUCAO_COLS)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(mapSolucao);
@@ -304,7 +316,7 @@ export async function listSolucoes(): Promise<Solucao[]> {
 export async function listSolucoesBySolicitacao(solicitacaoId: string): Promise<Solucao[]> {
   const { data, error } = await supabase
     .from("demanda_solucoes")
-    .select("id,solicitacao_id,titulo,descricao,link,created_at")
+    .select(SOLUCAO_COLS)
     .eq("solicitacao_id", solicitacaoId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -322,11 +334,13 @@ export async function createSolucao(data: { solicitacaoId?: string | null; titul
   if (error) throw error;
 }
 
-export async function updateSolucao(id: string, patch: { titulo?: string; descricao?: string; link?: string | null }): Promise<void> {
+export async function updateSolucao(id: string, patch: { titulo?: string; descricao?: string; link?: string | null; dataInicioPrevista?: string | null; dataFimPrevista?: string | null }): Promise<void> {
   const payload: Record<string, unknown> = {};
   if (patch.titulo !== undefined) payload.titulo = patch.titulo;
   if (patch.descricao !== undefined) payload.descricao = patch.descricao;
   if (patch.link !== undefined) payload.link = patch.link;
+  if (patch.dataInicioPrevista !== undefined) payload.data_inicio_prevista = patch.dataInicioPrevista;
+  if (patch.dataFimPrevista !== undefined) payload.data_fim_prevista = patch.dataFimPrevista;
   const { error } = await supabase.from("demanda_solucoes").update(payload as never).eq("id", id);
   if (error) throw error;
 }
@@ -494,7 +508,7 @@ export async function deleteSolucaoTask(id: string): Promise<void> {
 export async function getSolucao(id: string): Promise<Solucao | null> {
   const { data, error } = await supabase
     .from("demanda_solucoes")
-    .select("id,solicitacao_id,titulo,descricao,link,created_at")
+    .select(SOLUCAO_COLS)
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;

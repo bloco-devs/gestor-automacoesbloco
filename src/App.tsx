@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +18,9 @@ import Dashboard from "./pages/Dashboard";
 import Kanban from "./pages/Kanban";
 import Solucoes from "./pages/Solucoes";
 import Solicitacoes from "./pages/Solicitacoes";
+import SolucoesKanban from "./pages/SolucoesKanban";
+import SolicitacoesGantt from "./pages/SolicitacoesGantt";
+import SolucoesGantt from "./pages/SolucoesGantt";
 
 import DemandaDetail from "./pages/DemandaDetail";
 import SolucaoDetail from "./pages/SolucaoDetail";
@@ -48,8 +51,12 @@ const App = () => (
               {/* Desenvolvedor */}
               <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
               <Route path="/solicitacoes" element={<ProtectedRoute role="developer"><Solicitacoes /></ProtectedRoute>} />
-              <Route path="/kanban" element={<ProtectedRoute role="developer"><Kanban /></ProtectedRoute>} />
+              <Route path="/solicitacoes/kanban" element={<ProtectedRoute role="developer"><Kanban /></ProtectedRoute>} />
+              <Route path="/solicitacoes/gantt" element={<ProtectedRoute role="developer"><SolicitacoesGantt /></ProtectedRoute>} />
+              <Route path="/kanban" element={<Navigate to="/solicitacoes/kanban" replace />} />
               <Route path="/solucoes" element={<ProtectedRoute role="developer"><Solucoes /></ProtectedRoute>} />
+              <Route path="/solucoes/kanban" element={<ProtectedRoute role="developer"><SolucoesKanban /></ProtectedRoute>} />
+              <Route path="/solucoes/gantt" element={<ProtectedRoute role="developer"><SolucoesGantt /></ProtectedRoute>} />
               <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
               
 

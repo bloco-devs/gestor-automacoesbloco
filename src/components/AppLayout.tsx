@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Sparkles, ListTodo, Gauge, Repeat } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { ChevronDown, GanttChartSquare, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Plus, Repeat, Sparkles, Gauge } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,13 +10,40 @@ import { countPendingDevEvaluations } from "@/lib/supabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import blocoLogo from "@/assets/bloco-logo.png";
 
-const devNav = [
+type NavItem = {
+  to?: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  /** Quando definido, o item é um pai colapsável e não navega ao clique. */
+  children?: NavItem[];
+  /** Routes que mantêm o pai marcado como ativo (para realçar e auto-abrir). */
+  matchPrefix?: string;
+};
+
+const devNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/solicitacoes", label: "Solicitações", icon: ListChecks },
-  { to: "/kanban", label: "Kanban", icon: KanbanSquare },
-  { to: "/solucoes", label: "Soluções", icon: Sparkles },
+  {
+    label: "Solicitações",
+    icon: ListChecks,
+    matchPrefix: "/solicitacoes",
+    children: [
+      { to: "/solicitacoes", label: "Lista", icon: List },
+      { to: "/solicitacoes/kanban", label: "Kanban", icon: KanbanSquare },
+      { to: "/solicitacoes/gantt", label: "Gantt", icon: GanttChartSquare },
+    ],
+  },
+  {
+    label: "Soluções",
+    icon: Sparkles,
+    matchPrefix: "/solucoes",
+    children: [
+      { to: "/solucoes", label: "Lista", icon: List },
+      { to: "/solucoes/kanban", label: "Kanban", icon: KanbanSquare },
+      { to: "/solucoes/gantt", label: "Gantt", icon: GanttChartSquare },
+    ],
+  },
 ];
-const requesterNav = [
+const requesterNav: NavItem[] = [
   { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
   { to: "/minhas-demandas", label: "Minhas Demandas", icon: ListTodo },
   { to: "/nova-demanda", label: "Nova Demanda", icon: Plus },
@@ -120,28 +147,14 @@ export default function AppLayout() {
             <div className="text-sm font-brand font-bold truncate">Gestor de Automações</div>
           </div>
         </div>
-        <nav className="flex-1 px-3 py-2 space-y-1">
+        <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
           {nav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/60",
-                )
-              }
-            >
-              <item.icon className="size-4 shrink-0" />
-              <span className="truncate flex-1">{item.label}</span>
-              {isDeveloper && item.to === "/solicitacoes" && pendingEvalCount > 0 && (
-                <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1.5 h-5 border-dashed shrink-0" title="Solicitações aguardando avaliação técnica">
-                  ⚙ {pendingEvalCount}
-                </Badge>
-              )}
-            </NavLink>
+            <SidebarNavItem
+              key={item.label}
+              item={item}
+              isDeveloper={isDeveloper}
+              pendingEvalCount={pendingEvalCount}
+            />
           ))}
         </nav>
         <div className="p-3 border-t border-sidebar-border">
@@ -211,10 +224,11 @@ export default function AppLayout() {
           </div>
         </header>
         <nav className="md:hidden flex flex-wrap gap-1 overflow-hidden px-3 py-2 border-b border-border">
-          {nav.map((item) => (
+          {nav.flatMap((item) => (item.children ? item.children : [item])).map((item) => (
             <NavLink
               key={item.to}
-              to={item.to}
+              to={item.to!}
+              end={item.to === "/solicitacoes" || item.to === "/solucoes"}
               className={({ isActive }) =>
                 cn(
                   "flex min-w-0 flex-1 items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs whitespace-nowrap",
@@ -231,6 +245,106 @@ export default function AppLayout() {
           <Outlet />
         </div>
       </main>
+    </div>
+  );
+}
+
+function SidebarNavItem({
+  item,
+  isDeveloper,
+  pendingEvalCount,
+}: {
+  item: NavItem;
+  isDeveloper: boolean;
+  pendingEvalCount: number;
+}) {
+  const { pathname } = useLocation();
+  const hasChildren = !!item.children?.length;
+
+  // Pai está "ativo" se a rota atual cai sob seu prefixo
+  const isParentActive = useMemo(() => {
+    if (!item.matchPrefix) return false;
+    return pathname === item.matchPrefix || pathname.startsWith(item.matchPrefix + "/");
+  }, [pathname, item.matchPrefix]);
+
+  const [open, setOpen] = useState<boolean>(isParentActive);
+  useEffect(() => {
+    if (isParentActive) setOpen(true);
+  }, [isParentActive]);
+
+  const showBadge =
+    isDeveloper && item.matchPrefix === "/solicitacoes" && pendingEvalCount > 0;
+
+  if (!hasChildren) {
+    return (
+      <NavLink
+        to={item.to!}
+        end
+        className={({ isActive }) =>
+          cn(
+            "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0",
+            isActive
+              ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border"
+              : "text-sidebar-foreground hover:bg-sidebar-accent/60",
+          )
+        }
+      >
+        <item.icon className="size-4 shrink-0" />
+        <span className="truncate flex-1">{item.label}</span>
+      </NavLink>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0",
+          isParentActive
+            ? "text-sidebar-accent-foreground bg-sidebar-accent/40"
+            : "text-sidebar-foreground hover:bg-sidebar-accent/60",
+        )}
+      >
+        <item.icon className="size-4 shrink-0" />
+        <span className="truncate flex-1 text-left">{item.label}</span>
+        {showBadge && (
+          <Badge
+            variant="outline"
+            className="text-[10px] py-0 px-1.5 h-5 border-dashed shrink-0"
+            title="Solicitações aguardando avaliação técnica"
+          >
+            ⚙ {pendingEvalCount}
+          </Badge>
+        )}
+        <ChevronDown
+          className={cn("size-3.5 shrink-0 transition-transform text-muted-foreground", open && "rotate-180")}
+        />
+      </button>
+      {open && (
+        <div className="mt-1 ml-3 pl-3 border-l border-sidebar-border/60 space-y-0.5">
+          {item.children!.map((child) => (
+            <NavLink
+              key={child.to}
+              to={child.to!}
+              end
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-colors min-w-0",
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
+                )
+              }
+            >
+              <child.icon className="size-3.5 shrink-0" />
+              <span className="truncate">{child.label}</span>
+            </NavLink>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
