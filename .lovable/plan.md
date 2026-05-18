@@ -1,70 +1,72 @@
-## Objetivo
-Criar um terceiro perfil **Builder**, que herda tudo do Solicitante e ainda pode cadastrar, editar e excluir **soluções vinculadas às próprias solicitações** — diretamente na página de detalhe da demanda. Sem aba "Soluções" no menu.
+# Aba Configurações (somente devs)
 
-## Comportamento esperado
+Nova rota `/configuracoes` acessível somente para usuários com papel `developer` (admin). Estrutura em abas internas, entregue em fases.
 
-- **Builder vê o mesmo menu lateral do Solicitante** (Dashboard do Solicitante, Minhas Demandas, Nova Demanda, Solicitações: Lista/Kanban/Gantt). Nada de "Soluções" no menu.
-- **Na página de detalhe de uma demanda própria**, o Builder vê a seção "Soluções vinculadas" com:
-  - botão **"Adicionar solução"** (novo);
-  - botões **Editar** e **Excluir** em cada solução que ele criou;
-  - mesmos campos usados hoje pelo desenvolvedor: título, descrição, link, data início prevista, data fim prevista.
-- **Em demandas que não são dele**, o Builder se comporta como Solicitante normal (sem botões de criar/editar/excluir solução).
-- O perfil é exibido como **"Builder"** no header (hoje mostra "Solicitante"/"Desenvolvedor").
-- Migração de contas existentes para Builder fica para depois — agora apenas criamos o tipo e a infraestrutura.
+## Arquitetura
 
-## Mudanças
+- Rota: `/configuracoes` em `src/App.tsx`, dentro de `ProtectedRoute` exigindo `developer`.
+- Item no sidebar (`AppLayout.tsx`) com ícone `Settings`, exibido apenas quando `effectiveRole === "developer"`.
+- Página `src/pages/Configuracoes.tsx` usando `Tabs` shadcn com 4 abas internas: Acessos, Catálogos, Aparência, Auditoria.
+- Subcomponentes em `src/components/configuracoes/`: `AcessosPanel.tsx`, `CatalogosPanel.tsx`, `AparenciaPanel.tsx`, `AuditoriaPanel.tsx`.
 
-### 1. Tipo de perfil
+## Fase 1 — Gestão de Acessos (prioridade #1)
 
-`src/lib/types.ts`
-- `export type Role = "developer" | "requester" | "builder";`
+Objetivo: deixar de editar código para liberar/remover usuários e trocar papéis.
 
-### 2. Autenticação e roteamento
+UI (`AcessosPanel.tsx`):
+- Tabela com colunas: E-mail, Nome (do profile, se já logou), Papel atual (Desenvolvedor / Solicitante / Builder), Cadastrado em, Último acesso (opcional), Ações.
+- Botão "Adicionar conta" → dialog com campos: e-mail (obrigatório, normalizado em lowercase), papel (select). Cria registro em `allowed_emails` e, se já existir `auth.user`, cria também a linha em `user_roles`.
+- Por linha: trocar papel (select inline), botão "Remover" (confirmação) — remove de `allowed_emails` e `user_roles`.
+- Filtro por papel e busca por e-mail.
 
-`src/hooks/useAuth.tsx`
-- Aceitar `"builder"` em `getStoredViewAs` e em `setViewAs` (sem mudar quem é dual hoje).
-- `ALLOWED_ACCOUNTS` permanece como está (nenhuma conta vira Builder agora).
+Modelo de papéis:
+- Enum `app_role` hoje tem `admin`. Adicionar `requester` e `builder` ao enum.
+- Mapeamento de UI → enum: Desenvolvedor=`admin`, Solicitante=`requester`, Builder=`builder`.
+- Refatorar `useAuth.tsx` para ler o papel da tabela `user_roles` (via `has_role`) em vez de derivar de `ALLOWED_ACCOUNTS` no código. Manter fallback durante a migração.
+- Migrar a constante `ALLOWED_ACCOUNTS` atual para seeds em `allowed_emails` + `user_roles` (1 migration única).
 
-`src/components/ProtectedRoute.tsx`
-- Quando rota exige `role` específico e o usuário é Builder, tratar Builder como Solicitante para fins de redirecionamento (`/minhas-demandas`).
-- Aceitar Builder em todas as rotas hoje liberadas para Solicitante: `/dashboard-solicitante`, `/minhas-demandas`, `/nova-demanda`, e nas rotas já compartilhadas `/solicitacoes*`.
+Backend / segurança:
+- Migration para adicionar valores ao enum `app_role`.
+- Manter políticas existentes em `allowed_emails` e `user_roles` (já são admin-only).
+- Atualizar `is_allowed_user()` se necessário (já valida via `allowed_emails`, então segue funcionando).
+- Atualizar `ProtectedRoute` para usar o papel vindo do banco (Builder herda rotas de Solicitante, como já está).
 
-`src/pages/Index.tsx` e `src/pages/Auth.tsx`
-- Builder cai em `/minhas-demandas` após login (igual ao Solicitante).
+## Fase 2 — Catálogos base
 
-### 3. Menu lateral
+UI (`CatalogosPanel.tsx`) com sub-abas: Setores, Plataformas, Tipos de demanda.
+- CRUD em `setores` e `plataformas` (tabelas já existem). Listar, criar, renomear, excluir (com confirmação e checagem de uso).
+- Tipos de demanda hoje vivem em código (`tipo` em `solicitacoes`). Opção: criar tabela `tipos_demanda` (id, nome, ativo) e migrar o select de `NovaDemanda.tsx` para consumir do banco. **Decisão pendente — confirmar antes de implementar.**
 
-`src/components/AppLayout.tsx`
-- Builder usa o mesmo `requesterNav`. Apenas trocar o label do badge de perfil para mostrar "Builder" quando `user.role === "builder"`.
+## Fase 3 — Aparência + Auditoria/Export
 
-### 4. Detalhe da demanda — criar/editar/excluir solução
+Aparência (`AparenciaPanel.tsx`):
+- Nome da organização, logo (upload no bucket `plataforma-icones` ou novo bucket `branding`), cor primária (color picker → atualiza variável CSS `--primary`).
+- Persistência em nova tabela `app_settings` (singleton row) ou em `localStorage` para MVP. **Decisão pendente.**
 
-`src/pages/DemandaDetail.tsx`
-- Introduzir flag `canManageSolucoes = isDev || (user?.role === "builder" && isOwner)`.
-- Renderizar a seção de soluções e seus controles com base em `canManageSolucoes` em vez de `isDev` (apenas dentro do bloco de soluções; demais blocos exclusivos do dev continuam usando `isDev`).
-- Adicionar um **diálogo "Nova solução"** local à página com os campos da solução. No submit chama `createSolucao({ solicitacaoId: id, titulo, descricao, link, createdBy: user.id, dataInicioPrevista, dataFimPrevista })` (a função já existe em `src/lib/supabaseData.ts`; conferir/estender a assinatura se faltar suporte a datas).
-- Adicionar botões **Editar** (abre o mesmo diálogo preenchido, chama `updateSolucao`) e **Excluir** (com `AlertDialog` + `deleteSolucao`) por solução, visíveis apenas quando `canManageSolucoes`.
-- Recarregar a lista (`useSupabaseData` de `listSolucoesBySolicitacao`) após cada mutação.
+Auditoria (`AuditoriaPanel.tsx`):
+- Listar `activity_log` com filtros por usuário, entidade, período.
+- Botão "Exportar CSV" das demandas (`solicitacoes`) e soluções (`demanda_solucoes`).
 
-### 5. Banco de dados (RLS)
+## Fora de escopo desta entrega
 
-As políticas atuais de `demanda_solucoes` permitem qualquer `is_allowed_user()` inserir/atualizar/excluir, então **funcionalmente o Builder já consegue**. Para travar de verdade (Builder só nas próprias solicitações), recomenda-se nova migration que substitui as políticas amplas por:
-
-- **INSERT**: permitido se for admin OU se existir `solicitacao` com `user_id = auth.uid()` e id = `solicitacao_id`, e `created_by = auth.uid()`.
-- **UPDATE/DELETE**: permitido se for admin OU se `created_by = auth.uid()` E a solicitação pertence ao usuário.
-- **SELECT**: manter `is_allowed_user()` (já cobre dono via política específica).
-
-Essa migration é opcional para o MVP funcionar, mas necessária para garantir o escopo. Recomendo incluir.
-
-## Fora de escopo
-
-- Migrar contas existentes para Builder (faremos quando você indicar os e-mails).
-- Aba "Soluções" no menu do Builder, Kanban/Gantt de soluções para Builder.
-- Permitir Builder editar soluções criadas por outros.
+- Workflow/SLA, notificações por e-mail e integrações (webhook, Slack, GitHub) — ficam para iteração posterior.
+- Convite automático por e-mail ao adicionar conta (o usuário ainda precisa se cadastrar pelo fluxo de auth atual; só fica pré-autorizado).
 
 ## Detalhes técnicos
 
-- `Profile.role` passa a aceitar `"builder"`; revisar usos com `switch`/comparações estritas (busca por `=== "developer"` e `=== "requester"` em `src/` para garantir que Builder caia no caminho de Solicitante onde apropriado).
-- `createSolucao` em `src/lib/supabaseData.ts` aceita `createdBy`; conferir se já persiste `data_inicio_prevista`/`data_fim_prevista` (a coluna existe). Caso não, adicionar ao payload.
-- Componente `NovaSolucaoDialog` pode ficar inline em `DemandaDetail.tsx` (mesmo padrão usado para `NovoDepartamentoDialog`).
-- Nada muda em `Auth.tsx` além do redirecionamento; Builder não é dual-role por padrão.
+- Tabelas afetadas:
+  - `app_role` enum: adicionar `requester`, `builder`.
+  - (Fase 2) opcional `tipos_demanda`.
+  - (Fase 3) opcional `app_settings`.
+- Arquivos novos:
+  - `src/pages/Configuracoes.tsx`
+  - `src/components/configuracoes/{Acessos,Catalogos,Aparencia,Auditoria}Panel.tsx`
+  - `src/lib/configuracoes.ts` (helpers de CRUD de `allowed_emails` + `user_roles`)
+- Arquivos editados:
+  - `src/App.tsx` (rota), `src/components/AppLayout.tsx` (item de menu), `src/components/ProtectedRoute.tsx` (papel via banco), `src/hooks/useAuth.tsx` (papel via banco).
+
+## Perguntas que ficaram em aberto
+
+1. Tipos de demanda viram catálogo no banco ou continuam em código?
+2. Aparência: persistir em `app_settings` (todos veem) ou só `localStorage` (por usuário)?
+3. Quer entregar tudo de uma vez ou só a Fase 1 agora?
