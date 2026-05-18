@@ -1,45 +1,52 @@
 ## Objetivo
+Regerar `solicitacoes.csv` priorizando legibilidade para quem vai consumir o arquivo, sem alterar nada no banco nem no app.
 
-Permitir que qualquer usuário autenticado e autorizado (presente em `allowed_emails`) consiga **visualizar todas** as solicitações e soluções já cadastradas — incluindo as criadas anteriormente por `blococcomercial@gmail.com` e `riccellycivil@gmail.com`. A capacidade de **criar/editar/excluir** continua exatamente como está hoje (dono edita o próprio; admin edita tudo).
+## O que muda no CSV
 
-## Diagnóstico
+**1. Cabeçalhos em português, amigáveis**
+- `id` → `ID`
+- `titulo` → `Título`
+- `descricao` → `Descrição`
+- `setor` → `Setor`
+- `status` → `Status`
+- `solicitante_nome` → `Solicitante`
+- `email` → `E-mail`
+- `telefone` → `Telefone`
+- `created_at` → `Criado em`
+- `updated_at` → `Atualizado em`
+- `data_inicio_prevista` → `Início previsto`
+- `data_fim_prevista` → `Fim previsto`
+- `frequencia` → `Frequência`
+- `retorno` → `Retorno`
+- `complexidade` → `Dificuldade (solicitante)`
+- `complexidade_dev` → `Complexidade (dev)`
+- `score` → `Score`
+- `tem_integracao` → `Tem integração?`
+- `integracoes` → `Integrações`
+- `notas_tecnicas_complexidade` → `Notas técnicas`
 
-Hoje, na tabela `solicitacoes`, as únicas políticas de SELECT são:
-- `Admins can view all solicitacoes` → só admins
-- `Owners can view their solicitacoes` → só o dono (`auth.uid() = user_id`)
+**2. Reordenação por prioridade de leitura**
+1. Identificação: ID curto (8 chars), Título, Status, Setor
+2. Solicitante: Nome, E-mail, Telefone
+3. Datas: Criado em, Atualizado em, Início previsto, Fim previsto
+4. Avaliação: Score, Frequência, Retorno, Dificuldade (solicitante), Complexidade (dev)
+5. Integrações: Tem integração?, Integrações
+6. Texto longo no fim: Descrição, Notas técnicas
 
-Como os novos emails (Adriano, Ailton, Vitória, …, Fernanda) **não são admin** e **não são donos** das solicitações antigas, eles simplesmente não enxergam nada criado por blococcomercial/riccellycivil. O mesmo padrão se repete em `demanda_solucoes`, `demanda_tasks`, `solucao_tasks`, `demanda_melhorias` (várias dessas hoje são restritas a admin).
+**3. Formatação dos valores**
+- Status traduzido (`novo` → "Novo", `em_analise` → "Em Análise", etc.)
+- Datas em `DD/MM/AAAA HH:MM` (timezone America/Sao_Paulo)
+- Datas previstas em `DD/MM/AAAA`
+- `tem_integracao` → "Sim"/"Não"
+- `integracoes` (array) → lista separada por `; `
+- Campos vazios ficam em branco (sem `""` literal nem `null`)
+- Quebras de linha dentro da descrição preservadas com aspas (CSV padrão RFC 4180)
+- Separador `,`, encoding UTF-8 com BOM (abre certo no Excel BR)
 
-## Mudanças no banco (migração SQL)
+**4. Entrega**
+- Sobrescreve `/mnt/documents/solicitacoes.csv` (versão limpa)
+- Mantém os 61 registros, ordenados por **Criado em desc**
 
-Adicionar uma política **permissiva** de SELECT em cada tabela do domínio para qualquer usuário autorizado (`private.is_allowed_user()`). Não removemos nenhuma política existente — só ampliamos a leitura.
-
-Tabelas afetadas:
-
-- `public.solicitacoes` → nova policy SELECT: `private.is_allowed_user()`
-- `public.demanda_solucoes` → já existe policy equivalente, **sem alteração**
-- `public.demanda_tasks` → nova policy SELECT: `private.is_allowed_user()` (hoje só admin lê)
-- `public.solucao_tasks` → nova policy SELECT: `private.is_allowed_user()` (hoje só admin/dono lê)
-- `public.demanda_melhorias` → já permite, **sem alteração**
-- `public.solicitacoes_score_history` → nova policy SELECT: `private.is_allowed_user()` (opcional, para coerência do histórico exibido)
-
-Políticas de INSERT/UPDATE/DELETE permanecem intactas, então:
-- Solicitante continua só editando as próprias solicitações.
-- Apenas admin segue podendo alterar tasks, score, etc.
-
-## Mudanças no frontend
-
-Nenhuma mudança estrutural obrigatória. Pontos a confirmar depois da migração:
-
-- `MinhasDemandas` / `RequesterDashboard` continuam filtrando por `user_id = auth.uid()` no código, então o solicitante **continua vendo apenas as próprias** nessas telas (comportamento esperado).
-- Caso você queira que o Solicitante tenha uma tela "Todas as solicitações / Catálogo de soluções" para enxergar o histórico geral, isso vira um passo seguinte (nova rota + listagem somente leitura). Hoje as rotas `/solicitacoes` e `/solucoes` são restritas a `developer`.
-
-## Riscos / observações
-
-- Estamos expondo conteúdo de **todas** as solicitações (título, descrição, solicitante, etc.) para qualquer usuário autorizado. Confirmado pela sua escolha de "ver TODAS (somente leitura)".
-- Não há exposição de dados sensíveis tipo senha — `profiles` e `user_roles` continuam com as políticas atuais.
-- A função `private.is_allowed_user()` já é `SECURITY DEFINER` e é usada em várias outras tabelas, então o padrão é consistente.
-
-## Próximo passo
-
-Ao aprovar este plano, eu gero a migração SQL com as novas policies de SELECT e, em seguida, valido entrando como um dos novos usuários para confirmar que ele passa a ver as solicitações/soluções antigas.
+## Fora de escopo
+- Nenhuma migração, alteração de RLS, ou mudança no app.
+- Sem gerar `.xlsx` (a menos que você peça).
