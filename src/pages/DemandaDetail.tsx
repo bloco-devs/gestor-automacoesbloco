@@ -13,7 +13,8 @@ import {
   updateOwnSolicitacao,
   updateSolicitacao,
 } from "@/lib/supabaseData";
-import { FREQUENCIA_LABEL, PIPELINE_ORDER, SETORES, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus, type Setor } from "@/lib/types";
+import { FREQUENCIA_LABEL, PIPELINE_ORDER, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus } from "@/lib/types";
+import { useSetoresNomes } from "@/hooks/useSetores";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -78,7 +79,8 @@ export default function DemandaDetail() {
   const [editFrequencia, setEditFrequencia] = useState<Frequencia>(solicitacao?.frequencia ?? 3);
   const [editComplexidade, setEditComplexidade] = useState(solicitacao?.complexidade ?? 3);
   const [editRetorno, setEditRetorno] = useState(solicitacao?.retorno ?? 3);
-  const [editSetor, setEditSetor] = useState<Setor | "">((solicitacao?.setor as Setor) ?? "");
+  const [editSetor, setEditSetor] = useState<string>(solicitacao?.setor ?? "");
+  const setoresDisponiveis = useSetoresNomes();
 
 
   useEffect(() => {
@@ -99,7 +101,7 @@ export default function DemandaDetail() {
     setEditFrequencia(solicitacao.frequencia);
     setEditComplexidade(solicitacao.complexidade);
     setEditRetorno(solicitacao.retorno);
-    setEditSetor(((solicitacao.setor as Setor) ?? "") as Setor | "");
+    setEditSetor(solicitacao.setor ?? "");
   }, [solicitacao]);
 
   useEffect(() => {
@@ -141,7 +143,7 @@ export default function DemandaDetail() {
       toast({ title: "Verifique os campos", description: "Descreva a demanda com mais detalhes.", variant: "destructive" });
       return;
     }
-    if (!editSetor || !(SETORES as readonly string[]).includes(editSetor)) {
+    if (!editSetor.trim()) {
       toast({ title: "Verifique os campos", description: "Selecione o setor da empresa.", variant: "destructive" });
       return;
     }
@@ -299,10 +301,10 @@ export default function DemandaDetail() {
                 </div>
                 <div>
                   <Label>Setor da empresa</Label>
-                  <Select value={editSetor} onValueChange={(v) => setEditSetor(v as Setor)}>
+                  <Select value={editSetor} onValueChange={setEditSetor}>
                     <SelectTrigger><SelectValue placeholder="Selecione o setor" /></SelectTrigger>
                     <SelectContent>
-                      {SETORES.map((s) => (
+                      {setoresDisponiveis.map((s) => (
                         <SelectItem key={s} value={s}>{s}</SelectItem>
                       ))}
                     </SelectContent>
