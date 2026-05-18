@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { listSolicitacoes } from "@/lib/supabaseData";
-import { STATUS_LABEL, type PipelineStatus, type Solicitacao } from "@/lib/types";
+import { STATUS_LABEL, PIPELINE_ORDER, type Solicitacao } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -125,7 +125,7 @@ export default function Solicitacoes() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os status</SelectItem>
-              {(Object.keys(STATUS_LABEL) as PipelineStatus[]).map((s) => (
+              {PIPELINE_ORDER.map((s) => (
                 <SelectItem key={s} value={s}>
                   {STATUS_LABEL[s]}
                 </SelectItem>

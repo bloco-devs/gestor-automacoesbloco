@@ -21,7 +21,7 @@ import Solicitacoes from "./pages/Solicitacoes";
 import SolucoesKanban from "./pages/SolucoesKanban";
 import SolicitacoesGantt from "./pages/SolicitacoesGantt";
 import SolucoesGantt from "./pages/SolucoesGantt";
-import Departamentos from "./pages/Departamentos";
+
 
 import DemandaDetail from "./pages/DemandaDetail";
 import SolucaoDetail from "./pages/SolucaoDetail";
@@ -59,7 +59,7 @@ const App = () => (
               <Route path="/solucoes/kanban" element={<ProtectedRoute role="developer"><SolucoesKanban /></ProtectedRoute>} />
               <Route path="/solucoes/gantt" element={<ProtectedRoute role="developer"><SolucoesGantt /></ProtectedRoute>} />
               <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
-              <Route path="/departamentos" element={<ProtectedRoute role="developer"><Departamentos /></ProtectedRoute>} />
+              
 
               
 
