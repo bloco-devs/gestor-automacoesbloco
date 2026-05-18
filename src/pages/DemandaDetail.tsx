@@ -506,7 +506,7 @@ export default function DemandaDetail() {
                               </a>
                             </Button>
                           )}
-                          {canManageSolucoes && !isDev && (
+                          {canManageSolucoes && !isDev && s.createdBy === user?.id && (
                             <>
                               <Button variant="outline" size="icon" className="h-8 w-8" title="Editar" onClick={() => openEditarSolucao(s)}>
                                 <Pencil className="size-4" />
