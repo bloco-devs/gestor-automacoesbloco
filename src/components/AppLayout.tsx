@@ -46,8 +46,8 @@ const devNav: NavItem[] = [
 ];
 const requesterNav: NavItem[] = [
   { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
-  { to: "/minhas-demandas", label: "Minhas Solicitações", icon: ListTodo },
-  { to: "/nova-demanda", label: "Nova Solicitação", icon: Plus },
+  { to: "/minhas-solicitacoes", label: "Minhas Solicitações", icon: ListTodo },
+  { to: "/nova-solicitacao", label: "Nova Solicitação", icon: Plus },
   {
     label: "Solicitações",
     icon: ListChecks,

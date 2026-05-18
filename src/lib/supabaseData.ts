@@ -154,7 +154,7 @@ export async function createSolicitacao(data: {
 }): Promise<Solicitacao> {
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError || !authData.user) {
-    throw new Error("Faça login novamente para enviar uma demanda.");
+    throw new Error("Faça login novamente para enviar uma solicitação.");
   }
 
   // Espelho local — remover quando o trigger SQL existir.
@@ -199,7 +199,7 @@ export async function updateOwnSolicitacao(
 ): Promise<void> {
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError || !authData.user) {
-    throw new Error("Faça login novamente para editar a demanda.");
+    throw new Error("Faça login novamente para editar a solicitação.");
   }
 
   // Espelho local do score — substituído por trigger SQL no Prompt 5.

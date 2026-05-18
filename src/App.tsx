@@ -11,8 +11,8 @@ import Auth from "./pages/Auth";
 import RedefinirSenha from "./pages/RedefinirSenha";
 import EscolherPerfil from "./pages/EscolherPerfil";
 import SolicitarSolucao from "./pages/SolicitarSolucao";
-import NovaDemanda from "./pages/NovaDemanda";
-import MinhasDemandas from "./pages/MinhasDemandas";
+import NovaSolicitacao from "./pages/NovaSolicitacao";
+import MinhasSolicitacoes from "./pages/MinhasSolicitacoes";
 import RequesterDashboard from "./pages/RequesterDashboard";
 import Dashboard from "./pages/Dashboard";
 import Kanban from "./pages/Kanban";
@@ -23,7 +23,7 @@ import SolicitacoesGantt from "./pages/SolicitacoesGantt";
 import SolucoesGantt from "./pages/SolucoesGantt";
 
 
-import DemandaDetail from "./pages/DemandaDetail";
+import SolicitacaoDetail from "./pages/SolicitacaoDetail";
 import SolucaoDetail from "./pages/SolucaoDetail";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
@@ -47,8 +47,8 @@ const App = () => (
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               {/* Solicitante */}
               <Route path="/dashboard-solicitante" element={<ProtectedRoute role="requester"><RequesterDashboard /></ProtectedRoute>} />
-              <Route path="/minhas-demandas" element={<ProtectedRoute role="requester"><MinhasDemandas /></ProtectedRoute>} />
-              <Route path="/nova-demanda" element={<ProtectedRoute role="requester"><NovaDemanda /></ProtectedRoute>} />
+              <Route path="/minhas-solicitacoes" element={<ProtectedRoute role="requester"><MinhasSolicitacoes /></ProtectedRoute>} />
+              <Route path="/nova-solicitacao" element={<ProtectedRoute role="requester"><NovaSolicitacao /></ProtectedRoute>} />
 
               {/* Desenvolvedor */}
               <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
@@ -65,7 +65,7 @@ const App = () => (
               
 
               {/* Compartilhado */}
-              <Route path="/demanda/:id" element={<DemandaDetail />} />
+              <Route path="/solicitacao/:id" element={<SolicitacaoDetail />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

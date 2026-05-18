@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { FREQUENCIA_LABEL, statusToCategory, type PipelineStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import type { DemandaCardProps } from "./types";
+import type { SolicitacaoCardProps } from "./types";
 
 const SIDE_TONE: Record<PipelineStatus, string> = {
   novo: "bg-muted-foreground/40",
@@ -18,7 +18,7 @@ const SIDE_TONE: Record<PipelineStatus, string> = {
   em_producao: "bg-accent",
 };
 
-export function CardDestaqueLateral({ solicitacao: s, onOpen, onAbrirChamado, editHref }: DemandaCardProps) {
+export function CardDestaqueLateral({ solicitacao: s, onOpen, onAbrirChamado, editHref }: SolicitacaoCardProps) {
   const tone = SIDE_TONE[statusToCategory(s.status)];
   return (
     <Card

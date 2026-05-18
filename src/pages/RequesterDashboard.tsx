@@ -132,11 +132,11 @@ export default function RequesterDashboard() {
                 key={s.id}
                 role="link"
                 tabIndex={0}
-                onClick={() => navigate(`/demanda/${s.id}`)}
+                onClick={() => navigate(`/solicitacao/${s.id}`)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    navigate(`/demanda/${s.id}`);
+                    navigate(`/solicitacao/${s.id}`);
                   }
                 }}
                 className="surface-1 cursor-pointer hover:border-accent/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

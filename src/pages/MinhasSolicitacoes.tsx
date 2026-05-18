@@ -10,11 +10,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CardDestaqueLateral } from "@/components/minhas-demandas/CardDestaqueLateral";
+import { CardDestaqueLateral } from "@/components/minhas-solicitacoes/CardDestaqueLateral";
 import type { Solucao } from "@/lib/types";
 import { toast } from "@/hooks/use-toast";
 
-export default function MinhasDemandas() {
+export default function MinhasSolicitacoes() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const solicitacoes = useSupabaseData(() => (user ? listMinhasSolicitacoes(user.id) : Promise.resolve([])), [], [user?.id]);
@@ -68,12 +68,12 @@ export default function MinhasDemandas() {
     <div className="w-full min-w-0 space-y-6 overflow-hidden">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold">Minhas demandas</h1>
+          <h1 className="text-2xl font-semibold">Minhas solicitações</h1>
           <p className="text-sm text-muted-foreground">Acompanhe o status das suas solicitações em tempo real.</p>
         </div>
         <Button asChild>
-          <Link to="/nova-demanda">
-            <Plus className="size-4" /> Nova demanda
+          <Link to="/nova-solicitacao">
+            <Plus className="size-4" /> Nova solicitação
           </Link>
         </Button>
       </div>
@@ -85,12 +85,12 @@ export default function MinhasDemandas() {
               <Inbox className="size-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="font-medium">Nenhuma demanda ainda</p>
+              <p className="font-medium">Nenhuma solicitação ainda</p>
               <p className="text-sm text-muted-foreground">Crie sua primeira solicitação para o time de automação.</p>
             </div>
             <Button asChild>
-              <Link to="/nova-demanda">
-                <Plus className="size-4" /> Criar demanda
+              <Link to="/nova-solicitacao">
+                <Plus className="size-4" /> Criar solicitação
               </Link>
             </Button>
           </CardContent>
@@ -101,9 +101,9 @@ export default function MinhasDemandas() {
             <CardDestaqueLateral
               key={s.id}
               solicitacao={s}
-              onOpen={() => navigate(`/demanda/${s.id}`)}
+              onOpen={() => navigate(`/solicitacao/${s.id}`)}
               onAbrirChamado={() => handleAbrirChamado(s.id)}
-              editHref={`/demanda/${s.id}?editar=1`}
+              editHref={`/solicitacao/${s.id}?editar=1`}
             />
           ))}
         </div>
@@ -113,14 +113,14 @@ export default function MinhasDemandas() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Abrir chamado</DialogTitle>
-            <DialogDescription>Cadastre uma task na solução vinculada a esta demanda.</DialogDescription>
+            <DialogDescription>Cadastre uma task na solução vinculada a esta solicitação.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {chamadoLoading ? (
               <p className="text-sm text-muted-foreground">Carregando soluções...</p>
             ) : chamadoSolucoes.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Nenhuma solução vinculada a esta demanda ainda. Aguarde a equipe cadastrar uma solução.
+                Nenhuma solução vinculada a esta solicitação ainda. Aguarde a equipe cadastrar uma solução.
               </p>
             ) : (
               <>

@@ -69,7 +69,7 @@ export function TasksChecklist({ solicitacaoId }: { solicitacaoId: string }) {
     <Card className="surface-1">
       <CardHeader>
         <CardTitle className="text-base">Tasks</CardTitle>
-        <CardDescription>Checklist interno dos desenvolvedores para esta demanda.</CardDescription>
+        <CardDescription>Checklist interno dos desenvolvedores para esta solicitação.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex gap-2">

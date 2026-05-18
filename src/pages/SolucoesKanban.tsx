@@ -70,7 +70,7 @@ export default function SolucoesKanban() {
                 <div className="mb-3 px-1">
                   <button
                     type="button"
-                    onClick={() => solic && navigate(`/demanda/${solic.id}`)}
+                    onClick={() => solic && navigate(`/solicitacao/${solic.id}`)}
                     disabled={!solic}
                     className={cn(
                       "block w-full text-left text-sm font-medium leading-snug truncate",

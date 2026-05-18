@@ -56,7 +56,7 @@ export default function Auth() {
       if (dual) {
         navigate("/escolher-perfil");
       } else {
-        navigate(u.role === "developer" ? "/dashboard" : "/minhas-demandas");
+        navigate(u.role === "developer" ? "/dashboard" : "/minhas-solicitacoes");
       }
     } catch (err) {
       const msg =

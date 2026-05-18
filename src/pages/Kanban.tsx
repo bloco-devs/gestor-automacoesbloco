@@ -171,12 +171,12 @@ function KanbanCard({ item }: { item: Solicitacao }) {
       onClick={(e) => {
         if (isDragging) return;
         e.stopPropagation();
-        navigate(`/demanda/${item.id}`);
+        navigate(`/solicitacao/${item.id}`);
       }}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          navigate(`/demanda/${item.id}`);
+          navigate(`/solicitacao/${item.id}`);
         }
       }}
       role="link"
