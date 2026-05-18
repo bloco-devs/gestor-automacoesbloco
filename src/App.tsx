@@ -73,6 +73,11 @@ const App = () => (
               <Route path="/solicitacao/:id" element={<SolicitacaoDetail />} />
             </Route>
 
+            {/* Redirecionamentos de rotas antigas (compatibilidade) */}
+            <Route path="/minhas-demandas" element={<Navigate to="/minhas-solicitacoes" replace />} />
+            <Route path="/nova-demanda" element={<Navigate to="/nova-solicitacao" replace />} />
+            <Route path="/demanda/:id" element={<RedirectLegacySolicitacao />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
