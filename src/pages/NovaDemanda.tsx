@@ -261,3 +261,92 @@ function ScaleSlider({
     </div>
   );
 }
+
+function NovoDepartamentoDialog({
+  onCreated,
+  existentes,
+}: {
+  onCreated: (nome: string) => void;
+  existentes: string[];
+}) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [nome, setNome] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleCreate() {
+    const trimmed = nome.trim();
+    if (trimmed.length < 2) {
+      toast({ title: "Nome muito curto", variant: "destructive" });
+      return;
+    }
+    if (existentes.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+      toast({ title: "Departamento já existe", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      await createSetor(trimmed, descricao);
+      toast({ title: "Departamento criado" });
+      onCreated(trimmed);
+      setNome("");
+      setDescricao("");
+      setOpen(false);
+    } catch (err) {
+      toast({
+        title: "Erro ao criar departamento",
+        description: err instanceof Error ? err.message : "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 text-xs">
+          <Plus className="size-3.5" /> Novo departamento
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Novo departamento</DialogTitle>
+          <DialogDescription>
+            Cadastre um departamento que ainda não existe na lista.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="novo-dep-nome">Nome</Label>
+            <Input
+              id="novo-dep-nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Ex.: Operações"
+            />
+          </div>
+          <div>
+            <Label htmlFor="novo-dep-desc">Descrição (opcional)</Label>
+            <Textarea
+              id="novo-dep-desc"
+              rows={3}
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={handleCreate} disabled={saving}>
+            {saving ? "Salvando..." : "Criar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
