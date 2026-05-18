@@ -81,14 +81,7 @@ export default function Auth() {
     try {
       const v = resetSchema.parse({ email: resetEmail });
       const normalized = v.email.trim().toLowerCase();
-      if (!getAllowedAccount(normalized)) {
-        toast({
-          title: "Email não autorizado",
-          description: "Este email não tem acesso ao sistema.",
-          variant: "destructive",
-        });
-        return;
-      }
+      // allowlist check removed; reset only sends if user exists in auth
       const { error } = await supabase.auth.resetPasswordForEmail(normalized, {
         redirectTo: `${window.location.origin}/redefinir-senha`,
       });
