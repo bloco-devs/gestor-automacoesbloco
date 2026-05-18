@@ -1,9 +1,10 @@
 
 import { Navigate, useNavigate } from "react-router-dom";
-import { Code2, User } from "lucide-react";
+import { Code2, Hammer, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Role } from "@/lib/types";
 import blocoLogo from "@/assets/bloco-logo.png";
 
 export default function EscolherPerfil() {
@@ -11,19 +12,19 @@ export default function EscolherPerfil() {
   const navigate = useNavigate();
 
   if (!user) return null;
-  // Only dual-role accounts may pick a profile. Others go straight to their default view.
+  // Only Administradores may pick a profile. Others go straight to their default view.
   if (!isDual) {
     return <Navigate to={user.role === "developer" ? "/dashboard" : "/minhas-demandas"} replace />;
   }
 
-  function choose(role: "developer" | "requester") {
+  function choose(role: Role) {
     setViewAs(role);
     navigate(role === "developer" ? "/dashboard" : "/minhas-demandas");
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-3xl">
         <div className="flex items-center gap-3 mb-8 justify-center">
           <img src={blocoLogo} alt="Bloco" className="size-10 rounded-lg object-cover" />
           <h1 className="text-base font-brand font-bold">Gestor de Automações</h1>
@@ -35,7 +36,7 @@ export default function EscolherPerfil() {
               Escolha qual visão deseja utilizar nesta sessão. Você poderá alternar depois.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
+          <CardContent className="grid gap-4 md:grid-cols-3">
             <Button
               variant="outline"
               className="h-32 flex flex-col gap-2"
@@ -44,6 +45,15 @@ export default function EscolherPerfil() {
               <Code2 className="size-7" />
               <span className="font-semibold">Desenvolvedor</span>
               <span className="text-xs text-muted-foreground">Gerenciar demandas e soluções</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-32 flex flex-col gap-2"
+              onClick={() => choose("builder")}
+            >
+              <Hammer className="size-7" />
+              <span className="font-semibold">Builder</span>
+              <span className="text-xs text-muted-foreground">Cadastrar soluções nas próprias demandas</span>
             </Button>
             <Button
               variant="outline"
