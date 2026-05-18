@@ -39,18 +39,19 @@ function getStoredViewAs(): Role | null {
 }
 
 async function loadProfile(authUser: User): Promise<Profile> {
-  // Role comes from the database (SECURITY DEFINER RPC). If the user is not
-  // in allowed_emails, the RPC returns 'requester' by default — but RLS on
-  // every domain table still blocks them via is_allowed_user(), so unauthorized
-  // accounts can authenticate but won't see/write any data.
-  const [{ data: prof }, { data: roleStr, error: roleErr }] = await Promise.all([
-    supabase.from("profiles").select("nome, email").eq("id", authUser.id).maybeSingle(),
-    supabase.rpc("get_my_role"),
-  ]);
+  const [{ data: prof }, { data: roleStr, error: roleErr }, { data: allowed, error: allowedErr }] =
+    await Promise.all([
+      supabase.from("profiles").select("nome, email").eq("id", authUser.id).maybeSingle(),
+      supabase.rpc("get_my_role"),
+      supabase.rpc("is_allowed_user"),
+    ]);
 
-  if (roleErr) {
-    // If we can't determine the role, deny access.
+  if (roleErr || allowedErr) {
     throw new Error("Não foi possível verificar suas permissões. Tente novamente.");
+  }
+
+  if (!allowed) {
+    throw new Error("Este aplicativo aceita apenas os logins autorizados.");
   }
 
   const dbRole: Role =
