@@ -32,7 +32,8 @@ export default function NovaDemanda() {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [softwares, setSoftwares] = useState("");
-  const [setor, setSetor] = useState<Setor | "">("");
+  const [setor, setSetor] = useState<string>("");
+  const setoresDisponiveis = useSetoresNomes();
   const [frequencia, setFrequencia] = useState<number>(5);
   const [dificuldade, setDificuldade] = useState<number>(5);
   const [retorno, setRetorno] = useState<number>(5);
@@ -114,10 +115,10 @@ export default function NovaDemanda() {
               </div>
               <div>
                 <Label>Setor da empresa</Label>
-                <Select value={setor} onValueChange={(v) => setSetor(v as Setor)}>
+                <Select value={setor} onValueChange={setSetor}>
                   <SelectTrigger><SelectValue placeholder="Selecione o setor" /></SelectTrigger>
                   <SelectContent>
-                    {SETORES.map((s) => (
+                    {setoresDisponiveis.map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
