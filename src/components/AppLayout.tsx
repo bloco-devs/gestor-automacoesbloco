@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, GanttChartSquare, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Plus, Repeat, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, GanttChartSquare, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +42,7 @@ const devNav: NavItem[] = [
       { to: "/solucoes/gantt", label: "Gantt", icon: GanttChartSquare },
     ],
   },
-  
+  { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 const requesterNav: NavItem[] = [
   { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
