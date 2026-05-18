@@ -41,7 +41,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type DbRole = "developer" | "requester" | "builder";
+type DbRole = "developer" | "requester" | "builder" | "administrador";
 
 type Account = {
   email: string;
@@ -53,12 +53,14 @@ type Account = {
 };
 
 const ROLE_LABEL: Record<DbRole, string> = {
+  administrador: "Administrador",
   developer: "Desenvolvedor",
   requester: "Solicitante",
   builder: "Builder",
 };
 
 const ROLE_BADGE: Record<DbRole, string> = {
+  administrador: "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30",
   developer: "bg-primary/15 text-primary border-primary/30",
   builder: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
   requester: "bg-muted text-muted-foreground border-border",
