@@ -29,41 +29,6 @@ const DUAL_ROLE_EMAILS = new Set([
 ]);
 const VIEW_AS_KEY = "viewAsRole";
 
-const ALLOWED_ACCOUNTS: Record<string, { role: Role; nome: string }> = {
-  "blococcomercial@gmail.com": { role: "developer", nome: "Bloco Comercial" },
-  "riccellycivil@gmail.com": { role: "developer", nome: "Riccelly" },
-  "atendimentoblocojp@gmail.com": { role: "requester", nome: "Atendimento JP" },
-  "admblococonstrucoes@gmail.com": { role: "requester", nome: "Administrativo" },
-  "planejamentoblococonstrucoes@gmail.com": { role: "requester", nome: "Planejamento" },
-  "producaoblococonstrucoes@gmail.com": { role: "requester", nome: "Produção" },
-  "rh@grupobloco.com.br": { role: "requester", nome: "Recursos Humanos" },
-  "blocolegalizacao@gmail.com": { role: "requester", nome: "Legalização" },
-  "ailton.apd@gmail.com": { role: "requester", nome: "Ailton" },
-  "marianaporto827@gmail.com": { role: "requester", nome: "Mariana Porto" },
-  "julianovicente.arquiteto@gmail.com": { role: "requester", nome: "Juliano Vicente" },
-  "eng.vitoriaoliveira@gmail.com": { role: "requester", nome: "Vitória Oliveira" },
-  "kamilly.lourdes@gmail.com": { role: "requester", nome: "Kamilly Lourdes" },
-  "thaisalmedeiros@gmail.com": { role: "requester", nome: "Thais Medeiros" },
-  "lccarneiro2@gmail.com": { role: "requester", nome: "L. Carneiro" },
-  "karollainemont@gmail.com": { role: "requester", nome: "Karollaine Mont" },
-  "pdutra60@gmail.com": { role: "requester", nome: "P. Dutra" },
-  "raystefanyhingrid@gmail.com": { role: "requester", nome: "Ray Stefany Hingrid" },
-  "matheussdn@live.com": { role: "requester", nome: "Matheus SDN" },
-  "vitor.urtiga@gmail.com": { role: "requester", nome: "Vitor Urtiga" },
-  "adrianocoattipt@gmail.com": { role: "requester", nome: "Adriano Coatti" },
-  "thaywanfelipe02@gmail.com": { role: "requester", nome: "Thaywan Felipe" },
-  "rodrigosarmento777@gmail.com": { role: "requester", nome: "Rodrigo Sarmento" },
-  "fabiopb78@gmail.com": { role: "requester", nome: "Fabio PB" },
-  "luispaulodelux@gmail.com": { role: "requester", nome: "Luis Paulo" },
-  "lianaslacerda@gmail.com": { role: "requester", nome: "Liana Lacerda" },
-  "mariacorretoramacedo@gmail.com": { role: "requester", nome: "Fernanda" },
-  "studiogomesfilho@gmail.com": { role: "requester", nome: "Studio Gomes Filho" },
-};
-
-export function getAllowedAccount(email?: string | null) {
-  return email ? ALLOWED_ACCOUNTS[email.trim().toLowerCase()] : undefined;
-}
-
 function isDualEmail(email?: string | null) {
   return !!email && DUAL_ROLE_EMAILS.has(email.trim().toLowerCase());
 }
@@ -74,16 +39,22 @@ function getStoredViewAs(): Role | null {
 }
 
 async function loadProfile(authUser: User): Promise<Profile> {
-  const allowedAccount = getAllowedAccount(authUser.email);
-  if (!allowedAccount) {
-    throw new Error("Este aplicativo aceita apenas os logins autorizados.");
+  // Role comes from the database (SECURITY DEFINER RPC). If the user is not
+  // in allowed_emails, the RPC returns 'requester' by default — but RLS on
+  // every domain table still blocks them via is_allowed_user(), so unauthorized
+  // accounts can authenticate but won't see/write any data.
+  const [{ data: prof }, { data: roleStr, error: roleErr }] = await Promise.all([
+    supabase.from("profiles").select("nome, email").eq("id", authUser.id).maybeSingle(),
+    supabase.rpc("get_my_role"),
+  ]);
+
+  if (roleErr) {
+    // If we can't determine the role, deny access.
+    throw new Error("Não foi possível verificar suas permissões. Tente novamente.");
   }
 
-  const { data: prof } = await supabase
-    .from("profiles")
-    .select("nome, email")
-    .eq("id", authUser.id)
-    .maybeSingle();
+  const dbRole: Role =
+    roleStr === "developer" ? "developer" : roleStr === "builder" ? "builder" : "requester";
 
   const dual = isDualEmail(authUser.email);
   const stored = dual ? getStoredViewAs() : null;
@@ -94,8 +65,8 @@ async function loadProfile(authUser: User): Promise<Profile> {
     nome:
       prof?.nome ||
       (authUser.user_metadata?.nome as string | undefined) ||
-      allowedAccount.nome,
-    role: stored ?? allowedAccount.role,
+      (authUser.email ? authUser.email.split("@")[0] : "Usuário"),
+    role: stored ?? dbRole,
   };
 }
 
