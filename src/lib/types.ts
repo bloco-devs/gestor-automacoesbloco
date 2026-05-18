@@ -114,6 +114,7 @@ export interface Solucao {
   dataInicioPrevista?: string | null;
   /** Data planejada de fim (ISO date YYYY-MM-DD). Usada na visão Gantt. */
   dataFimPrevista?: string | null;
+  createdBy?: string | null;
   createdAt: string;
 }
 
