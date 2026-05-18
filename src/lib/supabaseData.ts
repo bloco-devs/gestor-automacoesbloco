@@ -76,7 +76,7 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
   };
 }
 
-function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; link: string | null; created_at: string; data_inicio_prevista?: string | null; data_fim_prevista?: string | null }): Solucao {
+function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; link: string | null; created_at: string; created_by?: string | null; data_inicio_prevista?: string | null; data_fim_prevista?: string | null }): Solucao {
   return {
     id: row.id,
     solicitacaoId: row.solicitacao_id,
@@ -85,6 +85,7 @@ function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: st
     link: row.link ?? undefined,
     dataInicioPrevista: row.data_inicio_prevista ?? null,
     dataFimPrevista: row.data_fim_prevista ?? null,
+    createdBy: row.created_by ?? null,
     createdAt: row.created_at,
   };
 }
