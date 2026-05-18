@@ -25,6 +25,7 @@ import SolucoesGantt from "./pages/SolucoesGantt";
 
 import DemandaDetail from "./pages/DemandaDetail";
 import SolucaoDetail from "./pages/SolucaoDetail";
+import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
