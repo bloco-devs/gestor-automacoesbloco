@@ -17,7 +17,7 @@ export async function listSetores(): Promise<SetorRow[]> {
 }
 
 export async function createSetor(nome: string, descricao?: string): Promise<SetorRow> {
-  const payload = { nome: nome.trim(), descricao: (descricao ?? "").trim() || null };
+  const payload = { nome: nome.trim(), descricao: (descricao ?? "").trim() };
   const { data, error } = await supabase
     .from("setores")
     .insert(payload)
