@@ -49,19 +49,15 @@ function CatalogCRUD({ table, singular, plural, placeholder, showAtivo }: Catalo
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    const cols =
-      table === "tipos_demanda"
-        ? "id,nome,descricao,ativo"
-        : "id,nome,descricao";
     const { data, error } = await supabase
       .from(table)
-      .select(cols)
+      .select("*")
       .order("nome", { ascending: true });
     if (error) {
       toast({ title: `Erro ao carregar ${plural.toLowerCase()}`, description: error.message, variant: "destructive" });
       setRows([]);
     } else {
-      setRows((data ?? []) as Row[]);
+      setRows((data ?? []) as unknown as Row[]);
     }
     setLoading(false);
   }, [table, plural, toast]);
