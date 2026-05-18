@@ -42,7 +42,7 @@ const devNav: NavItem[] = [
       { to: "/solucoes/gantt", label: "Gantt", icon: GanttChartSquare },
     ],
   },
-  { to: "/departamentos", label: "Departamentos", icon: Building2 },
+  
 ];
 const requesterNav: NavItem[] = [
   { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
