@@ -41,7 +41,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type DbRole = "developer" | "requester" | "builder";
+type DbRole = "developer" | "requester" | "builder" | "administrador";
 
 type Account = {
   email: string;
@@ -53,12 +53,14 @@ type Account = {
 };
 
 const ROLE_LABEL: Record<DbRole, string> = {
+  administrador: "Administrador",
   developer: "Desenvolvedor",
   requester: "Solicitante",
   builder: "Builder",
 };
 
 const ROLE_BADGE: Record<DbRole, string> = {
+  administrador: "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30",
   developer: "bg-primary/15 text-primary border-primary/30",
   builder: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
   requester: "bg-muted text-muted-foreground border-border",
@@ -243,6 +245,7 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os papéis</SelectItem>
+              <SelectItem value="administrador">Administrador</SelectItem>
               <SelectItem value="developer">Desenvolvedor</SelectItem>
               <SelectItem value="requester">Solicitante</SelectItem>
               <SelectItem value="builder">Builder</SelectItem>
@@ -299,13 +302,14 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
                     <TableCell>
                       <Select
                         value={account.role}
-                        disabled={isBusy || (isSelf && account.role === "developer")}
+                        disabled={isBusy || (isSelf && (account.role === "developer" || account.role === "administrador"))}
                         onValueChange={(v) => handleRoleChange(account, v as DbRole)}
                       >
                         <SelectTrigger className="w-40 h-8">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="administrador">Administrador</SelectItem>
                           <SelectItem value="developer">Desenvolvedor</SelectItem>
                           <SelectItem value="requester">Solicitante</SelectItem>
                           <SelectItem value="builder">Builder</SelectItem>
@@ -388,6 +392,7 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
                   <SelectItem value="requester">Solicitante</SelectItem>
                   <SelectItem value="builder">Builder</SelectItem>
                   <SelectItem value="developer">Desenvolvedor</SelectItem>
+                  <SelectItem value="administrador">Administrador</SelectItem>
                 </SelectContent>
               </Select>
             </div>

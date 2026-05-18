@@ -23,22 +23,14 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const DUAL_ROLE_EMAILS = new Set([
-  "riccellycivil@gmail.com",
-  "blococcomercial@gmail.com",
-]);
 const VIEW_AS_KEY = "viewAsRole";
-
-function isDualEmail(email?: string | null) {
-  return !!email && DUAL_ROLE_EMAILS.has(email.trim().toLowerCase());
-}
 
 function getStoredViewAs(): Role | null {
   const v = typeof window !== "undefined" ? localStorage.getItem(VIEW_AS_KEY) : null;
   return v === "developer" || v === "requester" || v === "builder" ? v : null;
 }
 
-async function loadProfile(authUser: User): Promise<Profile> {
+async function loadProfile(authUser: User): Promise<Profile & { isAdministrador: boolean }> {
   const [{ data: prof }, { data: roleStr, error: roleErr }, { data: allowed, error: allowedErr }] =
     await Promise.all([
       supabase.from("profiles").select("nome, email").eq("id", authUser.id).maybeSingle(),
@@ -54,11 +46,16 @@ async function loadProfile(authUser: User): Promise<Profile> {
     throw new Error("Este aplicativo aceita apenas os logins autorizados.");
   }
 
-  const dbRole: Role =
-    roleStr === "developer" ? "developer" : roleStr === "builder" ? "builder" : "requester";
+  const isAdministrador = roleStr === "administrador";
+  const dbRole: Role = isAdministrador
+    ? "developer"
+    : roleStr === "developer"
+      ? "developer"
+      : roleStr === "builder"
+        ? "builder"
+        : "requester";
 
-  const dual = isDualEmail(authUser.email);
-  const stored = dual ? getStoredViewAs() : null;
+  const stored = isAdministrador ? getStoredViewAs() : null;
 
   return {
     id: authUser.id,
@@ -68,6 +65,7 @@ async function loadProfile(authUser: User): Promise<Profile> {
       (authUser.user_metadata?.nome as string | undefined) ||
       (authUser.email ? authUser.email.split("@")[0] : "Usuário"),
     role: stored ?? dbRole,
+    isAdministrador,
   };
 }
 
@@ -133,14 +131,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setViewAs = useCallback((role: Role) => {
     setUser((u) => {
       if (!u) return u;
-      // Only dual-role accounts may switch views. Ignore for everyone else.
-      if (!isDualEmail(u.email)) return u;
+      // Only Administradores may switch views. Ignore for everyone else.
+      if (!u.isAdministrador) return u;
       if (typeof window !== "undefined") localStorage.setItem(VIEW_AS_KEY, role);
       return { ...u, role };
     });
   }, []);
 
-  const isDual = isDualEmail(user?.email);
+  const isDual = !!user?.isAdministrador;
 
   const value = useMemo(
     () => ({ user, session, loading, signIn, signOut, isDual, setViewAs }),
