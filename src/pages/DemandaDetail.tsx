@@ -6,13 +6,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
+  createSolucao,
   deleteSolicitacao,
+  deleteSolucao,
   getSolicitacao,
   listScoreHistory,
   listSolucoesBySolicitacao,
   updateOwnSolicitacao,
   updateSolicitacao,
+  updateSolucao,
 } from "@/lib/supabaseData";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type { Solucao } from "@/lib/types";
 import { FREQUENCIA_LABEL, PIPELINE_ORDER, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus } from "@/lib/types";
 import { useSetoresNomes } from "@/hooks/useSetores";
 import { Button } from "@/components/ui/button";
@@ -50,11 +62,89 @@ export default function DemandaDetail() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isDev = user?.role === "developer";
+  const isBuilder = user?.role === "builder";
 
+  const [solucoesReloadKey, setSolucoesReloadKey] = useState(0);
   const solicitacao = useSupabaseData(() => getSolicitacao(id), null, [id]);
-  const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id]);
+  const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id, solucoesReloadKey]);
   const scoreHistory = useSupabaseData(() => listScoreHistory(id), [], [id, solicitacao?.complexidadeDev, solicitacao?.notasTecnicasComplexidade]);
   const isOwner = user?.id === solicitacao?.solicitanteId;
+  const canManageSolucoes = isDev || (isBuilder && isOwner);
+
+  const [solucaoDialogOpen, setSolucaoDialogOpen] = useState(false);
+  const [editingSolucao, setEditingSolucao] = useState<Solucao | null>(null);
+  const [solForm, setSolForm] = useState({ titulo: "", descricao: "", link: "", dataInicio: "", dataFim: "" });
+  const [savingSolucao, setSavingSolucao] = useState(false);
+
+  function openNovaSolucao() {
+    setEditingSolucao(null);
+    setSolForm({ titulo: "", descricao: "", link: "", dataInicio: "", dataFim: "" });
+    setSolucaoDialogOpen(true);
+  }
+  function openEditarSolucao(s: Solucao) {
+    setEditingSolucao(s);
+    setSolForm({
+      titulo: s.titulo,
+      descricao: s.descricao ?? "",
+      link: s.link ?? "",
+      dataInicio: s.dataInicioPrevista ?? "",
+      dataFim: s.dataFimPrevista ?? "",
+    });
+    setSolucaoDialogOpen(true);
+  }
+  async function handleSaveSolucao() {
+    if (!solForm.titulo.trim()) {
+      toast({ title: "Informe um título", variant: "destructive" });
+      return;
+    }
+    setSavingSolucao(true);
+    try {
+      if (editingSolucao) {
+        await updateSolucao(editingSolucao.id, {
+          titulo: solForm.titulo.trim(),
+          descricao: solForm.descricao.trim(),
+          link: solForm.link.trim() || null,
+          dataInicioPrevista: solForm.dataInicio || null,
+          dataFimPrevista: solForm.dataFim || null,
+        });
+        toast({ title: "Solução atualizada" });
+      } else {
+        await createSolucao({
+          solicitacaoId: id,
+          titulo: solForm.titulo.trim(),
+          descricao: solForm.descricao.trim(),
+          link: solForm.link.trim() || null,
+          createdBy: user?.id,
+          dataInicioPrevista: solForm.dataInicio || null,
+          dataFimPrevista: solForm.dataFim || null,
+        });
+        toast({ title: "Solução cadastrada" });
+      }
+      setSolucaoDialogOpen(false);
+      setSolucoesReloadKey((k) => k + 1);
+    } catch (err) {
+      toast({
+        title: "Erro ao salvar solução",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingSolucao(false);
+    }
+  }
+  async function handleDeleteSolucao(solId: string) {
+    try {
+      await deleteSolucao(solId);
+      toast({ title: "Solução excluída" });
+      setSolucoesReloadKey((k) => k + 1);
+    } catch (err) {
+      toast({
+        title: "Erro ao excluir solução",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  }
 
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
   const [savingStatus, setSavingStatus] = useState(false);
