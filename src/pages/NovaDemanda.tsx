@@ -13,7 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { createSolicitacao } from "@/lib/supabaseData";
 import { computeScoreSolicitante, scoreTone } from "@/lib/scoreV2";
-import { SETORES, type Setor } from "@/lib/types";
+import { useSetoresNomes } from "@/hooks/useSetores";
 import { ScorePill } from "@/components/ScorePill";
 import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 
@@ -21,7 +21,7 @@ const schema = z.object({
   titulo: z.string().trim().min(3, "Título muito curto").max(120),
   descricao: z.string().trim().max(2000),
   softwares: z.string().trim().max(500, "Informe no máximo 500 caracteres"),
-  setor: z.string().refine((v) => (SETORES as readonly string[]).includes(v), { message: "Selecione o setor" }),
+  setor: z.string().trim().min(1, "Selecione o setor"),
 });
 
 export default function NovaDemanda() {
