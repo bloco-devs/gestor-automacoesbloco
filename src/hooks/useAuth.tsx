@@ -131,14 +131,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setViewAs = useCallback((role: Role) => {
     setUser((u) => {
       if (!u) return u;
-      // Only dual-role accounts may switch views. Ignore for everyone else.
-      if (!isDualEmail(u.email)) return u;
+      // Only Administradores may switch views. Ignore for everyone else.
+      if (!u.isAdministrador) return u;
       if (typeof window !== "undefined") localStorage.setItem(VIEW_AS_KEY, role);
       return { ...u, role };
     });
   }, []);
 
-  const isDual = isDualEmail(user?.email);
+  const isDual = !!user?.isAdministrador;
 
   const value = useMemo(
     () => ({ user, session, loading, signIn, signOut, isDual, setViewAs }),
