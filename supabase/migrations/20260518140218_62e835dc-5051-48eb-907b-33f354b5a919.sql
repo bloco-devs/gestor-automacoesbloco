@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.is_allowed_user() TO authenticated;
