@@ -55,16 +55,22 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          nome: string | null
+          role: string
         }
         Insert: {
           created_at?: string
           email: string
           id?: string
+          nome?: string | null
+          role?: string
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          nome?: string | null
+          role?: string
         }
         Relationships: []
       }
@@ -554,6 +560,18 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_accounts: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          nome: string
+          profile_nome: string
+          role: string
+          user_id: string
+        }[]
+      }
+      get_my_role: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
