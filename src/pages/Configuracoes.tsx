@@ -245,6 +245,7 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os papéis</SelectItem>
+              <SelectItem value="administrador">Administrador</SelectItem>
               <SelectItem value="developer">Desenvolvedor</SelectItem>
               <SelectItem value="requester">Solicitante</SelectItem>
               <SelectItem value="builder">Builder</SelectItem>
