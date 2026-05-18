@@ -39,30 +39,36 @@ export default function EscolherPerfil() {
           <CardContent className="grid gap-4 md:grid-cols-3">
             <Button
               variant="outline"
-              className="h-32 flex flex-col gap-2"
+              className="h-auto min-h-32 py-4 px-3 flex flex-col items-center justify-center gap-2 text-center whitespace-normal"
               onClick={() => choose("developer")}
             >
-              <Code2 className="size-7" />
+              <Code2 className="size-7 shrink-0" />
               <span className="font-semibold">Desenvolvedor</span>
-              <span className="text-xs text-muted-foreground">Gerenciar demandas e soluções</span>
+              <span className="text-xs text-muted-foreground leading-snug break-words">
+                Gerenciar demandas e soluções
+              </span>
             </Button>
             <Button
               variant="outline"
-              className="h-32 flex flex-col gap-2"
+              className="h-auto min-h-32 py-4 px-3 flex flex-col items-center justify-center gap-2 text-center whitespace-normal"
               onClick={() => choose("builder")}
             >
-              <Hammer className="size-7" />
+              <Hammer className="size-7 shrink-0" />
               <span className="font-semibold">Builder</span>
-              <span className="text-xs text-muted-foreground">Cadastrar soluções nas próprias demandas</span>
+              <span className="text-xs text-muted-foreground leading-snug break-words">
+                Cadastrar soluções nas próprias demandas
+              </span>
             </Button>
             <Button
               variant="outline"
-              className="h-32 flex flex-col gap-2"
+              className="h-auto min-h-32 py-4 px-3 flex flex-col items-center justify-center gap-2 text-center whitespace-normal"
               onClick={() => choose("requester")}
             >
-              <User className="size-7" />
+              <User className="size-7 shrink-0" />
               <span className="font-semibold">Solicitante</span>
-              <span className="text-xs text-muted-foreground">Criar e acompanhar demandas</span>
+              <span className="text-xs text-muted-foreground leading-snug break-words">
+                Criar e acompanhar demandas
+              </span>
             </Button>
           </CardContent>
         </Card>
