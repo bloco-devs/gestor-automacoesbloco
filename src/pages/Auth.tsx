@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { useAuth, getAllowedAccount } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import blocoLogo from "@/assets/bloco-logo.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
