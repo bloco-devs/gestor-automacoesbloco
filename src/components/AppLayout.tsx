@@ -69,6 +69,7 @@ export default function AppLayout() {
   const { user, signOut, isDual } = useAuth();
   const navigate = useNavigate();
   const nav = user?.role === "developer" ? devNav : requesterNav;
+  const roleLabel = user?.role === "developer" ? "Desenvolvedor" : user?.role === "builder" ? "Builder" : "Solicitante";
 
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     if (typeof window === "undefined") return SIDEBAR_DEFAULT;
@@ -180,7 +181,7 @@ export default function AppLayout() {
           <div className="px-2 py-1.5 mb-2 min-w-0">
             <div className="text-sm font-medium truncate">{user?.nome}</div>
             <div className="text-xs text-muted-foreground truncate">
-              {user?.role === "developer" ? "Desenvolvedor" : "Solicitante"}
+              {roleLabel}
             </div>
           </div>
           <div className="flex items-center gap-1">

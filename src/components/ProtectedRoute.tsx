@@ -12,7 +12,9 @@ export function ProtectedRoute({
   const { user, session, loading } = useAuth();
   if (loading) return null;
   if (!user || !session) return <Navigate to="/auth" replace />;
-  if (role && user.role !== role) {
+  // Builder inherits all requester routes.
+  const effectiveRole = user.role === "builder" ? "requester" : user.role;
+  if (role && effectiveRole !== role) {
     return <Navigate to={user.role === "developer" ? "/dashboard" : "/minhas-demandas"} replace />;
   }
   return <>{children}</>;

@@ -6,13 +6,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
+  createSolucao,
   deleteSolicitacao,
+  deleteSolucao,
   getSolicitacao,
   listScoreHistory,
   listSolucoesBySolicitacao,
   updateOwnSolicitacao,
   updateSolicitacao,
+  updateSolucao,
 } from "@/lib/supabaseData";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type { Solucao } from "@/lib/types";
 import { FREQUENCIA_LABEL, PIPELINE_ORDER, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus } from "@/lib/types";
 import { useSetoresNomes } from "@/hooks/useSetores";
 import { Button } from "@/components/ui/button";
@@ -50,11 +62,89 @@ export default function DemandaDetail() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isDev = user?.role === "developer";
+  const isBuilder = user?.role === "builder";
 
+  const [solucoesReloadKey, setSolucoesReloadKey] = useState(0);
   const solicitacao = useSupabaseData(() => getSolicitacao(id), null, [id]);
-  const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id]);
+  const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id, solucoesReloadKey]);
   const scoreHistory = useSupabaseData(() => listScoreHistory(id), [], [id, solicitacao?.complexidadeDev, solicitacao?.notasTecnicasComplexidade]);
   const isOwner = user?.id === solicitacao?.solicitanteId;
+  const canManageSolucoes = isDev || (isBuilder && isOwner);
+
+  const [solucaoDialogOpen, setSolucaoDialogOpen] = useState(false);
+  const [editingSolucao, setEditingSolucao] = useState<Solucao | null>(null);
+  const [solForm, setSolForm] = useState({ titulo: "", descricao: "", link: "", dataInicio: "", dataFim: "" });
+  const [savingSolucao, setSavingSolucao] = useState(false);
+
+  function openNovaSolucao() {
+    setEditingSolucao(null);
+    setSolForm({ titulo: "", descricao: "", link: "", dataInicio: "", dataFim: "" });
+    setSolucaoDialogOpen(true);
+  }
+  function openEditarSolucao(s: Solucao) {
+    setEditingSolucao(s);
+    setSolForm({
+      titulo: s.titulo,
+      descricao: s.descricao ?? "",
+      link: s.link ?? "",
+      dataInicio: s.dataInicioPrevista ?? "",
+      dataFim: s.dataFimPrevista ?? "",
+    });
+    setSolucaoDialogOpen(true);
+  }
+  async function handleSaveSolucao() {
+    if (!solForm.titulo.trim()) {
+      toast({ title: "Informe um título", variant: "destructive" });
+      return;
+    }
+    setSavingSolucao(true);
+    try {
+      if (editingSolucao) {
+        await updateSolucao(editingSolucao.id, {
+          titulo: solForm.titulo.trim(),
+          descricao: solForm.descricao.trim(),
+          link: solForm.link.trim() || null,
+          dataInicioPrevista: solForm.dataInicio || null,
+          dataFimPrevista: solForm.dataFim || null,
+        });
+        toast({ title: "Solução atualizada" });
+      } else {
+        await createSolucao({
+          solicitacaoId: id,
+          titulo: solForm.titulo.trim(),
+          descricao: solForm.descricao.trim(),
+          link: solForm.link.trim() || null,
+          createdBy: user?.id,
+          dataInicioPrevista: solForm.dataInicio || null,
+          dataFimPrevista: solForm.dataFim || null,
+        });
+        toast({ title: "Solução cadastrada" });
+      }
+      setSolucaoDialogOpen(false);
+      setSolucoesReloadKey((k) => k + 1);
+    } catch (err) {
+      toast({
+        title: "Erro ao salvar solução",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingSolucao(false);
+    }
+  }
+  async function handleDeleteSolucao(solId: string) {
+    try {
+      await deleteSolucao(solId);
+      toast({ title: "Solução excluída" });
+      setSolucoesReloadKey((k) => k + 1);
+    } catch (err) {
+      toast({
+        title: "Erro ao excluir solução",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  }
 
   const [status, setStatus] = useState<PipelineStatus>(solicitacao?.status ?? "novo");
   const [savingStatus, setSavingStatus] = useState(false);
@@ -369,8 +459,23 @@ export default function DemandaDetail() {
         {(isDev || isOwner) && (
           <Card className="surface-1 h-full flex flex-col">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções</CardTitle>
-              <CardDescription>{isDev ? "Soluções vinculadas a esta demanda. Cadastre novas pela aba Soluções." : "Soluções vinculadas a esta demanda."}</CardDescription>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções</CardTitle>
+                  <CardDescription>
+                    {isDev
+                      ? "Soluções vinculadas a esta demanda. Cadastre novas pela aba Soluções."
+                      : canManageSolucoes
+                        ? "Cadastre e gerencie as soluções desta demanda."
+                        : "Soluções vinculadas a esta demanda."}
+                  </CardDescription>
+                </div>
+                {canManageSolucoes && !isDev && (
+                  <Button size="sm" variant="outline" onClick={openNovaSolucao}>
+                    <Sparkles className="size-4" /> Adicionar solução
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4 flex-1 overflow-auto">
               {solucoes.length === 0 ? (
@@ -401,6 +506,32 @@ export default function DemandaDetail() {
                               </a>
                             </Button>
                           )}
+                          {canManageSolucoes && !isDev && (
+                            <>
+                              <Button variant="outline" size="icon" className="h-8 w-8" title="Editar" onClick={() => openEditarSolucao(s)}>
+                                <Pencil className="size-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="icon" className="h-8 w-8" title="Excluir">
+                                    <Trash2 className="size-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir solução?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteSolucao(s.id)}>Excluir</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
                         </div>
                       </div>
                     </li>
@@ -410,6 +541,46 @@ export default function DemandaDetail() {
             </CardContent>
           </Card>
         )}
+
+        <Dialog open={solucaoDialogOpen} onOpenChange={setSolucaoDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingSolucao ? "Editar solução" : "Nova solução"}</DialogTitle>
+              <DialogDescription>Preencha os dados da solução vinculada a esta demanda.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="sol-titulo">Título</Label>
+                <Input id="sol-titulo" value={solForm.titulo} onChange={(e) => setSolForm((f) => ({ ...f, titulo: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="sol-desc">Descrição</Label>
+                <Textarea id="sol-desc" rows={3} value={solForm.descricao} onChange={(e) => setSolForm((f) => ({ ...f, descricao: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="sol-link">Link</Label>
+                <Input id="sol-link" placeholder="https://..." value={solForm.link} onChange={(e) => setSolForm((f) => ({ ...f, link: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="sol-ini">Início previsto</Label>
+                  <Input id="sol-ini" type="date" value={solForm.dataInicio} onChange={(e) => setSolForm((f) => ({ ...f, dataInicio: e.target.value }))} />
+                </div>
+                <div>
+                  <Label htmlFor="sol-fim">Fim previsto</Label>
+                  <Input id="sol-fim" type="date" value={solForm.dataFim} onChange={(e) => setSolForm((f) => ({ ...f, dataFim: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSolucaoDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSaveSolucao} disabled={savingSolucao}>
+                {savingSolucao ? "Salvando..." : "Salvar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
 
       {isDev && (

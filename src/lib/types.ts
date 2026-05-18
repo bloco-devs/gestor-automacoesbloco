@@ -1,4 +1,4 @@
-export type Role = "developer" | "requester";
+export type Role = "developer" | "requester" | "builder";
 
 export type PipelineStatus =
   | "novo"
