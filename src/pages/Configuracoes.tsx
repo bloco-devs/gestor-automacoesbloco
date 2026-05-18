@@ -40,8 +40,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CatalogosPanel } from "@/components/configuracoes/CatalogosPanel";
 
 type DbRole = "developer" | "requester" | "builder";
 
@@ -84,19 +82,7 @@ export default function Configuracoes() {
         </p>
       </header>
 
-      <Tabs defaultValue="acessos">
-        <TabsList>
-          <TabsTrigger value="acessos">Acessos</TabsTrigger>
-          <TabsTrigger value="catalogos">Catálogos</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="acessos" className="mt-4">
-          <AcessosPanel currentUserId={user.id} />
-        </TabsContent>
-        <TabsContent value="catalogos" className="mt-4">
-          <CatalogosPanel />
-        </TabsContent>
-      </Tabs>
+      <AcessosPanel currentUserId={user.id} />
     </div>
   );
 }
