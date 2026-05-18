@@ -302,7 +302,7 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
                     <TableCell>
                       <Select
                         value={account.role}
-                        disabled={isBusy || (isSelf && account.role === "developer")}
+                        disabled={isBusy || (isSelf && (account.role === "developer" || account.role === "administrador"))}
                         onValueChange={(v) => handleRoleChange(account, v as DbRole)}
                       >
                         <SelectTrigger className="w-40 h-8">
