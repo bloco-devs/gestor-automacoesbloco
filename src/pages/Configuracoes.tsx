@@ -392,6 +392,7 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
                   <SelectItem value="requester">Solicitante</SelectItem>
                   <SelectItem value="builder">Builder</SelectItem>
                   <SelectItem value="developer">Desenvolvedor</SelectItem>
+                  <SelectItem value="administrador">Administrador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
