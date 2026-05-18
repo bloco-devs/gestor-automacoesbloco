@@ -111,9 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback(async (email: string, senha: string) => {
-    if (!getAllowedAccount(email)) {
-      throw new Error("Use apenas um dos logins autorizados para acessar o aplicativo.");
-    }
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
