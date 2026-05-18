@@ -70,7 +70,7 @@ function isDualEmail(email?: string | null) {
 
 function getStoredViewAs(): Role | null {
   const v = typeof window !== "undefined" ? localStorage.getItem(VIEW_AS_KEY) : null;
-  return v === "developer" || v === "requester" ? v : null;
+  return v === "developer" || v === "requester" || v === "builder" ? v : null;
 }
 
 async function loadProfile(authUser: User): Promise<Profile> {

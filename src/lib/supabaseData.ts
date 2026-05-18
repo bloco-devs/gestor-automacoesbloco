@@ -323,13 +323,15 @@ export async function listSolucoesBySolicitacao(solicitacaoId: string): Promise<
   return (data ?? []).map(mapSolucao);
 }
 
-export async function createSolucao(data: { solicitacaoId?: string | null; titulo: string; descricao: string; link?: string | null; createdBy?: string }): Promise<void> {
+export async function createSolucao(data: { solicitacaoId?: string | null; titulo: string; descricao: string; link?: string | null; createdBy?: string; dataInicioPrevista?: string | null; dataFimPrevista?: string | null }): Promise<void> {
   const { error } = await supabase.from("demanda_solucoes").insert({
     solicitacao_id: data.solicitacaoId ?? null,
     titulo: data.titulo,
     descricao: data.descricao,
     link: data.link ?? null,
     created_by: data.createdBy,
+    data_inicio_prevista: data.dataInicioPrevista ?? null,
+    data_fim_prevista: data.dataFimPrevista ?? null,
   });
   if (error) throw error;
 }
