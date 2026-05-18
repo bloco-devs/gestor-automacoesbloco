@@ -121,7 +121,7 @@ export function AssistenteDescricao({ onAccept }: Props) {
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Assistente de demanda</DialogTitle>
+          <DialogTitle>Assistente de solicitação</DialogTitle>
           <DialogDescription>
             Responda algumas perguntas e a IA vai montar a descrição para você.
           </DialogDescription>

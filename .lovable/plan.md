@@ -1,62 +1,72 @@
-# Plano — Papel "Builder"
+# Plano — Trocar "demanda" por "solicitação"
 
-Com base nas respostas:
-- **Soluções**: só quem criou a solução (+ Devs) edita/exclui.
-- **Visibilidade**: Builder vê apenas as próprias demandas (igual Solicitante).
-- **Edição da demanda**: mesmos campos do Solicitante.
-- **Dashboard**: o mesmo do Solicitante.
+Aplica-se a tudo que é vocabulário do produto. Banco de dados, edge function (`assistente-demanda`) e o tipo gerado `src/integrations/supabase/types.ts` **não** são tocados — manter os nomes técnicos das tabelas (`demanda_solucoes`, `demanda_melhorias`, `demanda_tasks`) evita uma migração arriscada que não muda nada para o usuário final.
 
-Ou seja, **Builder = Solicitante + permissão de cadastrar/editar/excluir soluções nas suas próprias demandas**. Nada mais.
+## 1. Texto visível ao usuário
 
-## O que já existe
-- Enum `Role` inclui `builder`; `useAuth` lê o papel via `get_my_role`.
-- `ProtectedRoute` trata Builder como Requester (rotas/dashboard).
-- `DemandaDetail` libera o painel de soluções quando `isBuilder && isOwner`.
-- AcessosPanel permite cadastrar e-mails como Builder.
+Substituições caso-sensíveis:
+- "demanda" → "solicitação"
+- "demandas" → "solicitações"
+- "Demanda" → "Solicitação"
+- "Demandas" → "Solicitações"
 
-## O que falta ajustar
+Arquivos afetados (todas as strings em JSX/toasts/labels):
 
-### 1. Banco — visibilidade igual à do Solicitante
-Hoje a policy `"Allowed users can view ..."` em várias tabelas dá acesso de leitura a **todos** os e-mails permitidos (inclui Builders). Isso deixa Builder enxergando demandas de terceiros. Vamos restringir essa policy a Devs (admin) e manter as policies "owner" para Builders/Solicitantes.
+- `src/pages/NovaDemanda.tsx`: `<h1>Nova demanda</h1>`, botões "Enviar demanda", toast "Demanda registrada".
+- `src/pages/MinhasDemandas.tsx`: `<h1>Minhas demandas</h1>`, "Nova demanda", "Nenhuma demanda ainda", "Criar demanda", textos de diálogo "...vinculada a esta demanda".
+- `src/pages/DemandaDetail.tsx`: "Demanda não encontrada", toast "Descreva a demanda...", "Demanda atualizada", "Editar demanda", "Editar demanda"/"Descrição", descrições "...desta demanda".
+- `src/pages/Solucoes.tsx`: labels "Vincular a uma demanda", "Com demanda vinculada", "Demanda vinculada", "Vincule a uma demanda existente".
+- `src/pages/SolicitacoesGantt.tsx`: "...clique no nome para abrir a demanda".
+- `src/lib/supabaseData.ts`: mensagens de erro "Faça login novamente para enviar uma demanda." e "...para editar a demanda."
+- `src/components/AssistenteDescricao.tsx`: `<DialogTitle>Assistente de demanda</DialogTitle>`.
+- `src/components/TasksChecklist.tsx`: "Checklist interno...para esta demanda."
+- `src/pages/Configuracoes.tsx`: "...As demandas e soluções..."
+- `src/components/AppLayout.tsx`: já está "Minhas Solicitações" / "Nova Solicitação" — nada a fazer.
 
-Tabelas afetadas:
-- `solicitacoes` — trocar `"Allowed users can view solicitacoes"` por uma policy só de admin (a policy `"Owners can view their solicitacoes"` já cobre Builder/Solicitante).
-- `demanda_solucoes` — idem (`"Owners can view own solucoes"` já existe via join).
-- `solicitacoes_score_history` — idem (`"Owners can view own score history"` já existe).
-- `demanda_melhorias` — criar policy "owner via solução → solicitação" e restringir a leitura geral a admin.
-- `demanda_tasks` / `solucao_tasks` — manter leitura ampla só para admin; Builder lê via policies "owner".
+## 2. Rotas com redirect das antigas
 
-Catálogos (`setores`, `plataformas`, `tipos_demanda`, `solucoes`, `criterios_solucoes`) **permanecem** com `is_allowed_user()` — Builder precisa consultá-los para preencher formulários.
+Novas rotas em `src/App.tsx`:
+- `/minhas-demandas` → `/minhas-solicitacoes`
+- `/nova-demanda` → `/nova-solicitacao`
+- `/demanda/:id` → `/solicitacao/:id`
 
-### 2. Banco — escrita em soluções restrita ao autor
-Hoje qualquer `is_allowed_user()` pode `UPDATE`/`DELETE` em `demanda_solucoes`. Ajustar:
-- `UPDATE` / `DELETE` em `demanda_solucoes`: permitir se `has_role(admin)` **ou** `created_by = auth.uid()`.
-- `INSERT` continua exigindo `is_allowed_user() AND created_by = auth.uid()`, mais a regra de que a `solicitacao_id` pertence ao próprio Builder (validação via trigger ou policy com EXISTS).
-- Garantir que `created_by` seja preenchido automaticamente (default `auth.uid()` ou trigger) — hoje depende do cliente enviar.
+Adicionar rotas de redirect usando `<Navigate>` para que links antigos (favoritos, e-mails) continuem funcionando:
 
-### 3. Frontend — `DemandaDetail`
-- Botões "Editar/Excluir solução": exibir apenas para Dev ou para o Builder que criou aquela solução (`solucao.created_by === user.id`).
-- Botão "Adicionar solução": continua disponível para Dev e para Builder dono da demanda.
-- Mensagem clara quando o Builder vê uma solução de outro autor (somente leitura).
+```text
+<Route path="/minhas-demandas"  element={<Navigate to="/minhas-solicitacoes" replace />} />
+<Route path="/nova-demanda"     element={<Navigate to="/nova-solicitacao" replace />} />
+<Route path="/demanda/:id"      element={<RedirectDemanda />} />  // preserva :id
+```
 
-### 4. Frontend — dashboard e listas
-- Nenhuma mudança na tela inicial (Builder usa RequesterDashboard).
-- Conferir que listagens/consultas no app não assumem que `is_allowed_user` enxerga tudo (ex.: telas que listam todas as solicitações ficam vazias para Builder — comportamento desejado, mas precisa revisar para não quebrar UI).
+Atualizar todos os `navigate("/minhas-demandas")`, `navigate(\`/demanda/${id}\`)`, `<Link to="...">` em:
+`Auth.tsx`, `Index.tsx`, `EscolherPerfil.tsx`, `ProtectedRoute.tsx`, `Dashboard.tsx`, `RequesterDashboard.tsx`, `Kanban.tsx`, `SolucoesKanban.tsx`, `Solicitacoes.tsx`, `SolicitacoesGantt.tsx`, `NovaDemanda.tsx`, `MinhasDemandas.tsx`.
 
-### 5. AcessosPanel
-- Garantir que a opção "Builder" aparece no seletor de papel e que o label exibido é "Builder".
-- Texto de ajuda curto explicando: "Pode cadastrar soluções nas próprias demandas".
+## 3. Arquivos, componentes e variáveis internas
 
-## Detalhes técnicos
-- Migrações: uma para reescrever as policies de SELECT (`solicitacoes`, `demanda_solucoes`, `solicitacoes_score_history`, `demanda_melhorias`, `*_tasks`) e outra para as policies de UPDATE/DELETE de `demanda_solucoes` + default/trigger de `created_by`.
-- Sem alterações em `auth.*`. Mantém `is_allowed_user()` e `has_role()` como estão.
-- Tipagem do front: usar `created_by` já presente em `demanda_solucoes` para checagem do botão.
+Renomear arquivos:
+- `src/pages/NovaDemanda.tsx` → `src/pages/NovaSolicitacao.tsx`
+- `src/pages/MinhasDemandas.tsx` → `src/pages/MinhasSolicitacoes.tsx`
+- `src/pages/DemandaDetail.tsx` → `src/pages/SolicitacaoDetail.tsx`
+- `src/components/minhas-demandas/` → `src/components/minhas-solicitacoes/`
+  - `CardDestaqueLateral.tsx` (atualizar import interno)
+  - `types.ts` (renomear `DemandaCardProps` → `SolicitacaoCardProps`)
 
-## Fora de escopo
-- Convidar colaboradores para uma demanda.
-- Builder editar status/score técnico ou tasks da solução.
-- Notificações por e-mail.
+Renomear componentes/exports e atualizar imports em `App.tsx`:
+- `NovaDemanda` → `NovaSolicitacao`
+- `MinhasDemandas` → `MinhasSolicitacoes`
+- `DemandaDetail` → `SolicitacaoDetail`
 
-## Perguntas ainda em aberto (opcional)
-1. Quando um Dev exclui uma solução criada por um Builder, queremos notificar/avisar o Builder? (sugiro: não, fica no `activity_log`).
-2. Builder pode reabrir/encerrar a própria demanda (mudar `status`)? Hoje Solicitante não pode — confirma manter assim?
+Renomear variáveis/tipos:
+- `DemandaCardProps` → `SolicitacaoCardProps`
+- Em `src/pages/Solucoes.tsx`: `SortKey "demanda"` → `"solicitacao"`, `demandaTituloById` → `solicitacaoTituloById`, variável local `demanda` → `solicitacao`, label `"Demanda vinculada"` → `"Solicitação vinculada"`.
+
+## O que NÃO é alterado
+
+- Tabelas `demanda_solucoes`, `demanda_melhorias`, `demanda_tasks` e referências em `supabaseData.ts`/`useSupabaseData.ts` que apontam para elas.
+- Edge function `assistente-demanda` (slug do invoke).
+- Arquivo `src/integrations/supabase/types.ts` (gerado automaticamente).
+
+## Validação
+
+- Após as trocas, rodar `rg -ni "demanda" src` e conferir que sobraram apenas referências às tabelas do banco e à edge function.
+- Testar manualmente: navegar para `/demanda/<id>` antigo e confirmar redirecionamento para `/solicitacao/<id>`; idem para `/minhas-demandas` e `/nova-demanda`.

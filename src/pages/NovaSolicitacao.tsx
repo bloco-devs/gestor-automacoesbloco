@@ -26,7 +26,7 @@ const schema = z.object({
   setor: z.string().trim().min(1, "Selecione o setor"),
 });
 
-export default function NovaDemanda() {
+export default function NovaSolicitacao() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -66,8 +66,8 @@ export default function NovaDemanda() {
         solicitanteNome: user.nome,
         email: user.email,
       });
-      toast({ title: "Demanda registrada", description: "Você poderá acompanhar o status em tempo real." });
-      navigate("/minhas-demandas");
+      toast({ title: "Solicitação registrada", description: "Você poderá acompanhar o status em tempo real." });
+      navigate("/minhas-solicitacoes");
     } catch (err) {
       const msg = err instanceof z.ZodError ? err.issues[0].message : "Erro ao salvar";
       toast({ title: "Verifique os campos", description: msg, variant: "destructive" });
@@ -80,7 +80,7 @@ export default function NovaDemanda() {
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3">
           <ArrowLeft className="size-4" /> Voltar
         </Button>
-        <h1 className="text-2xl font-semibold">Nova demanda</h1>
+        <h1 className="text-2xl font-semibold">Nova solicitação</h1>
         <p className="text-sm text-muted-foreground">Descreva a atividade para que o desenvolvedor possa priorizar.</p>
       </div>
 
@@ -190,7 +190,7 @@ export default function NovaDemanda() {
                 <div className="text-xs text-muted-foreground">Será ajustado quando o dev fizer a avaliação técnica.</div>
               </div>
               <Button type="submit" className="w-full sm:w-auto">
-                Enviar demanda
+                Enviar solicitação
               </Button>
             </div>
           )}
@@ -213,7 +213,7 @@ export default function NovaDemanda() {
                 {scoreTone(previewScore, "solicitante") === "low" && "Baixa prioridade."}
               </div>
               <Button type="submit" className="w-full mt-6">
-                Enviar demanda
+                Enviar solicitação
               </Button>
             </CardContent>
           </Card>

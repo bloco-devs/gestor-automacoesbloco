@@ -1,6 +1,6 @@
 import type { Solicitacao } from "@/lib/types";
 
-export interface DemandaCardProps {
+export interface SolicitacaoCardProps {
   solicitacao: Solicitacao;
   onOpen: () => void;
   onAbrirChamado: () => void;

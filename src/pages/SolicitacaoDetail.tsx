@@ -55,7 +55,7 @@ import {
 import { computeScoreFinal, computeScoreSolicitante } from "@/lib/scoreV2";
 import { useToast } from "@/hooks/use-toast";
 
-export default function DemandaDetail() {
+export default function SolicitacaoDetail() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -203,7 +203,7 @@ export default function DemandaDetail() {
   if (!solicitacao) {
     return (
       <div className="text-center py-20 space-y-4">
-        <p className="text-muted-foreground">Demanda não encontrada.</p>
+        <p className="text-muted-foreground">Solicitação não encontrada.</p>
         <Button asChild variant="outline"><Link to="/">Voltar</Link></Button>
       </div>
     );
@@ -230,7 +230,7 @@ export default function DemandaDetail() {
       return;
     }
     if (!editDescricao.trim() || editDescricao.trim().length < 10) {
-      toast({ title: "Verifique os campos", description: "Descreva a demanda com mais detalhes.", variant: "destructive" });
+      toast({ title: "Verifique os campos", description: "Descreva a solicitação com mais detalhes.", variant: "destructive" });
       return;
     }
     if (!editSetor.trim()) {
@@ -250,7 +250,7 @@ export default function DemandaDetail() {
     });
     setIsEditing(false);
     setSearchParams({});
-    toast({ title: "Demanda atualizada" });
+    toast({ title: "Solicitação atualizada" });
   }
 
   async function handleDelete() {
@@ -332,7 +332,7 @@ export default function DemandaDetail() {
                 setIsEditing(true);
                 setSearchParams({ editar: "1" });
               }}>
-                <Pencil className="size-4" /> Editar demanda
+                <Pencil className="size-4" /> Editar solicitação
               </Button>
             )}
             {isDev && (
@@ -373,7 +373,7 @@ export default function DemandaDetail() {
       <div className="grid lg:grid-cols-2 gap-6 items-stretch">
         <Card className="surface-1 h-full flex flex-col">
           <CardHeader>
-            <CardTitle className="text-base">{isEditing ? "Editar demanda" : "Descrição"}</CardTitle>
+            <CardTitle className="text-base">{isEditing ? "Editar solicitação" : "Descrição"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 flex-1">
             {isEditing ? (
@@ -464,10 +464,10 @@ export default function DemandaDetail() {
                   <CardTitle className="text-base flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Soluções</CardTitle>
                   <CardDescription>
                     {isDev
-                      ? "Soluções vinculadas a esta demanda. Cadastre novas pela aba Soluções."
+                      ? "Soluções vinculadas a esta solicitação. Cadastre novas pela aba Soluções."
                       : canManageSolucoes
-                        ? "Cadastre e gerencie as soluções desta demanda."
-                        : "Soluções vinculadas a esta demanda."}
+                        ? "Cadastre e gerencie as soluções desta solicitação."
+                        : "Soluções vinculadas a esta solicitação."}
                   </CardDescription>
                 </div>
                 {canManageSolucoes && !isDev && (
@@ -546,7 +546,7 @@ export default function DemandaDetail() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingSolucao ? "Editar solução" : "Nova solução"}</DialogTitle>
-              <DialogDescription>Preencha os dados da solução vinculada a esta demanda.</DialogDescription>
+              <DialogDescription>Preencha os dados da solução vinculada a esta solicitação.</DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
               <div>

@@ -157,7 +157,7 @@ export default function Solicitacoes() {
                   pageItems.map((s) => (
                     <TableRow
                       key={s.id}
-                      onClick={() => navigate(`/demanda/${s.id}`)}
+                      onClick={() => navigate(`/solicitacao/${s.id}`)}
                       className="cursor-pointer hover:bg-muted/40"
                     >
                       <TableCell>

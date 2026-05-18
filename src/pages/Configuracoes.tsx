@@ -414,7 +414,7 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Remover {pendingDelete?.email}?</AlertDialogTitle>
             <AlertDialogDescription>
-              A conta perderá o acesso ao aplicativo imediatamente. As demandas e soluções
+              A conta perderá o acesso ao aplicativo imediatamente. As solicitações e soluções
               já criadas serão preservadas.
             </AlertDialogDescription>
           </AlertDialogHeader>

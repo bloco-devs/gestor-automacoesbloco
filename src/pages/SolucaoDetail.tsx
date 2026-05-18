@@ -43,7 +43,7 @@ export default function SolucaoDetail() {
     );
   }
 
-  const demanda = solicitacoes.find((s) => s.id === solucao.solicitacaoId);
+  const solicitação = solicitacoes.find((s) => s.id === solucao.solicitacaoId);
 
   return (
     <div className="space-y-6">
@@ -58,10 +58,10 @@ export default function SolucaoDetail() {
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="size-5 text-accent" /> {solucao.titulo}
           </CardTitle>
-          {demanda && (
+          {solicitação && (
             <CardDescription>
-              <Link to={`/demanda/${demanda.id}`} className="text-accent font-medium hover:underline underline-offset-4">
-                {demanda.titulo}
+              <Link to={`/solicitacao/${solicitação.id}`} className="text-accent font-medium hover:underline underline-offset-4">
+                {solicitação.titulo}
               </Link>
             </CardDescription>
           )}

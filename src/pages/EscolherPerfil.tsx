@@ -14,12 +14,12 @@ export default function EscolherPerfil() {
   if (!user) return null;
   // Only Administradores may pick a profile. Others go straight to their default view.
   if (!isDual) {
-    return <Navigate to={user.role === "developer" ? "/dashboard" : "/minhas-demandas"} replace />;
+    return <Navigate to={user.role === "developer" ? "/dashboard" : "/minhas-solicitacoes"} replace />;
   }
 
   function choose(role: Role) {
     setViewAs(role);
-    navigate(role === "developer" ? "/dashboard" : "/minhas-demandas");
+    navigate(role === "developer" ? "/dashboard" : "/minhas-solicitacoes");
   }
 
   return (
@@ -45,7 +45,7 @@ export default function EscolherPerfil() {
               <Code2 className="size-7 shrink-0" />
               <span className="font-semibold">Desenvolvedor</span>
               <span className="text-xs text-muted-foreground leading-snug break-words">
-                Gerenciar demandas e soluções
+                Gerenciar solicitações e soluções
               </span>
             </Button>
             <Button
@@ -56,7 +56,7 @@ export default function EscolherPerfil() {
               <Hammer className="size-7 shrink-0" />
               <span className="font-semibold">Builder</span>
               <span className="text-xs text-muted-foreground leading-snug break-words">
-                Cadastrar soluções nas próprias demandas
+                Cadastrar soluções nas próprias solicitações
               </span>
             </Button>
             <Button
@@ -67,7 +67,7 @@ export default function EscolherPerfil() {
               <User className="size-7 shrink-0" />
               <span className="font-semibold">Solicitante</span>
               <span className="text-xs text-muted-foreground leading-snug break-words">
-                Criar e acompanhar demandas
+                Criar e acompanhar solicitações
               </span>
             </Button>
           </CardContent>

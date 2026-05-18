@@ -32,13 +32,13 @@ export default function SolicitacoesGantt() {
       <div>
         <h1 className="text-2xl font-semibold">Cronograma de Solicitações</h1>
         <p className="text-sm text-muted-foreground">
-          Visão Gantt baseada em datas planejadas. Clique numa barra para editar; clique no nome para abrir a demanda.
+          Visão Gantt baseada em datas planejadas. Clique numa barra para editar; clique no nome para abrir a solicitação.
         </p>
       </div>
 
       <GanttChart
         items={items}
-        onItemClick={(id) => navigate(`/demanda/${id}`)}
+        onItemClick={(id) => navigate(`/solicitacao/${id}`)}
         onSaveDates={async (id, start, end) => {
           await updateSolicitacao(id, { dataInicioPrevista: start, dataFimPrevista: end });
         }}

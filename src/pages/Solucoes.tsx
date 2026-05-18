@@ -40,7 +40,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-type SortKey = "titulo" | "demanda" | "createdAt";
+type SortKey = "titulo" | "solicitação" | "createdAt";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
@@ -52,7 +52,7 @@ export default function Solucoes() {
   const solucoes = useSupabaseData(() => listSolucoes(), []);
   const solicitacoes = useSupabaseData(() => listSolicitacoes(), []);
 
-  const demandaTituloById = useMemo(() => {
+  const solicitacaoTituloById = useMemo(() => {
     const map = new Map<string, string>();
     solicitacoes.forEach((s) => map.set(s.id, s.titulo));
     return map;
@@ -78,26 +78,26 @@ export default function Solucoes() {
       if (vinculoFilter === "linked" && !s.solicitacaoId) return false;
       if (vinculoFilter === "unlinked" && s.solicitacaoId) return false;
       if (!q) return true;
-      const demanda = s.solicitacaoId ? demandaTituloById.get(s.solicitacaoId) ?? "" : "";
+      const solicitação = s.solicitacaoId ? solicitacaoTituloById.get(s.solicitacaoId) ?? "" : "";
       return (
         s.titulo.toLowerCase().includes(q) ||
         s.descricao.toLowerCase().includes(q) ||
-        demanda.toLowerCase().includes(q)
+        solicitação.toLowerCase().includes(q)
       );
     });
-  }, [solucoes, search, vinculoFilter, demandaTituloById]);
+  }, [solucoes, search, vinculoFilter, solicitacaoTituloById]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
     arr.sort((a, b) => {
-      const va = readSortable(a, sortKey, demandaTituloById);
-      const vb = readSortable(b, sortKey, demandaTituloById);
+      const va = readSortable(a, sortKey, solicitacaoTituloById);
+      const vb = readSortable(b, sortKey, solicitacaoTituloById);
       if (va < vb) return sortDir === "asc" ? -1 : 1;
       if (va > vb) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
     return arr;
-  }, [filtered, sortKey, sortDir, demandaTituloById]);
+  }, [filtered, sortKey, sortDir, solicitacaoTituloById]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -165,7 +165,7 @@ export default function Solucoes() {
           <PopoverContent align="end" className="w-80 space-y-3">
             <div>
               <p className="text-sm font-medium">Cadastrar solução</p>
-              <p className="text-xs text-muted-foreground">Vincule a uma demanda existente, se desejar.</p>
+              <p className="text-xs text-muted-foreground">Vincule a uma solicitação existente, se desejar.</p>
             </div>
             <Input
               placeholder="Título da solução"
@@ -185,7 +185,7 @@ export default function Solucoes() {
             />
             <Select value={novoSolicitacaoId} onValueChange={setNovoSolicitacaoId}>
               <SelectTrigger>
-                <SelectValue placeholder="Vincular a uma demanda (opcional)" />
+                <SelectValue placeholder="Vincular a uma solicitação (opcional)" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Sem vínculo</SelectItem>
@@ -228,7 +228,7 @@ export default function Solucoes() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os vínculos</SelectItem>
-              <SelectItem value="linked">Com demanda vinculada</SelectItem>
+              <SelectItem value="linked">Com solicitação vinculada</SelectItem>
               <SelectItem value="unlinked">Sem vínculo</SelectItem>
             </SelectContent>
           </Select>
@@ -242,7 +242,7 @@ export default function Solucoes() {
               <TableHeader>
                 <TableRow>
                   <SortableHead label="Solução" k="titulo" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                  <SortableHead label="Demanda vinculada" k="demanda" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <SortableHead label="Solicitação vinculada" k="solicitação" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <SortableHead label="Data" k="createdAt" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                 </TableRow>
               </TableHeader>
@@ -255,7 +255,7 @@ export default function Solucoes() {
                   </TableRow>
                 ) : (
                   pageItems.map((s) => {
-                    const demanda = s.solicitacaoId ? demandaTituloById.get(s.solicitacaoId) : undefined;
+                    const solicitação = s.solicitacaoId ? solicitacaoTituloById.get(s.solicitacaoId) : undefined;
                     return (
                       <TableRow
                         key={s.id}
@@ -269,7 +269,7 @@ export default function Solucoes() {
                           )}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {demanda ?? <span className="text-muted-foreground">—</span>}
+                          {solicitação ?? <span className="text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="text-sm tabular-nums">
                           {formatDate(s.createdAt)}
@@ -372,12 +372,12 @@ function SortableHead({
   );
 }
 
-function readSortable(s: Solucao, key: SortKey, demandaMap: Map<string, string>): string | number {
+function readSortable(s: Solucao, key: SortKey, solicitacaoMap: Map<string, string>): string | number {
   switch (key) {
     case "titulo":
       return s.titulo.toLowerCase();
-    case "demanda":
-      return (s.solicitacaoId ? demandaMap.get(s.solicitacaoId) ?? "" : "").toLowerCase();
+    case "solicitação":
+      return (s.solicitacaoId ? solicitacaoMap.get(s.solicitacaoId) ?? "" : "").toLowerCase();
     case "createdAt":
       return new Date(s.createdAt).getTime();
   }

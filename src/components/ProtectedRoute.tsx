@@ -15,7 +15,7 @@ export function ProtectedRoute({
   // Builder inherits all requester routes.
   const effectiveRole = user.role === "builder" ? "requester" : user.role;
   if (role && effectiveRole !== role) {
-    return <Navigate to={user.role === "developer" ? "/dashboard" : "/minhas-demandas"} replace />;
+    return <Navigate to={user.role === "developer" ? "/dashboard" : "/minhas-solicitacoes"} replace />;
   }
   return <>{children}</>;
 }
