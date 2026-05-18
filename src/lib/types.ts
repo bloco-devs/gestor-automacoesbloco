@@ -66,6 +66,8 @@ export interface Profile {
   email: string;
   nome: string;
   role: Role;
+  /** True quando o usuário foi cadastrado em allowed_emails com papel "administrador". */
+  isAdministrador?: boolean;
 }
 
 export interface Solicitacao {
