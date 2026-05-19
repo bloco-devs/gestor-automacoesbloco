@@ -773,6 +773,25 @@ export default function SolicitacaoDetail() {
 
       {(isDev || isOwner) && (
         <Card className="surface-1">
+          <CardContent className="py-3 text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
+            {solicitacao.avaliadoPor && solicitacao.avaliadoEm ? (
+              <>
+                <span className="text-muted-foreground">Avaliação técnica feita por</span>
+                <span className="font-medium text-foreground">{avaliadorNome ?? "carregando..."}</span>
+                <span className="text-muted-foreground">em</span>
+                <span className="tabular-nums text-foreground">
+                  {new Date(solicitacao.avaliadoEm).toLocaleString("pt-BR")}
+                </span>
+              </>
+            ) : (
+              <span className="text-muted-foreground italic">Aguardando avaliação técnica do desenvolvedor.</span>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {(isDev || isOwner) && (
+        <Card className="surface-1">
           <Collapsible defaultOpen={false}>
             <CardHeader className="pb-2">
               <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left">
