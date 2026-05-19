@@ -770,7 +770,7 @@ export default function SolicitacaoDetail() {
       )}
 
       {(isDev || isOwner) && (
-        <Card className="surface-1">
+        <Card id="avaliacao-tecnica" className="surface-1 scroll-mt-24">
           <CardContent className="py-3 text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
             {solicitacao.avaliadoPor && solicitacao.avaliadoEm ? (
               <>
