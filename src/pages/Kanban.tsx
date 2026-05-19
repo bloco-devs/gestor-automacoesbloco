@@ -211,7 +211,7 @@ function KanbanCard({ item }: { item: Solicitacao }) {
           variant="outline"
           className="text-[10px] py-0 px-1.5 h-5 font-normal"
         >
-          {FREQUENCIA_LABEL[item.frequencia]}
+          {freqLabel(item.frequencia)}
         </Badge>
         <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground/80">
           {STATUS_LABEL[item.status]}
