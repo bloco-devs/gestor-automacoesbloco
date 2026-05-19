@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Search, Trash2, UserCog } from "lucide-react";
+import { Check, Loader2, Pencil, Plus, Search, Trash2, UserCog, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -102,6 +102,38 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
   const [saving, setSaving] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Account | null>(null);
   const [busyEmail, setBusyEmail] = useState<string | null>(null);
+  const [editingEmail, setEditingEmail] = useState<string | null>(null);
+  const [editingNome, setEditingNome] = useState("");
+
+  async function handleSaveNome(account: Account) {
+    const nome = editingNome.trim();
+    if (nome.length > 100) {
+      toast({ title: "Nome muito longo", description: "Máximo de 100 caracteres.", variant: "destructive" });
+      return;
+    }
+    setBusyEmail(account.email);
+    const { error: aeErr } = await supabase
+      .from("allowed_emails")
+      .update({ nome: nome || null })
+      .eq("email", account.email);
+    let profErr: { message: string } | null = null;
+    if (!aeErr && account.user_id) {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ nome: nome || "" })
+        .eq("id", account.user_id);
+      profErr = error;
+    }
+    setBusyEmail(null);
+    const err = aeErr || profErr;
+    if (err) {
+      toast({ title: "Erro ao salvar nome", description: err.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Nome atualizado", description: account.email });
+    setEditingEmail(null);
+    refresh();
+  }
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -298,7 +330,43 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">{displayName}</TableCell>
+                    <TableCell className="text-sm">
+                      {editingEmail === account.email ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            autoFocus
+                            value={editingNome}
+                            onChange={(e) => setEditingNome(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSaveNome(account);
+                              if (e.key === "Escape") setEditingEmail(null);
+                            }}
+                            maxLength={100}
+                            className="h-8"
+                            disabled={isBusy}
+                          />
+                          <Button size="icon" variant="ghost" className="h-8 w-8" disabled={isBusy} onClick={() => handleSaveNome(account)} title="Salvar">
+                            {isBusy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4 text-emerald-600" />}
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" disabled={isBusy} onClick={() => setEditingEmail(null)} title="Cancelar">
+                            <X className="size-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="group inline-flex items-center gap-2 hover:text-foreground text-left"
+                          onClick={() => {
+                            setEditingEmail(account.email);
+                            setEditingNome(account.profile_nome || account.nome || "");
+                          }}
+                          title="Editar nome"
+                        >
+                          <span>{displayName}</span>
+                          <Pencil className="size-3 opacity-0 group-hover:opacity-60" />
+                        </button>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Select
                         value={account.role}
