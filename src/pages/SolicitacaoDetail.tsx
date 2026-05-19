@@ -194,6 +194,21 @@ export default function SolicitacaoDetail() {
     setEditSetor(solicitacao.setor ?? "");
   }, [solicitacao]);
 
+  const [avaliadorNome, setAvaliadorNome] = useState<string | null>(null);
+  useEffect(() => {
+    const uid = solicitacao?.avaliadoPor;
+    if (!uid) { setAvaliadorNome(null); return; }
+    let active = true;
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.from("profiles").select("nome,email").eq("id", uid).maybeSingle()
+        .then(({ data }) => {
+          if (!active) return;
+          setAvaliadorNome(data?.nome || data?.email || null);
+        });
+    });
+    return () => { active = false; };
+  }, [solicitacao?.avaliadoPor]);
+
   useEffect(() => {
     if (searchParams.get("editar") === "1" && isOwner) {
       setIsEditing(true);
@@ -752,6 +767,25 @@ export default function SolicitacaoDetail() {
                 <Save className="size-4" /> Salvar Avaliação Técnica
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {(isDev || isOwner) && (
+        <Card className="surface-1">
+          <CardContent className="py-3 text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
+            {solicitacao.avaliadoPor && solicitacao.avaliadoEm ? (
+              <>
+                <span className="text-muted-foreground">Avaliação técnica feita por</span>
+                <span className="font-medium text-foreground">{avaliadorNome ?? "carregando..."}</span>
+                <span className="text-muted-foreground">em</span>
+                <span className="tabular-nums text-foreground">
+                  {new Date(solicitacao.avaliadoEm).toLocaleString("pt-BR")}
+                </span>
+              </>
+            ) : (
+              <span className="text-muted-foreground italic">Aguardando avaliação técnica do desenvolvedor.</span>
+            )}
           </CardContent>
         </Card>
       )}

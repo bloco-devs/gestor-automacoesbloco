@@ -102,6 +102,10 @@ export interface Solicitacao {
   dataInicioPrevista?: string | null;
   /** Data planejada de fim (ISO date YYYY-MM-DD). Usada na visão Gantt. */
   dataFimPrevista?: string | null;
+  /** ID do dev/admin que salvou a última avaliação técnica. NULL se nunca avaliada. */
+  avaliadoPor?: string | null;
+  /** Timestamp ISO de quando a última avaliação técnica foi salva. NULL se nunca avaliada. */
+  avaliadoEm?: string | null;
   createdAt: string;
   updatedAt: string;
 }
