@@ -1,72 +1,59 @@
-# Plano — Trocar "demanda" por "solicitação"
+## Objetivo
 
-Aplica-se a tudo que é vocabulário do produto. Banco de dados, edge function (`assistente-demanda`) e o tipo gerado `src/integrations/supabase/types.ts` **não** são tocados — manter os nomes técnicos das tabelas (`demanda_solucoes`, `demanda_melhorias`, `demanda_tasks`) evita uma migração arriscada que não muda nada para o usuário final.
+Registrar e exibir qual desenvolvedor realizou a avaliação técnica de cada solicitação (complexidade do dev / notas técnicas).
 
-## 1. Texto visível ao usuário
+## 1. Banco de dados (migration)
 
-Substituições caso-sensíveis:
-- "demanda" → "solicitação"
-- "demandas" → "solicitações"
-- "Demanda" → "Solicitação"
-- "Demandas" → "Solicitações"
+Adicionar duas colunas em `public.solicitacoes`:
 
-Arquivos afetados (todas as strings em JSX/toasts/labels):
+- `avaliado_por uuid` — id do usuário que salvou a avaliação técnica
+- `avaliado_em timestamptz` — quando a avaliação foi salva
 
-- `src/pages/NovaDemanda.tsx`: `<h1>Nova demanda</h1>`, botões "Enviar demanda", toast "Demanda registrada".
-- `src/pages/MinhasDemandas.tsx`: `<h1>Minhas demandas</h1>`, "Nova demanda", "Nenhuma demanda ainda", "Criar demanda", textos de diálogo "...vinculada a esta demanda".
-- `src/pages/DemandaDetail.tsx`: "Demanda não encontrada", toast "Descreva a demanda...", "Demanda atualizada", "Editar demanda", "Editar demanda"/"Descrição", descrições "...desta demanda".
-- `src/pages/Solucoes.tsx`: labels "Vincular a uma demanda", "Com demanda vinculada", "Demanda vinculada", "Vincule a uma demanda existente".
-- `src/pages/SolicitacoesGantt.tsx`: "...clique no nome para abrir a demanda".
-- `src/lib/supabaseData.ts`: mensagens de erro "Faça login novamente para enviar uma demanda." e "...para editar a demanda."
-- `src/components/AssistenteDescricao.tsx`: `<DialogTitle>Assistente de demanda</DialogTitle>`.
-- `src/components/TasksChecklist.tsx`: "Checklist interno...para esta demanda."
-- `src/pages/Configuracoes.tsx`: "...As demandas e soluções..."
-- `src/components/AppLayout.tsx`: já está "Minhas Solicitações" / "Nova Solicitação" — nada a fazer.
+Atualizar a função `enforce_dev_only_columns()` (que hoje protege `complexidade_dev` e `notas_tecnicas_complexidade`) para também proteger `avaliado_por` / `avaliado_em` — só devs/admins podem alterar.
 
-## 2. Rotas com redirect das antigas
+Atualizar a função `log_score_history()` para preencher automaticamente `avaliado_por = auth.uid()` e `avaliado_em = now()` sempre que `complexidade_dev` ou `notas_tecnicas_complexidade` mudarem (mantém o histórico já existente).
 
-Novas rotas em `src/App.tsx`:
-- `/minhas-demandas` → `/minhas-solicitacoes`
-- `/nova-demanda` → `/nova-solicitacao`
-- `/demanda/:id` → `/solicitacao/:id`
+Backfill: para solicitações que já têm `complexidade_dev` preenchida, copiar o último `changed_by` / `changed_at` do `solicitacoes_score_history` (quando existir).
 
-Adicionar rotas de redirect usando `<Navigate>` para que links antigos (favoritos, e-mails) continuem funcionando:
+Sem mudanças nas policies de SELECT — solicitante já vê a sua própria solicitação inteira; devs/admins já veem todas.
+
+## 2. Camada de dados (`src/lib/supabaseData.ts`)
+
+- Incluir `avaliado_por` e `avaliado_em` em `SOLICITACAO_COLS` e no tipo `SolicitacaoRow`.
+- Mapear para `avaliadoPor` e `avaliadoEm` no objeto `Solicitacao`.
+- Em `updateSolicitacao`, não precisamos enviar `avaliado_por` — o trigger cuida disso.
+- Buscar `profiles.nome` do avaliador via join leve (nova função `getAvaliadorInfo(userId)` ou já trazer em `fetchSolicitacaoCompleta` via segundo `select` em `profiles`).
+
+## 3. Tipos (`src/lib/types.ts`)
+
+Adicionar a `Solicitacao`:
 
 ```text
-<Route path="/minhas-demandas"  element={<Navigate to="/minhas-solicitacoes" replace />} />
-<Route path="/nova-demanda"     element={<Navigate to="/nova-solicitacao" replace />} />
-<Route path="/demanda/:id"      element={<RedirectDemanda />} />  // preserva :id
+avaliadoPor: string | null
+avaliadoEm: string | null
 ```
 
-Atualizar todos os `navigate("/minhas-demandas")`, `navigate(\`/demanda/${id}\`)`, `<Link to="...">` em:
-`Auth.tsx`, `Index.tsx`, `EscolherPerfil.tsx`, `ProtectedRoute.tsx`, `Dashboard.tsx`, `RequesterDashboard.tsx`, `Kanban.tsx`, `SolucoesKanban.tsx`, `Solicitacoes.tsx`, `SolicitacoesGantt.tsx`, `NovaDemanda.tsx`, `MinhasDemandas.tsx`.
+## 4. UI (`src/pages/SolicitacaoDetail.tsx`)
 
-## 3. Arquivos, componentes e variáveis internas
+Logo abaixo da nota de complexidade do dev (próximo ao bloco "Salvar Avaliação Técnica" e no card resumo visível para o solicitante), exibir um rótulo discreto:
 
-Renomear arquivos:
-- `src/pages/NovaDemanda.tsx` → `src/pages/NovaSolicitacao.tsx`
-- `src/pages/MinhasDemandas.tsx` → `src/pages/MinhasSolicitacoes.tsx`
-- `src/pages/DemandaDetail.tsx` → `src/pages/SolicitacaoDetail.tsx`
-- `src/components/minhas-demandas/` → `src/components/minhas-solicitacoes/`
-  - `CardDestaqueLateral.tsx` (atualizar import interno)
-  - `types.ts` (renomear `DemandaCardProps` → `SolicitacaoCardProps`)
+```text
+Avaliado por <Nome do dev> em 19/05/2026 às 14:30
+```
 
-Renomear componentes/exports e atualizar imports em `App.tsx`:
-- `NovaDemanda` → `NovaSolicitacao`
-- `MinhasDemandas` → `MinhasSolicitacoes`
-- `DemandaDetail` → `SolicitacaoDetail`
+- Visível para devs/admins (`isDev`) **e** para o dono da solicitação (`isOwner`).
+- Se ainda não houver avaliação: mostrar "Aguardando avaliação técnica" em `text-muted-foreground`.
+- Nome vem de `profiles.nome` (fallback para email do histórico, depois "Desconhecido").
 
-Renomear variáveis/tipos:
-- `DemandaCardProps` → `SolicitacaoCardProps`
-- Em `src/pages/Solucoes.tsx`: `SortKey "demanda"` → `"solicitacao"`, `demandaTituloById` → `solicitacaoTituloById`, variável local `demanda` → `solicitacao`, label `"Demanda vinculada"` → `"Solicitação vinculada"`.
+## 5. Validação
 
-## O que NÃO é alterado
+- Salvar avaliação como dev → confirmar que `avaliado_por` e `avaliado_em` foram preenchidos no banco e aparecem na UI.
+- Abrir a mesma solicitação como o solicitante → confirmar que vê o nome do avaliador.
+- Confirmar que o histórico de avaliações continua funcionando.
+- Rodar `supabase--linter` após a migration.
 
-- Tabelas `demanda_solucoes`, `demanda_melhorias`, `demanda_tasks` e referências em `supabaseData.ts`/`useSupabaseData.ts` que apontam para elas.
-- Edge function `assistente-demanda` (slug do invoke).
-- Arquivo `src/integrations/supabase/types.ts` (gerado automaticamente).
+## Fora de escopo
 
-## Validação
-
-- Após as trocas, rodar `rg -ni "demanda" src` e conferir que sobraram apenas referências às tabelas do banco e à edge function.
-- Testar manualmente: navegar para `/demanda/<id>` antigo e confirmar redirecionamento para `/solicitacao/<id>`; idem para `/minhas-demandas` e `/nova-demanda`.
+- Não alterar `assistente-demanda` nem tabelas legadas `demanda_*`.
+- Não mexer no card de score do solicitante.
+- Sem alterações em rotas ou autenticação.
