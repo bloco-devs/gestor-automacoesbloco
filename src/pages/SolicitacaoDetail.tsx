@@ -426,19 +426,10 @@ export default function SolicitacaoDetail() {
                   <Label htmlFor="edit-softwares">Softwares envolvidos</Label>
                   <Input id="edit-softwares" value={editSoftwares} onChange={(e) => setEditSoftwares(e.target.value)} />
                 </div>
-                <div>
-                  <Label>Frequência</Label>
-                  <Select value={String(editFrequencia)} onValueChange={(v) => setEditFrequencia(Number(v) as Frequencia)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {([4, 3, 2, 1] as Frequencia[]).map((f) => (
-                        <SelectItem key={f} value={String(f)}>{FREQUENCIA_LABEL[f]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <SliderField label="Frequência" value={editFrequencia} onChange={(n) => setEditFrequencia(n as Frequencia)} />
                 <SliderField label="Complexidade" value={editComplexidade} onChange={setEditComplexidade} />
                 <SliderField label="Retorno financeiro" value={editRetorno} onChange={setEditRetorno} />
+
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button onClick={handleSaveOwn}><Save className="size-4" /> Salvar alterações</Button>
                   <Button variant="outline" onClick={() => {
