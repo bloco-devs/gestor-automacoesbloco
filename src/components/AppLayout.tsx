@@ -362,10 +362,12 @@ function SidebarNavItem({
   item,
   isDeveloper,
   pendingEvalCount,
+  dragHandleProps,
 }: {
   item: NavItem;
   isDeveloper: boolean;
   pendingEvalCount: number;
+  dragHandleProps?: Record<string, unknown>;
 }) {
   const { pathname } = useLocation();
   const hasChildren = !!item.children?.length;
@@ -389,9 +391,10 @@ function SidebarNavItem({
       <NavLink
         to={item.to!}
         end
+        {...(dragHandleProps as Record<string, unknown>)}
         className={({ isActive }) =>
           cn(
-            "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0",
+            "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0 cursor-grab active:cursor-grabbing touch-none",
             isActive
               ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border"
               : "text-sidebar-foreground hover:bg-sidebar-accent/60",
@@ -410,8 +413,9 @@ function SidebarNavItem({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        {...dragHandleProps}
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0",
+          "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0 cursor-grab active:cursor-grabbing touch-none",
           isParentActive
             ? "text-sidebar-accent-foreground bg-sidebar-accent/40"
             : "text-sidebar-foreground hover:bg-sidebar-accent/60",
@@ -478,17 +482,13 @@ function SortableSidebarNavItem({
     position: "relative",
   };
   return (
-    <div ref={setNodeRef} style={style} className="group/sortable relative">
-      <button
-        type="button"
-        aria-label={`Reordenar ${item.label}`}
-        className="absolute -left-1 top-1.5 z-10 flex items-center justify-center size-5 rounded text-muted-foreground/40 opacity-0 group-hover/sortable:opacity-100 hover:text-foreground hover:bg-muted/60 transition-opacity cursor-grab active:cursor-grabbing touch-none"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="size-3.5" />
-      </button>
-      <SidebarNavItem item={item} isDeveloper={isDeveloper} pendingEvalCount={pendingEvalCount} />
+    <div ref={setNodeRef} style={style}>
+      <SidebarNavItem
+        item={item}
+        isDeveloper={isDeveloper}
+        pendingEvalCount={pendingEvalCount}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
     </div>
   );
 }
