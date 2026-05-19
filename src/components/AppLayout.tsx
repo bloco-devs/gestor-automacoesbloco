@@ -457,3 +457,38 @@ function SidebarNavItem({
     </div>
   );
 }
+
+function SortableSidebarNavItem({
+  item,
+  isDeveloper,
+  pendingEvalCount,
+}: {
+  item: NavItem;
+  isDeveloper: boolean;
+  pendingEvalCount: number;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.label,
+  });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : undefined,
+    zIndex: isDragging ? 10 : undefined,
+    position: "relative",
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="group/sortable relative">
+      <button
+        type="button"
+        aria-label={`Reordenar ${item.label}`}
+        className="absolute -left-1 top-1.5 z-10 flex items-center justify-center size-5 rounded text-muted-foreground/40 opacity-0 group-hover/sortable:opacity-100 hover:text-foreground hover:bg-muted/60 transition-opacity cursor-grab active:cursor-grabbing touch-none"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="size-3.5" />
+      </button>
+      <SidebarNavItem item={item} isDeveloper={isDeveloper} pendingEvalCount={pendingEvalCount} />
+    </div>
+  );
+}
