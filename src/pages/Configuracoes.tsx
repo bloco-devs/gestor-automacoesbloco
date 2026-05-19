@@ -330,7 +330,43 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">{displayName}</TableCell>
+                    <TableCell className="text-sm">
+                      {editingEmail === account.email ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            autoFocus
+                            value={editingNome}
+                            onChange={(e) => setEditingNome(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSaveNome(account);
+                              if (e.key === "Escape") setEditingEmail(null);
+                            }}
+                            maxLength={100}
+                            className="h-8"
+                            disabled={isBusy}
+                          />
+                          <Button size="icon" variant="ghost" className="h-8 w-8" disabled={isBusy} onClick={() => handleSaveNome(account)} title="Salvar">
+                            {isBusy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4 text-emerald-600" />}
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" disabled={isBusy} onClick={() => setEditingEmail(null)} title="Cancelar">
+                            <X className="size-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="group inline-flex items-center gap-2 hover:text-foreground text-left"
+                          onClick={() => {
+                            setEditingEmail(account.email);
+                            setEditingNome(account.profile_nome || account.nome || "");
+                          }}
+                          title="Editar nome"
+                        >
+                          <span>{displayName}</span>
+                          <Pencil className="size-3 opacity-0 group-hover:opacity-60" />
+                        </button>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Select
                         value={account.role}
