@@ -227,6 +227,48 @@ export type Database = {
         }
         Relationships: []
       }
+      notificacoes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_email: string | null
+          id: string
+          lida: boolean
+          lida_em: string | null
+          mensagem: string
+          solicitacao_id: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          id?: string
+          lida?: boolean
+          lida_em?: string | null
+          mensagem: string
+          solicitacao_id?: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          id?: string
+          lida?: boolean
+          lida_em?: string | null
+          mensagem?: string
+          solicitacao_id?: string | null
+          tipo?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plataformas: {
         Row: {
           created_at: string

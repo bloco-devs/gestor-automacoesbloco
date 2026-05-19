@@ -1,59 +1,58 @@
-## Objetivo
+# Notificações de avaliação técnica
 
-Registrar e exibir qual desenvolvedor realizou a avaliação técnica de cada solicitação (complexidade do dev / notas técnicas).
+Quando um dev cadastrar/alterar uma avaliação técnica em uma solicitação, o solicitante daquela demanda passa a ver uma notificação no app no próximo acesso, com indicador no sino do cabeçalho e link direto para a solicitação avaliada.
 
-## 1. Banco de dados (migration)
+## Experiência do solicitante
 
-Adicionar duas colunas em `public.solicitacoes`:
+- **Sino no header** (ao lado do toggle de tema): mostra um badge com a contagem de notificações não lidas.
+- **Popover ao clicar**: lista as últimas notificações, mais recentes primeiro. Cada item mostra:
+  - Título da solicitação avaliada
+  - Quem avaliou (nome/email) e quando (ex.: "há 2 horas")
+  - Resumo: "Sua solicitação recebeu uma avaliação técnica"
+  - Estado visual diferente para lidas vs não lidas (ponto/cor)
+- **Clicar no item**: marca como lida e navega para `/solicitacoes/:id`, rolando até a seção de avaliação técnica.
+- **Ação "Marcar todas como lidas"** no rodapé do popover.
+- **Realtime**: a contagem e a lista atualizam ao vivo via Supabase Realtime na tabela de notificações.
 
-- `avaliado_por uuid` — id do usuário que salvou a avaliação técnica
-- `avaliado_em timestamptz` — quando a avaliação foi salva
+Devs/admins não recebem essas notificações (são eles que as geram). Builders só recebem como solicitantes das próprias demandas.
 
-Atualizar a função `enforce_dev_only_columns()` (que hoje protege `complexidade_dev` e `notas_tecnicas_complexidade`) para também proteger `avaliado_por` / `avaliado_em` — só devs/admins podem alterar.
+## Mudanças no banco
 
-Atualizar a função `log_score_history()` para preencher automaticamente `avaliado_por = auth.uid()` e `avaliado_em = now()` sempre que `complexidade_dev` ou `notas_tecnicas_complexidade` mudarem (mantém o histórico já existente).
+Nova tabela `public.notificacoes`:
+- `user_id` (destinatário — o solicitante)
+- `tipo` (`'avaliacao_tecnica'` inicialmente, deixando aberto para tipos futuros)
+- `solicitacao_id` (referência à demanda)
+- `titulo`, `mensagem` (texto pronto para exibir)
+- `lida` (boolean, default false), `lida_em`
+- `created_by` (uuid do dev que disparou), `created_by_email`
+- `created_at`
 
-Backfill: para solicitações que já têm `complexidade_dev` preenchida, copiar o último `changed_by` / `changed_at` do `solicitacoes_score_history` (quando existir).
+RLS:
+- Solicitante lê / atualiza (marcar como lida) / apaga apenas as próprias notificações.
+- Admins veem todas (para suporte).
+- INSERT só via trigger SECURITY DEFINER — sem policy de insert para usuários.
 
-Sem mudanças nas policies de SELECT — solicitante já vê a sua própria solicitação inteira; devs/admins já veem todas.
+Trigger `notify_avaliacao_tecnica` em `public.solicitacoes` (AFTER UPDATE):
+- Dispara quando `complexidade_dev` OU `notas_tecnicas_complexidade` muda (mesma condição do `log_score_history` já existente).
+- Insere uma linha em `notificacoes` para `NEW.user_id`, desde que `NEW.user_id IS NOT NULL` e `NEW.user_id <> auth.uid()` (evita auto-notificar quando o próprio solicitante editar).
+- `created_by` = `auth.uid()`, `created_by_email` resolvido via `auth.users`.
 
-## 2. Camada de dados (`src/lib/supabaseData.ts`)
+Índice em `(user_id, lida, created_at DESC)` para a query da lista.
 
-- Incluir `avaliado_por` e `avaliado_em` em `SOLICITACAO_COLS` e no tipo `SolicitacaoRow`.
-- Mapear para `avaliadoPor` e `avaliadoEm` no objeto `Solicitacao`.
-- Em `updateSolicitacao`, não precisamos enviar `avaliado_por` — o trigger cuida disso.
-- Buscar `profiles.nome` do avaliador via join leve (nova função `getAvaliadorInfo(userId)` ou já trazer em `fetchSolicitacaoCompleta` via segundo `select` em `profiles`).
+## Mudanças no frontend
 
-## 3. Tipos (`src/lib/types.ts`)
+**Novo módulo `src/lib/notificacoes.ts`**: `listNotificacoes`, `countUnread`, `markAsRead(id)`, `markAllAsRead()`.
 
-Adicionar a `Solicitacao`:
+**Novo hook `src/hooks/useNotificacoes.ts`**: carrega lista + contagem do usuário atual, assina canal realtime de `notificacoes` filtrado por `user_id=eq.<id>`, expõe `unreadCount`, `items`, `markAsRead`, `markAllAsRead`.
 
-```text
-avaliadoPor: string | null
-avaliadoEm: string | null
-```
+**Novo componente `src/components/NotificacoesBell.tsx`**: ícone `Bell` (lucide) + badge de contagem + `Popover` com a lista. Item clicável navega para `/solicitacoes/:id?focus=avaliacao`.
 
-## 4. UI (`src/pages/SolicitacaoDetail.tsx`)
+**`src/components/AppLayout.tsx`**: renderiza `<NotificacoesBell />` no header, ao lado do `ThemeToggle`. Visível para todos os usuários autenticados (devs raramente terão notificações, então fica naturalmente vazio para eles).
 
-Logo abaixo da nota de complexidade do dev (próximo ao bloco "Salvar Avaliação Técnica" e no card resumo visível para o solicitante), exibir um rótulo discreto:
-
-```text
-Avaliado por <Nome do dev> em 19/05/2026 às 14:30
-```
-
-- Visível para devs/admins (`isDev`) **e** para o dono da solicitação (`isOwner`).
-- Se ainda não houver avaliação: mostrar "Aguardando avaliação técnica" em `text-muted-foreground`.
-- Nome vem de `profiles.nome` (fallback para email do histórico, depois "Desconhecido").
-
-## 5. Validação
-
-- Salvar avaliação como dev → confirmar que `avaliado_por` e `avaliado_em` foram preenchidos no banco e aparecem na UI.
-- Abrir a mesma solicitação como o solicitante → confirmar que vê o nome do avaliador.
-- Confirmar que o histórico de avaliações continua funcionando.
-- Rodar `supabase--linter` após a migration.
+**`src/pages/SolicitacaoDetail.tsx`**: lê `?focus=avaliacao` em `useSearchParams` e, se presente, faz `scrollIntoView` na seção "Notas da Avaliação Técnica" ao montar.
 
 ## Fora de escopo
 
-- Não alterar `assistente-demanda` nem tabelas legadas `demanda_*`.
-- Não mexer no card de score do solicitante.
-- Sem alterações em rotas ou autenticação.
+- Notificações por e-mail (apenas in-app).
+- Outros tipos de notificação (novas soluções, mudança de status, etc.) — a tabela já fica preparada para isso, mas não será implementado agora.
+- Centro de notificações em página própria — só o popover.
