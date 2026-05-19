@@ -44,10 +44,11 @@ function map(r: Row): Notificacao {
   };
 }
 
-export async function listNotificacoes(limit = 30): Promise<Notificacao[]> {
+export async function listNotificacoes(userId: string, limit = 30): Promise<Notificacao[]> {
   const { data, error } = await supabase
     .from("notificacoes" as never)
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) {
