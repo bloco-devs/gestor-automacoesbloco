@@ -1,6 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, GanttChartSquare, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, GanttChartSquare, GripVertical, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,6 +106,52 @@ export default function AppLayout() {
   const isDeveloper = user?.role === "developer";
   const [pendingEvalCount, setPendingEvalCount] = useState<number>(0);
 
+  const navOrderKey = `app:sidebarNavOrder:${user?.role ?? "anon"}`;
+  const [navOrder, setNavOrder] = useState<string[]>(() => {
+    if (typeof window === "undefined") return nav.map((n) => n.label);
+    try {
+      const raw = window.localStorage.getItem(navOrderKey);
+      const stored = raw ? (JSON.parse(raw) as string[]) : [];
+      const valid = stored.filter((l) => nav.some((n) => n.label === l));
+      const missing = nav.map((n) => n.label).filter((l) => !valid.includes(l));
+      return [...valid, ...missing];
+    } catch {
+      return nav.map((n) => n.label);
+    }
+  });
+  useEffect(() => {
+    const labels = nav.map((n) => n.label);
+    setNavOrder((prev) => {
+      const valid = prev.filter((l) => labels.includes(l));
+      const missing = labels.filter((l) => !valid.includes(l));
+      return [...valid, ...missing];
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.role]);
+  useEffect(() => {
+    window.localStorage.setItem(navOrderKey, JSON.stringify(navOrder));
+  }, [navOrder, navOrderKey]);
+
+  const orderedNav = useMemo(() => {
+    const byLabel = new Map(nav.map((n) => [n.label, n]));
+    return navOrder.map((l) => byLabel.get(l)).filter(Boolean) as NavItem[];
+  }, [nav, navOrder]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setNavOrder((items) => {
+      const oldIndex = items.indexOf(String(active.id));
+      const newIndex = items.indexOf(String(over.id));
+      if (oldIndex < 0 || newIndex < 0) return items;
+      return arrayMove(items, oldIndex, newIndex);
+    });
+  };
+
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarWidth));
   }, [sidebarWidth]);
@@ -168,14 +231,18 @@ export default function AppLayout() {
           </div>
         </div>
         <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-          {nav.map((item) => (
-            <SidebarNavItem
-              key={item.label}
-              item={item}
-              isDeveloper={isDeveloper}
-              pendingEvalCount={pendingEvalCount}
-            />
-          ))}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={navOrder} strategy={verticalListSortingStrategy}>
+              {orderedNav.map((item) => (
+                <SortableSidebarNavItem
+                  key={item.label}
+                  item={item}
+                  isDeveloper={isDeveloper}
+                  pendingEvalCount={pendingEvalCount}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </nav>
         <div className="p-3 border-t border-sidebar-border">
           <div className="px-2 py-1.5 mb-2 min-w-0">
@@ -387,6 +454,41 @@ function SidebarNavItem({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function SortableSidebarNavItem({
+  item,
+  isDeveloper,
+  pendingEvalCount,
+}: {
+  item: NavItem;
+  isDeveloper: boolean;
+  pendingEvalCount: number;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.label,
+  });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : undefined,
+    zIndex: isDragging ? 10 : undefined,
+    position: "relative",
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="group/sortable relative">
+      <button
+        type="button"
+        aria-label={`Reordenar ${item.label}`}
+        className="absolute -left-1 top-1.5 z-10 flex items-center justify-center size-5 rounded text-muted-foreground/40 opacity-0 group-hover/sortable:opacity-100 hover:text-foreground hover:bg-muted/60 transition-opacity cursor-grab active:cursor-grabbing touch-none"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="size-3.5" />
+      </button>
+      <SidebarNavItem item={item} isDeveloper={isDeveloper} pendingEvalCount={pendingEvalCount} />
     </div>
   );
 }
