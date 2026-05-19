@@ -73,6 +73,8 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     solicitanteNome: row.solicitante_nome || row.nome || "Solicitante",
     dataInicioPrevista: row.data_inicio_prevista,
     dataFimPrevista: row.data_fim_prevista,
+    avaliadoPor: row.avaliado_por,
+    avaliadoEm: row.avaliado_em,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
