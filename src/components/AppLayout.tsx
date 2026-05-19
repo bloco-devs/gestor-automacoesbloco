@@ -106,6 +106,52 @@ export default function AppLayout() {
   const isDeveloper = user?.role === "developer";
   const [pendingEvalCount, setPendingEvalCount] = useState<number>(0);
 
+  const navOrderKey = `app:sidebarNavOrder:${user?.role ?? "anon"}`;
+  const [navOrder, setNavOrder] = useState<string[]>(() => {
+    if (typeof window === "undefined") return nav.map((n) => n.label);
+    try {
+      const raw = window.localStorage.getItem(navOrderKey);
+      const stored = raw ? (JSON.parse(raw) as string[]) : [];
+      const valid = stored.filter((l) => nav.some((n) => n.label === l));
+      const missing = nav.map((n) => n.label).filter((l) => !valid.includes(l));
+      return [...valid, ...missing];
+    } catch {
+      return nav.map((n) => n.label);
+    }
+  });
+  useEffect(() => {
+    const labels = nav.map((n) => n.label);
+    setNavOrder((prev) => {
+      const valid = prev.filter((l) => labels.includes(l));
+      const missing = labels.filter((l) => !valid.includes(l));
+      return [...valid, ...missing];
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.role]);
+  useEffect(() => {
+    window.localStorage.setItem(navOrderKey, JSON.stringify(navOrder));
+  }, [navOrder, navOrderKey]);
+
+  const orderedNav = useMemo(() => {
+    const byLabel = new Map(nav.map((n) => [n.label, n]));
+    return navOrder.map((l) => byLabel.get(l)).filter(Boolean) as NavItem[];
+  }, [nav, navOrder]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setNavOrder((items) => {
+      const oldIndex = items.indexOf(String(active.id));
+      const newIndex = items.indexOf(String(over.id));
+      if (oldIndex < 0 || newIndex < 0) return items;
+      return arrayMove(items, oldIndex, newIndex);
+    });
+  };
+
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarWidth));
   }, [sidebarWidth]);
