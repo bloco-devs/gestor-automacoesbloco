@@ -194,6 +194,21 @@ export default function SolicitacaoDetail() {
     setEditSetor(solicitacao.setor ?? "");
   }, [solicitacao]);
 
+  const [avaliadorNome, setAvaliadorNome] = useState<string | null>(null);
+  useEffect(() => {
+    const uid = solicitacao?.avaliadoPor;
+    if (!uid) { setAvaliadorNome(null); return; }
+    let active = true;
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.from("profiles").select("nome,email").eq("id", uid).maybeSingle()
+        .then(({ data }) => {
+          if (!active) return;
+          setAvaliadorNome(data?.nome || data?.email || null);
+        });
+    });
+    return () => { active = false; };
+  }, [solicitacao?.avaliadoPor]);
+
   useEffect(() => {
     if (searchParams.get("editar") === "1" && isOwner) {
       setIsEditing(true);
