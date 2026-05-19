@@ -443,9 +443,10 @@ export default function SolicitacaoDetail() {
                 <p className="text-sm whitespace-pre-wrap">{solicitacao.descricao}</p>
                 <dl className="grid grid-cols-2 gap-3 text-sm pt-3 border-t border-border">
                   <div><dt className="text-xs text-muted-foreground">Status</dt><dd>{STATUS_LABEL[statusToCategory(solicitacao.status)]}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Frequência</dt><dd>{FREQUENCIA_LABEL[solicitacao.frequencia]}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Complexidade</dt><dd>{solicitacao.complexidade}/5</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Retorno financeiro</dt><dd>{solicitacao.retorno}/5</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Frequência</dt><dd>{freqLabel(solicitacao.frequencia)}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Complexidade</dt><dd>{solicitacao.complexidade}/10</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Retorno financeiro</dt><dd>{solicitacao.retorno}/10</dd></div>
+
                   {solicitacao.setor && <div><dt className="text-xs text-muted-foreground">Setor</dt><dd>{solicitacao.setor}</dd></div>}
                 </dl>
               </>
