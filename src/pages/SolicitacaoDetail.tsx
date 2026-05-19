@@ -10,7 +10,6 @@ import {
   deleteSolicitacao,
   deleteSolucao,
   getSolicitacao,
-  listScoreHistory,
   listSolucoesBySolicitacao,
   updateOwnSolicitacao,
   updateSolicitacao,
@@ -67,7 +66,6 @@ export default function SolicitacaoDetail() {
   const [solucoesReloadKey, setSolucoesReloadKey] = useState(0);
   const solicitacao = useSupabaseData(() => getSolicitacao(id), null, [id]);
   const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id, solucoesReloadKey]);
-  const scoreHistory = useSupabaseData(() => listScoreHistory(id), [], [id, solicitacao?.complexidadeDev, solicitacao?.notasTecnicasComplexidade]);
   const isOwner = user?.id === solicitacao?.solicitanteId;
   const canManageSolucoes = isDev || (isBuilder && isOwner);
 
@@ -790,55 +788,6 @@ export default function SolicitacaoDetail() {
         </Card>
       )}
 
-      {(isDev || isOwner) && (
-        <Card className="surface-1">
-          <Collapsible defaultOpen={false}>
-            <CardHeader className="pb-2">
-              <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left">
-                <div>
-                  <CardTitle className="text-base">Histórico de Avaliações Técnicas</CardTitle>
-                  <CardDescription>
-                    {scoreHistory.length === 0
-                      ? "Nenhuma avaliação registrada ainda."
-                      : `${scoreHistory.length} mudança${scoreHistory.length === 1 ? "" : "s"} registrada${scoreHistory.length === 1 ? "" : "s"}.`}
-                  </CardDescription>
-                </div>
-                <ChevronDown className="size-4 text-muted-foreground transition-transform data-[state=open]:rotate-180" />
-              </CollapsibleTrigger>
-            </CardHeader>
-            <CollapsibleContent>
-              <CardContent>
-                {scoreHistory.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhuma avaliação registrada.</p>
-                ) : (
-                  <ol className="relative border-l border-border pl-4 space-y-4">
-                    {scoreHistory.map((event) => (
-                      <li key={event.id} className="relative">
-                        <span className="absolute -left-[21px] top-1 size-2.5 rounded-full bg-accent border-2 border-background" />
-                        <p className="text-sm font-medium">
-                          Complexidade{" "}
-                          <span className="tabular-nums">
-                            {event.old_complexidade_dev ?? "—"} → {event.new_complexidade_dev ?? "—"}
-                          </span>
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          por {event.changed_by_email ?? "desconhecido"} em{" "}
-                          {new Date(event.changed_at).toLocaleString("pt-BR")}
-                        </p>
-                        {event.new_notas && (
-                          <p className="text-xs mt-1 italic text-muted-foreground border-l-2 border-border pl-2">
-                            {event.new_notas}
-                          </p>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </Card>
-      )}
     </div>
   );
 }
