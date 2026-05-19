@@ -66,7 +66,6 @@ export default function SolicitacaoDetail() {
   const [solucoesReloadKey, setSolucoesReloadKey] = useState(0);
   const solicitacao = useSupabaseData(() => getSolicitacao(id), null, [id]);
   const solucoes = useSupabaseData(() => listSolucoesBySolicitacao(id), [], [id, solucoesReloadKey]);
-  const scoreHistory = useSupabaseData(() => listScoreHistory(id), [], [id, solicitacao?.complexidadeDev, solicitacao?.notasTecnicasComplexidade]);
   const isOwner = user?.id === solicitacao?.solicitanteId;
   const canManageSolucoes = isDev || (isBuilder && isOwner);
 
