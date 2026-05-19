@@ -192,6 +192,15 @@ export default function SolicitacaoDetail() {
     setEditSetor(solicitacao.setor ?? "");
   }, [solicitacao]);
 
+  useEffect(() => {
+    if (!solicitacao) return;
+    if (searchParams.get("focus") !== "avaliacao") return;
+    const el = document.getElementById("avaliacao-tecnica");
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    }
+  }, [solicitacao, searchParams]);
+
   const [avaliadorNome, setAvaliadorNome] = useState<string | null>(null);
   useEffect(() => {
     const uid = solicitacao?.avaliadoPor;
