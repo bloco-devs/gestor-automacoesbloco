@@ -17,7 +17,7 @@ export function useNotificacoes() {
       setItems([]);
       return;
     }
-    const data = await listNotificacoes();
+    const data = await listNotificacoes(user.id);
     setItems(data);
   }, [user?.id]);
 
