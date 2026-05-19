@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
-import { FREQUENCIA_LABEL, statusToCategory, type PipelineStatus } from "@/lib/types";
+import { freqLabel, statusToCategory, type PipelineStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { SolicitacaoCardProps } from "./types";
 
