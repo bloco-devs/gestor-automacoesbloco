@@ -25,9 +25,11 @@ type SolicitacaoRow = {
   complexidade_dev: number | null;
   data_inicio_prevista: string | null;
   data_fim_prevista: string | null;
+  avaliado_por: string | null;
+  avaliado_em: string | null;
 };
 
-const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista";
+const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em";
 
 const SOLUCAO_COLS = "id,solicitacao_id,titulo,descricao,link,created_at,created_by,data_inicio_prevista,data_fim_prevista";
 
