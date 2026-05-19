@@ -192,6 +192,15 @@ export default function SolicitacaoDetail() {
     setEditSetor(solicitacao.setor ?? "");
   }, [solicitacao]);
 
+  useEffect(() => {
+    if (!solicitacao) return;
+    if (searchParams.get("focus") !== "avaliacao") return;
+    const el = document.getElementById("avaliacao-tecnica");
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    }
+  }, [solicitacao, searchParams]);
+
   const [avaliadorNome, setAvaliadorNome] = useState<string | null>(null);
   useEffect(() => {
     const uid = solicitacao?.avaliadoPor;
@@ -770,7 +779,7 @@ export default function SolicitacaoDetail() {
       )}
 
       {(isDev || isOwner) && (
-        <Card className="surface-1">
+        <Card id="avaliacao-tecnica" className="surface-1 scroll-mt-24">
           <CardContent className="py-3 text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
             {solicitacao.avaliadoPor && solicitacao.avaliadoEm ? (
               <>

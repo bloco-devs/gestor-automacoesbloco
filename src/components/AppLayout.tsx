@@ -22,6 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificacoesBell } from "@/components/NotificacoesBell";
 import { cn } from "@/lib/utils";
 import { countPendingDevEvaluations } from "@/lib/supabaseData";
 import { supabase } from "@/integrations/supabase/client";
@@ -274,6 +275,7 @@ export default function AppLayout() {
               <LogOut className="size-4 shrink-0" />
               <span className="truncate">Sair</span>
             </Button>
+            <NotificacoesBell />
             <ThemeToggle />
           </div>
         </div>
@@ -326,6 +328,7 @@ export default function AppLayout() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <NotificacoesBell />
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/auth"); }}>
               <LogOut className="size-4" />
