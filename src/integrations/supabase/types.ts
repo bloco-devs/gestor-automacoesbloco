@@ -304,6 +304,8 @@ export type Database = {
       }
       solicitacoes: {
         Row: {
+          avaliado_em: string | null
+          avaliado_por: string | null
           complexidade: number
           complexidade_dev: number | null
           created_at: string
@@ -330,6 +332,8 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          avaliado_em?: string | null
+          avaliado_por?: string | null
           complexidade?: number
           complexidade_dev?: number | null
           created_at?: string
@@ -356,6 +360,8 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          avaliado_em?: string | null
+          avaliado_por?: string | null
           complexidade?: number
           complexidade_dev?: number | null
           created_at?: string
