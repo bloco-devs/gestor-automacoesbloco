@@ -231,14 +231,18 @@ export default function AppLayout() {
           </div>
         </div>
         <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-          {nav.map((item) => (
-            <SidebarNavItem
-              key={item.label}
-              item={item}
-              isDeveloper={isDeveloper}
-              pendingEvalCount={pendingEvalCount}
-            />
-          ))}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={navOrder} strategy={verticalListSortingStrategy}>
+              {orderedNav.map((item) => (
+                <SortableSidebarNavItem
+                  key={item.label}
+                  item={item}
+                  isDeveloper={isDeveloper}
+                  pendingEvalCount={pendingEvalCount}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </nav>
         <div className="p-3 border-t border-sidebar-border">
           <div className="px-2 py-1.5 mb-2 min-w-0">
