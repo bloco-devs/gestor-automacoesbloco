@@ -25,10 +25,12 @@ export function useNotificacoes() {
     refresh();
   }, [refresh]);
 
+  const channelIdRef = useRef<string>(`notificacoes-${crypto.randomUUID()}`);
+
   useEffect(() => {
     if (!user?.id) return;
     const channel = supabase
-      .channel(`notificacoes-${user.id}`)
+      .channel(channelIdRef.current)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notificacoes", filter: `user_id=eq.${user.id}` },
