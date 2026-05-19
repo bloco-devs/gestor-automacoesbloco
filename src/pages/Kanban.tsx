@@ -14,7 +14,7 @@ import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { listSolicitacoes, updateSolicitacao } from "@/lib/supabaseData";
 import {
   STATUS_LABEL,
-  FREQUENCIA_LABEL,
+  freqLabel,
   type PipelineStatus,
   type Solicitacao,
 } from "@/lib/types";
