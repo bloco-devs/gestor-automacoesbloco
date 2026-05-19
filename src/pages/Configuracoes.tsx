@@ -102,6 +102,38 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
   const [saving, setSaving] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Account | null>(null);
   const [busyEmail, setBusyEmail] = useState<string | null>(null);
+  const [editingEmail, setEditingEmail] = useState<string | null>(null);
+  const [editingNome, setEditingNome] = useState("");
+
+  async function handleSaveNome(account: Account) {
+    const nome = editingNome.trim();
+    if (nome.length > 100) {
+      toast({ title: "Nome muito longo", description: "Máximo de 100 caracteres.", variant: "destructive" });
+      return;
+    }
+    setBusyEmail(account.email);
+    const { error: aeErr } = await supabase
+      .from("allowed_emails")
+      .update({ nome: nome || null })
+      .eq("email", account.email);
+    let profErr: { message: string } | null = null;
+    if (!aeErr && account.user_id) {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ nome: nome || "" })
+        .eq("id", account.user_id);
+      profErr = error;
+    }
+    setBusyEmail(null);
+    const err = aeErr || profErr;
+    if (err) {
+      toast({ title: "Erro ao salvar nome", description: err.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Nome atualizado", description: account.email });
+    setEditingEmail(null);
+    refresh();
+  }
 
   const refresh = useCallback(async () => {
     setLoading(true);
