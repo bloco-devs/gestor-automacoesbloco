@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Solucao } from "@/lib/types";
-import { FREQUENCIA_LABEL, PIPELINE_ORDER, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus } from "@/lib/types";
+import { freqLabel, PIPELINE_ORDER, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus } from "@/lib/types";
 import { useSetoresNomes } from "@/hooks/useSetores";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -426,19 +426,10 @@ export default function SolicitacaoDetail() {
                   <Label htmlFor="edit-softwares">Softwares envolvidos</Label>
                   <Input id="edit-softwares" value={editSoftwares} onChange={(e) => setEditSoftwares(e.target.value)} />
                 </div>
-                <div>
-                  <Label>Frequência</Label>
-                  <Select value={String(editFrequencia)} onValueChange={(v) => setEditFrequencia(Number(v) as Frequencia)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {([4, 3, 2, 1] as Frequencia[]).map((f) => (
-                        <SelectItem key={f} value={String(f)}>{FREQUENCIA_LABEL[f]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <SliderField label="Frequência" value={editFrequencia} onChange={(n) => setEditFrequencia(n as Frequencia)} />
                 <SliderField label="Complexidade" value={editComplexidade} onChange={setEditComplexidade} />
                 <SliderField label="Retorno financeiro" value={editRetorno} onChange={setEditRetorno} />
+
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button onClick={handleSaveOwn}><Save className="size-4" /> Salvar alterações</Button>
                   <Button variant="outline" onClick={() => {
@@ -452,9 +443,10 @@ export default function SolicitacaoDetail() {
                 <p className="text-sm whitespace-pre-wrap">{solicitacao.descricao}</p>
                 <dl className="grid grid-cols-2 gap-3 text-sm pt-3 border-t border-border">
                   <div><dt className="text-xs text-muted-foreground">Status</dt><dd>{STATUS_LABEL[statusToCategory(solicitacao.status)]}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Frequência</dt><dd>{FREQUENCIA_LABEL[solicitacao.frequencia]}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Complexidade</dt><dd>{solicitacao.complexidade}/5</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Retorno financeiro</dt><dd>{solicitacao.retorno}/5</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Frequência</dt><dd>{freqLabel(solicitacao.frequencia)}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Complexidade</dt><dd>{solicitacao.complexidade}/10</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Retorno financeiro</dt><dd>{solicitacao.retorno}/10</dd></div>
+
                   {solicitacao.setor && <div><dt className="text-xs text-muted-foreground">Setor</dt><dd>{solicitacao.setor}</dd></div>}
                 </dl>
               </>
@@ -806,9 +798,10 @@ function SliderField({ label, value, onChange }: { label: string; value: number;
     <div>
       <div className="flex items-center justify-between mb-2">
         <Label>{label}</Label>
-        <span className="text-sm tabular-nums text-accent font-medium">{value}/5</span>
+        <span className="text-sm tabular-nums text-accent font-medium">{value}/10</span>
       </div>
-      <Slider min={1} max={5} step={1} value={[value]} onValueChange={(v) => onChange(v[0])} />
+      <Slider min={0} max={10} step={1} value={[value]} onValueChange={(v) => onChange(v[0])} />
+
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
-import { FREQUENCIA_LABEL, statusToCategory, type PipelineStatus } from "@/lib/types";
+import { freqLabel, statusToCategory, type PipelineStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { SolicitacaoCardProps } from "./types";
 
@@ -42,9 +42,9 @@ export function CardDestaqueLateral({ solicitacao: s, onOpen, onAbrirChamado, ed
           </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs">Freq.: <span className="font-medium text-foreground">{FREQUENCIA_LABEL[s.frequencia]}</span></span>
-          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs">Complex.: <span className="font-medium text-foreground">{s.complexidade}/5</span></span>
-          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs">Retorno: <span className="font-medium text-foreground">{s.retorno}/5</span></span>
+          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs">Freq.: <span className="font-medium text-foreground">{freqLabel(s.frequencia)}</span></span>
+          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs">Complex.: <span className="font-medium text-foreground">{s.complexidade}/10</span></span>
+          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs">Retorno: <span className="font-medium text-foreground">{s.retorno}/10</span></span>
         </div>
         <StatusTimeline current={s.status} compact />
         <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
