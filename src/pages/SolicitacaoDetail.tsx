@@ -10,7 +10,6 @@ import {
   deleteSolicitacao,
   deleteSolucao,
   getSolicitacao,
-  listScoreHistory,
   listSolucoesBySolicitacao,
   updateOwnSolicitacao,
   updateSolicitacao,
