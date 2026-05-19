@@ -798,9 +798,10 @@ function SliderField({ label, value, onChange }: { label: string; value: number;
     <div>
       <div className="flex items-center justify-between mb-2">
         <Label>{label}</Label>
-        <span className="text-sm tabular-nums text-accent font-medium">{value}/5</span>
+        <span className="text-sm tabular-nums text-accent font-medium">{value}/10</span>
       </div>
-      <Slider min={1} max={5} step={1} value={[value]} onValueChange={(v) => onChange(v[0])} />
+      <Slider min={0} max={10} step={1} value={[value]} onValueChange={(v) => onChange(v[0])} />
+
     </div>
   );
 }
