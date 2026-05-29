@@ -17,12 +17,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { useSetoresRows } from "@/hooks/useSetores";
 import { createSetor, deleteSetor } from "@/lib/setores";
 
 export default function Departamentos() {
   const { rows, refresh } = useSetoresRows();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canManage = user?.role !== "requester";
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
   const [saving, setSaving] = useState(false);
