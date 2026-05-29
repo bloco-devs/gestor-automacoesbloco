@@ -508,14 +508,14 @@ export type Database = {
             foreignKeyName: "solucao_diagrama_conexoes_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
-            referencedRelation: "solucoes"
+            referencedRelation: "demanda_solucoes"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "solucao_diagrama_conexoes_target_id_fkey"
             columns: ["target_id"]
             isOneToOne: false
-            referencedRelation: "solucoes"
+            referencedRelation: "demanda_solucoes"
             referencedColumns: ["id"]
           },
         ]
@@ -547,7 +547,7 @@ export type Database = {
             foreignKeyName: "solucao_diagrama_posicoes_solucao_id_fkey"
             columns: ["solucao_id"]
             isOneToOne: true
-            referencedRelation: "solucoes"
+            referencedRelation: "demanda_solucoes"
             referencedColumns: ["id"]
           },
         ]
