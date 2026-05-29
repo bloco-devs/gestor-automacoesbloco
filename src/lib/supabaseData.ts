@@ -467,6 +467,16 @@ export async function listDevelopers(): Promise<Developer[]> {
   }));
 }
 
+export async function listAssignableUsers(): Promise<AssignableUser[]> {
+  const { data, error } = await supabase.rpc("list_assignable_users" as never);
+  if (error) throw error;
+  return ((data ?? []) as Array<{ id: string; nome: string; email: string; role: string }>).map((r) => ({
+    id: r.id,
+    nome: r.nome,
+    email: r.email,
+    role: r.role as AssignableRole,
+  }));
+
 // ===== Solucao Tasks =====
 
 import type { SolucaoTask } from "@/lib/types";
