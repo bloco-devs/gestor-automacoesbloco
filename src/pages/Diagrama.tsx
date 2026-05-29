@@ -276,13 +276,33 @@ function DiagramaInner() {
 
   return (
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
-      <div className="px-4 md:px-8 py-3 border-b border-border bg-background">
-        <h1 className="text-xl md:text-2xl font-brand font-bold">Diagrama de Soluções</h1>
-        <p className="text-xs text-muted-foreground">
-          Arraste para reposicionar. Conecte os pontos das laterais para criar relações. Selecione uma aresta e
-          pressione Delete para removê-la. Duplo clique em um nó abre a Solução.
-        </p>
+      <div className="px-4 md:px-8 py-3 border-b border-border bg-background flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-xl md:text-2xl font-brand font-bold">Diagrama de Soluções</h1>
+          <p className="text-xs text-muted-foreground">
+            Arraste para reposicionar. Conecte os pontos das laterais para criar relações. Selecione uma aresta e
+            pressione Delete para removê-la. Duplo clique em um nó abre a Solução.
+          </p>
+        </div>
+        <div className="inline-flex rounded-md border border-border bg-card p-0.5 text-xs shrink-0">
+          {(Object.keys(VARIANT_LABEL) as NodeVariant[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setVariant(v)}
+              className={
+                "px-2.5 py-1 rounded transition-colors " +
+                (variant === v
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {VARIANT_LABEL[v]}
+            </button>
+          ))}
+        </div>
       </div>
+
       <div className="w-full h-[calc(100%-4rem)]">
         {loading ? (
           <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
