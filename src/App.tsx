@@ -31,6 +31,7 @@ import SolucoesGantt from "./pages/SolucoesGantt";
 import SolicitacaoDetail from "./pages/SolicitacaoDetail";
 import SolucaoDetail from "./pages/SolucaoDetail";
 import Configuracoes from "./pages/Configuracoes";
+import Diagrama from "./pages/Diagrama";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
