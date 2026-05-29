@@ -67,7 +67,77 @@ function SolucaoNode({ data }: NodeProps) {
   );
 }
 
-const nodeTypes = { solucao: SolucaoNode };
+/** Variante "Compacta": pílula minimalista com apenas título. */
+function SolucaoNodeCompact({ data }: NodeProps) {
+  const d = data as unknown as SolucaoNodeData;
+  return (
+    <div
+      className="group inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-sm hover:border-primary hover:shadow-md transition-all max-w-[200px] cursor-pointer"
+      onDoubleClick={d.onOpen}
+    >
+      <Handle type="target" position={Position.Left} className="!bg-primary !w-2 !h-2" />
+      <span className="size-2 rounded-full bg-primary shrink-0" />
+      <span className="text-xs font-medium truncate" title={d.titulo}>
+        {d.titulo}
+      </span>
+      <Handle type="source" position={Position.Right} className="!bg-primary !w-2 !h-2" />
+    </div>
+  );
+}
+
+/** Variante "Detalhada": card com faixa lateral, ícone destacado e CTA. */
+function SolucaoNodeDetailed({ data }: NodeProps) {
+  const d = data as unknown as SolucaoNodeData;
+  return (
+    <Card
+      className="min-w-[220px] max-w-[280px] overflow-hidden border-2 border-border bg-card hover:border-primary transition-colors cursor-pointer shadow-md"
+      onDoubleClick={d.onOpen}
+    >
+      <Handle type="target" position={Position.Left} className="!bg-primary !w-2.5 !h-2.5" />
+      <div className="flex">
+        <div className="w-1.5 bg-primary shrink-0" />
+        <div className="flex-1 p-3">
+          <div className="flex items-start gap-2">
+            <div className="rounded-md bg-primary/10 p-1.5 shrink-0">
+              <Workflow className="size-4 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold leading-tight line-clamp-2" title={d.titulo}>
+                {d.titulo}
+              </div>
+              {d.solicitacaoTitulo && (
+                <div
+                  className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1 truncate"
+                  title={d.solicitacaoTitulo}
+                >
+                  {d.solicitacaoTitulo}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="mt-2 pt-2 border-t border-border flex items-center justify-between text-[10px] text-muted-foreground">
+            <span>Solução</span>
+            <span className="text-primary font-medium">Abrir →</span>
+          </div>
+        </div>
+      </div>
+      <Handle type="source" position={Position.Right} className="!bg-primary !w-2.5 !h-2.5" />
+    </Card>
+  );
+}
+
+const nodeTypes = {
+  solucao: SolucaoNode,
+  solucaoCompact: SolucaoNodeCompact,
+  solucaoDetailed: SolucaoNodeDetailed,
+};
+
+type NodeVariant = "solucao" | "solucaoCompact" | "solucaoDetailed";
+const VARIANT_LABEL: Record<NodeVariant, string> = {
+  solucao: "Padrão",
+  solucaoCompact: "Compacta",
+  solucaoDetailed: "Detalhada",
+};
 
 function DiagramaInner() {
   const { user } = useAuth();
@@ -75,17 +145,24 @@ function DiagramaInner() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [variant, setVariant] = useState<NodeVariant>("solucao");
+  const variantRef = useRef<NodeVariant>("solucao");
   const positionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const buildNodes = useCallback(
-    (solucoes: Solucao[], solicitacoes: Solicitacao[], posMap: Map<string, { x: number; y: number }>) => {
+    (
+      solucoes: Solucao[],
+      solicitacoes: Solicitacao[],
+      posMap: Map<string, { x: number; y: number }>,
+      v: NodeVariant,
+    ) => {
       const solById = new Map(solicitacoes.map((s) => [s.id, s.titulo]));
       const cols = 4;
       return solucoes.map<Node>((s, i) => {
         const pos = posMap.get(s.id);
         return {
           id: s.id,
-          type: "solucao",
+          type: v,
           position: pos ?? { x: (i % cols) * 280, y: Math.floor(i / cols) * 140 },
           data: {
             titulo: s.titulo,
@@ -97,6 +174,13 @@ function DiagramaInner() {
     },
     [navigate],
   );
+
+  // Quando o usuário troca a variante, atualiza o tipo de cada nó preservando posição.
+  useEffect(() => {
+    variantRef.current = variant;
+    setNodes((nds) => nds.map((n) => ({ ...n, type: variant })));
+  }, [variant]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -110,7 +194,7 @@ function DiagramaInner() {
         ]);
         if (cancelled) return;
         const posMap = new Map(posicoes.map((p) => [p.solucaoId, { x: p.x, y: p.y }]));
-        setNodes(buildNodes(solucoes, solicitacoes, posMap));
+        setNodes(buildNodes(solucoes, solicitacoes, posMap, variantRef.current));
         const validIds = new Set(solucoes.map((s) => s.id));
         setEdges(
           conexoes
@@ -192,13 +276,33 @@ function DiagramaInner() {
 
   return (
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
-      <div className="px-4 md:px-8 py-3 border-b border-border bg-background">
-        <h1 className="text-xl md:text-2xl font-brand font-bold">Diagrama de Soluções</h1>
-        <p className="text-xs text-muted-foreground">
-          Arraste para reposicionar. Conecte os pontos das laterais para criar relações. Selecione uma aresta e
-          pressione Delete para removê-la. Duplo clique em um nó abre a Solução.
-        </p>
+      <div className="px-4 md:px-8 py-3 border-b border-border bg-background flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-xl md:text-2xl font-brand font-bold">Diagrama de Soluções</h1>
+          <p className="text-xs text-muted-foreground">
+            Arraste para reposicionar. Conecte os pontos das laterais para criar relações. Selecione uma aresta e
+            pressione Delete para removê-la. Duplo clique em um nó abre a Solução.
+          </p>
+        </div>
+        <div className="inline-flex rounded-md border border-border bg-card p-0.5 text-xs shrink-0">
+          {(Object.keys(VARIANT_LABEL) as NodeVariant[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setVariant(v)}
+              className={
+                "px-2.5 py-1 rounded transition-colors " +
+                (variant === v
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {VARIANT_LABEL[v]}
+            </button>
+          ))}
+        </div>
       </div>
+
       <div className="w-full h-[calc(100%-4rem)]">
         {loading ? (
           <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
