@@ -192,7 +192,7 @@ function DiagramaInner() {
         ]);
         if (cancelled) return;
         const posMap = new Map(posicoes.map((p) => [p.solucaoId, { x: p.x, y: p.y }]));
-        setNodes(buildNodes(solucoes, solicitacoes, posMap, variant));
+        setNodes(buildNodes(solucoes, solicitacoes, posMap, variantRef.current));
         const validIds = new Set(solucoes.map((s) => s.id));
         setEdges(
           conexoes
