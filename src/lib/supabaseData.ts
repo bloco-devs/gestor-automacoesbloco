@@ -31,7 +31,7 @@ type SolicitacaoRow = {
 
 const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em";
 
-const SOLUCAO_COLS = "id,solicitacao_id,titulo,descricao,link,created_at,created_by,data_inicio_prevista,data_fim_prevista";
+const SOLUCAO_COLS = "id,solicitacao_id,titulo,descricao,link,created_at,created_by,data_inicio_prevista,data_fim_prevista,responsavel_id";
 
 function asFrequencia(value: number): Frequencia {
   // Aceita escala legada (1-4) e a nova (0-10). O backfill no Prompt 4
