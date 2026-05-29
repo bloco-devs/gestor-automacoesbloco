@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Trash2, Plus } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
-import { createTask, deleteTask, listDevelopers, listTasks, updateTask } from "@/lib/supabaseData";
+import { createTask, deleteTask, listAssignableUsers, listTasks, updateTask } from "@/lib/supabaseData";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ export function TasksChecklist({ solicitacaoId }: { solicitacaoId: string }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const remoteTasks = useSupabaseData(() => listTasks(solicitacaoId), [] as Task[], [solicitacaoId]);
-  const devs = useSupabaseData(() => listDevelopers(), []);
+  const devs = useSupabaseData(() => listAssignableUsers(), []);
   const [tasks, setTasks] = useState<Task[]>(remoteTasks);
   const [novoTitulo, setNovoTitulo] = useState("");
 

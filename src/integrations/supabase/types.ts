@@ -156,6 +156,7 @@ export type Database = {
           descricao: string
           id: string
           link: string | null
+          responsavel_id: string | null
           solicitacao_id: string | null
           titulo: string
         }
@@ -167,6 +168,7 @@ export type Database = {
           descricao?: string
           id?: string
           link?: string | null
+          responsavel_id?: string | null
           solicitacao_id?: string | null
           titulo: string
         }
@@ -178,6 +180,7 @@ export type Database = {
           descricao?: string
           id?: string
           link?: string | null
+          responsavel_id?: string | null
           solicitacao_id?: string | null
           titulo?: string
         }
@@ -729,6 +732,15 @@ export type Database = {
         Returns: boolean
       }
       is_allowed_user: { Args: never; Returns: boolean }
+      list_assignable_users: {
+        Args: never
+        Returns: {
+          email: string
+          id: string
+          nome: string
+          role: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"

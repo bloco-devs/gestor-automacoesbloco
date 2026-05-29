@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { calcScore } from "@/lib/score";
 import { computeScoreFinal, computeScoreSolicitante } from "@/lib/scoreV2";
-import type { Frequencia, Melhoria, MelhoriaStatus, PipelineStatus, Solicitacao, Solucao } from "@/lib/types";
+import type { AssignableUser, AssignableRole, Frequencia, Melhoria, MelhoriaStatus, PipelineStatus, Solicitacao, Solucao } from "@/lib/types";
 
 type SolicitacaoRow = {
   id: string;
@@ -31,7 +31,7 @@ type SolicitacaoRow = {
 
 const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em";
 
-const SOLUCAO_COLS = "id,solicitacao_id,titulo,descricao,link,created_at,created_by,data_inicio_prevista,data_fim_prevista";
+const SOLUCAO_COLS = "id,solicitacao_id,titulo,descricao,link,created_at,created_by,data_inicio_prevista,data_fim_prevista,responsavel_id";
 
 function asFrequencia(value: number): Frequencia {
   // Aceita escala legada (1-4) e a nova (0-10). O backfill no Prompt 4
@@ -80,7 +80,7 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
   };
 }
 
-function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; link: string | null; created_at: string; created_by?: string | null; data_inicio_prevista?: string | null; data_fim_prevista?: string | null }): Solucao {
+function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; link: string | null; created_at: string; created_by?: string | null; data_inicio_prevista?: string | null; data_fim_prevista?: string | null; responsavel_id?: string | null }): Solucao {
   return {
     id: row.id,
     solicitacaoId: row.solicitacao_id,
@@ -89,6 +89,7 @@ function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: st
     link: row.link ?? undefined,
     dataInicioPrevista: row.data_inicio_prevista ?? null,
     dataFimPrevista: row.data_fim_prevista ?? null,
+    responsavelId: row.responsavel_id ?? null,
     createdBy: row.created_by ?? null,
     createdAt: row.created_at,
   };
@@ -341,13 +342,14 @@ export async function createSolucao(data: { solicitacaoId?: string | null; titul
   if (error) throw error;
 }
 
-export async function updateSolucao(id: string, patch: { titulo?: string; descricao?: string; link?: string | null; dataInicioPrevista?: string | null; dataFimPrevista?: string | null }): Promise<void> {
+export async function updateSolucao(id: string, patch: { titulo?: string; descricao?: string; link?: string | null; dataInicioPrevista?: string | null; dataFimPrevista?: string | null; responsavelId?: string | null }): Promise<void> {
   const payload: Record<string, unknown> = {};
   if (patch.titulo !== undefined) payload.titulo = patch.titulo;
   if (patch.descricao !== undefined) payload.descricao = patch.descricao;
   if (patch.link !== undefined) payload.link = patch.link;
   if (patch.dataInicioPrevista !== undefined) payload.data_inicio_prevista = patch.dataInicioPrevista;
   if (patch.dataFimPrevista !== undefined) payload.data_fim_prevista = patch.dataFimPrevista;
+  if (patch.responsavelId !== undefined) payload.responsavel_id = patch.responsavelId;
   const { error } = await supabase.from("demanda_solucoes").update(payload as never).eq("id", id);
   if (error) throw error;
 }
@@ -464,6 +466,19 @@ export async function listDevelopers(): Promise<Developer[]> {
     email: r.email,
   }));
 }
+
+export async function listAssignableUsers(): Promise<AssignableUser[]> {
+  const { data, error } = await supabase.rpc("list_assignable_users" as never);
+  if (error) throw error;
+  return ((data ?? []) as Array<{ id: string; nome: string; email: string; role: string }>).map((r) => ({
+    id: r.id,
+    nome: r.nome,
+    email: r.email,
+    role: r.role as AssignableRole,
+  }));
+}
+
+
 
 // ===== Solucao Tasks =====
 

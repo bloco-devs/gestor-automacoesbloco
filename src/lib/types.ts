@@ -120,9 +120,21 @@ export interface Solucao {
   dataInicioPrevista?: string | null;
   /** Data planejada de fim (ISO date YYYY-MM-DD). Usada na visão Gantt. */
   dataFimPrevista?: string | null;
+  /** Usuário (developer, administrador ou builder) responsável principal pela solução. */
+  responsavelId?: string | null;
   createdBy?: string | null;
   createdAt: string;
 }
+
+export type AssignableRole = "developer" | "administrador" | "builder";
+
+export interface AssignableUser {
+  id: string;
+  nome: string;
+  email: string;
+  role: AssignableRole;
+}
+
 
 export type IntegracaoTipo = "consome" | "alimenta" | "bidirecional";
 
