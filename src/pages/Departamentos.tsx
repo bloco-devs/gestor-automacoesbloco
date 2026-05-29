@@ -17,12 +17,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { useSetoresRows } from "@/hooks/useSetores";
 import { createSetor, deleteSetor } from "@/lib/setores";
 
 export default function Departamentos() {
   const { rows, refresh } = useSetoresRows();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canManage = user?.role !== "requester";
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
   const [saving, setSaving] = useState(false);
@@ -79,40 +82,42 @@ export default function Departamentos() {
         </p>
       </div>
 
-      <Card className="surface-1">
-        <CardHeader>
-          <CardTitle className="text-base">Novo departamento</CardTitle>
-          <CardDescription>O nome aparecerá nos formulários e filtros.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAdd} className="space-y-4">
-            <div>
-              <Label htmlFor="setor-nome">Nome</Label>
-              <Input
-                id="setor-nome"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Ex.: Suprimentos"
-                maxLength={80}
-              />
-            </div>
-            <div>
-              <Label htmlFor="setor-desc">Descrição (opcional)</Label>
-              <Textarea
-                id="setor-desc"
-                rows={2}
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
-                maxLength={300}
-              />
-            </div>
-            <Button type="submit" disabled={saving}>
-              {saving ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-              Adicionar
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {canManage && (
+        <Card className="surface-1">
+          <CardHeader>
+            <CardTitle className="text-base">Novo departamento</CardTitle>
+            <CardDescription>O nome aparecerá nos formulários e filtros.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAdd} className="space-y-4">
+              <div>
+                <Label htmlFor="setor-nome">Nome</Label>
+                <Input
+                  id="setor-nome"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  placeholder="Ex.: Suprimentos"
+                  maxLength={80}
+                />
+              </div>
+              <div>
+                <Label htmlFor="setor-desc">Descrição (opcional)</Label>
+                <Textarea
+                  id="setor-desc"
+                  rows={2}
+                  value={descricao}
+                  onChange={(e) => setDescricao(e.target.value)}
+                  maxLength={300}
+                />
+              </div>
+              <Button type="submit" disabled={saving}>
+                {saving ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+                Adicionar
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="surface-1">
         <CardHeader>
