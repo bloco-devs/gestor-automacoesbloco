@@ -476,6 +476,9 @@ export async function listAssignableUsers(): Promise<AssignableUser[]> {
     email: r.email,
     role: r.role as AssignableRole,
   }));
+}
+
+
 
 // ===== Solucao Tasks =====
 
