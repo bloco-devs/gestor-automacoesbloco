@@ -4,7 +4,7 @@ import { useSupabaseData } from "@/hooks/useSupabaseData";
 import {
   createSolucaoTask,
   deleteSolucaoTask,
-  listDevelopers,
+  listAssignableUsers,
   listSolucaoTasks,
   updateSolucaoTask,
 } from "@/lib/supabaseData";
