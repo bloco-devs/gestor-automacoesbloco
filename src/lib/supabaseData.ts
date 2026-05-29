@@ -342,13 +342,14 @@ export async function createSolucao(data: { solicitacaoId?: string | null; titul
   if (error) throw error;
 }
 
-export async function updateSolucao(id: string, patch: { titulo?: string; descricao?: string; link?: string | null; dataInicioPrevista?: string | null; dataFimPrevista?: string | null }): Promise<void> {
+export async function updateSolucao(id: string, patch: { titulo?: string; descricao?: string; link?: string | null; dataInicioPrevista?: string | null; dataFimPrevista?: string | null; responsavelId?: string | null }): Promise<void> {
   const payload: Record<string, unknown> = {};
   if (patch.titulo !== undefined) payload.titulo = patch.titulo;
   if (patch.descricao !== undefined) payload.descricao = patch.descricao;
   if (patch.link !== undefined) payload.link = patch.link;
   if (patch.dataInicioPrevista !== undefined) payload.data_inicio_prevista = patch.dataInicioPrevista;
   if (patch.dataFimPrevista !== undefined) payload.data_fim_prevista = patch.dataFimPrevista;
+  if (patch.responsavelId !== undefined) payload.responsavel_id = patch.responsavelId;
   const { error } = await supabase.from("demanda_solucoes").update(payload as never).eq("id", id);
   if (error) throw error;
 }
