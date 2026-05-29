@@ -46,7 +46,7 @@ export function SolucaoTasksChecklist({ solucaoId }: { solucaoId: string }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const remoteTasks = useSupabaseData(() => listSolucaoTasks(solucaoId), [] as SolucaoTask[], [solucaoId]);
-  const devs = useSupabaseData(() => listDevelopers(), []);
+  const devs = useSupabaseData(() => listAssignableUsers(), []);
   const [tasks, setTasks] = useState<SolucaoTask[]>(remoteTasks);
   const [adding, setAdding] = useState(false);
   const [novoTitulo, setNovoTitulo] = useState("");
