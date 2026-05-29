@@ -82,8 +82,6 @@ export default function Departamentos() {
         </p>
       </div>
 
-      <Card className="surface-1">
-        <CardHeader>
       {canManage && (
         <Card className="surface-1">
           <CardHeader>
