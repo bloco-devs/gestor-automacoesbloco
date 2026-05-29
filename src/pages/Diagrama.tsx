@@ -177,6 +177,7 @@ function DiagramaInner() {
 
   // Quando o usuário troca a variante, atualiza o tipo de cada nó preservando posição.
   useEffect(() => {
+    variantRef.current = variant;
     setNodes((nds) => nds.map((n) => ({ ...n, type: variant })));
   }, [variant]);
 
