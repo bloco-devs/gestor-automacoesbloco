@@ -44,79 +44,48 @@ function SolucaoNode({ data }: NodeProps) {
   const d = data as unknown as SolucaoNodeData;
   return (
     <Card
-      className="min-w-[180px] max-w-[240px] px-3 py-2 border-2 border-border bg-card hover:border-primary/60 transition-colors cursor-pointer shadow-sm"
-      onDoubleClick={d.onOpen}
-    >
-      <Handle type="target" position={Position.Left} className="!bg-primary !w-2 !h-2" />
-      <div className="flex items-center gap-2">
-        <Workflow className="size-4 text-primary shrink-0" />
-        <div className="text-sm font-medium truncate flex-1" title={d.titulo}>
-          {d.titulo}
-        </div>
-      </div>
-      {d.solicitacaoTitulo && (
-        <div
-          className="text-[11px] text-muted-foreground truncate mt-1"
-          title={d.solicitacaoTitulo}
-        >
-          {d.solicitacaoTitulo}
-        </div>
-      )}
-      <Handle type="source" position={Position.Right} className="!bg-primary !w-2 !h-2" />
-    </Card>
-  );
-}
-
-/** Variante "Compacta": pílula minimalista com apenas título. */
-function SolucaoNodeCompact({ data }: NodeProps) {
-  const d = data as unknown as SolucaoNodeData;
-  return (
-    <div
-      className="group inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-sm hover:border-primary hover:shadow-md transition-all max-w-[200px] cursor-pointer"
-      onDoubleClick={d.onOpen}
-    >
-      <Handle type="target" position={Position.Left} className="!bg-primary !w-2 !h-2" />
-      <span className="size-2 rounded-full bg-primary shrink-0" />
-      <span className="text-xs font-medium truncate" title={d.titulo}>
-        {d.titulo}
-      </span>
-      <Handle type="source" position={Position.Right} className="!bg-primary !w-2 !h-2" />
-    </div>
-  );
-}
-
-/** Variante "Detalhada": card com faixa lateral, ícone destacado e CTA. */
-function SolucaoNodeDetailed({ data }: NodeProps) {
-  const d = data as unknown as SolucaoNodeData;
-  return (
-    <Card
-      className="min-w-[220px] max-w-[280px] overflow-hidden border-2 border-border bg-card hover:border-primary transition-colors cursor-pointer shadow-md"
+      className="w-[240px] overflow-hidden border-2 border-border bg-card hover:border-primary transition-colors cursor-pointer shadow-md"
       onDoubleClick={d.onOpen}
     >
       <Handle type="target" position={Position.Left} className="!bg-primary !w-2.5 !h-2.5" />
       <div className="flex">
         <div className="w-1.5 bg-primary shrink-0" />
-        <div className="flex-1 p-3">
-          <div className="flex items-start gap-2">
-            <div className="rounded-md bg-primary/10 p-1.5 shrink-0">
-              <Workflow className="size-4 text-primary" />
+        <div className="flex-1 flex flex-col">
+          {/* Cabeçalho com ícone destacado */}
+          <div className="flex flex-col items-center text-center px-4 pt-4 pb-3 border-b border-border bg-muted/30">
+            <div className="rounded-lg bg-primary/10 p-2.5 mb-2">
+              <Workflow className="size-6 text-primary" />
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold leading-tight line-clamp-2" title={d.titulo}>
-                {d.titulo}
-              </div>
-              {d.solicitacaoTitulo && (
+            <div
+              className="text-sm font-semibold leading-tight line-clamp-2 w-full"
+              title={d.titulo}
+            >
+              {d.titulo}
+            </div>
+          </div>
+
+          {/* Corpo */}
+          <div className="px-4 py-3 flex-1 flex flex-col gap-2 min-h-[80px]">
+            {d.solicitacaoTitulo ? (
+              <div>
+                <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium mb-0.5">
+                  Solicitação
+                </div>
                 <div
-                  className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1 truncate"
+                  className="text-xs text-foreground line-clamp-3"
                   title={d.solicitacaoTitulo}
                 >
                   {d.solicitacaoTitulo}
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="text-xs text-muted-foreground italic">Sem solicitação vinculada</div>
+            )}
           </div>
-          <div className="mt-2 pt-2 border-t border-border flex items-center justify-between text-[10px] text-muted-foreground">
-            <span>Solução</span>
+
+          {/* Rodapé */}
+          <div className="px-4 py-2 border-t border-border bg-muted/20 flex items-center justify-between text-[10px]">
+            <span className="text-muted-foreground uppercase tracking-wide">Solução</span>
             <span className="text-primary font-medium">Abrir →</span>
           </div>
         </div>
@@ -126,18 +95,8 @@ function SolucaoNodeDetailed({ data }: NodeProps) {
   );
 }
 
-const nodeTypes = {
-  solucao: SolucaoNode,
-  solucaoCompact: SolucaoNodeCompact,
-  solucaoDetailed: SolucaoNodeDetailed,
-};
+const nodeTypes = { solucao: SolucaoNode };
 
-type NodeVariant = "solucao" | "solucaoCompact" | "solucaoDetailed";
-const VARIANT_LABEL: Record<NodeVariant, string> = {
-  solucao: "Padrão",
-  solucaoCompact: "Compacta",
-  solucaoDetailed: "Detalhada",
-};
 
 function DiagramaInner() {
   const { user } = useAuth();
