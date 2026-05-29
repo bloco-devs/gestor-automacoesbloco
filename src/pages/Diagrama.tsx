@@ -104,8 +104,6 @@ function DiagramaInner() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
-  const [variant, setVariant] = useState<NodeVariant>("solucao");
-  const variantRef = useRef<NodeVariant>("solucao");
   const positionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const buildNodes = useCallback(
@@ -113,7 +111,6 @@ function DiagramaInner() {
       solucoes: Solucao[],
       solicitacoes: Solicitacao[],
       posMap: Map<string, { x: number; y: number }>,
-      v: NodeVariant,
     ) => {
       const solById = new Map(solicitacoes.map((s) => [s.id, s.titulo]));
       const cols = 4;
@@ -121,7 +118,7 @@ function DiagramaInner() {
         const pos = posMap.get(s.id);
         return {
           id: s.id,
-          type: v,
+          type: "solucao",
           position: pos ?? { x: (i % cols) * 280, y: Math.floor(i / cols) * 140 },
           data: {
             titulo: s.titulo,
@@ -134,11 +131,6 @@ function DiagramaInner() {
     [navigate],
   );
 
-  // Quando o usuário troca a variante, atualiza o tipo de cada nó preservando posição.
-  useEffect(() => {
-    variantRef.current = variant;
-    setNodes((nds) => nds.map((n) => ({ ...n, type: variant })));
-  }, [variant]);
 
 
   useEffect(() => {
