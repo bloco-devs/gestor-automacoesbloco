@@ -146,6 +146,7 @@ function DiagramaInner() {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
   const [variant, setVariant] = useState<NodeVariant>("solucao");
+  const variantRef = useRef<NodeVariant>("solucao");
   const positionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const buildNodes = useCallback(
