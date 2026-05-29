@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, GanttChartSquare, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, GanttChartSquare, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import {
   DndContext,
   DragEndEvent,
@@ -60,6 +60,7 @@ const devNav: NavItem[] = [
       { to: "/solucoes/gantt", label: "Gantt", icon: GanttChartSquare },
     ],
   },
+  { to: "/diagrama", label: "Diagrama", icon: Network },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 const requesterNav: NavItem[] = [

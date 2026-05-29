@@ -31,6 +31,7 @@ import SolucoesGantt from "./pages/SolucoesGantt";
 import SolicitacaoDetail from "./pages/SolicitacaoDetail";
 import SolucaoDetail from "./pages/SolucaoDetail";
 import Configuracoes from "./pages/Configuracoes";
+import Diagrama from "./pages/Diagrama";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="/solucoes/gantt" element={<ProtectedRoute role="developer"><SolucoesGantt /></ProtectedRoute>} />
               <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
               <Route path="/configuracoes" element={<ProtectedRoute role="developer"><Configuracoes /></ProtectedRoute>} />
+              <Route path="/diagrama" element={<ProtectedRoute role="developer"><Diagrama /></ProtectedRoute>} />
 
               
 
