@@ -60,6 +60,7 @@ const devNav: NavItem[] = [
       { to: "/solucoes/gantt", label: "Gantt", icon: GanttChartSquare },
     ],
   },
+  { to: "/diagrama", label: "Diagrama", icon: Network },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 const requesterNav: NavItem[] = [
