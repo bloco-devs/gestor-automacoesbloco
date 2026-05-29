@@ -222,7 +222,7 @@ function DiagramaInner() {
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
             <Controls />
-            <MiniMap pannable zoomable className="!bg-muted" />
+            <MiniMap pannable zoomable className="!bg-muted" style={{ width: 120, height: 80 }} />
           </ReactFlow>
         )}
       </div>
