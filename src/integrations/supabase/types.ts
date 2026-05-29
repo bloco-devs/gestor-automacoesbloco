@@ -478,6 +478,80 @@ export type Database = {
           },
         ]
       }
+      solucao_diagrama_conexoes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string | null
+          source_id: string
+          target_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string | null
+          source_id: string
+          target_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string | null
+          source_id?: string
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solucao_diagrama_conexoes_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "solucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solucao_diagrama_conexoes_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "solucoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solucao_diagrama_posicoes: {
+        Row: {
+          solucao_id: string
+          updated_at: string
+          updated_by: string | null
+          x: number
+          y: number
+        }
+        Insert: {
+          solucao_id: string
+          updated_at?: string
+          updated_by?: string | null
+          x?: number
+          y?: number
+        }
+        Update: {
+          solucao_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solucao_diagrama_posicoes_solucao_id_fkey"
+            columns: ["solucao_id"]
+            isOneToOne: true
+            referencedRelation: "solucoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solucao_tasks: {
         Row: {
           assigned_to: string | null
