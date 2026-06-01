@@ -23,10 +23,13 @@ function FlowEdgeBase({
   markerEnd,
   style,
   selected,
+  data,
 }: EdgeProps) {
+  const onLabelClick = (data as { onLabelClick?: (edgeId: string) => void } | undefined)?.onLabelClick;
   const hasReverse = useStore((s) =>
     s.edges.some((e) => e.source === target && e.target === source),
   );
+
 
   // Deterministic side: the edge whose source id is "smaller" bends one way,
   // the reverse bends the other. Magnitude scales with distance (clamped).
