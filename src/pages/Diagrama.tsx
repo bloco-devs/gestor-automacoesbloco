@@ -234,7 +234,7 @@ function DiagramaInner() {
     return () => {
       cancelled = true;
     };
-  }, [buildNodes]);
+  }, [buildNodes, openDetails]);
 
   const schedulePersistPosition = useCallback(
     (id: string, x: number, y: number) => {
