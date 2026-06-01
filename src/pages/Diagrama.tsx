@@ -46,6 +46,7 @@ import {
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Workflow } from "lucide-react";
+import { FlowEdge } from "@/components/diagrama/FlowEdge";
 
 type SolucaoNodeData = {
   titulo: string;
