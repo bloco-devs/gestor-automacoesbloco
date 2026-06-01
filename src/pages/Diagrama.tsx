@@ -277,6 +277,7 @@ function DiagramaInner() {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onEdgeDoubleClick={onEdgeDoubleClick}
             fitView
             proOptions={{ hideAttribution: true }}
             deleteKeyCode={["Delete", "Backspace"]}
