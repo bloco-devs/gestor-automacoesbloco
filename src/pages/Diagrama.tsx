@@ -590,11 +590,20 @@ function DiagramaInner() {
       img.src = dataUrl;
       await new Promise((res) => { img.onload = () => res(null); });
 
-      // Cores da marca Bloco Construções
+      // Paleta da marca Bloco Construções — adapta a light/dark mode
+      const isDark = resolvedTheme === "dark";
+      const BRAND_YELLOW = "#FFDA5B";
       const BRAND_BLACK = "#0C0C0C";
       const BRAND_SAND = "#E5E3DF";
       const BRAND_BROWN = "#8B796D";
-      const BRAND_YELLOW = "#FFDA5B";
+      // Tokens semânticos do PDF
+      const PAGE_BG = isDark ? "#0C0C0C" : BRAND_SAND;       // fundo da página
+      const BAR_BG = isDark ? BRAND_SAND : BRAND_BLACK;       // header/footer
+      const BAR_TEXT = isDark ? BRAND_BLACK : BRAND_SAND;     // texto secundário em barra
+      const BAR_TITLE = isDark ? BRAND_BLACK : BRAND_SAND;    // "CONSTRUÇÕES"
+      const BAR_ACCENT = isDark ? "#7A5A12" : BRAND_YELLOW;   // "BLOCO" + acentos (contraste sobre sand)
+      const STRIPE = BRAND_YELLOW;                            // faixa amarela mantida
+      const FRAME = isDark ? "#3A3A3A" : BRAND_BROWN;         // moldura do diagrama
 
       const pdf = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
 
