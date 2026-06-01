@@ -33,20 +33,35 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { listSolucoes, listSolicitacoes } from "@/lib/supabaseData";
 import {
   createConexao,
+  createColuna,
+  deleteColuna,
   deleteConexao,
+  listColunas,
   listConexoes,
   listPosicoes,
+  TIPOS_DADO,
+  updateColuna,
   updateConexaoLabel,
   upsertPosicao,
+  type DiagramaConexaoColuna,
 } from "@/lib/diagrama";
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { Workflow } from "lucide-react";
+import { Trash2, Plus, Workflow } from "lucide-react";
 import { FlowEdge } from "@/components/diagrama/FlowEdge";
+
 
 type SolucaoNodeData = {
   titulo: string;
