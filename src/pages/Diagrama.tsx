@@ -633,29 +633,29 @@ function DiagramaInner() {
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
 
-      // Fundo geral (areia)
-      pdf.setFillColor(BRAND_SAND);
+      // Fundo geral
+      pdf.setFillColor(PAGE_BG);
       pdf.rect(0, 0, pageW, pageH, "F");
 
       // ===== HEADER =====
       const headerH = 70;
-      pdf.setFillColor(BRAND_BLACK);
+      pdf.setFillColor(BAR_BG);
       pdf.rect(0, 0, pageW, headerH, "F");
       // faixa amarela
-      pdf.setFillColor(BRAND_YELLOW);
+      pdf.setFillColor(STRIPE);
       pdf.rect(0, headerH, pageW, 4, "F");
 
       // Logo-block tipográfico
       pdf.setFont(brandFont, "bold");
       pdf.setFontSize(22);
-      pdf.setTextColor(BRAND_YELLOW);
+      pdf.setTextColor(BAR_ACCENT);
       pdf.text("BLOCO", 32, 38);
-      pdf.setTextColor(BRAND_SAND);
+      pdf.setTextColor(BAR_TITLE);
       pdf.text("CONSTRUÇÕES", 32 + pdf.getTextWidth("BLOCO") + 8, 38);
 
       pdf.setFont(brandFont, "normal");
       pdf.setFontSize(10);
-      pdf.setTextColor(BRAND_SAND);
+      pdf.setTextColor(BAR_TEXT);
       pdf.text("Diagrama de Soluções", 32, 56);
 
       // Data alinhada à direita
@@ -664,25 +664,25 @@ function DiagramaInner() {
       });
       pdf.setFont(brandFont, "normal");
       pdf.setFontSize(9);
-      pdf.setTextColor(BRAND_SAND);
+      pdf.setTextColor(BAR_TEXT);
       const dataW = pdf.getTextWidth(dataStr);
       pdf.text(dataStr, pageW - 32 - dataW, 38);
       pdf.setFont(brandFont, "bold");
       pdf.setFontSize(8);
-      pdf.setTextColor(BRAND_YELLOW);
+      pdf.setTextColor(BAR_ACCENT);
       const lbl = "EXPORTADO EM";
       const lblW = pdf.getTextWidth(lbl);
       pdf.text(lbl, pageW - 32 - lblW, 24);
 
       // ===== FOOTER =====
       const footerH = 28;
-      pdf.setFillColor(BRAND_BLACK);
+      pdf.setFillColor(BAR_BG);
       pdf.rect(0, pageH - footerH, pageW, footerH, "F");
-      pdf.setFillColor(BRAND_YELLOW);
+      pdf.setFillColor(STRIPE);
       pdf.rect(0, pageH - footerH - 2, pageW, 2, "F");
       pdf.setFont(brandFont, "normal");
       pdf.setFontSize(8);
-      pdf.setTextColor(BRAND_SAND);
+      pdf.setTextColor(BAR_TEXT);
       pdf.text("Bloco Construções · Gestor de Automações", 32, pageH - 10);
       const pg = "Página 1 de 1";
       const pgW = pdf.getTextWidth(pg);
@@ -698,7 +698,7 @@ function DiagramaInner() {
       const areaH = bottom - top;
 
       // Moldura sutil
-      pdf.setDrawColor(BRAND_BROWN);
+      pdf.setDrawColor(FRAME);
       pdf.setLineWidth(0.6);
       pdf.roundedRect(left - 6, top - 6, areaW + 12, areaH + 12, 6, 6, "S");
 
