@@ -83,9 +83,10 @@ function StickyNoteNodeBase({ id, data, selected }: NodeProps) {
                     <button
                       key={c}
                       type="button"
-                      className={`size-5 rounded-full border border-border ${getCorClasses(c).swatch} ${
+                      className={`size-5 rounded-full border ${
                         d.cor === c ? "ring-2 ring-primary" : ""
                       }`}
+                      style={{ backgroundColor: getCorDef(c).bg, borderColor: getCorDef(c).border }}
                       onClick={() => d.onColorChange(id, c)}
                       title={c}
                     />
