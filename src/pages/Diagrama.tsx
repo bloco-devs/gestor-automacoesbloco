@@ -249,17 +249,19 @@ function DiagramaInner() {
   const onEdgeDoubleClick = useCallback<EdgeMouseHandler>((_evt, edge) => {
     if (edge.id.startsWith("tmp-")) return;
     const current = typeof edge.label === "string" ? edge.label : "";
-    const next = window.prompt(
-      "Rótulo da integração (ex.: Pedidos, NF-e, Clientes). Deixe em branco para remover.",
-      current,
-    );
-    if (next === null) return;
-    const trimmed = next.trim();
-    setEdges((eds) =>
-      eds.map((e) => (e.id === edge.id ? { ...e, label: trimmed || undefined } : e)),
-    );
-    updateConexaoLabel(edge.id, trimmed || null).catch((err) => console.error("updateConexaoLabel", err));
+    setLabelDialog({ edgeId: edge.id, value: current });
   }, []);
+
+  const handleSaveLabel = useCallback(() => {
+    if (!labelDialog) return;
+    const { edgeId, value } = labelDialog;
+    const trimmed = value.trim();
+    setEdges((eds) =>
+      eds.map((e) => (e.id === edgeId ? { ...e, label: trimmed || undefined } : e)),
+    );
+    updateConexaoLabel(edgeId, trimmed || null).catch((err) => console.error("updateConexaoLabel", err));
+    setLabelDialog(null);
+  }, [labelDialog]);
 
   return (
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
