@@ -1,18 +1,39 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Plus } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
-import { listSolicitacoes, listSolucoes } from "@/lib/supabaseData";
+import { createSolucao, listSolicitacoes, listSolucoes } from "@/lib/supabaseData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 const SEM_SOLICITACAO_KEY = "__sem__";
 
 export default function SolucoesKanban() {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const solucoes = useSupabaseData(() => listSolucoes(), []);
   const solicitacoes = useSupabaseData(() => listSolicitacoes(), []);
+
+  const [novoTitulo, setNovoTitulo] = useState("");
+  const [novoDescricao, setNovoDescricao] = useState("");
+  const [novoLink, setNovoLink] = useState("");
+  const [novoSolicitacaoId, setNovoSolicitacaoId] = useState<string>("none");
+  const [salvando, setSalvando] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   const solicitacoesMap = useMemo(() => {
     const m = new Map(solicitacoes.map((s) => [s.id, s]));
@@ -39,13 +60,91 @@ export default function SolucoesKanban() {
     return orderedKeys.map((k) => ({ key: k, items: map.get(k)! }));
   }, [solucoes, solicitacoesMap]);
 
+  const handleCriarSolucao = async () => {
+    if (!novoTitulo.trim()) {
+      toast({ title: "Informe um título", variant: "destructive" });
+      return;
+    }
+    setSalvando(true);
+    try {
+      await createSolucao({
+        titulo: novoTitulo.trim(),
+        descricao: novoDescricao.trim(),
+        link: novoLink.trim() || null,
+        createdBy: user?.id,
+        solicitacaoId: novoSolicitacaoId === "none" ? null : novoSolicitacaoId,
+      });
+      setNovoTitulo("");
+      setNovoDescricao("");
+      setNovoLink("");
+      setNovoSolicitacaoId("none");
+      setPopoverOpen(false);
+      toast({ title: "Solução cadastrada" });
+    } catch (err) {
+      toast({
+        title: "Erro ao cadastrar",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Kanban de Soluções</h1>
-        <p className="text-sm text-muted-foreground">
-          Soluções agrupadas pela solicitação que as originou.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Kanban de Soluções</h1>
+          <p className="text-sm text-muted-foreground">
+            Soluções agrupadas pela solicitação que as originou.
+          </p>
+        </div>
+        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Plus className="size-4" /> Cadastrar solução
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-80 space-y-3">
+            <div>
+              <p className="text-sm font-medium">Cadastrar solução</p>
+              <p className="text-xs text-muted-foreground">Vincule a uma solicitação existente, se desejar.</p>
+            </div>
+            <Input
+              placeholder="Título da solução"
+              value={novoTitulo}
+              onChange={(e) => setNovoTitulo(e.target.value)}
+            />
+            <Textarea
+              placeholder="Descrição (opcional)"
+              value={novoDescricao}
+              onChange={(e) => setNovoDescricao(e.target.value)}
+              rows={3}
+            />
+            <Input
+              placeholder="Link (opcional, ex: https://...)"
+              value={novoLink}
+              onChange={(e) => setNovoLink(e.target.value)}
+            />
+            <Select value={novoSolicitacaoId} onValueChange={setNovoSolicitacaoId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Vincular a uma solicitação (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem vínculo</SelectItem>
+                {solicitacoes.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.titulo}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex justify-end">
+              <Button size="sm" onClick={handleCriarSolucao} disabled={salvando}>
+                {salvando ? "Salvando..." : "Cadastrar"}
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {grouped.length === 0 ? (
