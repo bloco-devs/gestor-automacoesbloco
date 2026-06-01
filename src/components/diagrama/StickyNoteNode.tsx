@@ -58,7 +58,7 @@ function getCorClasses(cor: string) {
 
 function StickyNoteNodeBase({ id, data, selected }: NodeProps) {
   const d = data as unknown as StickyNoteData;
-  const cls = COR_CLASSES[d.cor] ?? COR_CLASSES.amarelo;
+  const cls = getCorClasses(d.cor);
   const [editing, setEditing] = useState(false);
 
   return (
