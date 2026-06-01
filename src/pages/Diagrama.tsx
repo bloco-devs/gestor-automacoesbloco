@@ -23,6 +23,16 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { listSolucoes, listSolicitacoes } from "@/lib/supabaseData";
 import {
@@ -123,6 +133,7 @@ function DiagramaInner() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [labelDialog, setLabelDialog] = useState<{ edgeId: string; value: string } | null>(null);
   const positionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const buildNodes = useCallback(
@@ -238,17 +249,19 @@ function DiagramaInner() {
   const onEdgeDoubleClick = useCallback<EdgeMouseHandler>((_evt, edge) => {
     if (edge.id.startsWith("tmp-")) return;
     const current = typeof edge.label === "string" ? edge.label : "";
-    const next = window.prompt(
-      "Rótulo da integração (ex.: Pedidos, NF-e, Clientes). Deixe em branco para remover.",
-      current,
-    );
-    if (next === null) return;
-    const trimmed = next.trim();
-    setEdges((eds) =>
-      eds.map((e) => (e.id === edge.id ? { ...e, label: trimmed || undefined } : e)),
-    );
-    updateConexaoLabel(edge.id, trimmed || null).catch((err) => console.error("updateConexaoLabel", err));
+    setLabelDialog({ edgeId: edge.id, value: current });
   }, []);
+
+  const handleSaveLabel = useCallback(() => {
+    if (!labelDialog) return;
+    const { edgeId, value } = labelDialog;
+    const trimmed = value.trim();
+    setEdges((eds) =>
+      eds.map((e) => (e.id === edgeId ? { ...e, label: trimmed || undefined } : e)),
+    );
+    updateConexaoLabel(edgeId, trimmed || null).catch((err) => console.error("updateConexaoLabel", err));
+    setLabelDialog(null);
+  }, [labelDialog]);
 
   return (
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
@@ -289,6 +302,35 @@ function DiagramaInner() {
           </ReactFlow>
         )}
       </div>
+
+      <Dialog open={labelDialog !== null} onOpenChange={(open) => !open && setLabelDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nomear integração</DialogTitle>
+            <DialogDescription>
+              Informe os dados trafegados nessa conexão (ex.: Pedidos, NF-e, Clientes). Deixe em branco para remover o rótulo.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            autoFocus
+            value={labelDialog?.value ?? ""}
+            onChange={(e) => setLabelDialog((d) => (d ? { ...d, value: e.target.value } : d))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSaveLabel();
+              }
+            }}
+            placeholder="Ex.: Pedidos, NF-e"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLabelDialog(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveLabel}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
