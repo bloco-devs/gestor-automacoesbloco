@@ -1,5 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Cast helper for tables not yet present in generated types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = supabase as any;
+
 export interface DiagramaPosicao {
   solucaoId: string;
   x: number;
