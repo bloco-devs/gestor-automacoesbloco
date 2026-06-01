@@ -181,6 +181,7 @@ function buildEdge(
 
 function DiagramaInner() {
   const { user } = useAuth();
+  const { resolvedTheme } = useTheme();
   const navigate = useNavigate();
   const reactFlow = useReactFlow();
   const [nodes, setNodes] = useState<Node[]>([]);
