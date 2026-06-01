@@ -169,9 +169,11 @@ function buildEdge(
 function DiagramaInner() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const reactFlow = useReactFlow();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [labelDialog, setLabelDialog] = useState<{ edgeId: string; value: string } | null>(null);
   const [detailsDialog, setDetailsDialog] = useState<{ edgeId: string; label: string } | null>(null);
   const [colunas, setColunas] = useState<DiagramaConexaoColuna[]>([]);
@@ -179,6 +181,63 @@ function DiagramaInner() {
   const [novaColuna, setNovaColuna] = useState<{ nome: string; tipo: string }>({ nome: "", tipo: "VARCHAR" });
   const positionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const curvatureTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const notaTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const flowWrapperRef = useRef<HTMLDivElement>(null);
+
+  const scheduleNotaUpdate = useCallback(
+    (id: string, patch: Parameters<typeof updateNota>[1]) => {
+      const timers = notaTimers.current;
+      const existing = timers.get(id);
+      if (existing) clearTimeout(existing);
+      const handle = setTimeout(() => {
+        updateNota(id, patch).catch((err) => console.error("updateNota", err));
+        timers.delete(id);
+      }, 400);
+      timers.set(id, handle);
+    },
+    [],
+  );
+
+  const handleNotaTextChange = useCallback(
+    (id: string, texto: string) => {
+      setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, texto } } : n)));
+      scheduleNotaUpdate(id, { texto });
+    },
+    [scheduleNotaUpdate],
+  );
+
+  const handleNotaColorChange = useCallback(
+    (id: string, cor: string) => {
+      setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, cor } } : n)));
+      updateNota(id, { cor }).catch((err) => console.error("updateNota", err));
+    },
+    [],
+  );
+
+  const handleNotaDelete = useCallback((id: string) => {
+    setNodes((nds) => nds.filter((n) => n.id !== id));
+    deleteNota(id).catch((err) => console.error("deleteNota", err));
+  }, []);
+
+  const buildNotaNode = useCallback(
+    (n: { id: string; x: number; y: number; largura: number; altura: number; texto: string; cor: string }): Node => ({
+      id: n.id,
+      type: "nota",
+      position: { x: n.x, y: n.y },
+      width: n.largura,
+      height: n.altura,
+      style: { width: n.largura, height: n.altura },
+      data: {
+        texto: n.texto,
+        cor: n.cor,
+        onTextChange: handleNotaTextChange,
+        onColorChange: handleNotaColorChange,
+        onDelete: handleNotaDelete,
+      } satisfies StickyNoteData,
+    }),
+    [handleNotaTextChange, handleNotaColorChange, handleNotaDelete],
+  );
+
 
   const handleCurvatureDrag = useCallback(
     (edgeId: string, dx: number | null, dy: number | null, isFinal: boolean) => {
