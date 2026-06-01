@@ -43,6 +43,11 @@ export default function SolucoesKanban() {
   const [novoSolicitacaoId, setNovoSolicitacaoId] = useState<string>("none");
   const [salvando, setSalvando] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
+  // Toggle entre as duas variantes do seletor de vínculo (A: combobox / B: modal com busca)
+  const [vinculoVariant, setVinculoVariant] = useState<"A" | "B">("A");
+  const [comboOpen, setComboOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogSearch, setDialogSearch] = useState("");
 
   const solicitacoesMap = useMemo(() => {
     const m = new Map(solicitacoes.map((s) => [s.id, s]));
