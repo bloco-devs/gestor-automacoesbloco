@@ -268,7 +268,7 @@ function DiagramaInner() {
     return () => {
       cancelled = true;
     };
-  }, [buildNodes, openDetails]);
+  }, [buildNodes, openDetails, handleCurvatureDrag]);
 
   const schedulePersistPosition = useCallback(
     (id: string, x: number, y: number) => {
