@@ -720,7 +720,7 @@ function DiagramaInner() {
     } finally {
       setExporting(false);
     }
-  }, [nodes]);
+  }, [nodes, resolvedTheme]);
 
 
   return (
