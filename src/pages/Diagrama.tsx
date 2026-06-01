@@ -133,8 +133,11 @@ function buildEdge(
   id: string,
   source: string,
   target: string,
-  label?: string,
-  onLabelClick?: (edgeId: string) => void,
+  label: string | undefined,
+  onLabelClick: ((edgeId: string) => void) | undefined,
+  curvDX: number | null | undefined,
+  curvDY: number | null | undefined,
+  onCurvatureDrag: ((edgeId: string, dx: number | null, dy: number | null, isFinal: boolean) => void) | undefined,
 ): Edge {
   return {
     id,
@@ -143,11 +146,12 @@ function buildEdge(
     label,
     type: "flow",
     animated: true,
-    data: { onLabelClick },
+    data: { onLabelClick, curvDX, curvDY, onCurvatureDrag },
     markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--primary))", width: 18, height: 18 },
     style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
   };
 }
+
 
 
 
