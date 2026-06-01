@@ -396,12 +396,26 @@ function DiagramaInner() {
   );
 
   const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-    setEdges((eds) => applyEdgeChanges(changes, eds));
-    for (const ch of changes) {
-      if (ch.type === "remove") {
-        deleteConexao(ch.id).catch((err) => console.error("deleteConexao", err));
+    setEdges((eds) => {
+      const filtered: EdgeChange[] = [];
+      for (const ch of changes) {
+        if (ch.type === "remove") {
+          const edge = eds.find((e) => e.id === ch.id);
+          const lbl = typeof edge?.label === "string" ? edge.label.trim() : "";
+          if (lbl) {
+            const ok = window.confirm(
+              `Esta integração possui o chip "${lbl}". Deseja realmente excluí-la?`,
+            );
+            if (!ok) continue;
+          }
+          filtered.push(ch);
+          deleteConexao(ch.id).catch((err) => console.error("deleteConexao", err));
+        } else {
+          filtered.push(ch);
+        }
       }
-    }
+      return applyEdgeChanges(filtered, eds);
+    });
   }, []);
 
   const onConnect = useCallback(
