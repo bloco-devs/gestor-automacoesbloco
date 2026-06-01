@@ -80,3 +80,11 @@ export async function deleteConexao(id: string): Promise<void> {
   const { error } = await supabase.from("solucao_diagrama_conexoes").delete().eq("id", id);
   if (error) throw error;
 }
+
+export async function updateConexaoLabel(id: string, label: string | null): Promise<void> {
+  const { error } = await supabase
+    .from("solucao_diagrama_conexoes")
+    .update({ label: label && label.trim() ? label.trim() : null })
+    .eq("id", id);
+  if (error) throw error;
+}

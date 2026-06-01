@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ReactFlow,
@@ -12,9 +12,11 @@ import {
   applyNodeChanges,
   Handle,
   Position,
+  MarkerType,
   type Connection,
   type Edge,
   type EdgeChange,
+  type EdgeMouseHandler,
   type Node,
   type NodeChange,
   type NodeProps,
@@ -28,6 +30,7 @@ import {
   deleteConexao,
   listConexoes,
   listPosicoes,
+  updateConexaoLabel,
   upsertPosicao,
 } from "@/lib/diagrama";
 import type { Solucao, Solicitacao } from "@/lib/types";
@@ -97,6 +100,22 @@ function SolucaoNode({ data }: NodeProps) {
 
 const nodeTypes = { solucao: SolucaoNode };
 
+function buildEdge(id: string, source: string, target: string, label?: string): Edge {
+  return {
+    id,
+    source,
+    target,
+    label,
+    animated: true,
+    markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--primary))", width: 18, height: 18 },
+    style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
+    labelBgPadding: [6, 3],
+    labelBgBorderRadius: 6,
+    labelStyle: { fill: "hsl(var(--primary-foreground))", fontSize: 11, fontWeight: 600 },
+    labelBgStyle: { fill: "hsl(var(--primary))", fillOpacity: 0.95 },
+  };
+}
+
 
 function DiagramaInner() {
   const { user } = useAuth();
@@ -150,13 +169,7 @@ function DiagramaInner() {
         setEdges(
           conexoes
             .filter((c) => validIds.has(c.sourceId) && validIds.has(c.targetId))
-            .map<Edge>((c) => ({
-              id: c.id,
-              source: c.sourceId,
-              target: c.targetId,
-              label: c.label ?? undefined,
-              animated: false,
-            })),
+            .map<Edge>((c) => buildEdge(c.id, c.sourceId, c.targetId, c.label ?? undefined)),
         );
       } finally {
         if (!cancelled) setLoading(false);
@@ -205,11 +218,8 @@ function DiagramaInner() {
   const onConnect = useCallback(
     async (params: Connection) => {
       if (!params.source || !params.target || params.source === params.target) return;
-      // optimistic
       const tempId = `tmp-${params.source}-${params.target}-${Date.now()}`;
-      setEdges((eds) =>
-        addEdge({ ...params, id: tempId, source: params.source!, target: params.target! }, eds),
-      );
+      setEdges((eds) => addEdge(buildEdge(tempId, params.source!, params.target!), eds));
       try {
         const created = await createConexao(params.source, params.target, user?.id);
         if (!created) {
@@ -225,13 +235,29 @@ function DiagramaInner() {
     [user?.id],
   );
 
+  const onEdgeDoubleClick = useCallback<EdgeMouseHandler>((_evt, edge) => {
+    if (edge.id.startsWith("tmp-")) return;
+    const current = typeof edge.label === "string" ? edge.label : "";
+    const next = window.prompt(
+      "Rótulo da integração (ex.: Pedidos, NF-e, Clientes). Deixe em branco para remover.",
+      current,
+    );
+    if (next === null) return;
+    const trimmed = next.trim();
+    setEdges((eds) =>
+      eds.map((e) => (e.id === edge.id ? { ...e, label: trimmed || undefined } : e)),
+    );
+    updateConexaoLabel(edge.id, trimmed || null).catch((err) => console.error("updateConexaoLabel", err));
+  }, []);
+
   return (
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
       <div className="px-4 md:px-8 py-3 border-b border-border bg-background">
         <h1 className="text-xl md:text-2xl font-brand font-bold">Diagrama de Soluções</h1>
         <p className="text-xs text-muted-foreground">
-          Arraste para reposicionar. Conecte os pontos das laterais para criar relações. Selecione uma aresta e
-          pressione Delete para removê-la. Duplo clique em um nó abre a Solução.
+          Conecte as laterais das Soluções para indicar fluxo de dados (origem → destino). Duplo clique em uma seta
+          para nomear o dado trafegado (ex.: Pedidos, NF-e). Selecione uma seta e pressione Delete para removê-la.
+          Duplo clique em um nó abre a Solução.
         </p>
       </div>
 
@@ -252,6 +278,7 @@ function DiagramaInner() {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onEdgeDoubleClick={onEdgeDoubleClick}
             fitView
             proOptions={{ hideAttribution: true }}
             deleteKeyCode={["Delete", "Backspace"]}
