@@ -15,9 +15,9 @@ type FlowEdgeData = {
 };
 
 /**
- * Custom edge with a draggable control point so users can freely adjust how
- * the line curves between two solutions. When no manual curvature is set,
- * bidirectional connections auto-bend to opposite sides to avoid overlap.
+ * Custom edge whose entire path acts as a draggable control point. Dragging
+ * anywhere along the line bends the curve toward the cursor. When no manual
+ * curvature is set, bidirectional connections auto-bend to opposite sides.
  */
 function FlowEdgeBase({
   id,
@@ -35,7 +35,7 @@ function FlowEdgeBase({
 }: EdgeProps) {
   const d = data as FlowEdgeData | undefined;
   const { screenToFlowPosition } = useReactFlow();
-  const dragState = useRef<{ pointerId: number } | null>(null);
+  const dragging = useRef(false);
 
   const hasReverse = useStore((s) =>
     s.edges.some((e) => e.source === target && e.target === source),
@@ -44,7 +44,6 @@ function FlowEdgeBase({
   const mx = (sourceX + targetX) / 2;
   const my = (sourceY + targetY) / 2;
 
-  // Manual curvature takes precedence; otherwise auto-bend for bidirectional.
   const manual = d?.curvDX != null && d?.curvDY != null;
   let offDX = 0;
   let offDY = 0;
@@ -74,8 +73,7 @@ function FlowEdgeBase({
         },${targetY} ${targetX},${targetY}`
       : `M ${sourceX},${sourceY} Q ${cx},${cy} ${targetX},${targetY}`;
 
-  // Label and handle sit at the midpoint of the quadratic curve, which is at
-  // (P0 + 2*P1 + P2) / 4 for t = 0.5.
+  // Quadratic midpoint for label placement
   const midX = (sourceX + 2 * cx + targetX) / 4;
   const midY = (sourceY + 2 * cy + targetY) / 4;
 
@@ -83,50 +81,59 @@ function FlowEdgeBase({
     ? { ...style, strokeWidth: ((style?.strokeWidth as number) ?? 2) + 1 }
     : style;
 
+  const computeOffset = useCallback(
+    (clientX: number, clientY: number) => {
+      const pos = screenToFlowPosition({ x: clientX, y: clientY });
+      // To make a quadratic Bezier pass through `pos` at t=0.5, the control
+      // point must be: P1 = 2*pos - (P0 + P2) / 2
+      const targetCX = 2 * pos.x - (sourceX + targetX) / 2;
+      const targetCY = 2 * pos.y - (sourceY + targetY) / 2;
+      return { dx: targetCX - mx, dy: targetCY - my };
+    },
+    [screenToFlowPosition, sourceX, sourceY, targetX, targetY, mx, my],
+  );
+
   const handlePointerDown = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
+    (e: React.PointerEvent<SVGPathElement>) => {
       e.stopPropagation();
       e.preventDefault();
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
-      dragState.current = { pointerId: e.pointerId };
+      (e.target as SVGPathElement).setPointerCapture(e.pointerId);
+      dragging.current = true;
+      const { dx, dy } = computeOffset(e.clientX, e.clientY);
+      d?.onCurvatureDrag?.(id, dx, dy, false);
     },
-    [],
+    [computeOffset, d, id],
   );
 
   const handlePointerMove = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!dragState.current) return;
+    (e: React.PointerEvent<SVGPathElement>) => {
+      if (!dragging.current) return;
       e.stopPropagation();
-      const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-      const dx = pos.x - mx;
-      const dy = pos.y - my;
+      const { dx, dy } = computeOffset(e.clientX, e.clientY);
       d?.onCurvatureDrag?.(id, dx, dy, false);
     },
-    [d, id, mx, my, screenToFlowPosition],
+    [computeOffset, d, id],
   );
 
   const handlePointerUp = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!dragState.current) return;
+    (e: React.PointerEvent<SVGPathElement>) => {
+      if (!dragging.current) return;
       e.stopPropagation();
       try {
-        (e.target as HTMLElement).releasePointerCapture(dragState.current.pointerId);
+        (e.target as SVGPathElement).releasePointerCapture(e.pointerId);
       } catch {
         /* ignore */
       }
-      dragState.current = null;
-      const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-      const dx = pos.x - mx;
-      const dy = pos.y - my;
+      dragging.current = false;
+      const { dx, dy } = computeOffset(e.clientX, e.clientY);
       d?.onCurvatureDrag?.(id, dx, dy, true);
     },
-    [d, id, mx, my, screenToFlowPosition],
+    [computeOffset, d, id],
   );
 
   const handleDoubleClick = useCallback(
-    (e: React.MouseEvent) => {
+    (e: React.MouseEvent<SVGPathElement>) => {
       e.stopPropagation();
-      // Reset manual curvature back to default
       d?.onCurvatureDrag?.(id, null, null, true);
     },
     [d, id],
@@ -136,28 +143,19 @@ function FlowEdgeBase({
     <>
       <BaseEdge id={id} path={path} markerEnd={markerEnd} style={finalStyle} />
 
-      {/* Draggable control handle */}
-      <EdgeLabelRenderer>
-        <div
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          onDoubleClick={handleDoubleClick}
-          style={{
-            position: "absolute",
-            transform: `translate(-50%, -50%) translate(${cx}px, ${cy}px)`,
-            pointerEvents: "all",
-            touchAction: "none",
-          }}
-          className={`nodrag nopan rounded-full border-2 border-primary bg-background shadow-sm cursor-grab active:cursor-grabbing transition-all ${
-            selected || manual
-              ? "size-3 opacity-100"
-              : "size-2.5 opacity-50 hover:opacity-100"
-          }`}
-          title="Arraste para ajustar a curva. Duplo clique para resetar."
-        />
-      </EdgeLabelRenderer>
+      {/* Invisible wide hit area for dragging the curve anywhere along its length */}
+      <path
+        d={path}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={20}
+        style={{ cursor: dragging.current ? "grabbing" : "grab", pointerEvents: "stroke", touchAction: "none" }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onDoubleClick={handleDoubleClick}
+      />
 
       {label ? (
         <EdgeLabelRenderer>
