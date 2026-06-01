@@ -348,9 +348,10 @@ function DiagramaInner() {
         <h1 className="text-xl md:text-2xl font-brand font-bold">Diagrama de Soluções</h1>
         <p className="text-xs text-muted-foreground">
           Conecte as laterais das Soluções para indicar fluxo de dados (origem → destino). Duplo clique em uma seta
-          para nomear o dado trafegado (ex.: Pedidos, NF-e). Selecione uma seta e pressione Delete para removê-la.
-          Duplo clique em um nó abre a Solução.
+          para nomear o dado trafegado (ex.: Pedidos, NF-e). Clique no chip para detalhar as colunas trafegadas.
+          Selecione uma seta e pressione Delete para removê-la. Duplo clique em um nó abre a Solução.
         </p>
+
       </div>
 
       <div className="w-full h-[calc(100%-4rem)]">
