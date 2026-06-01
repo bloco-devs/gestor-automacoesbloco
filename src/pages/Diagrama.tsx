@@ -412,7 +412,110 @@ function DiagramaInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={detailsDialog !== null} onOpenChange={(open) => !open && setDetailsDialog(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Detalhes da integração{detailsDialog?.label ? `: ${detailsDialog.label}` : ""}
+            </DialogTitle>
+            <DialogDescription>
+              Cadastre as colunas (campos) trafegadas entre as Soluções e o respectivo tipo de dado.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            {colunasLoading ? (
+              <div className="text-sm text-muted-foreground py-4 text-center">Carregando colunas...</div>
+            ) : colunas.length === 0 ? (
+              <div className="text-sm text-muted-foreground py-2 text-center italic">
+                Nenhuma coluna cadastrada ainda.
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+                <div className="grid grid-cols-[1fr_180px_40px] gap-2 text-[10px] uppercase tracking-wide text-muted-foreground font-medium px-1">
+                  <span>Nome da coluna</span>
+                  <span>Tipo</span>
+                  <span></span>
+                </div>
+                {colunas.map((c) => (
+                  <div key={c.id} className="grid grid-cols-[1fr_180px_40px] gap-2 items-center">
+                    <Input
+                      value={c.nome}
+                      onChange={(e) => handleUpdateColuna(c.id, { nome: e.target.value })}
+                      placeholder="ex.: cliente_id"
+                    />
+                    <Select
+                      value={c.tipo}
+                      onValueChange={(v) => handleUpdateColuna(c.id, { tipo: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIPOS_DADO.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteColuna(c.id)}
+                      title="Remover coluna"
+                    >
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="border-t border-border pt-3 space-y-2">
+              <Label className="text-xs">Adicionar nova coluna</Label>
+              <div className="grid grid-cols-[1fr_180px_auto] gap-2">
+                <Input
+                  value={novaColuna.nome}
+                  onChange={(e) => setNovaColuna((n) => ({ ...n, nome: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddColuna();
+                    }
+                  }}
+                  placeholder="Nome (ex.: pedido_id)"
+                />
+                <Select
+                  value={novaColuna.tipo}
+                  onValueChange={(v) => setNovaColuna((n) => ({ ...n, tipo: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIPOS_DADO.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleAddColuna} disabled={!novaColuna.nome.trim()}>
+                  <Plus className="size-4 mr-1" /> Adicionar
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setDetailsDialog(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
 
