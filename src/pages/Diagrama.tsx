@@ -53,10 +53,12 @@ import {
   listPosicoes,
   TIPOS_DADO,
   updateColuna,
+  updateConexaoCurvatura,
   updateConexaoLabel,
   upsertPosicao,
   type DiagramaConexaoColuna,
 } from "@/lib/diagrama";
+
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Trash2, Plus, Workflow } from "lucide-react";
