@@ -288,7 +288,8 @@ function DiagramaInner() {
         setEdges((eds) => eds.filter((e) => e.id !== tempId));
       }
     },
-    [user?.id],
+    [user?.id, openDetails],
+
   );
 
   const onEdgeDoubleClick = useCallback<EdgeMouseHandler>((_evt, edge) => {
