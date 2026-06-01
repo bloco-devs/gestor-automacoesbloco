@@ -382,6 +382,11 @@ function DiagramaInner() {
                 altura: ch.dimensions.height,
               });
             }
+          } else if (ch.type === "remove") {
+            const node = current.find((n) => n.id === ch.id);
+            if (node?.type === "nota") {
+              deleteNota(node.id).catch((err) => console.error("deleteNota", err));
+            }
           }
         }
         return next;
