@@ -59,6 +59,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { listSolucoes, listSolicitacoes } from "@/lib/supabaseData";
 import {
   createConexao,
