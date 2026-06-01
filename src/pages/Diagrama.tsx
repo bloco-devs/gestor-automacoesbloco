@@ -27,6 +27,18 @@ import {
 import "@xyflow/react/dist/style.css";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
+import newBlackBoldUrl from "@/assets/fonts/NewBlackTypeface-Bold.ttf?url";
+import newBlackRegularUrl from "@/assets/fonts/NewBlackTypeface-Regular.ttf?url";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import {
   Dialog,
