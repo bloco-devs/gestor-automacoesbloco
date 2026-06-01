@@ -298,6 +298,7 @@ function DiagramaInner() {
         return {
           id: s.id,
           type: "solucao",
+          deletable: false,
           position: pos ?? { x: (i % cols) * 280, y: Math.floor(i / cols) * 140 },
           data: {
             titulo: s.titulo,
