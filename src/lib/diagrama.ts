@@ -11,7 +11,10 @@ export interface DiagramaConexao {
   sourceId: string;
   targetId: string;
   label?: string | null;
+  curvX?: number | null;
+  curvY?: number | null;
 }
+
 
 export async function listPosicoes(): Promise<DiagramaPosicao[]> {
   const { data, error } = await supabase
