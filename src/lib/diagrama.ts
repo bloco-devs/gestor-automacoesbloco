@@ -11,7 +11,10 @@ export interface DiagramaConexao {
   sourceId: string;
   targetId: string;
   label?: string | null;
+  curvX?: number | null;
+  curvY?: number | null;
 }
+
 
 export async function listPosicoes(): Promise<DiagramaPosicao[]> {
   const { data, error } = await supabase
@@ -43,13 +46,15 @@ export async function upsertPosicao(
 export async function listConexoes(): Promise<DiagramaConexao[]> {
   const { data, error } = await supabase
     .from("solucao_diagrama_conexoes")
-    .select("id, source_id, target_id, label");
+    .select("id, source_id, target_id, label, curvatura_x, curvatura_y");
   if (error) throw error;
   return (data ?? []).map((r) => ({
     id: r.id as string,
     sourceId: r.source_id as string,
     targetId: r.target_id as string,
     label: r.label as string | null,
+    curvX: (r as { curvatura_x: number | null }).curvatura_x,
+    curvY: (r as { curvatura_y: number | null }).curvatura_y,
   }));
 }
 
@@ -61,7 +66,7 @@ export async function createConexao(
   const { data, error } = await supabase
     .from("solucao_diagrama_conexoes")
     .insert({ source_id: sourceId, target_id: targetId, created_by: userId ?? null })
-    .select("id, source_id, target_id, label")
+    .select("id, source_id, target_id, label, curvatura_x, curvatura_y")
     .single();
   if (error) {
     // duplicate or self-loop — ignore silently
@@ -73,6 +78,8 @@ export async function createConexao(
     sourceId: data.source_id as string,
     targetId: data.target_id as string,
     label: data.label as string | null,
+    curvX: (data as { curvatura_x: number | null }).curvatura_x,
+    curvY: (data as { curvatura_y: number | null }).curvatura_y,
   };
 }
 
@@ -88,6 +95,19 @@ export async function updateConexaoLabel(id: string, label: string | null): Prom
     .eq("id", id);
   if (error) throw error;
 }
+
+export async function updateConexaoCurvatura(
+  id: string,
+  curvX: number | null,
+  curvY: number | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from("solucao_diagrama_conexoes")
+    .update({ curvatura_x: curvX, curvatura_y: curvY })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 
 export const TIPOS_DADO = [
   "INT",

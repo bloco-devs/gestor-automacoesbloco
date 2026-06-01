@@ -526,6 +526,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          curvatura_x: number | null
+          curvatura_y: number | null
           id: string
           label: string | null
           source_id: string
@@ -534,6 +536,8 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          curvatura_x?: number | null
+          curvatura_y?: number | null
           id?: string
           label?: string | null
           source_id: string
@@ -542,6 +546,8 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          curvatura_x?: number | null
+          curvatura_y?: number | null
           id?: string
           label?: string | null
           source_id?: string

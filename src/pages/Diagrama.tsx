@@ -53,10 +53,12 @@ import {
   listPosicoes,
   TIPOS_DADO,
   updateColuna,
+  updateConexaoCurvatura,
   updateConexaoLabel,
   upsertPosicao,
   type DiagramaConexaoColuna,
 } from "@/lib/diagrama";
+
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Trash2, Plus, Workflow } from "lucide-react";
@@ -131,8 +133,11 @@ function buildEdge(
   id: string,
   source: string,
   target: string,
-  label?: string,
-  onLabelClick?: (edgeId: string) => void,
+  label: string | undefined,
+  onLabelClick: ((edgeId: string) => void) | undefined,
+  curvDX: number | null | undefined,
+  curvDY: number | null | undefined,
+  onCurvatureDrag: ((edgeId: string, dx: number | null, dy: number | null, isFinal: boolean) => void) | undefined,
 ): Edge {
   return {
     id,
@@ -141,11 +146,12 @@ function buildEdge(
     label,
     type: "flow",
     animated: true,
-    data: { onLabelClick },
+    data: { onLabelClick, curvDX, curvDY, onCurvatureDrag },
     markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--primary))", width: 18, height: 18 },
     style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
   };
 }
+
 
 
 
@@ -161,6 +167,34 @@ function DiagramaInner() {
   const [colunasLoading, setColunasLoading] = useState(false);
   const [novaColuna, setNovaColuna] = useState<{ nome: string; tipo: string }>({ nome: "", tipo: "VARCHAR" });
   const positionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const curvatureTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const handleCurvatureDrag = useCallback(
+    (edgeId: string, dx: number | null, dy: number | null, isFinal: boolean) => {
+      if (edgeId.startsWith("tmp-")) return;
+      setEdges((eds) =>
+        eds.map((e) =>
+          e.id === edgeId
+            ? { ...e, data: { ...(e.data ?? {}), curvDX: dx, curvDY: dy } }
+            : e,
+        ),
+      );
+      if (isFinal) {
+        const timers = curvatureTimers.current;
+        const existing = timers.get(edgeId);
+        if (existing) clearTimeout(existing);
+        const handle = setTimeout(() => {
+          updateConexaoCurvatura(edgeId, dx, dy).catch((err) =>
+            console.error("updateConexaoCurvatura", err),
+          );
+          timers.delete(edgeId);
+        }, 200);
+        timers.set(edgeId, handle);
+      }
+    },
+    [],
+  );
+
 
   const openDetails = useCallback((edgeId: string) => {
     if (edgeId.startsWith("tmp-")) return;
@@ -225,7 +259,7 @@ function DiagramaInner() {
         setEdges(
           conexoes
             .filter((c) => validIds.has(c.sourceId) && validIds.has(c.targetId))
-            .map<Edge>((c) => buildEdge(c.id, c.sourceId, c.targetId, c.label ?? undefined, openDetails)),
+            .map<Edge>((c) => buildEdge(c.id, c.sourceId, c.targetId, c.label ?? undefined, openDetails, c.curvX, c.curvY, handleCurvatureDrag)),
         );
       } finally {
         if (!cancelled) setLoading(false);
@@ -234,7 +268,7 @@ function DiagramaInner() {
     return () => {
       cancelled = true;
     };
-  }, [buildNodes, openDetails]);
+  }, [buildNodes, openDetails, handleCurvatureDrag]);
 
   const schedulePersistPosition = useCallback(
     (id: string, x: number, y: number) => {
@@ -275,7 +309,7 @@ function DiagramaInner() {
     async (params: Connection) => {
       if (!params.source || !params.target || params.source === params.target) return;
       const tempId = `tmp-${params.source}-${params.target}-${Date.now()}`;
-      setEdges((eds) => addEdge(buildEdge(tempId, params.source!, params.target!, undefined, openDetails), eds));
+      setEdges((eds) => addEdge(buildEdge(tempId, params.source!, params.target!, undefined, openDetails, null, null, handleCurvatureDrag), eds));
       try {
         const created = await createConexao(params.source, params.target, user?.id);
         if (!created) {
@@ -288,7 +322,7 @@ function DiagramaInner() {
         setEdges((eds) => eds.filter((e) => e.id !== tempId));
       }
     },
-    [user?.id, openDetails],
+    [user?.id, openDetails, handleCurvatureDrag],
 
   );
 
@@ -349,8 +383,10 @@ function DiagramaInner() {
         <p className="text-xs text-muted-foreground">
           Conecte as laterais das Soluções para indicar fluxo de dados (origem → destino). Duplo clique em uma seta
           para nomear o dado trafegado (ex.: Pedidos, NF-e). Clique no chip para detalhar as colunas trafegadas.
+          Arraste o ponto no meio da seta para ajustar a curva (duplo clique no ponto reseta).
           Selecione uma seta e pressione Delete para removê-la. Duplo clique em um nó abre a Solução.
         </p>
+
 
       </div>
 
