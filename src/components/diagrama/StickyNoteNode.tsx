@@ -18,10 +18,15 @@ export type StickyNoteData = {
 
 const COR_CLASSES: Record<string, { bg: string; border: string; swatch: string }> = {
   amarelo: { bg: "bg-yellow-200 dark:bg-yellow-300/90", border: "border-yellow-400", swatch: "bg-yellow-300" },
+  laranja: { bg: "bg-orange-200 dark:bg-orange-300/90", border: "border-orange-400", swatch: "bg-orange-300" },
+  vermelho: { bg: "bg-red-200 dark:bg-red-300/90", border: "border-red-400", swatch: "bg-red-300" },
   rosa: { bg: "bg-pink-200 dark:bg-pink-300/90", border: "border-pink-400", swatch: "bg-pink-300" },
-  azul: { bg: "bg-sky-200 dark:bg-sky-300/90", border: "border-sky-400", swatch: "bg-sky-300" },
-  verde: { bg: "bg-green-200 dark:bg-green-300/90", border: "border-green-400", swatch: "bg-green-300" },
   roxo: { bg: "bg-violet-200 dark:bg-violet-300/90", border: "border-violet-400", swatch: "bg-violet-300" },
+  azul: { bg: "bg-sky-200 dark:bg-sky-300/90", border: "border-sky-400", swatch: "bg-sky-300" },
+  ciano: { bg: "bg-cyan-200 dark:bg-cyan-300/90", border: "border-cyan-400", swatch: "bg-cyan-300" },
+  verde: { bg: "bg-green-200 dark:bg-green-300/90", border: "border-green-400", swatch: "bg-green-300" },
+  lima: { bg: "bg-lime-200 dark:bg-lime-300/90", border: "border-lime-400", swatch: "bg-lime-300" },
+  cinza: { bg: "bg-neutral-200 dark:bg-neutral-300/90", border: "border-neutral-400", swatch: "bg-neutral-300" },
 };
 
 function StickyNoteNodeBase({ id, data, selected }: NodeProps) {
@@ -57,7 +62,7 @@ function StickyNoteNodeBase({ id, data, selected }: NodeProps) {
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-2" onPointerDown={(e) => e.stopPropagation()}>
-                <div className="flex gap-1.5">
+                <div className="grid grid-cols-5 gap-1.5">
                   {CORES_NOTA.map((c) => (
                     <button
                       key={c}
