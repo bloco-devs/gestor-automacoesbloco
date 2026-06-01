@@ -203,16 +203,28 @@ export async function deleteColuna(id: string): Promise<void> {
 
 
 export const CORES_NOTA = [
-  "amarelo",
-  "laranja",
-  "vermelho",
-  "rosa",
-  "roxo",
-  "azul",
-  "ciano",
-  "verde",
-  "lima",
-  "cinza",
+  "slate",
+  "gray",
+  "zinc",
+  "neutral",
+  "stone",
+  "red",
+  "orange",
+  "amber",
+  "yellow",
+  "lime",
+  "green",
+  "emerald",
+  "teal",
+  "cyan",
+  "sky",
+  "blue",
+  "indigo",
+  "violet",
+  "purple",
+  "fuchsia",
+  "pink",
+  "rose",
 ] as const;
 export type CorNota = (typeof CORES_NOTA)[number];
 
