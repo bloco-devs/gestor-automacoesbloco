@@ -141,17 +141,169 @@ export default function SolucoesKanban() {
               value={novoLink}
               onChange={(e) => setNovoLink(e.target.value)}
             />
-            <Select value={novoSolicitacaoId} onValueChange={setNovoSolicitacaoId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Vincular a uma solicitação (opcional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Sem vínculo</SelectItem>
-                {solicitacoes.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>{s.titulo}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Toggle entre as duas variantes (para avaliação) */}
+            <div className="flex items-center gap-1 rounded-md border border-border p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setVinculoVariant("A")}
+                className={cn(
+                  "flex-1 rounded px-2 py-1 transition",
+                  vinculoVariant === "A" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Opção A · Combobox
+              </button>
+              <button
+                type="button"
+                onClick={() => setVinculoVariant("B")}
+                className={cn(
+                  "flex-1 rounded px-2 py-1 transition",
+                  vinculoVariant === "B" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Opção B · Modal
+              </button>
+            </div>
+
+            {(() => {
+              const selectedTitulo = novoSolicitacaoId === "none"
+                ? null
+                : solicitacoesMap.get(novoSolicitacaoId)?.titulo ?? null;
+              const triggerLabel = selectedTitulo ?? "Vincular a uma solicitação (opcional)";
+
+              if (vinculoVariant === "A") {
+                // === Opção A — Combobox com busca (altura limitada + rolagem) ===
+                return (
+                  <Popover open={comboOpen} onOpenChange={setComboOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          "w-full justify-between font-normal",
+                          !selectedTitulo && "text-muted-foreground",
+                        )}
+                      >
+                        <span className="truncate">{triggerLabel}</span>
+                        <ChevronsUpDown className="size-4 opacity-50 shrink-0 ml-2" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      side="bottom"
+                      className="w-[var(--radix-popover-trigger-width)] p-0"
+                    >
+                      <Command>
+                        <CommandInput placeholder="Buscar solicitação..." />
+                        <CommandList className="max-h-64">
+                          <CommandEmpty>Nenhuma solicitação encontrada.</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem
+                              value="sem vínculo"
+                              onSelect={() => {
+                                setNovoSolicitacaoId("none");
+                                setComboOpen(false);
+                              }}
+                            >
+                              <Check className={cn("mr-2 size-4", novoSolicitacaoId === "none" ? "opacity-100" : "opacity-0")} />
+                              Sem vínculo
+                            </CommandItem>
+                            {solicitacoes.map((s) => (
+                              <CommandItem
+                                key={s.id}
+                                value={s.titulo}
+                                onSelect={() => {
+                                  setNovoSolicitacaoId(s.id);
+                                  setComboOpen(false);
+                                }}
+                              >
+                                <Check className={cn("mr-2 size-4 shrink-0", novoSolicitacaoId === s.id ? "opacity-100" : "opacity-0")} />
+                                <span className="truncate">{s.titulo}</span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                );
+              }
+
+              // === Opção B — Modal centralizado com busca e lista rolável ===
+              const filtradas = solicitacoes.filter((s) =>
+                s.titulo.toLowerCase().includes(dialogSearch.trim().toLowerCase()),
+              );
+              return (
+                <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setDialogSearch(""); }}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-between font-normal",
+                        !selectedTitulo && "text-muted-foreground",
+                      )}
+                    >
+                      <span className="truncate">{triggerLabel}</span>
+                      <Search className="size-4 opacity-50 shrink-0 ml-2" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Vincular a uma solicitação</DialogTitle>
+                    </DialogHeader>
+                    <Input
+                      autoFocus
+                      placeholder="Buscar por título..."
+                      value={dialogSearch}
+                      onChange={(e) => setDialogSearch(e.target.value)}
+                    />
+                    <ScrollArea className="h-72 rounded-md border border-border">
+                      <div className="p-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNovoSolicitacaoId("none");
+                            setDialogOpen(false);
+                            setDialogSearch("");
+                          }}
+                          className={cn(
+                            "w-full flex items-center gap-2 rounded px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
+                            novoSolicitacaoId === "none" && "bg-accent/50",
+                          )}
+                        >
+                          <Check className={cn("size-4", novoSolicitacaoId === "none" ? "opacity-100" : "opacity-0")} />
+                          Sem vínculo
+                        </button>
+                        {filtradas.length === 0 ? (
+                          <div className="px-2 py-6 text-center text-xs text-muted-foreground">
+                            Nenhuma solicitação encontrada.
+                          </div>
+                        ) : (
+                          filtradas.map((s) => (
+                            <button
+                              type="button"
+                              key={s.id}
+                              onClick={() => {
+                                setNovoSolicitacaoId(s.id);
+                                setDialogOpen(false);
+                                setDialogSearch("");
+                              }}
+                              className={cn(
+                                "w-full flex items-center gap-2 rounded px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
+                                novoSolicitacaoId === s.id && "bg-accent/50",
+                              )}
+                            >
+                              <Check className={cn("size-4 shrink-0", novoSolicitacaoId === s.id ? "opacity-100" : "opacity-0")} />
+                              <span className="truncate">{s.titulo}</span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </DialogContent>
+                </Dialog>
+              );
+            })()}
             <div className="flex justify-end">
               <Button size="sm" onClick={handleCriarSolucao} disabled={salvando}>
                 {salvando ? "Salvando..." : "Cadastrar"}
