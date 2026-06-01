@@ -601,7 +601,7 @@ function DiagramaInner() {
       const BAR_BG = isDark ? BRAND_SAND : BRAND_BLACK;       // header/footer
       const BAR_TEXT = isDark ? BRAND_BLACK : BRAND_SAND;     // texto secundário em barra
       const BAR_TITLE = isDark ? BRAND_BLACK : BRAND_SAND;    // "CONSTRUÇÕES"
-      const BAR_ACCENT = isDark ? "#7A5A12" : BRAND_YELLOW;   // "BLOCO" + acentos (contraste sobre sand)
+      const BAR_ACCENT = BRAND_YELLOW;                        // "BLOCO" + acentos (sempre amarelo da marca)
       const STRIPE = BRAND_YELLOW;                            // faixa amarela mantida
       const FRAME = isDark ? "#3A3A3A" : BRAND_BROWN;         // moldura do diagrama
 
