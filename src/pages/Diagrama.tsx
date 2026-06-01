@@ -322,7 +322,7 @@ function DiagramaInner() {
         setEdges((eds) => eds.filter((e) => e.id !== tempId));
       }
     },
-    [user?.id, openDetails],
+    [user?.id, openDetails, handleCurvatureDrag],
 
   );
 
