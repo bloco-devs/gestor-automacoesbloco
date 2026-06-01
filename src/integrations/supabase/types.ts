@@ -570,6 +570,45 @@ export type Database = {
           },
         ]
       }
+      solucao_diagrama_notas: {
+        Row: {
+          altura: number
+          cor: string
+          created_at: string
+          created_by: string | null
+          id: string
+          largura: number
+          texto: string
+          updated_at: string
+          x: number
+          y: number
+        }
+        Insert: {
+          altura?: number
+          cor?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          largura?: number
+          texto?: string
+          updated_at?: string
+          x?: number
+          y?: number
+        }
+        Update: {
+          altura?: number
+          cor?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          largura?: number
+          texto?: string
+          updated_at?: string
+          x?: number
+          y?: number
+        }
+        Relationships: []
+      }
       solucao_diagrama_posicoes: {
         Row: {
           solucao_id: string

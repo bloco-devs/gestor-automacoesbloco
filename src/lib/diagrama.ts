@@ -1,5 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Cast helper for tables not yet present in generated types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = supabase as any;
+
 export interface DiagramaPosicao {
   solucaoId: string;
   x: number;
@@ -197,3 +201,67 @@ export async function deleteColuna(id: string): Promise<void> {
   if (error) throw error;
 }
 
+
+export const CORES_NOTA = ["amarelo", "rosa", "azul", "verde", "roxo"] as const;
+export type CorNota = (typeof CORES_NOTA)[number];
+
+export interface DiagramaNota {
+  id: string;
+  texto: string;
+  x: number;
+  y: number;
+  largura: number;
+  altura: number;
+  cor: string;
+}
+
+export async function listNotas(): Promise<DiagramaNota[]> {
+  const { data, error } = await sb
+    .from("solucao_diagrama_notas")
+    .select("id, texto, x, y, largura, altura, cor");
+  if (error) throw error;
+  return (data ?? []).map((r: Record<string, unknown>) => ({
+    id: r.id as string,
+    texto: (r.texto as string) ?? "",
+    x: Number(r.x),
+    y: Number(r.y),
+    largura: Number(r.largura),
+    altura: Number(r.altura),
+    cor: (r.cor as string) ?? "amarelo",
+  }));
+}
+
+export async function createNota(
+  x: number,
+  y: number,
+  userId?: string | null,
+): Promise<DiagramaNota> {
+  const { data, error } = await sb
+    .from("solucao_diagrama_notas")
+    .insert({ x, y, created_by: userId ?? null })
+    .select("id, texto, x, y, largura, altura, cor")
+    .single();
+  if (error) throw error;
+  return {
+    id: data.id,
+    texto: data.texto ?? "",
+    x: Number(data.x),
+    y: Number(data.y),
+    largura: Number(data.largura),
+    altura: Number(data.altura),
+    cor: data.cor ?? "amarelo",
+  };
+}
+
+export async function updateNota(
+  id: string,
+  patch: Partial<{ texto: string; x: number; y: number; largura: number; altura: number; cor: string }>,
+): Promise<void> {
+  const { error } = await sb.from("solucao_diagrama_notas").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteNota(id: string): Promise<void> {
+  const { error } = await sb.from("solucao_diagrama_notas").delete().eq("id", id);
+  if (error) throw error;
+}
