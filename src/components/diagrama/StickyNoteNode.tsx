@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { Trash2, Palette } from "lucide-react";
-import { CORES_NOTA, type CorNota } from "@/lib/diagrama";
+import { HexColorPicker, HexColorInput } from "react-colorful";
 import {
   Popover,
   PopoverContent,
@@ -16,38 +16,71 @@ export type StickyNoteData = {
   onDelete: (id: string) => void;
 };
 
-// Paleta de cores bem distintas entre si (inclui marrom, preto, branco, etc.).
-// Usamos inline styles para não depender de classes Tailwind, garantindo cores
-// fora do espectro padrão.
-type CorDef = { bg: string; border: string; text: string };
-
-const COR_DEFS: Record<string, CorDef> = {
-  amarelo: { bg: "#fde68a", border: "#eab308", text: "#1f2937" },
-  laranja: { bg: "#fdba74", border: "#ea580c", text: "#1f2937" },
-  vermelho: { bg: "#fca5a5", border: "#dc2626", text: "#1f2937" },
-  rosa: { bg: "#fbcfe8", border: "#db2777", text: "#1f2937" },
-  magenta: { bg: "#f0abfc", border: "#c026d3", text: "#1f2937" },
-  roxo: { bg: "#c4b5fd", border: "#7c3aed", text: "#1f2937" },
-  azul: { bg: "#93c5fd", border: "#2563eb", text: "#1f2937" },
-  ciano: { bg: "#a5f3fc", border: "#0891b2", text: "#1f2937" },
-  turquesa: { bg: "#99f6e4", border: "#0d9488", text: "#1f2937" },
-  verde: { bg: "#86efac", border: "#16a34a", text: "#1f2937" },
-  lima: { bg: "#d9f99d", border: "#65a30d", text: "#1f2937" },
-  oliva: { bg: "#bef264", border: "#4d7c0f", text: "#1f2937" },
-  marrom: { bg: "#a16207", border: "#713f12", text: "#fafafa" },
-  bege: { bg: "#f5e6c8", border: "#a8825a", text: "#1f2937" },
-  cinza: { bg: "#d4d4d8", border: "#71717a", text: "#1f2937" },
-  preto: { bg: "#1f2937", border: "#000000", text: "#fafafa" },
-  branco: { bg: "#ffffff", border: "#9ca3af", text: "#1f2937" },
+// Presets nomeados (mantidos para compatibilidade com notas antigas e como
+// atalhos rápidos). O valor real armazenado em `cor` agora pode ser qualquer
+// hex (#rrggbb), permitindo a roda de cores completa.
+const PRESETS_NOMEADOS: Record<string, string> = {
+  amarelo: "#fde68a",
+  laranja: "#fdba74",
+  vermelho: "#fca5a5",
+  rosa: "#fbcfe8",
+  magenta: "#f0abfc",
+  roxo: "#c4b5fd",
+  azul: "#93c5fd",
+  ciano: "#a5f3fc",
+  turquesa: "#99f6e4",
+  verde: "#86efac",
+  lima: "#d9f99d",
+  oliva: "#bef264",
+  marrom: "#a16207",
+  bege: "#f5e6c8",
+  cinza: "#d4d4d8",
+  preto: "#1f2937",
+  branco: "#ffffff",
 };
 
-function getCorDef(cor: string): CorDef {
-  return COR_DEFS[cor] ?? COR_DEFS.amarelo;
+const PRESETS_HEX: string[] = [
+  "#fde68a", "#fdba74", "#fca5a5", "#fbcfe8", "#f0abfc",
+  "#c4b5fd", "#93c5fd", "#a5f3fc", "#99f6e4", "#86efac",
+  "#d9f99d", "#bef264", "#a16207", "#f5e6c8", "#d4d4d8",
+  "#1f2937", "#ffffff",
+];
+
+function normalizeHex(cor: string): string {
+  if (!cor) return "#fde68a";
+  if (cor.startsWith("#")) return cor;
+  return PRESETS_NOMEADOS[cor] ?? "#fde68a";
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  const n = parseInt(h, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const to = (v: number) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
+  return `#${to(r)}${to(g)}${to(b)}`;
+}
+
+function darken(hex: string, amount = 0.35): string {
+  const { r, g, b } = hexToRgb(hex);
+  return rgbToHex(r * (1 - amount), g * (1 - amount), b * (1 - amount));
+}
+
+function readableText(hex: string): string {
+  const { r, g, b } = hexToRgb(hex);
+  // Luminância relativa simples
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.6 ? "#1f2937" : "#fafafa";
 }
 
 function StickyNoteNodeBase({ id, data, selected }: NodeProps) {
   const d = data as unknown as StickyNoteData;
-  const c = getCorDef(d.cor);
+  const bg = normalizeHex(d.cor);
+  const border = darken(bg, 0.4);
+  const text = readableText(bg);
   const [editing, setEditing] = useState(false);
 
   return (
@@ -61,9 +94,9 @@ function StickyNoteNodeBase({ id, data, selected }: NodeProps) {
       />
       <div
         className="w-full h-full rounded-sm shadow-lg border flex flex-col"
-        style={{ minWidth: 140, minHeight: 100, backgroundColor: c.bg, borderColor: c.border, color: c.text }}
+        style={{ minWidth: 140, minHeight: 100, backgroundColor: bg, borderColor: border, color: text }}
       >
-        <div className="flex items-center justify-between px-2 py-1 border-b nodrag-controls" style={{ borderColor: c.border }}>
+        <div className="flex items-center justify-between px-2 py-1 border-b nodrag-controls" style={{ borderColor: border }}>
           <span className="text-[10px] uppercase tracking-wide opacity-60 select-none">Nota</span>
           <div className="flex items-center gap-1">
             <Popover>
@@ -77,20 +110,41 @@ function StickyNoteNodeBase({ id, data, selected }: NodeProps) {
                   <Palette className="size-3" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-2" onPointerDown={(e) => e.stopPropagation()}>
-                <div className="grid grid-cols-5 gap-1.5">
-                  {CORES_NOTA.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      className={`size-5 rounded-full border ${
-                        d.cor === c ? "ring-2 ring-primary" : ""
-                      }`}
-                      style={{ backgroundColor: getCorDef(c).bg, borderColor: getCorDef(c).border }}
-                      onClick={() => d.onColorChange(id, c)}
-                      title={c}
-                    />
-                  ))}
+              <PopoverContent
+                className="w-auto p-3 space-y-3"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <HexColorPicker
+                  color={bg}
+                  onChange={(c) => d.onColorChange(id, c)}
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Hex</span>
+                  <HexColorInput
+                    color={bg}
+                    onChange={(c) => d.onColorChange(id, c)}
+                    prefixed
+                    className="h-7 w-24 rounded border bg-background px-2 text-xs font-mono uppercase"
+                  />
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                    Atalhos
+                  </div>
+                  <div className="grid grid-cols-9 gap-1.5">
+                    {PRESETS_HEX.map((hex) => (
+                      <button
+                        key={hex}
+                        type="button"
+                        className={`size-5 rounded-full border ${
+                          bg.toLowerCase() === hex.toLowerCase() ? "ring-2 ring-primary" : ""
+                        }`}
+                        style={{ backgroundColor: hex, borderColor: darken(hex, 0.4) }}
+                        onClick={() => d.onColorChange(id, hex)}
+                        title={hex}
+                      />
+                    ))}
+                  </div>
                 </div>
               </PopoverContent>
             </Popover>
@@ -106,9 +160,10 @@ function StickyNoteNodeBase({ id, data, selected }: NodeProps) {
           </div>
         </div>
         <textarea
-          className={`flex-1 w-full bg-transparent p-2 text-xs leading-snug resize-none outline-none placeholder:text-neutral-500 ${
+          className={`flex-1 w-full bg-transparent p-2 text-xs leading-snug resize-none outline-none placeholder:opacity-50 ${
             editing ? "nodrag" : ""
           }`}
+          style={{ color: text }}
           value={d.texto}
           placeholder="Escreva sua anotação..."
           onFocus={() => setEditing(true)}
