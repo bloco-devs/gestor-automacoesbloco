@@ -1,0 +1,1 @@
+ALTER TABLE public.solucao_diagrama_conexoes DROP CONSTRAINT IF EXISTS solucao_diagrama_conexoes_unique;
