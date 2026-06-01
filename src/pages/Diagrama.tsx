@@ -468,22 +468,112 @@ function DiagramaInner() {
     deleteColuna(id).catch((err) => console.error("deleteColuna", err));
   }, []);
 
+  const handleAddNota = useCallback(async () => {
+    try {
+      // Coloca no centro do viewport visível
+      const wrap = flowWrapperRef.current;
+      const rect = wrap?.getBoundingClientRect();
+      const center = rect
+        ? reactFlow.screenToFlowPosition({
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+          })
+        : { x: 0, y: 0 };
+      const created = await createNota(center.x - 110, center.y - 80, user?.id);
+      setNodes((nds) => [...nds, buildNotaNode(created)]);
+    } catch (err) {
+      console.error("createNota", err);
+      toast({
+        title: "Não foi possível criar a nota",
+        description: "Verifique se você possui permissão de administrador.",
+        variant: "destructive",
+      });
+    }
+  }, [reactFlow, user?.id, buildNotaNode]);
+
+  const handleExportPdf = useCallback(async () => {
+    const wrap = flowWrapperRef.current;
+    if (!wrap || nodes.length === 0) return;
+    setExporting(true);
+    try {
+      const viewportEl = wrap.querySelector(".react-flow__viewport") as HTMLElement | null;
+      const containerEl = (wrap.querySelector(".react-flow") as HTMLElement | null) ?? wrap;
+      if (!viewportEl) throw new Error("viewport not found");
+
+      // Salva o transform atual e ajusta para enquadrar tudo
+      const prevTransform = viewportEl.style.transform;
+      const width = containerEl.clientWidth;
+      const height = containerEl.clientHeight;
+      const bounds = getNodesBounds(nodes);
+      const padding = 40;
+      const vp = getViewportForBounds(bounds, width, height, 0.2, 2, padding);
+      viewportEl.style.transform = `translate(${vp.x}px, ${vp.y}px) scale(${vp.zoom})`;
+
+      // Aguarda o reflow
+      await new Promise((r) => setTimeout(r, 100));
+
+      const dataUrl = await toPng(containerEl, {
+        pixelRatio: 2,
+        backgroundColor: getComputedStyle(document.body).backgroundColor || "#ffffff",
+        filter: (node) => {
+          if (!(node instanceof Element)) return true;
+          return !node.classList?.contains("react-flow__minimap") &&
+                 !node.classList?.contains("react-flow__controls") &&
+                 !node.classList?.contains("react-flow__panel");
+        },
+      });
+
+      // Restaura
+      viewportEl.style.transform = prevTransform;
+
+      // Cria PDF
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((res) => { img.onload = () => res(null); });
+      const orientation = img.width >= img.height ? "landscape" : "portrait";
+      const pdf = new jsPDF({ orientation, unit: "pt", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const ratio = Math.min(pageW / img.width, pageH / img.height);
+      const w = img.width * ratio;
+      const h = img.height * ratio;
+      pdf.addImage(dataUrl, "PNG", (pageW - w) / 2, (pageH - h) / 2, w, h);
+      pdf.save(`diagrama-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (err) {
+      console.error("exportPdf", err);
+      toast({
+        title: "Falha ao exportar PDF",
+        description: "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  }, [nodes]);
+
 
   return (
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
-      <div className="px-4 md:px-8 py-3 border-b border-border bg-background">
-        <h1 className="text-xl md:text-2xl font-brand font-bold">Diagrama de Soluções</h1>
-        <p className="text-xs text-muted-foreground">
-          Conecte as laterais das Soluções para indicar fluxo de dados (origem → destino). Duplo clique em uma seta
-          para nomear o dado trafegado (ex.: Pedidos, NF-e). Clique no chip para detalhar as colunas trafegadas.
-          Arraste a linha em qualquer ponto para ajustar a curva (duplo clique na linha reseta).
-          Selecione uma seta e pressione Delete para removê-la. Duplo clique em um nó abre a Solução.
-        </p>
-
-
+      <div className="px-4 md:px-8 py-3 border-b border-border bg-background flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex-1 min-w-[260px]">
+          <h1 className="text-xl md:text-2xl font-brand font-bold">Diagrama de Soluções</h1>
+          <p className="text-xs text-muted-foreground">
+            Conecte as laterais das Soluções para indicar fluxo de dados (origem → destino). Duplo clique em uma seta
+            para nomear o dado trafegado. Clique no chip para detalhar as colunas. Arraste a linha para ajustar a curva
+            (duplo clique reseta). Use as notas adesivas para anotações livres.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={handleAddNota}>
+            <StickyNote className="size-4 mr-1" /> Nota
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={exporting || nodes.length === 0}>
+            <FileDown className="size-4 mr-1" /> {exporting ? "Exportando..." : "Exportar PDF"}
+          </Button>
+        </div>
       </div>
 
-      <div className="w-full h-[calc(100%-4rem)]">
+      <div ref={flowWrapperRef} className="w-full h-[calc(100%-4rem)]">
         {loading ? (
           <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
             Carregando diagrama...
