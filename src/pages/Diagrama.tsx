@@ -27,6 +27,18 @@ import {
 import "@xyflow/react/dist/style.css";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
+import newBlackBoldUrl from "@/assets/fonts/NewBlackTypeface-Bold.ttf?url";
+import newBlackRegularUrl from "@/assets/fonts/NewBlackTypeface-Regular.ttf?url";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import {
   Dialog,
@@ -176,6 +188,7 @@ function DiagramaInner() {
   const [exporting, setExporting] = useState(false);
   const [labelDialog, setLabelDialog] = useState<{ edgeId: string; value: string } | null>(null);
   const [detailsDialog, setDetailsDialog] = useState<{ edgeId: string; label: string } | null>(null);
+  const [deleteEdgeDialog, setDeleteEdgeDialog] = useState<{ edgeId: string; label: string } | null>(null);
   const [colunas, setColunas] = useState<DiagramaConexaoColuna[]>([]);
   const [colunasLoading, setColunasLoading] = useState(false);
   const [novaColuna, setNovaColuna] = useState<{ nome: string; tipo: string }>({ nome: "", tipo: "VARCHAR" });
@@ -403,10 +416,9 @@ function DiagramaInner() {
           const edge = eds.find((e) => e.id === ch.id);
           const lbl = typeof edge?.label === "string" ? edge.label.trim() : "";
           if (lbl) {
-            const ok = window.confirm(
-              `Esta integração possui o chip "${lbl}". Deseja realmente excluí-la?`,
-            );
-            if (!ok) continue;
+            // Defer: abre confirmação no app; não aplica remoção agora
+            setDeleteEdgeDialog({ edgeId: ch.id, label: lbl });
+            continue;
           }
           filtered.push(ch);
           deleteConexao(ch.id).catch((err) => console.error("deleteConexao", err));
@@ -417,6 +429,14 @@ function DiagramaInner() {
       return applyEdgeChanges(filtered, eds);
     });
   }, []);
+
+  const handleConfirmDeleteEdge = useCallback(() => {
+    if (!deleteEdgeDialog) return;
+    const { edgeId } = deleteEdgeDialog;
+    setEdges((eds) => applyEdgeChanges([{ type: "remove", id: edgeId }], eds));
+    deleteConexao(edgeId).catch((err) => console.error("deleteConexao", err));
+    setDeleteEdgeDialog(null);
+  }, [deleteEdgeDialog]);
 
   const onConnect = useCallback(
     async (params: Connection) => {
@@ -534,7 +554,7 @@ function DiagramaInner() {
 
       const dataUrl = await toPng(containerEl, {
         pixelRatio: 2,
-        backgroundColor: getComputedStyle(document.body).backgroundColor || "#ffffff",
+        backgroundColor: "#E5E3DF",
         filter: (node) => {
           if (!(node instanceof Element)) return true;
           return !node.classList?.contains("react-flow__minimap") &&
@@ -546,19 +566,121 @@ function DiagramaInner() {
       // Restaura
       viewportEl.style.transform = prevTransform;
 
-      // Cria PDF
       const img = new Image();
       img.src = dataUrl;
       await new Promise((res) => { img.onload = () => res(null); });
-      const orientation = img.width >= img.height ? "landscape" : "portrait";
-      const pdf = new jsPDF({ orientation, unit: "pt", format: "a4" });
+
+      // Cores da marca Bloco Construções
+      const BRAND_BLACK = "#0C0C0C";
+      const BRAND_SAND = "#E5E3DF";
+      const BRAND_BROWN = "#8B796D";
+      const BRAND_YELLOW = "#FFDA5B";
+
+      const pdf = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+
+      // Embute a fonte da marca (NewBlackTypeface). Falha silenciosamente -> helvetica.
+      let brandFont = "helvetica";
+      try {
+        const toBase64 = async (url: string) => {
+          const buf = await (await fetch(url)).arrayBuffer();
+          let binary = "";
+          const bytes = new Uint8Array(buf);
+          for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+          return btoa(binary);
+        };
+        const [boldB64, regB64] = await Promise.all([
+          toBase64(newBlackBoldUrl),
+          toBase64(newBlackRegularUrl),
+        ]);
+        pdf.addFileToVFS("NewBlackTypeface-Bold.ttf", boldB64);
+        pdf.addFont("NewBlackTypeface-Bold.ttf", "NewBlack", "bold");
+        pdf.addFileToVFS("NewBlackTypeface-Regular.ttf", regB64);
+        pdf.addFont("NewBlackTypeface-Regular.ttf", "NewBlack", "normal");
+        brandFont = "NewBlack";
+      } catch (e) {
+        console.warn("Falha ao carregar fonte da marca, usando fallback.", e);
+      }
+
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
-      const ratio = Math.min(pageW / img.width, pageH / img.height);
+
+      // Fundo geral (areia)
+      pdf.setFillColor(BRAND_SAND);
+      pdf.rect(0, 0, pageW, pageH, "F");
+
+      // ===== HEADER =====
+      const headerH = 70;
+      pdf.setFillColor(BRAND_BLACK);
+      pdf.rect(0, 0, pageW, headerH, "F");
+      // faixa amarela
+      pdf.setFillColor(BRAND_YELLOW);
+      pdf.rect(0, headerH, pageW, 4, "F");
+
+      // Logo-block tipográfico
+      pdf.setFont(brandFont, "bold");
+      pdf.setFontSize(22);
+      pdf.setTextColor(BRAND_YELLOW);
+      pdf.text("BLOCO", 32, 38);
+      pdf.setTextColor(BRAND_SAND);
+      pdf.text("CONSTRUÇÕES", 32 + pdf.getTextWidth("BLOCO") + 8, 38);
+
+      pdf.setFont(brandFont, "normal");
+      pdf.setFontSize(10);
+      pdf.setTextColor(BRAND_SAND);
+      pdf.text("Diagrama de Soluções", 32, 56);
+
+      // Data alinhada à direita
+      const dataStr = new Date().toLocaleDateString("pt-BR", {
+        day: "2-digit", month: "long", year: "numeric",
+      });
+      pdf.setFont(brandFont, "normal");
+      pdf.setFontSize(9);
+      pdf.setTextColor(BRAND_SAND);
+      const dataW = pdf.getTextWidth(dataStr);
+      pdf.text(dataStr, pageW - 32 - dataW, 38);
+      pdf.setFont(brandFont, "bold");
+      pdf.setFontSize(8);
+      pdf.setTextColor(BRAND_YELLOW);
+      const lbl = "EXPORTADO EM";
+      const lblW = pdf.getTextWidth(lbl);
+      pdf.text(lbl, pageW - 32 - lblW, 24);
+
+      // ===== FOOTER =====
+      const footerH = 28;
+      pdf.setFillColor(BRAND_BLACK);
+      pdf.rect(0, pageH - footerH, pageW, footerH, "F");
+      pdf.setFillColor(BRAND_YELLOW);
+      pdf.rect(0, pageH - footerH - 2, pageW, 2, "F");
+      pdf.setFont(brandFont, "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(BRAND_SAND);
+      pdf.text("Bloco Construções · Gestor de Automações", 32, pageH - 10);
+      const pg = "Página 1 de 1";
+      const pgW = pdf.getTextWidth(pg);
+      pdf.text(pg, pageW - 32 - pgW, pageH - 10);
+
+      // ===== ÁREA DO DIAGRAMA =====
+      const margin = 24;
+      const top = headerH + 4 + margin;
+      const bottom = pageH - footerH - 2 - margin;
+      const left = margin;
+      const right = pageW - margin;
+      const areaW = right - left;
+      const areaH = bottom - top;
+
+      // Moldura sutil
+      pdf.setDrawColor(BRAND_BROWN);
+      pdf.setLineWidth(0.6);
+      pdf.roundedRect(left - 6, top - 6, areaW + 12, areaH + 12, 6, 6, "S");
+
+      const ratio = Math.min(areaW / img.width, areaH / img.height);
       const w = img.width * ratio;
       const h = img.height * ratio;
-      pdf.addImage(dataUrl, "PNG", (pageW - w) / 2, (pageH - h) / 2, w, h);
-      pdf.save(`diagrama-${new Date().toISOString().slice(0, 10)}.pdf`);
+      const x = left + (areaW - w) / 2;
+      const y = top + (areaH - h) / 2;
+      pdf.addImage(dataUrl, "PNG", x, y, w, h);
+
+      pdf.save(`bloco-diagrama-${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error("exportPdf", err);
       toast({
@@ -755,6 +877,33 @@ function DiagramaInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={deleteEdgeDialog !== null}
+        onOpenChange={(open) => !open && setDeleteEdgeDialog(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir integração?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta integração possui o chip{" "}
+              <span className="font-semibold text-foreground">
+                "{deleteEdgeDialog?.label}"
+              </span>
+              . Excluí-la também removerá as colunas associadas. Deseja realmente prosseguir?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeleteEdge}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
 
   );
