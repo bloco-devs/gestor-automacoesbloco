@@ -195,7 +195,7 @@ export default function SolucoesKanban() {
                     >
                       <Command>
                         <CommandInput placeholder="Buscar solicitação..." />
-                        <CommandList className="max-h-64">
+                        <CommandList className="max-h-40">
                           <CommandEmpty>Nenhuma solicitação encontrada.</CommandEmpty>
                           <CommandGroup>
                             <CommandItem
