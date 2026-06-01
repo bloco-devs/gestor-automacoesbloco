@@ -164,11 +164,21 @@ function DiagramaInner() {
 
   const openDetails = useCallback((edgeId: string) => {
     if (edgeId.startsWith("tmp-")) return;
-    setDetailsDialog((prev) => {
-      // resolve label from latest edges via setEdges callback trick — but we can do via current state easily through setEdges
-      return prev ?? { edgeId, label: "" };
+    setEdges((eds) => {
+      const e = eds.find((x) => x.id === edgeId);
+      const lbl = typeof e?.label === "string" ? e.label : "";
+      setDetailsDialog({ edgeId, label: lbl });
+      setColunasLoading(true);
+      setColunas([]);
+      setNovaColuna({ nome: "", tipo: "VARCHAR" });
+      listColunas(edgeId)
+        .then((cols) => setColunas(cols))
+        .catch((err) => console.error("listColunas", err))
+        .finally(() => setColunasLoading(false));
+      return eds;
     });
   }, []);
+
 
 
   const buildNodes = useCallback(
