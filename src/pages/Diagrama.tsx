@@ -133,6 +133,7 @@ function DiagramaInner() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [labelDialog, setLabelDialog] = useState<{ edgeId: string; value: string } | null>(null);
   const positionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const buildNodes = useCallback(
