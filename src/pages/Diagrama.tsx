@@ -188,6 +188,7 @@ function DiagramaInner() {
   const [exporting, setExporting] = useState(false);
   const [labelDialog, setLabelDialog] = useState<{ edgeId: string; value: string } | null>(null);
   const [detailsDialog, setDetailsDialog] = useState<{ edgeId: string; label: string } | null>(null);
+  const [deleteEdgeDialog, setDeleteEdgeDialog] = useState<{ edgeId: string; label: string } | null>(null);
   const [colunas, setColunas] = useState<DiagramaConexaoColuna[]>([]);
   const [colunasLoading, setColunasLoading] = useState(false);
   const [novaColuna, setNovaColuna] = useState<{ nome: string; tipo: string }>({ nome: "", tipo: "VARCHAR" });
