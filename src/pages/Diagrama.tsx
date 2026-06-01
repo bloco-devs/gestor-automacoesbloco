@@ -100,6 +100,22 @@ function SolucaoNode({ data }: NodeProps) {
 
 const nodeTypes = { solucao: SolucaoNode };
 
+function buildEdge(id: string, source: string, target: string, label?: string): Edge {
+  return {
+    id,
+    source,
+    target,
+    label,
+    animated: true,
+    markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--primary))", width: 18, height: 18 },
+    style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
+    labelBgPadding: [6, 3],
+    labelBgBorderRadius: 6,
+    labelStyle: { fill: "hsl(var(--primary-foreground))", fontSize: 11, fontWeight: 600 },
+    labelBgStyle: { fill: "hsl(var(--primary))", fillOpacity: 0.95 },
+  };
+}
+
 
 function DiagramaInner() {
   const { user } = useAuth();
