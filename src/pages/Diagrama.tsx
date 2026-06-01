@@ -302,6 +302,35 @@ function DiagramaInner() {
           </ReactFlow>
         )}
       </div>
+
+      <Dialog open={labelDialog !== null} onOpenChange={(open) => !open && setLabelDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nomear integração</DialogTitle>
+            <DialogDescription>
+              Informe os dados trafegados nessa conexão (ex.: Pedidos, NF-e, Clientes). Deixe em branco para remover o rótulo.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            autoFocus
+            value={labelDialog?.value ?? ""}
+            onChange={(e) => setLabelDialog((d) => (d ? { ...d, value: e.target.value } : d))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSaveLabel();
+              }
+            }}
+            placeholder="Ex.: Pedidos, NF-e"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLabelDialog(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveLabel}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
