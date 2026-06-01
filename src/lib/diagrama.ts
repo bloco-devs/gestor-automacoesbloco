@@ -88,3 +88,92 @@ export async function updateConexaoLabel(id: string, label: string | null): Prom
     .eq("id", id);
   if (error) throw error;
 }
+
+export const TIPOS_DADO = [
+  "INT",
+  "BIGINT",
+  "SMALLINT",
+  "DECIMAL",
+  "NUMERIC",
+  "FLOAT",
+  "DOUBLE",
+  "VARCHAR",
+  "TEXT",
+  "CHAR",
+  "BOOLEAN",
+  "DATE",
+  "TIME",
+  "TIMESTAMP",
+  "JSON",
+  "JSONB",
+  "UUID",
+  "BLOB",
+] as const;
+
+export type TipoDado = (typeof TIPOS_DADO)[number];
+
+export interface DiagramaConexaoColuna {
+  id: string;
+  conexaoId: string;
+  nome: string;
+  tipo: string;
+  ordem: number;
+}
+
+export async function listColunas(conexaoId: string): Promise<DiagramaConexaoColuna[]> {
+  const { data, error } = await supabase
+    .from("solucao_diagrama_conexao_colunas")
+    .select("id, conexao_id, nome, tipo, ordem")
+    .eq("conexao_id", conexaoId)
+    .order("ordem", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    id: r.id as string,
+    conexaoId: r.conexao_id as string,
+    nome: r.nome as string,
+    tipo: r.tipo as string,
+    ordem: Number(r.ordem),
+  }));
+}
+
+export async function createColuna(
+  conexaoId: string,
+  nome: string,
+  tipo: string,
+  ordem: number,
+  userId?: string | null,
+): Promise<DiagramaConexaoColuna> {
+  const { data, error } = await supabase
+    .from("solucao_diagrama_conexao_colunas")
+    .insert({ conexao_id: conexaoId, nome, tipo, ordem, created_by: userId ?? null })
+    .select("id, conexao_id, nome, tipo, ordem")
+    .single();
+  if (error) throw error;
+  return {
+    id: data.id as string,
+    conexaoId: data.conexao_id as string,
+    nome: data.nome as string,
+    tipo: data.tipo as string,
+    ordem: Number(data.ordem),
+  };
+}
+
+export async function updateColuna(
+  id: string,
+  patch: { nome?: string; tipo?: string; ordem?: number },
+): Promise<void> {
+  const { error } = await supabase
+    .from("solucao_diagrama_conexao_colunas")
+    .update(patch)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteColuna(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("solucao_diagrama_conexao_colunas")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+
