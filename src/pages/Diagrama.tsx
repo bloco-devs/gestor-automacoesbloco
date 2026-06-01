@@ -221,6 +221,14 @@ function DiagramaInner() {
     [scheduleNotaUpdate],
   );
 
+  const handleNotaHeaderChange = useCallback(
+    (id: string, cabecalho: string) => {
+      setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, cabecalho } } : n)));
+      scheduleNotaUpdate(id, { cabecalho });
+    },
+    [scheduleNotaUpdate],
+  );
+
   const handleNotaColorChange = useCallback(
     (id: string, cor: string) => {
       setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, cor } } : n)));
@@ -228,14 +236,13 @@ function DiagramaInner() {
     },
     [],
   );
-
   const handleNotaDelete = useCallback((id: string) => {
     setNodes((nds) => nds.filter((n) => n.id !== id));
     deleteNota(id).catch((err) => console.error("deleteNota", err));
   }, []);
 
   const buildNotaNode = useCallback(
-    (n: { id: string; x: number; y: number; largura: number; altura: number; texto: string; cor: string }): Node => ({
+    (n: { id: string; x: number; y: number; largura: number; altura: number; texto: string; cabecalho?: string; cor: string }): Node => ({
       id: n.id,
       type: "nota",
       position: { x: n.x, y: n.y },
@@ -244,13 +251,15 @@ function DiagramaInner() {
       style: { width: n.largura, height: n.altura },
       data: {
         texto: n.texto,
+        cabecalho: n.cabecalho ?? "",
         cor: n.cor,
         onTextChange: handleNotaTextChange,
+        onHeaderChange: handleNotaHeaderChange,
         onColorChange: handleNotaColorChange,
         onDelete: handleNotaDelete,
       } satisfies StickyNoteData,
     }),
-    [handleNotaTextChange, handleNotaColorChange, handleNotaDelete],
+    [handleNotaTextChange, handleNotaHeaderChange, handleNotaColorChange, handleNotaDelete],
   );
 
 
