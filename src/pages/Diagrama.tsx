@@ -127,7 +127,13 @@ function SolucaoNode({ data }: NodeProps) {
 const nodeTypes = { solucao: SolucaoNode };
 const edgeTypes = { flow: FlowEdge };
 
-function buildEdge(id: string, source: string, target: string, label?: string): Edge {
+function buildEdge(
+  id: string,
+  source: string,
+  target: string,
+  label?: string,
+  onLabelClick?: (edgeId: string) => void,
+): Edge {
   return {
     id,
     source,
@@ -135,10 +141,12 @@ function buildEdge(id: string, source: string, target: string, label?: string): 
     label,
     type: "flow",
     animated: true,
+    data: { onLabelClick },
     markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--primary))", width: 18, height: 18 },
     style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
   };
 }
+
 
 
 function DiagramaInner() {
