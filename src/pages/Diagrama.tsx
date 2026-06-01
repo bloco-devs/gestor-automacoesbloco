@@ -156,7 +156,20 @@ function DiagramaInner() {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
   const [labelDialog, setLabelDialog] = useState<{ edgeId: string; value: string } | null>(null);
+  const [detailsDialog, setDetailsDialog] = useState<{ edgeId: string; label: string } | null>(null);
+  const [colunas, setColunas] = useState<DiagramaConexaoColuna[]>([]);
+  const [colunasLoading, setColunasLoading] = useState(false);
+  const [novaColuna, setNovaColuna] = useState<{ nome: string; tipo: string }>({ nome: "", tipo: "VARCHAR" });
   const positionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const openDetails = useCallback((edgeId: string) => {
+    if (edgeId.startsWith("tmp-")) return;
+    setDetailsDialog((prev) => {
+      // resolve label from latest edges via setEdges callback trick — but we can do via current state easily through setEdges
+      return prev ?? { edgeId, label: "" };
+    });
+  }, []);
+
 
   const buildNodes = useCallback(
     (
