@@ -225,7 +225,7 @@ function DiagramaInner() {
         setEdges(
           conexoes
             .filter((c) => validIds.has(c.sourceId) && validIds.has(c.targetId))
-            .map<Edge>((c) => buildEdge(c.id, c.sourceId, c.targetId, c.label ?? undefined)),
+            .map<Edge>((c) => buildEdge(c.id, c.sourceId, c.targetId, c.label ?? undefined, openDetails)),
         );
       } finally {
         if (!cancelled) setLoading(false);
