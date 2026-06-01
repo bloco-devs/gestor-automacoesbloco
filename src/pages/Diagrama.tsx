@@ -599,6 +599,8 @@ function DiagramaInner() {
             onConnect={onConnect}
             onEdgeDoubleClick={onEdgeDoubleClick}
             fitView
+            minZoom={0.1}
+            maxZoom={4}
             proOptions={{ hideAttribution: true }}
             deleteKeyCode={["Delete", "Backspace"]}
           >
