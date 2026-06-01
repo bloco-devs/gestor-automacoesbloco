@@ -877,6 +877,33 @@ function DiagramaInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={deleteEdgeDialog !== null}
+        onOpenChange={(open) => !open && setDeleteEdgeDialog(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir integração?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta integração possui o chip{" "}
+              <span className="font-semibold text-foreground">
+                "{deleteEdgeDialog?.label}"
+              </span>
+              . Excluí-la também removerá as colunas associadas. Deseja realmente prosseguir?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeleteEdge}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
 
   );
