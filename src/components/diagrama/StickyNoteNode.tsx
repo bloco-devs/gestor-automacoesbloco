@@ -62,7 +62,7 @@ function StickyNoteNodeBase({ id, data, selected }: NodeProps) {
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-2" onPointerDown={(e) => e.stopPropagation()}>
-                <div className="flex gap-1.5">
+                <div className="grid grid-cols-5 gap-1.5">
                   {CORES_NOTA.map((c) => (
                     <button
                       key={c}
