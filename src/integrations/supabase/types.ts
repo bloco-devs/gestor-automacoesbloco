@@ -481,6 +481,47 @@ export type Database = {
           },
         ]
       }
+      solucao_diagrama_conexao_colunas: {
+        Row: {
+          conexao_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          ordem: number
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          conexao_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          conexao_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solucao_diagrama_conexao_colunas_conexao_id_fkey"
+            columns: ["conexao_id"]
+            isOneToOne: false
+            referencedRelation: "solucao_diagrama_conexoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solucao_diagrama_conexoes: {
         Row: {
           created_at: string

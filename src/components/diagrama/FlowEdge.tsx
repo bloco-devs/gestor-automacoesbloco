@@ -23,10 +23,13 @@ function FlowEdgeBase({
   markerEnd,
   style,
   selected,
+  data,
 }: EdgeProps) {
+  const onLabelClick = (data as { onLabelClick?: (edgeId: string) => void } | undefined)?.onLabelClick;
   const hasReverse = useStore((s) =>
     s.edges.some((e) => e.source === target && e.target === source),
   );
+
 
   // Deterministic side: the edge whose source id is "smaller" bends one way,
   // the reverse bends the other. Magnitude scales with distance (clamped).
@@ -65,18 +68,25 @@ function FlowEdgeBase({
       <BaseEdge id={id} path={path} markerEnd={markerEnd} style={finalStyle} />
       {label ? (
         <EdgeLabelRenderer>
-          <div
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onLabelClick?.(id);
+            }}
             style={{
               position: "absolute",
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
               pointerEvents: "all",
             }}
-            className="rounded-md bg-primary px-1.5 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-sm nodrag nopan"
+            className="rounded-md bg-primary px-1.5 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-sm nodrag nopan hover:bg-primary/90 cursor-pointer"
+            title="Editar detalhes da integração"
           >
             {label}
-          </div>
+          </button>
         </EdgeLabelRenderer>
       ) : null}
+
     </>
   );
 }

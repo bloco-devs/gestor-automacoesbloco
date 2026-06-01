@@ -33,20 +33,35 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { listSolucoes, listSolicitacoes } from "@/lib/supabaseData";
 import {
   createConexao,
+  createColuna,
+  deleteColuna,
   deleteConexao,
+  listColunas,
   listConexoes,
   listPosicoes,
+  TIPOS_DADO,
+  updateColuna,
   updateConexaoLabel,
   upsertPosicao,
+  type DiagramaConexaoColuna,
 } from "@/lib/diagrama";
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { Workflow } from "lucide-react";
+import { Trash2, Plus, Workflow } from "lucide-react";
 import { FlowEdge } from "@/components/diagrama/FlowEdge";
+
 
 type SolucaoNodeData = {
   titulo: string;
@@ -112,7 +127,13 @@ function SolucaoNode({ data }: NodeProps) {
 const nodeTypes = { solucao: SolucaoNode };
 const edgeTypes = { flow: FlowEdge };
 
-function buildEdge(id: string, source: string, target: string, label?: string): Edge {
+function buildEdge(
+  id: string,
+  source: string,
+  target: string,
+  label?: string,
+  onLabelClick?: (edgeId: string) => void,
+): Edge {
   return {
     id,
     source,
@@ -120,10 +141,12 @@ function buildEdge(id: string, source: string, target: string, label?: string): 
     label,
     type: "flow",
     animated: true,
+    data: { onLabelClick },
     markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--primary))", width: 18, height: 18 },
     style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
   };
 }
+
 
 
 function DiagramaInner() {
@@ -133,7 +156,30 @@ function DiagramaInner() {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
   const [labelDialog, setLabelDialog] = useState<{ edgeId: string; value: string } | null>(null);
+  const [detailsDialog, setDetailsDialog] = useState<{ edgeId: string; label: string } | null>(null);
+  const [colunas, setColunas] = useState<DiagramaConexaoColuna[]>([]);
+  const [colunasLoading, setColunasLoading] = useState(false);
+  const [novaColuna, setNovaColuna] = useState<{ nome: string; tipo: string }>({ nome: "", tipo: "VARCHAR" });
   const positionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const openDetails = useCallback((edgeId: string) => {
+    if (edgeId.startsWith("tmp-")) return;
+    setEdges((eds) => {
+      const e = eds.find((x) => x.id === edgeId);
+      const lbl = typeof e?.label === "string" ? e.label : "";
+      setDetailsDialog({ edgeId, label: lbl });
+      setColunasLoading(true);
+      setColunas([]);
+      setNovaColuna({ nome: "", tipo: "VARCHAR" });
+      listColunas(edgeId)
+        .then((cols) => setColunas(cols))
+        .catch((err) => console.error("listColunas", err))
+        .finally(() => setColunasLoading(false));
+      return eds;
+    });
+  }, []);
+
+
 
   const buildNodes = useCallback(
     (
@@ -179,7 +225,7 @@ function DiagramaInner() {
         setEdges(
           conexoes
             .filter((c) => validIds.has(c.sourceId) && validIds.has(c.targetId))
-            .map<Edge>((c) => buildEdge(c.id, c.sourceId, c.targetId, c.label ?? undefined)),
+            .map<Edge>((c) => buildEdge(c.id, c.sourceId, c.targetId, c.label ?? undefined, openDetails)),
         );
       } finally {
         if (!cancelled) setLoading(false);
@@ -188,7 +234,7 @@ function DiagramaInner() {
     return () => {
       cancelled = true;
     };
-  }, [buildNodes]);
+  }, [buildNodes, openDetails]);
 
   const schedulePersistPosition = useCallback(
     (id: string, x: number, y: number) => {
@@ -229,7 +275,7 @@ function DiagramaInner() {
     async (params: Connection) => {
       if (!params.source || !params.target || params.source === params.target) return;
       const tempId = `tmp-${params.source}-${params.target}-${Date.now()}`;
-      setEdges((eds) => addEdge(buildEdge(tempId, params.source!, params.target!), eds));
+      setEdges((eds) => addEdge(buildEdge(tempId, params.source!, params.target!, undefined, openDetails), eds));
       try {
         const created = await createConexao(params.source, params.target, user?.id);
         if (!created) {
@@ -242,7 +288,8 @@ function DiagramaInner() {
         setEdges((eds) => eds.filter((e) => e.id !== tempId));
       }
     },
-    [user?.id],
+    [user?.id, openDetails],
+
   );
 
   const onEdgeDoubleClick = useCallback<EdgeMouseHandler>((_evt, edge) => {
@@ -262,15 +309,49 @@ function DiagramaInner() {
     setLabelDialog(null);
   }, [labelDialog]);
 
+  const handleAddColuna = useCallback(async () => {
+    if (!detailsDialog) return;
+    const nome = novaColuna.nome.trim();
+    if (!nome) return;
+    try {
+      const created = await createColuna(
+        detailsDialog.edgeId,
+        nome,
+        novaColuna.tipo,
+        colunas.length,
+        user?.id,
+      );
+      setColunas((cs) => [...cs, created]);
+      setNovaColuna({ nome: "", tipo: novaColuna.tipo });
+    } catch (err) {
+      console.error("createColuna", err);
+    }
+  }, [detailsDialog, novaColuna, colunas.length, user?.id]);
+
+  const handleUpdateColuna = useCallback(
+    (id: string, patch: { nome?: string; tipo?: string }) => {
+      setColunas((cs) => cs.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+      updateColuna(id, patch).catch((err) => console.error("updateColuna", err));
+    },
+    [],
+  );
+
+  const handleDeleteColuna = useCallback((id: string) => {
+    setColunas((cs) => cs.filter((c) => c.id !== id));
+    deleteColuna(id).catch((err) => console.error("deleteColuna", err));
+  }, []);
+
+
   return (
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
       <div className="px-4 md:px-8 py-3 border-b border-border bg-background">
         <h1 className="text-xl md:text-2xl font-brand font-bold">Diagrama de Soluções</h1>
         <p className="text-xs text-muted-foreground">
           Conecte as laterais das Soluções para indicar fluxo de dados (origem → destino). Duplo clique em uma seta
-          para nomear o dado trafegado (ex.: Pedidos, NF-e). Selecione uma seta e pressione Delete para removê-la.
-          Duplo clique em um nó abre a Solução.
+          para nomear o dado trafegado (ex.: Pedidos, NF-e). Clique no chip para detalhar as colunas trafegadas.
+          Selecione uma seta e pressione Delete para removê-la. Duplo clique em um nó abre a Solução.
         </p>
+
       </div>
 
       <div className="w-full h-[calc(100%-4rem)]">
@@ -331,7 +412,110 @@ function DiagramaInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={detailsDialog !== null} onOpenChange={(open) => !open && setDetailsDialog(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Detalhes da integração{detailsDialog?.label ? `: ${detailsDialog.label}` : ""}
+            </DialogTitle>
+            <DialogDescription>
+              Cadastre as colunas (campos) trafegadas entre as Soluções e o respectivo tipo de dado.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            {colunasLoading ? (
+              <div className="text-sm text-muted-foreground py-4 text-center">Carregando colunas...</div>
+            ) : colunas.length === 0 ? (
+              <div className="text-sm text-muted-foreground py-2 text-center italic">
+                Nenhuma coluna cadastrada ainda.
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+                <div className="grid grid-cols-[1fr_180px_40px] gap-2 text-[10px] uppercase tracking-wide text-muted-foreground font-medium px-1">
+                  <span>Nome da coluna</span>
+                  <span>Tipo</span>
+                  <span></span>
+                </div>
+                {colunas.map((c) => (
+                  <div key={c.id} className="grid grid-cols-[1fr_180px_40px] gap-2 items-center">
+                    <Input
+                      value={c.nome}
+                      onChange={(e) => handleUpdateColuna(c.id, { nome: e.target.value })}
+                      placeholder="ex.: cliente_id"
+                    />
+                    <Select
+                      value={c.tipo}
+                      onValueChange={(v) => handleUpdateColuna(c.id, { tipo: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIPOS_DADO.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteColuna(c.id)}
+                      title="Remover coluna"
+                    >
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="border-t border-border pt-3 space-y-2">
+              <Label className="text-xs">Adicionar nova coluna</Label>
+              <div className="grid grid-cols-[1fr_180px_auto] gap-2">
+                <Input
+                  value={novaColuna.nome}
+                  onChange={(e) => setNovaColuna((n) => ({ ...n, nome: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddColuna();
+                    }
+                  }}
+                  placeholder="Nome (ex.: pedido_id)"
+                />
+                <Select
+                  value={novaColuna.tipo}
+                  onValueChange={(v) => setNovaColuna((n) => ({ ...n, tipo: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIPOS_DADO.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleAddColuna} disabled={!novaColuna.nome.trim()}>
+                  <Plus className="size-4 mr-1" /> Adicionar
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setDetailsDialog(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
 
