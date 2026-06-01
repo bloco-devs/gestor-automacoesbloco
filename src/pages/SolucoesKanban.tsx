@@ -195,7 +195,7 @@ export default function SolucoesKanban() {
                     >
                       <Command>
                         <CommandInput placeholder="Buscar solicitação..." />
-                        <CommandList className="max-h-64">
+                        <CommandList className="max-h-40">
                           <CommandEmpty>Nenhuma solicitação encontrada.</CommandEmpty>
                           <CommandGroup>
                             <CommandItem
@@ -257,7 +257,7 @@ export default function SolucoesKanban() {
                       value={dialogSearch}
                       onChange={(e) => setDialogSearch(e.target.value)}
                     />
-                    <ScrollArea className="h-72 rounded-md border border-border">
+                    <ScrollArea className="h-48 rounded-md border border-border">
                       <div className="p-1">
                         <button
                           type="button"
