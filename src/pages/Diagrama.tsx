@@ -416,10 +416,9 @@ function DiagramaInner() {
           const edge = eds.find((e) => e.id === ch.id);
           const lbl = typeof edge?.label === "string" ? edge.label.trim() : "";
           if (lbl) {
-            const ok = window.confirm(
-              `Esta integração possui o chip "${lbl}". Deseja realmente excluí-la?`,
-            );
-            if (!ok) continue;
+            // Defer: abre confirmação no app; não aplica remoção agora
+            setDeleteEdgeDialog({ edgeId: ch.id, label: lbl });
+            continue;
           }
           filtered.push(ch);
           deleteConexao(ch.id).catch((err) => console.error("deleteConexao", err));
@@ -430,6 +429,14 @@ function DiagramaInner() {
       return applyEdgeChanges(filtered, eds);
     });
   }, []);
+
+  const handleConfirmDeleteEdge = useCallback(() => {
+    if (!deleteEdgeDialog) return;
+    const { edgeId } = deleteEdgeDialog;
+    setEdges((eds) => applyEdgeChanges([{ type: "remove", id: edgeId }], eds));
+    deleteConexao(edgeId).catch((err) => console.error("deleteConexao", err));
+    setDeleteEdgeDialog(null);
+  }, [deleteEdgeDialog]);
 
   const onConnect = useCallback(
     async (params: Connection) => {
