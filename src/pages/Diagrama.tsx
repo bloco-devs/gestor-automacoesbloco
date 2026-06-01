@@ -30,6 +30,7 @@ import {
   deleteConexao,
   listConexoes,
   listPosicoes,
+  updateConexaoLabel,
   upsertPosicao,
 } from "@/lib/diagrama";
 import type { Solucao, Solicitacao } from "@/lib/types";
