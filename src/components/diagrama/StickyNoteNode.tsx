@@ -39,12 +39,6 @@ const PRESETS_NOMEADOS: Record<string, string> = {
   branco: "#ffffff",
 };
 
-const PRESETS_HEX: string[] = [
-  "#fde68a", "#fdba74", "#fca5a5", "#fbcfe8", "#f0abfc",
-  "#c4b5fd", "#93c5fd", "#a5f3fc", "#99f6e4", "#86efac",
-  "#d9f99d", "#bef264", "#a16207", "#f5e6c8", "#d4d4d8",
-  "#1f2937", "#ffffff",
-];
 
 function normalizeHex(cor: string): string {
   if (!cor) return "#fde68a";
