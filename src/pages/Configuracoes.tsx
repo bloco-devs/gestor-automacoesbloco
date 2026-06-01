@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Loader2, Pencil, Plus, Search, Trash2, UserCog, X } from "lucide-react";
+import { Building2, Check, Loader2, Pencil, Plus, Search, Trash2, UserCog, X } from "lucide-react";
+import { useSetoresRows } from "@/hooks/useSetores";
+import { createSetor, deleteSetor } from "@/lib/setores";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
