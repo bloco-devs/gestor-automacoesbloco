@@ -137,7 +137,7 @@ function SolucaoNode({ data }: NodeProps) {
   );
 }
 
-const nodeTypes = { solucao: SolucaoNode };
+const nodeTypes = { solucao: SolucaoNode, nota: StickyNoteNode };
 const edgeTypes = { flow: FlowEdge };
 
 function buildEdge(
