@@ -13,6 +13,9 @@ import {
   Handle,
   Position,
   MarkerType,
+  useReactFlow,
+  getNodesBounds,
+  getViewportForBounds,
   type Connection,
   type Edge,
   type EdgeChange,
@@ -22,6 +25,8 @@ import {
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { toPng } from "html-to-image";
+import jsPDF from "jspdf";
 
 import {
   Dialog,
@@ -46,23 +51,29 @@ import { listSolucoes, listSolicitacoes } from "@/lib/supabaseData";
 import {
   createConexao,
   createColuna,
+  createNota,
   deleteColuna,
   deleteConexao,
+  deleteNota,
   listColunas,
   listConexoes,
+  listNotas,
   listPosicoes,
   TIPOS_DADO,
   updateColuna,
   updateConexaoCurvatura,
   updateConexaoLabel,
+  updateNota,
   upsertPosicao,
   type DiagramaConexaoColuna,
 } from "@/lib/diagrama";
 
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { Trash2, Plus, Workflow } from "lucide-react";
+import { Trash2, Plus, Workflow, StickyNote, FileDown } from "lucide-react";
 import { FlowEdge } from "@/components/diagrama/FlowEdge";
+import { StickyNoteNode, type StickyNoteData } from "@/components/diagrama/StickyNoteNode";
+import { toast } from "@/hooks/use-toast";
 
 
 type SolucaoNodeData = {
