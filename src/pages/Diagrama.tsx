@@ -218,11 +218,8 @@ function DiagramaInner() {
   const onConnect = useCallback(
     async (params: Connection) => {
       if (!params.source || !params.target || params.source === params.target) return;
-      // optimistic
       const tempId = `tmp-${params.source}-${params.target}-${Date.now()}`;
-      setEdges((eds) =>
-        addEdge({ ...params, id: tempId, source: params.source!, target: params.target! }, eds),
-      );
+      setEdges((eds) => addEdge(buildEdge(tempId, params.source!, params.target!), eds));
       try {
         const created = await createConexao(params.source, params.target, user?.id);
         if (!created) {
@@ -237,6 +234,21 @@ function DiagramaInner() {
     },
     [user?.id],
   );
+
+  const onEdgeDoubleClick = useCallback<EdgeMouseHandler>((_evt, edge) => {
+    if (edge.id.startsWith("tmp-")) return;
+    const current = typeof edge.label === "string" ? edge.label : "";
+    const next = window.prompt(
+      "Rótulo da integração (ex.: Pedidos, NF-e, Clientes). Deixe em branco para remover.",
+      current,
+    );
+    if (next === null) return;
+    const trimmed = next.trim();
+    setEdges((eds) =>
+      eds.map((e) => (e.id === edge.id ? { ...e, label: trimmed || undefined } : e)),
+    );
+    updateConexaoLabel(edge.id, trimmed || null).catch((err) => console.error("updateConexaoLabel", err));
+  }, []);
 
   return (
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
