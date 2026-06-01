@@ -194,36 +194,39 @@ export default function SolucoesKanban() {
                       className="w-[var(--radix-popover-trigger-width)] p-0"
                     >
                       <Command>
-                        <CommandInput placeholder="Buscar solicitação..." />
-                        <CommandList className="max-h-40">
-                          <CommandEmpty>Nenhuma solicitação encontrada.</CommandEmpty>
+                        <CommandInput placeholder="Buscar solicitação..." className="h-8 text-xs" />
+                        <CommandList className="max-h-28">
+                          <CommandEmpty className="py-2 text-xs">Nenhuma solicitação encontrada.</CommandEmpty>
                           <CommandGroup>
                             <CommandItem
                               value="sem vínculo"
+                              className="py-1 text-xs"
                               onSelect={() => {
                                 setNovoSolicitacaoId("none");
                                 setComboOpen(false);
                               }}
                             >
-                              <Check className={cn("mr-2 size-4", novoSolicitacaoId === "none" ? "opacity-100" : "opacity-0")} />
+                              <Check className={cn("mr-2 size-3", novoSolicitacaoId === "none" ? "opacity-100" : "opacity-0")} />
                               Sem vínculo
                             </CommandItem>
                             {solicitacoes.map((s) => (
                               <CommandItem
                                 key={s.id}
                                 value={s.titulo}
+                                className="py-1 text-xs"
                                 onSelect={() => {
                                   setNovoSolicitacaoId(s.id);
                                   setComboOpen(false);
                                 }}
                               >
-                                <Check className={cn("mr-2 size-4 shrink-0", novoSolicitacaoId === s.id ? "opacity-100" : "opacity-0")} />
+                                <Check className={cn("mr-2 size-3 shrink-0", novoSolicitacaoId === s.id ? "opacity-100" : "opacity-0")} />
                                 <span className="truncate">{s.titulo}</span>
                               </CommandItem>
                             ))}
                           </CommandGroup>
                         </CommandList>
                       </Command>
+
                     </PopoverContent>
                   </Popover>
                 );
