@@ -167,6 +167,34 @@ function DiagramaInner() {
   const [colunasLoading, setColunasLoading] = useState(false);
   const [novaColuna, setNovaColuna] = useState<{ nome: string; tipo: string }>({ nome: "", tipo: "VARCHAR" });
   const positionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const curvatureTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const handleCurvatureDrag = useCallback(
+    (edgeId: string, dx: number | null, dy: number | null, isFinal: boolean) => {
+      if (edgeId.startsWith("tmp-")) return;
+      setEdges((eds) =>
+        eds.map((e) =>
+          e.id === edgeId
+            ? { ...e, data: { ...(e.data ?? {}), curvDX: dx, curvDY: dy } }
+            : e,
+        ),
+      );
+      if (isFinal) {
+        const timers = curvatureTimers.current;
+        const existing = timers.get(edgeId);
+        if (existing) clearTimeout(existing);
+        const handle = setTimeout(() => {
+          updateConexaoCurvatura(edgeId, dx, dy).catch((err) =>
+            console.error("updateConexaoCurvatura", err),
+          );
+          timers.delete(edgeId);
+        }, 200);
+        timers.set(edgeId, handle);
+      }
+    },
+    [],
+  );
+
 
   const openDetails = useCallback((edgeId: string) => {
     if (edgeId.startsWith("tmp-")) return;
