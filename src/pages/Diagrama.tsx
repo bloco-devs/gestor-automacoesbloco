@@ -153,13 +153,7 @@ function DiagramaInner() {
         setEdges(
           conexoes
             .filter((c) => validIds.has(c.sourceId) && validIds.has(c.targetId))
-            .map<Edge>((c) => ({
-              id: c.id,
-              source: c.sourceId,
-              target: c.targetId,
-              label: c.label ?? undefined,
-              animated: false,
-            })),
+            .map<Edge>((c) => buildEdge(c.id, c.sourceId, c.targetId, c.label ?? undefined)),
         );
       } finally {
         if (!cancelled) setLoading(false);
