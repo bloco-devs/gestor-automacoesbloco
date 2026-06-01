@@ -127,25 +127,6 @@ function StickyNoteNodeBase({ id, data, selected }: NodeProps) {
                     className="h-7 w-24 rounded border bg-background px-2 text-xs font-mono uppercase"
                   />
                 </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">
-                    Atalhos
-                  </div>
-                  <div className="grid grid-cols-9 gap-1.5">
-                    {PRESETS_HEX.map((hex) => (
-                      <button
-                        key={hex}
-                        type="button"
-                        className={`size-5 rounded-full border ${
-                          bg.toLowerCase() === hex.toLowerCase() ? "ring-2 ring-primary" : ""
-                        }`}
-                        style={{ backgroundColor: hex, borderColor: darken(hex, 0.4) }}
-                        onClick={() => d.onColorChange(id, hex)}
-                        title={hex}
-                      />
-                    ))}
-                  </div>
-                </div>
               </PopoverContent>
             </Popover>
             <button

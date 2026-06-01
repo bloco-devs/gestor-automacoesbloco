@@ -569,7 +569,7 @@ function DiagramaInner() {
             (duplo clique reseta). Use as notas adesivas para anotações livres.
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 mt-2">
           <Button variant="outline" size="sm" onClick={handleAddNota}>
             <StickyNote className="size-4 mr-1" /> Nota
           </Button>
