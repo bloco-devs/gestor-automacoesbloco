@@ -120,7 +120,7 @@ export default function SolucoesKanban() {
               <Plus className="size-4" /> Cadastrar solução
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-80 space-y-3">
+          <PopoverContent align="end" className="w-80 space-y-3 max-h-[80vh] overflow-y-auto">
             <div>
               <p className="text-sm font-medium">Cadastrar solução</p>
               <p className="text-xs text-muted-foreground">Vincule a uma solicitação existente, se desejar.</p>
