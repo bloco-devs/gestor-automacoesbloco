@@ -187,12 +187,13 @@ export default function Solucoes() {
               <SelectTrigger>
                 <SelectValue placeholder="Vincular a uma solicitação (opcional)" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-48">
                 <SelectItem value="none">Sem vínculo</SelectItem>
                 {solicitacoes.map((s) => (
                   <SelectItem key={s.id} value={s.id}>{s.titulo}</SelectItem>
                 ))}
               </SelectContent>
+
             </Select>
             <div className="flex justify-end">
               <Button size="sm" onClick={handleCriarSolucao} disabled={salvando}>
