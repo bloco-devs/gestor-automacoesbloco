@@ -226,6 +226,7 @@ export type CorNota = (typeof CORES_NOTA)[number];
 export interface DiagramaNota {
   id: string;
   texto: string;
+  cabecalho: string;
   x: number;
   y: number;
   largura: number;
@@ -236,11 +237,12 @@ export interface DiagramaNota {
 export async function listNotas(): Promise<DiagramaNota[]> {
   const { data, error } = await sb
     .from("solucao_diagrama_notas")
-    .select("id, texto, x, y, largura, altura, cor");
+    .select("id, texto, cabecalho, x, y, largura, altura, cor");
   if (error) throw error;
   return (data ?? []).map((r: Record<string, unknown>) => ({
     id: r.id as string,
     texto: (r.texto as string) ?? "",
+    cabecalho: (r.cabecalho as string) ?? "",
     x: Number(r.x),
     y: Number(r.y),
     largura: Number(r.largura),
@@ -257,12 +259,13 @@ export async function createNota(
   const { data, error } = await sb
     .from("solucao_diagrama_notas")
     .insert({ x, y, created_by: userId ?? null })
-    .select("id, texto, x, y, largura, altura, cor")
+    .select("id, texto, cabecalho, x, y, largura, altura, cor")
     .single();
   if (error) throw error;
   return {
     id: data.id,
     texto: data.texto ?? "",
+    cabecalho: data.cabecalho ?? "",
     x: Number(data.x),
     y: Number(data.y),
     largura: Number(data.largura),
@@ -273,7 +276,7 @@ export async function createNota(
 
 export async function updateNota(
   id: string,
-  patch: Partial<{ texto: string; x: number; y: number; largura: number; altura: number; cor: string }>,
+  patch: Partial<{ texto: string; cabecalho: string; x: number; y: number; largura: number; altura: number; cor: string }>,
 ): Promise<void> {
   const { error } = await sb.from("solucao_diagrama_notas").update(patch).eq("id", id);
   if (error) throw error;
