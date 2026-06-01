@@ -383,7 +383,7 @@ function DiagramaInner() {
         <p className="text-xs text-muted-foreground">
           Conecte as laterais das Soluções para indicar fluxo de dados (origem → destino). Duplo clique em uma seta
           para nomear o dado trafegado (ex.: Pedidos, NF-e). Clique no chip para detalhar as colunas trafegadas.
-          Arraste o ponto no meio da seta para ajustar a curva (duplo clique no ponto reseta).
+          Arraste a linha em qualquer ponto para ajustar a curva (duplo clique na linha reseta).
           Selecione uma seta e pressione Delete para removê-la. Duplo clique em um nó abre a Solução.
         </p>
 
