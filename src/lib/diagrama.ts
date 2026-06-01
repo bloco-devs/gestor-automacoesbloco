@@ -202,7 +202,18 @@ export async function deleteColuna(id: string): Promise<void> {
 }
 
 
-export const CORES_NOTA = ["amarelo", "rosa", "azul", "verde", "roxo"] as const;
+export const CORES_NOTA = [
+  "amarelo",
+  "laranja",
+  "vermelho",
+  "rosa",
+  "roxo",
+  "azul",
+  "ciano",
+  "verde",
+  "lima",
+  "cinza",
+] as const;
 export type CorNota = (typeof CORES_NOTA)[number];
 
 export interface DiagramaNota {
