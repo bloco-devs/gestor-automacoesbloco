@@ -573,6 +573,7 @@ export type Database = {
       solucao_diagrama_notas: {
         Row: {
           altura: number
+          cabecalho: string | null
           cor: string
           created_at: string
           created_by: string | null
@@ -585,6 +586,7 @@ export type Database = {
         }
         Insert: {
           altura?: number
+          cabecalho?: string | null
           cor?: string
           created_at?: string
           created_by?: string | null
@@ -597,6 +599,7 @@ export type Database = {
         }
         Update: {
           altura?: number
+          cabecalho?: string | null
           cor?: string
           created_at?: string
           created_by?: string | null

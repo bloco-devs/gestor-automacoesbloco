@@ -1,0 +1,1 @@
+ALTER TABLE public.solucao_diagrama_notas ADD COLUMN IF NOT EXISTS cabecalho text;
