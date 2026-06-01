@@ -275,7 +275,7 @@ function DiagramaInner() {
     async (params: Connection) => {
       if (!params.source || !params.target || params.source === params.target) return;
       const tempId = `tmp-${params.source}-${params.target}-${Date.now()}`;
-      setEdges((eds) => addEdge(buildEdge(tempId, params.source!, params.target!), eds));
+      setEdges((eds) => addEdge(buildEdge(tempId, params.source!, params.target!, undefined, openDetails), eds));
       try {
         const created = await createConexao(params.source, params.target, user?.id);
         if (!created) {
