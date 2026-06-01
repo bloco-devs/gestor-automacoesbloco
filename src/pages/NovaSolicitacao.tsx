@@ -114,13 +114,7 @@ export default function NovaSolicitacao() {
                 />
               </div>
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <Label>Setor da empresa</Label>
-                  <NovoDepartamentoDialog
-                    onCreated={(nome) => setSetor(nome)}
-                    existentes={setoresDisponiveis}
-                  />
-                </div>
+                <Label>Setor da empresa</Label>
                 <Select value={setor} onValueChange={setSetor}>
                   <SelectTrigger><SelectValue placeholder="Selecione o setor" /></SelectTrigger>
                   <SelectContent>
