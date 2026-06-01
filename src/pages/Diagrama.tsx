@@ -540,20 +540,34 @@ function DiagramaInner() {
       const containerEl = (wrap.querySelector(".react-flow") as HTMLElement | null) ?? wrap;
       if (!viewportEl) throw new Error("viewport not found");
 
-      // Salva o transform atual e ajusta para enquadrar tudo
+      // Salva estilos atuais e enquadra exatamente o bounding box de todos os nós
       const prevTransform = viewportEl.style.transform;
-      const width = containerEl.clientWidth;
-      const height = containerEl.clientHeight;
+      const prevWrapWidth = wrap.style.width;
+      const prevWrapHeight = wrap.style.height;
+      const prevContainerWidth = containerEl.style.width;
+      const prevContainerHeight = containerEl.style.height;
+
       const bounds = getNodesBounds(nodes);
       const padding = 40;
-      const vp = getViewportForBounds(bounds, width, height, 0.2, 2, padding);
-      viewportEl.style.transform = `translate(${vp.x}px, ${vp.y}px) scale(${vp.zoom})`;
+      const captureW = Math.ceil(bounds.width + padding * 2);
+      const captureH = Math.ceil(bounds.height + padding * 2);
+
+      // Redimensiona o container para o tamanho exato do conteúdo
+      wrap.style.width = `${captureW}px`;
+      wrap.style.height = `${captureH}px`;
+      containerEl.style.width = `${captureW}px`;
+      containerEl.style.height = `${captureH}px`;
+
+      // Posiciona viewport em escala 1:1 para capturar todos os nós sem corte
+      viewportEl.style.transform = `translate(${-bounds.x + padding}px, ${-bounds.y + padding}px) scale(1)`;
 
       // Aguarda o reflow
-      await new Promise((r) => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 150));
 
       const dataUrl = await toPng(containerEl, {
         pixelRatio: 2,
+        width: captureW,
+        height: captureH,
         backgroundColor: "#E5E3DF",
         filter: (node) => {
           if (!(node instanceof Element)) return true;
@@ -565,6 +579,10 @@ function DiagramaInner() {
 
       // Restaura
       viewportEl.style.transform = prevTransform;
+      wrap.style.width = prevWrapWidth;
+      wrap.style.height = prevWrapHeight;
+      containerEl.style.width = prevContainerWidth;
+      containerEl.style.height = prevContainerHeight;
 
       const img = new Image();
       img.src = dataUrl;
