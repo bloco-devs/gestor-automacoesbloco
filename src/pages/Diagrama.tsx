@@ -309,6 +309,39 @@ function DiagramaInner() {
     setLabelDialog(null);
   }, [labelDialog]);
 
+  const handleAddColuna = useCallback(async () => {
+    if (!detailsDialog) return;
+    const nome = novaColuna.nome.trim();
+    if (!nome) return;
+    try {
+      const created = await createColuna(
+        detailsDialog.edgeId,
+        nome,
+        novaColuna.tipo,
+        colunas.length,
+        user?.id,
+      );
+      setColunas((cs) => [...cs, created]);
+      setNovaColuna({ nome: "", tipo: novaColuna.tipo });
+    } catch (err) {
+      console.error("createColuna", err);
+    }
+  }, [detailsDialog, novaColuna, colunas.length, user?.id]);
+
+  const handleUpdateColuna = useCallback(
+    (id: string, patch: { nome?: string; tipo?: string }) => {
+      setColunas((cs) => cs.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+      updateColuna(id, patch).catch((err) => console.error("updateColuna", err));
+    },
+    [],
+  );
+
+  const handleDeleteColuna = useCallback((id: string) => {
+    setColunas((cs) => cs.filter((c) => c.id !== id));
+    deleteColuna(id).catch((err) => console.error("deleteColuna", err));
+  }, []);
+
+
   return (
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
       <div className="px-4 md:px-8 py-3 border-b border-border bg-background">
