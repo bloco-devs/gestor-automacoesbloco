@@ -570,7 +570,7 @@ function DiagramaInner() {
         pixelRatio: 2,
         width: captureW,
         height: captureH,
-        backgroundColor: "#E5E3DF",
+        backgroundColor: resolvedTheme === "dark" ? "#0C0C0C" : "#E5E3DF",
         filter: (node) => {
           if (!(node instanceof Element)) return true;
           return !node.classList?.contains("react-flow__minimap") &&
