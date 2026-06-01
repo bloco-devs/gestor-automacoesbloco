@@ -316,15 +316,18 @@ function DiagramaInner() {
     let cancelled = false;
     (async () => {
       try {
-        const [solucoes, solicitacoes, posicoes, conexoes] = await Promise.all([
+        const [solucoes, solicitacoes, posicoes, conexoes, notas] = await Promise.all([
           listSolucoes(),
           listSolicitacoes(),
           listPosicoes(),
           listConexoes(),
+          listNotas(),
         ]);
         if (cancelled) return;
         const posMap = new Map(posicoes.map((p) => [p.solucaoId, { x: p.x, y: p.y }]));
-        setNodes(buildNodes(solucoes, solicitacoes, posMap));
+        const solucaoNodes = buildNodes(solucoes, solicitacoes, posMap);
+        const notaNodes = notas.map(buildNotaNode);
+        setNodes([...solucaoNodes, ...notaNodes]);
         const validIds = new Set(solucoes.map((s) => s.id));
         setEdges(
           conexoes
@@ -338,7 +341,7 @@ function DiagramaInner() {
     return () => {
       cancelled = true;
     };
-  }, [buildNodes, openDetails, handleCurvatureDrag]);
+  }, [buildNodes, openDetails, handleCurvatureDrag, buildNotaNode]);
 
   const schedulePersistPosition = useCallback(
     (id: string, x: number, y: number) => {
@@ -356,14 +359,34 @@ function DiagramaInner() {
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      setNodes((nds) => applyNodeChanges(changes, nds));
-      for (const ch of changes) {
-        if (ch.type === "position" && ch.dragging === false && ch.position) {
-          schedulePersistPosition(ch.id, ch.position.x, ch.position.y);
+      setNodes((current) => {
+        const next = applyNodeChanges(changes, current);
+        for (const ch of changes) {
+          if (ch.type === "position" && ch.dragging === false && ch.position) {
+            const node = current.find((n) => n.id === ch.id);
+            if (node?.type === "nota") {
+              scheduleNotaUpdate(node.id, { x: ch.position.x, y: ch.position.y });
+            } else {
+              schedulePersistPosition(ch.id, ch.position.x, ch.position.y);
+            }
+          } else if (
+            ch.type === "dimensions" &&
+            ch.dimensions &&
+            ch.resizing === false
+          ) {
+            const node = current.find((n) => n.id === ch.id);
+            if (node?.type === "nota") {
+              scheduleNotaUpdate(node.id, {
+                largura: ch.dimensions.width,
+                altura: ch.dimensions.height,
+              });
+            }
+          }
         }
-      }
+        return next;
+      });
     },
-    [schedulePersistPosition],
+    [schedulePersistPosition, scheduleNotaUpdate],
   );
 
   const onEdgesChange = useCallback((changes: EdgeChange[]) => {
