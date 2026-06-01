@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Loader2, Pencil, Plus, Search, Trash2, UserCog, X } from "lucide-react";
+import { Building2, Check, Loader2, Pencil, Plus, Search, Trash2, UserCog, X } from "lucide-react";
+import { useSetoresRows } from "@/hooks/useSetores";
+import { createSetor, deleteSetor } from "@/lib/setores";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +36,7 @@ import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
+  AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -85,7 +88,148 @@ export default function Configuracoes() {
       </header>
 
       <AcessosPanel currentUserId={user.id} />
+      <DepartamentosPanel />
     </div>
+  );
+}
+
+function DepartamentosPanel() {
+  const { rows, refresh } = useSetoresRows();
+  const { toast } = useToast();
+  const [nome, setNome] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = nome.trim();
+    if (trimmed.length < 2) {
+      toast({ title: "Nome muito curto", description: "Informe ao menos 2 caracteres.", variant: "destructive" });
+      return;
+    }
+    if (rows.some((r) => r.nome.toLowerCase() === trimmed.toLowerCase())) {
+      toast({ title: "Departamento já existe", description: trimmed, variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      await createSetor(trimmed, descricao);
+      setNome("");
+      setDescricao("");
+      toast({ title: "Departamento criado", description: trimmed });
+      refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao salvar";
+      toast({ title: "Não foi possível criar", description: msg, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string, n: string) {
+    setRemoving(id);
+    try {
+      await deleteSetor(id);
+      toast({ title: "Departamento removido", description: n });
+      refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao remover";
+      toast({ title: "Não foi possível remover", description: msg, variant: "destructive" });
+    } finally {
+      setRemoving(null);
+    }
+  }
+
+  return (
+    <section className="space-y-4 pt-4 border-t">
+      <div>
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Building2 className="size-4" /> Departamentos
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Cadastre os departamentos disponíveis para classificar solicitações.
+        </p>
+      </div>
+
+      <form onSubmit={handleAdd} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end rounded-md border p-4">
+        <div className="space-y-1">
+          <Label htmlFor="dep-nome">Nome</Label>
+          <Input
+            id="dep-nome"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder="Ex.: Suprimentos"
+            maxLength={80}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="dep-desc">Descrição (opcional)</Label>
+          <Input
+            id="dep-desc"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            maxLength={300}
+          />
+        </div>
+        <Button type="submit" disabled={saving}>
+          {saving ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+          Adicionar
+        </Button>
+      </form>
+
+      <div className="rounded-md border">
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">
+            Nenhum departamento cadastrado ainda.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {rows.map((r) => (
+              <li key={r.id} className="px-4 py-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-medium">{r.nome}</div>
+                  {r.descricao && (
+                    <div className="text-xs text-muted-foreground line-clamp-2">{r.descricao}</div>
+                  )}
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={removing === r.id}
+                      aria-label={`Remover ${r.nome}`}
+                    >
+                      {removing === r.id ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="size-4 text-destructive" />
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remover "{r.nome}"?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Solicitações que já referenciam esse departamento permanecerão inalteradas,
+                        mas ele deixará de aparecer como opção em novos cadastros.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDelete(r.id, r.nome)}>
+                        Remover
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
   );
 }
 
