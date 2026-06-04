@@ -436,14 +436,15 @@ function KanbanCard({
         isDragging && "shadow-lg opacity-80",
       )}
     >
-      <div className="text-sm font-medium leading-snug line-clamp-3 group-hover:text-accent transition-colors">
+      <div className="text-sm font-medium leading-snug break-words group-hover:text-accent transition-colors">
         {card.titulo}
       </div>
       {card.descricao && (
-        <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
+        <p className="mt-1.5 text-xs text-muted-foreground break-words whitespace-pre-wrap">
           {card.descricao}
         </p>
       )}
+
 
       {checklistTotal > 0 && (
         <div
