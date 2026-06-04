@@ -181,17 +181,18 @@ export default function Atividades() {
         <div className="text-sm text-muted-foreground">Carregando...</div>
       ) : (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="flex gap-3 overflow-x-auto pb-3">
             {colunas.map((col) => (
-              <Coluna
-                key={col.id}
-                coluna={col}
-                cards={cardsByColuna[col.id] ?? []}
-                responsaveisMap={responsaveisMap}
-                solucoesMap={solucoesMap}
-                onNew={() => openNew(col.id)}
-                onEdit={openEdit}
-              />
+              <div key={col.id} className="w-72 shrink-0">
+                <Coluna
+                  coluna={col}
+                  cards={cardsByColuna[col.id] ?? []}
+                  responsaveisMap={responsaveisMap}
+                  solucoesMap={solucoesMap}
+                  onNew={() => openNew(col.id)}
+                  onEdit={openEdit}
+                />
+              </div>
             ))}
           </div>
         </DndContext>
