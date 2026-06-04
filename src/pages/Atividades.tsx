@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { CardDialog } from "@/components/atividades/CardDialog";
+import { CardDialog, type CardDraftValues } from "@/components/atividades/CardDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -52,6 +52,12 @@ export default function Atividades() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AtividadeCard | null>(null);
   const [newCardColuna, setNewCardColuna] = useState<string | null>(null);
+
+  // Rascunhos locais (não persistidos)
+  type Draft = { id: string; colunaId: string; data: CardDraftValues };
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
+  const editingDraft = drafts.find((d) => d.id === editingDraftId) ?? null;
 
   useEffect(() => {
     (async () => {
@@ -119,23 +125,47 @@ export default function Atividades() {
 
   function openNew(colunaId: string) {
     setEditing(null);
+    setEditingDraftId(null);
     setNewCardColuna(colunaId);
     setDialogOpen(true);
   }
   function openEdit(card: AtividadeCard) {
     setEditing(card);
+    setEditingDraftId(null);
     setNewCardColuna(null);
     setDialogOpen(true);
   }
+  function openDraft(draft: Draft) {
+    setEditing(null);
+    setEditingDraftId(draft.id);
+    setNewCardColuna(draft.colunaId);
+    setDialogOpen(true);
+  }
 
-  async function handleSubmit(data: {
-    titulo: string;
-    descricao: string;
-    responsavelId: string | null;
-    solucaoId: string | null;
-    checklist: ChecklistItem[];
-    links: CardLink[];
-  }) {
+  function handleSaveDraft(data: CardDraftValues) {
+    if (!newCardColuna) return;
+    if (editingDraftId) {
+      setDrafts((ds) =>
+        ds.map((d) => (d.id === editingDraftId ? { ...d, data } : d)),
+      );
+    } else {
+      const id = `draft-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      setDrafts((ds) => [...ds, { id, colunaId: newCardColuna, data }]);
+    }
+    toast.success("Rascunho salvo na coluna");
+  }
+
+  function handleDiscardDraft() {
+    if (editingDraftId) {
+      setDrafts((ds) => ds.filter((d) => d.id !== editingDraftId));
+    }
+  }
+
+  function handleDeleteDraft(draftId: string) {
+    setDrafts((ds) => ds.filter((d) => d.id !== draftId));
+  }
+
+  async function handleSubmit(data: CardDraftValues) {
     try {
       if (editing) {
         await updateCard(editing.id, data);
@@ -154,6 +184,9 @@ export default function Atividades() {
           ordem: (cardsByColuna[newCardColuna]?.length ?? 0) + 1,
         });
         setCards((cs) => [...cs, created]);
+        if (editingDraftId) {
+          setDrafts((ds) => ds.filter((d) => d.id !== editingDraftId));
+        }
         toast.success("Card criado");
       }
     } catch (e) {
@@ -211,10 +244,13 @@ export default function Atividades() {
                 <Coluna
                   coluna={col}
                   cards={cardsByColuna[col.id] ?? []}
+                  drafts={drafts.filter((d) => d.colunaId === col.id)}
                   responsaveisMap={responsaveisMap}
                   solucoesMap={solucoesMap}
                   onNew={() => openNew(col.id)}
                   onEdit={openEdit}
+                  onOpenDraft={openDraft}
+                  onDeleteDraft={handleDeleteDraft}
                   onToggleChecklist={toggleChecklistItem}
                 />
               </div>
@@ -227,10 +263,13 @@ export default function Atividades() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         initial={editing}
+        defaultValues={editingDraft?.data ?? null}
         responsaveis={responsaveis}
         solucoes={solucoes}
         onSubmit={handleSubmit}
         onDelete={editing ? handleDelete : undefined}
+        onSaveDraft={!editing ? handleSaveDraft : undefined}
+        onDiscardDraft={!editing ? handleDiscardDraft : undefined}
       />
     </div>
   );
@@ -239,18 +278,24 @@ export default function Atividades() {
 function Coluna({
   coluna,
   cards,
+  drafts,
   responsaveisMap,
   solucoesMap,
   onNew,
   onEdit,
+  onOpenDraft,
+  onDeleteDraft,
   onToggleChecklist,
 }: {
   coluna: AtividadeColuna;
   cards: AtividadeCard[];
+  drafts: { id: string; colunaId: string; data: CardDraftValues }[];
   responsaveisMap: Map<string, AssignableUser>;
   solucoesMap: Map<string, Solucao>;
   onNew: () => void;
   onEdit: (c: AtividadeCard) => void;
+  onOpenDraft: (d: { id: string; colunaId: string; data: CardDraftValues }) => void;
+  onDeleteDraft: (id: string) => void;
   onToggleChecklist: (cardId: string, itemId: string) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: coluna.id });
@@ -290,7 +335,63 @@ function Coluna({
             onToggleChecklist={onToggleChecklist}
           />
         ))}
+        {drafts.map((draft) => (
+          <DraftCard
+            key={draft.id}
+            draft={draft}
+            onOpen={() => onOpenDraft(draft)}
+            onDelete={() => onDeleteDraft(draft.id)}
+          />
+        ))}
       </div>
+    </div>
+  );
+}
+
+function DraftCard({
+  draft,
+  onOpen,
+  onDelete,
+}: {
+  draft: { id: string; colunaId: string; data: CardDraftValues };
+  onOpen: () => void;
+  onDelete: () => void;
+}) {
+  const { titulo, descricao, checklist } = draft.data;
+  return (
+    <div
+      onClick={onOpen}
+      className="group relative rounded-md border border-dashed border-accent/40 bg-accent/5 p-3 cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
+      title="Rascunho — clique para continuar editando"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10px] uppercase tracking-wide text-accent font-medium">
+          Rascunho
+        </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="text-[10px] text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          Descartar
+        </button>
+      </div>
+      <div className="mt-1 text-sm font-medium leading-snug line-clamp-2">
+        {titulo || <span className="italic text-muted-foreground">Sem título</span>}
+      </div>
+      {descricao && (
+        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+          {descricao}
+        </p>
+      )}
+      {checklist.length > 0 && (
+        <div className="mt-1.5 text-[10px] text-muted-foreground">
+          {checklist.filter((c) => c.concluido).length}/{checklist.length} itens
+        </div>
+      )}
     </div>
   );
 }
