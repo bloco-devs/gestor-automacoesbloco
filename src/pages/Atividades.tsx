@@ -53,6 +53,12 @@ export default function Atividades() {
   const [editing, setEditing] = useState<AtividadeCard | null>(null);
   const [newCardColuna, setNewCardColuna] = useState<string | null>(null);
 
+  // Rascunhos locais (não persistidos)
+  type Draft = { id: string; colunaId: string; data: CardDraftValues };
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
+  const editingDraft = drafts.find((d) => d.id === editingDraftId) ?? null;
+
   useEffect(() => {
     (async () => {
       try {
