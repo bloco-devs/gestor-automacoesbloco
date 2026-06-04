@@ -8,7 +8,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { Plus, Link2 } from "lucide-react";
+import { Plus, Link2, CheckSquare, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   listColunas,
