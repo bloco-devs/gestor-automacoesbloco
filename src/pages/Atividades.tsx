@@ -283,6 +283,7 @@ function Coluna({
             responsavel={card.responsavelId ? responsaveisMap.get(card.responsavelId) : undefined}
             solucao={card.solucaoId ? solucoesMap.get(card.solucaoId) : undefined}
             onEdit={() => onEdit(card)}
+            onToggleChecklist={onToggleChecklist}
           />
         ))}
       </div>
