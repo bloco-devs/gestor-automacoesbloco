@@ -130,6 +130,8 @@ export default function Atividades() {
     descricao: string;
     responsavelId: string | null;
     solucaoId: string | null;
+    checklist: ChecklistItem[];
+    links: CardLink[];
   }) {
     try {
       if (editing) {
@@ -143,6 +145,8 @@ export default function Atividades() {
           descricao: data.descricao,
           responsavelId: data.responsavelId,
           solucaoId: data.solucaoId,
+          checklist: data.checklist,
+          links: data.links,
           createdBy: user?.id,
           ordem: (cardsByColuna[newCardColuna]?.length ?? 0) + 1,
         });
@@ -153,6 +157,23 @@ export default function Atividades() {
       console.error(e);
       toast.error("Erro ao salvar card");
       throw e;
+    }
+  }
+
+  async function toggleChecklistItem(cardId: string, itemId: string) {
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) return;
+    const next = card.checklist.map((i) =>
+      i.id === itemId ? { ...i, concluido: !i.concluido } : i,
+    );
+    const prev = cards;
+    setCards((cs) => cs.map((c) => (c.id === cardId ? { ...c, checklist: next } : c)));
+    try {
+      await updateCard(cardId, { checklist: next });
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao atualizar checklist");
+      setCards(prev);
     }
   }
 
