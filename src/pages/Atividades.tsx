@@ -8,7 +8,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { Plus, Link2 } from "lucide-react";
+import { Plus, Link2, CheckSquare, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   listColunas,
@@ -18,11 +18,14 @@ import {
   deleteCard,
   type AtividadeColuna,
   type AtividadeCard,
+  type ChecklistItem,
+  type CardLink,
 } from "@/lib/atividades";
 import { listAssignableUsers, listSolucoes } from "@/lib/supabaseData";
 import type { AssignableUser, Solucao } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { CardDialog } from "@/components/atividades/CardDialog";
 import { useAuth } from "@/hooks/useAuth";
@@ -130,6 +133,8 @@ export default function Atividades() {
     descricao: string;
     responsavelId: string | null;
     solucaoId: string | null;
+    checklist: ChecklistItem[];
+    links: CardLink[];
   }) {
     try {
       if (editing) {
@@ -143,6 +148,8 @@ export default function Atividades() {
           descricao: data.descricao,
           responsavelId: data.responsavelId,
           solucaoId: data.solucaoId,
+          checklist: data.checklist,
+          links: data.links,
           createdBy: user?.id,
           ordem: (cardsByColuna[newCardColuna]?.length ?? 0) + 1,
         });
@@ -153,6 +160,23 @@ export default function Atividades() {
       console.error(e);
       toast.error("Erro ao salvar card");
       throw e;
+    }
+  }
+
+  async function toggleChecklistItem(cardId: string, itemId: string) {
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) return;
+    const next = card.checklist.map((i) =>
+      i.id === itemId ? { ...i, concluido: !i.concluido } : i,
+    );
+    const prev = cards;
+    setCards((cs) => cs.map((c) => (c.id === cardId ? { ...c, checklist: next } : c)));
+    try {
+      await updateCard(cardId, { checklist: next });
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao atualizar checklist");
+      setCards(prev);
     }
   }
 
@@ -191,6 +215,7 @@ export default function Atividades() {
                   solucoesMap={solucoesMap}
                   onNew={() => openNew(col.id)}
                   onEdit={openEdit}
+                  onToggleChecklist={toggleChecklistItem}
                 />
               </div>
             ))}
@@ -218,6 +243,7 @@ function Coluna({
   solucoesMap,
   onNew,
   onEdit,
+  onToggleChecklist,
 }: {
   coluna: AtividadeColuna;
   cards: AtividadeCard[];
@@ -225,6 +251,7 @@ function Coluna({
   solucoesMap: Map<string, Solucao>;
   onNew: () => void;
   onEdit: (c: AtividadeCard) => void;
+  onToggleChecklist: (cardId: string, itemId: string) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: coluna.id });
   return (
@@ -260,6 +287,7 @@ function Coluna({
             responsavel={card.responsavelId ? responsaveisMap.get(card.responsavelId) : undefined}
             solucao={card.solucaoId ? solucoesMap.get(card.solucaoId) : undefined}
             onEdit={() => onEdit(card)}
+            onToggleChecklist={onToggleChecklist}
           />
         ))}
       </div>
@@ -272,11 +300,13 @@ function KanbanCard({
   responsavel,
   solucao,
   onEdit,
+  onToggleChecklist,
 }: {
   card: AtividadeCard;
   responsavel?: AssignableUser;
   solucao?: Solucao;
   onEdit: () => void;
+  onToggleChecklist: (cardId: string, itemId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: card.id,
@@ -284,6 +314,10 @@ function KanbanCard({
   const style = transform
     ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
     : undefined;
+
+  const checklistTotal = card.checklist.length;
+  const checklistDone = card.checklist.filter((c) => c.concluido).length;
+  const progress = checklistTotal > 0 ? (checklistDone / checklistTotal) * 100 : 0;
 
   return (
     <div
@@ -309,6 +343,80 @@ function KanbanCard({
           {card.descricao}
         </p>
       )}
+
+      {checklistTotal > 0 && (
+        <div
+          className="mt-2 space-y-1.5"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <CheckSquare className="size-3" />
+            <span className="tabular-nums">
+              {checklistDone}/{checklistTotal}
+            </span>
+            <div className="ml-1 h-1 flex-1 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-accent transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+          <div className="space-y-0.5">
+            {card.checklist.slice(0, 3).map((item) => (
+              <label
+                key={item.id}
+                className="flex items-start gap-1.5 text-[11px] cursor-pointer"
+              >
+                <Checkbox
+                  checked={item.concluido}
+                  onCheckedChange={() => onToggleChecklist(card.id, item.id)}
+                  className="mt-0.5 size-3.5"
+                />
+                <span
+                  className={cn(
+                    "leading-snug line-clamp-1",
+                    item.concluido && "line-through text-muted-foreground",
+                  )}
+                >
+                  {item.texto}
+                </span>
+              </label>
+            ))}
+            {card.checklist.length > 3 && (
+              <span className="text-[10px] text-muted-foreground pl-5">
+                +{card.checklist.length - 3} item(s)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {card.links.length > 0 && (
+        <div
+          className="mt-2 flex flex-wrap gap-1"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {card.links.map((link) => (
+            <Button
+              key={link.id}
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-6 px-2 text-[10px] gap-1"
+            >
+              <a href={link.url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="size-3" />
+                <span className="truncate max-w-[120px]">
+                  {link.label || link.url}
+                </span>
+              </a>
+            </Button>
+          ))}
+        </div>
+      )}
+
       {solucao && (
         <Link
           to={`/solucoes/${solucao.id}`}

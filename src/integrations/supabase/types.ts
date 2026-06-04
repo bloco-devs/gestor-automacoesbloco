@@ -76,11 +76,13 @@ export type Database = {
       }
       atividades_cards: {
         Row: {
+          checklist: Json
           coluna_id: string
           created_at: string
           created_by: string | null
           descricao: string
           id: string
+          links: Json
           ordem: number
           responsavel_id: string | null
           solucao_id: string | null
@@ -88,11 +90,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          checklist?: Json
           coluna_id: string
           created_at?: string
           created_by?: string | null
           descricao?: string
           id?: string
+          links?: Json
           ordem?: number
           responsavel_id?: string | null
           solucao_id?: string | null
@@ -100,11 +104,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          checklist?: Json
           coluna_id?: string
           created_at?: string
           created_by?: string | null
           descricao?: string
           id?: string
+          links?: Json
           ordem?: number
           responsavel_id?: string | null
           solucao_id?: string | null
