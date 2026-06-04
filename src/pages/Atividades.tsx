@@ -379,14 +379,15 @@ function DraftCard({
           Descartar
         </button>
       </div>
-      <div className="mt-1 text-sm font-medium leading-snug line-clamp-2">
+      <div className="mt-1 text-sm font-medium leading-snug break-words">
         {titulo || <span className="italic text-muted-foreground">Sem título</span>}
       </div>
       {descricao && (
-        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+        <p className="mt-1 text-xs text-muted-foreground break-words whitespace-pre-wrap">
           {descricao}
         </p>
       )}
+
       {checklist.length > 0 && (
         <div className="mt-1.5 text-[10px] text-muted-foreground">
           {checklist.filter((c) => c.concluido).length}/{checklist.length} itens
