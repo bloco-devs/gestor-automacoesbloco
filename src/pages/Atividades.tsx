@@ -379,15 +379,14 @@ function DraftCard({
           Descartar
         </button>
       </div>
-      <div className="mt-1 text-sm font-medium leading-snug break-words">
+      <div className="mt-1 text-sm font-medium leading-snug line-clamp-2">
         {titulo || <span className="italic text-muted-foreground">Sem título</span>}
       </div>
       {descricao && (
-        <p className="mt-1 text-xs text-muted-foreground break-words whitespace-pre-wrap">
+        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
           {descricao}
         </p>
       )}
-
       {checklist.length > 0 && (
         <div className="mt-1.5 text-[10px] text-muted-foreground">
           {checklist.filter((c) => c.concluido).length}/{checklist.length} itens
@@ -437,15 +436,14 @@ function KanbanCard({
         isDragging && "shadow-lg opacity-80",
       )}
     >
-      <div className="text-sm font-medium leading-snug break-words group-hover:text-accent transition-colors">
+      <div className="text-sm font-medium leading-snug line-clamp-3 group-hover:text-accent transition-colors">
         {card.titulo}
       </div>
       {card.descricao && (
-        <p className="mt-1.5 text-xs text-muted-foreground break-words whitespace-pre-wrap">
+        <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
           {card.descricao}
         </p>
       )}
-
 
       {checklistTotal > 0 && (
         <div
@@ -478,13 +476,12 @@ function KanbanCard({
                 />
                 <span
                   className={cn(
-                    "leading-snug break-words",
+                    "leading-snug line-clamp-1",
                     item.concluido && "line-through text-muted-foreground",
                   )}
                 >
                   {item.texto}
                 </span>
-
               </label>
             ))}
             {card.checklist.length > 3 && (
