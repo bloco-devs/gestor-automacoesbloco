@@ -299,11 +299,13 @@ function KanbanCard({
   responsavel,
   solucao,
   onEdit,
+  onToggleChecklist,
 }: {
   card: AtividadeCard;
   responsavel?: AssignableUser;
   solucao?: Solucao;
   onEdit: () => void;
+  onToggleChecklist: (cardId: string, itemId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: card.id,
@@ -311,6 +313,10 @@ function KanbanCard({
   const style = transform
     ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
     : undefined;
+
+  const checklistTotal = card.checklist.length;
+  const checklistDone = card.checklist.filter((c) => c.concluido).length;
+  const progress = checklistTotal > 0 ? (checklistDone / checklistTotal) * 100 : 0;
 
   return (
     <div
@@ -336,6 +342,80 @@ function KanbanCard({
           {card.descricao}
         </p>
       )}
+
+      {checklistTotal > 0 && (
+        <div
+          className="mt-2 space-y-1.5"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <CheckSquare className="size-3" />
+            <span className="tabular-nums">
+              {checklistDone}/{checklistTotal}
+            </span>
+            <div className="ml-1 h-1 flex-1 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-accent transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+          <div className="space-y-0.5">
+            {card.checklist.slice(0, 3).map((item) => (
+              <label
+                key={item.id}
+                className="flex items-start gap-1.5 text-[11px] cursor-pointer"
+              >
+                <Checkbox
+                  checked={item.concluido}
+                  onCheckedChange={() => onToggleChecklist(card.id, item.id)}
+                  className="mt-0.5 size-3.5"
+                />
+                <span
+                  className={cn(
+                    "leading-snug line-clamp-1",
+                    item.concluido && "line-through text-muted-foreground",
+                  )}
+                >
+                  {item.texto}
+                </span>
+              </label>
+            ))}
+            {card.checklist.length > 3 && (
+              <span className="text-[10px] text-muted-foreground pl-5">
+                +{card.checklist.length - 3} item(s)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {card.links.length > 0 && (
+        <div
+          className="mt-2 flex flex-wrap gap-1"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {card.links.map((link) => (
+            <Button
+              key={link.id}
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-6 px-2 text-[10px] gap-1"
+            >
+              <a href={link.url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="size-3" />
+                <span className="truncate max-w-[120px]">
+                  {link.label || link.url}
+                </span>
+              </a>
+            </Button>
+          ))}
+        </div>
+      )}
+
       {solucao && (
         <Link
           to={`/solucoes/${solucao.id}`}
