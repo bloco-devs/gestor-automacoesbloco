@@ -74,6 +74,84 @@ export type Database = {
         }
         Relationships: []
       }
+      atividades_cards: {
+        Row: {
+          coluna_id: string
+          created_at: string
+          created_by: string | null
+          descricao: string
+          id: string
+          ordem: number
+          responsavel_id: string | null
+          solucao_id: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          coluna_id: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          id?: string
+          ordem?: number
+          responsavel_id?: string | null
+          solucao_id?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          coluna_id?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          id?: string
+          ordem?: number
+          responsavel_id?: string | null
+          solucao_id?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_cards_coluna_id_fkey"
+            columns: ["coluna_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_colunas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_cards_solucao_id_fkey"
+            columns: ["solucao_id"]
+            isOneToOne: false
+            referencedRelation: "demanda_solucoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_colunas: {
+        Row: {
+          chave: string
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
       criterios_solucoes: {
         Row: {
           complexidade: number
