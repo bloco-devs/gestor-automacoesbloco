@@ -478,12 +478,13 @@ function KanbanCard({
                 />
                 <span
                   className={cn(
-                    "leading-snug line-clamp-1",
+                    "leading-snug break-words",
                     item.concluido && "line-through text-muted-foreground",
                   )}
                 >
                   {item.texto}
                 </span>
+
               </label>
             ))}
             {card.checklist.length > 3 && (
