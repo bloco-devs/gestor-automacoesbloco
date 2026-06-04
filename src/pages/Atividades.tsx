@@ -244,10 +244,13 @@ export default function Atividades() {
                 <Coluna
                   coluna={col}
                   cards={cardsByColuna[col.id] ?? []}
+                  drafts={drafts.filter((d) => d.colunaId === col.id)}
                   responsaveisMap={responsaveisMap}
                   solucoesMap={solucoesMap}
                   onNew={() => openNew(col.id)}
                   onEdit={openEdit}
+                  onOpenDraft={openDraft}
+                  onDeleteDraft={handleDeleteDraft}
                   onToggleChecklist={toggleChecklistItem}
                 />
               </div>
@@ -260,10 +263,13 @@ export default function Atividades() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         initial={editing}
+        defaultValues={editingDraft?.data ?? null}
         responsaveis={responsaveis}
         solucoes={solucoes}
         onSubmit={handleSubmit}
         onDelete={editing ? handleDelete : undefined}
+        onSaveDraft={!editing ? handleSaveDraft : undefined}
+        onDiscardDraft={!editing ? handleDiscardDraft : undefined}
       />
     </div>
   );
@@ -272,18 +278,24 @@ export default function Atividades() {
 function Coluna({
   coluna,
   cards,
+  drafts,
   responsaveisMap,
   solucoesMap,
   onNew,
   onEdit,
+  onOpenDraft,
+  onDeleteDraft,
   onToggleChecklist,
 }: {
   coluna: AtividadeColuna;
   cards: AtividadeCard[];
+  drafts: { id: string; colunaId: string; data: CardDraftValues }[];
   responsaveisMap: Map<string, AssignableUser>;
   solucoesMap: Map<string, Solucao>;
   onNew: () => void;
   onEdit: (c: AtividadeCard) => void;
+  onOpenDraft: (d: { id: string; colunaId: string; data: CardDraftValues }) => void;
+  onDeleteDraft: (id: string) => void;
   onToggleChecklist: (cardId: string, itemId: string) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: coluna.id });
