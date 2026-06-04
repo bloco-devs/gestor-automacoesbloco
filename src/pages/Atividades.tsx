@@ -18,6 +18,8 @@ import {
   deleteCard,
   type AtividadeColuna,
   type AtividadeCard,
+  type ChecklistItem,
+  type CardLink,
 } from "@/lib/atividades";
 import { listAssignableUsers, listSolucoes } from "@/lib/supabaseData";
 import type { AssignableUser, Solucao } from "@/lib/types";
