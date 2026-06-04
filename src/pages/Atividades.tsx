@@ -241,6 +241,7 @@ function Coluna({
   solucoesMap,
   onNew,
   onEdit,
+  onToggleChecklist,
 }: {
   coluna: AtividadeColuna;
   cards: AtividadeCard[];
@@ -248,6 +249,7 @@ function Coluna({
   solucoesMap: Map<string, Solucao>;
   onNew: () => void;
   onEdit: (c: AtividadeCard) => void;
+  onToggleChecklist: (cardId: string, itemId: string) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: coluna.id });
   return (
