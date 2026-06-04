@@ -10,6 +10,18 @@ export interface AtividadeColuna {
   ordem: number;
 }
 
+export interface ChecklistItem {
+  id: string;
+  texto: string;
+  concluido: boolean;
+}
+
+export interface CardLink {
+  id: string;
+  label: string;
+  url: string;
+}
+
 export interface AtividadeCard {
   id: string;
   colunaId: string;
@@ -18,9 +30,32 @@ export interface AtividadeCard {
   responsavelId: string | null;
   solucaoId: string | null;
   ordem: number;
+  checklist: ChecklistItem[];
+  links: CardLink[];
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+const SELECT_COLS =
+  "id, coluna_id, titulo, descricao, responsavel_id, solucao_id, ordem, checklist, links, created_by, created_at, updated_at";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapCard(r: any): AtividadeCard {
+  return {
+    id: r.id,
+    colunaId: r.coluna_id,
+    titulo: r.titulo,
+    descricao: r.descricao ?? "",
+    responsavelId: r.responsavel_id,
+    solucaoId: r.solucao_id,
+    ordem: r.ordem ?? 0,
+    checklist: Array.isArray(r.checklist) ? r.checklist : [],
+    links: Array.isArray(r.links) ? r.links : [],
+    createdBy: r.created_by,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
 }
 
 export async function listColunas(): Promise<AtividadeColuna[]> {
@@ -40,22 +75,10 @@ export async function listColunas(): Promise<AtividadeColuna[]> {
 export async function listCards(): Promise<AtividadeCard[]> {
   const { data, error } = await sb
     .from("atividades_cards")
-    .select("id, coluna_id, titulo, descricao, responsavel_id, solucao_id, ordem, created_by, created_at, updated_at")
+    .select(SELECT_COLS)
     .order("ordem", { ascending: true });
   if (error) throw error;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data ?? []).map((r: any) => ({
-    id: r.id,
-    colunaId: r.coluna_id,
-    titulo: r.titulo,
-    descricao: r.descricao ?? "",
-    responsavelId: r.responsavel_id,
-    solucaoId: r.solucao_id,
-    ordem: r.ordem ?? 0,
-    createdBy: r.created_by,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-  }));
+  return (data ?? []).map(mapCard);
 }
 
 export async function createCard(input: {
@@ -64,6 +87,8 @@ export async function createCard(input: {
   descricao?: string;
   responsavelId?: string | null;
   solucaoId?: string | null;
+  checklist?: ChecklistItem[];
+  links?: CardLink[];
   createdBy?: string | null;
   ordem?: number;
 }): Promise<AtividadeCard> {
@@ -75,24 +100,15 @@ export async function createCard(input: {
       descricao: input.descricao ?? "",
       responsavel_id: input.responsavelId ?? null,
       solucao_id: input.solucaoId ?? null,
+      checklist: input.checklist ?? [],
+      links: input.links ?? [],
       created_by: input.createdBy ?? null,
       ordem: input.ordem ?? 0,
     })
-    .select("id, coluna_id, titulo, descricao, responsavel_id, solucao_id, ordem, created_by, created_at, updated_at")
+    .select(SELECT_COLS)
     .single();
   if (error) throw error;
-  return {
-    id: data.id,
-    colunaId: data.coluna_id,
-    titulo: data.titulo,
-    descricao: data.descricao ?? "",
-    responsavelId: data.responsavel_id,
-    solucaoId: data.solucao_id,
-    ordem: data.ordem ?? 0,
-    createdBy: data.created_by,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-  };
+  return mapCard(data);
 }
 
 export async function updateCard(
@@ -104,6 +120,8 @@ export async function updateCard(
     solucaoId?: string | null;
     colunaId?: string;
     ordem?: number;
+    checklist?: ChecklistItem[];
+    links?: CardLink[];
   },
 ): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -114,6 +132,8 @@ export async function updateCard(
   if (patch.solucaoId !== undefined) upd.solucao_id = patch.solucaoId;
   if (patch.colunaId !== undefined) upd.coluna_id = patch.colunaId;
   if (patch.ordem !== undefined) upd.ordem = patch.ordem;
+  if (patch.checklist !== undefined) upd.checklist = patch.checklist;
+  if (patch.links !== undefined) upd.links = patch.links;
   const { error } = await sb.from("atividades_cards").update(upd).eq("id", id);
   if (error) throw error;
 }
