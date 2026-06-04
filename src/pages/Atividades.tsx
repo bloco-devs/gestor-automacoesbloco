@@ -214,6 +214,7 @@ export default function Atividades() {
                   solucoesMap={solucoesMap}
                   onNew={() => openNew(col.id)}
                   onEdit={openEdit}
+                  onToggleChecklist={toggleChecklistItem}
                 />
               </div>
             ))}
