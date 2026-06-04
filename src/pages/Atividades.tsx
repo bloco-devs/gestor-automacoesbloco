@@ -125,23 +125,47 @@ export default function Atividades() {
 
   function openNew(colunaId: string) {
     setEditing(null);
+    setEditingDraftId(null);
     setNewCardColuna(colunaId);
     setDialogOpen(true);
   }
   function openEdit(card: AtividadeCard) {
     setEditing(card);
+    setEditingDraftId(null);
     setNewCardColuna(null);
     setDialogOpen(true);
   }
+  function openDraft(draft: Draft) {
+    setEditing(null);
+    setEditingDraftId(draft.id);
+    setNewCardColuna(draft.colunaId);
+    setDialogOpen(true);
+  }
 
-  async function handleSubmit(data: {
-    titulo: string;
-    descricao: string;
-    responsavelId: string | null;
-    solucaoId: string | null;
-    checklist: ChecklistItem[];
-    links: CardLink[];
-  }) {
+  function handleSaveDraft(data: CardDraftValues) {
+    if (!newCardColuna) return;
+    if (editingDraftId) {
+      setDrafts((ds) =>
+        ds.map((d) => (d.id === editingDraftId ? { ...d, data } : d)),
+      );
+    } else {
+      const id = `draft-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      setDrafts((ds) => [...ds, { id, colunaId: newCardColuna, data }]);
+    }
+    toast.success("Rascunho salvo na coluna");
+  }
+
+  function handleDiscardDraft() {
+    if (editingDraftId) {
+      setDrafts((ds) => ds.filter((d) => d.id !== editingDraftId));
+    }
+  }
+
+  function handleDeleteDraft(draftId: string) {
+    setDrafts((ds) => ds.filter((d) => d.id !== draftId));
+  }
+
+  async function handleSubmit(data: CardDraftValues) {
     try {
       if (editing) {
         await updateCard(editing.id, data);
@@ -160,6 +184,9 @@ export default function Atividades() {
           ordem: (cardsByColuna[newCardColuna]?.length ?? 0) + 1,
         });
         setCards((cs) => [...cs, created]);
+        if (editingDraftId) {
+          setDrafts((ds) => ds.filter((d) => d.id !== editingDraftId));
+        }
         toast.success("Card criado");
       }
     } catch (e) {
