@@ -183,7 +183,7 @@ export default function Atividades() {
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <div className="flex gap-3 overflow-x-auto pb-3">
             {colunas.map((col) => (
-              <div key={col.id} className="w-72 shrink-0">
+              <div key={col.id} className="flex-1 min-w-0 basis-0">
                 <Coluna
                   coluna={col}
                   cards={cardsByColuna[col.id] ?? []}
