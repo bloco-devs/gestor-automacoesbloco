@@ -436,111 +436,60 @@ function KanbanCard({
         isDragging && "shadow-lg opacity-80",
       )}
     >
-      <div className="text-sm font-medium leading-snug line-clamp-3 group-hover:text-accent transition-colors">
-        {card.titulo}
-      </div>
-      {card.descricao && (
-        <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
-          {card.descricao}
-        </p>
-      )}
-
-      {checklistTotal > 0 && (
-        <div
-          className="mt-2 space-y-1.5"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-            <CheckSquare className="size-3" />
-            <span className="tabular-nums">
-              {checklistDone}/{checklistTotal}
-            </span>
-            <div className="ml-1 h-1 flex-1 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full bg-accent transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            {card.checklist.slice(0, 3).map((item) => (
-              <label
-                key={item.id}
-                className="flex items-start gap-1.5 text-[11px] cursor-pointer"
-              >
-                <Checkbox
-                  checked={item.concluido}
-                  onCheckedChange={() => onToggleChecklist(card.id, item.id)}
-                  className="mt-0.5 size-3.5"
-                />
-                <span
-                  className={cn(
-                    "leading-snug line-clamp-1",
-                    item.concluido && "line-through text-muted-foreground",
-                  )}
-                >
-                  {item.texto}
-                </span>
-              </label>
-            ))}
-            {card.checklist.length > 3 && (
-              <span className="text-[10px] text-muted-foreground pl-5">
-                +{card.checklist.length - 3} item(s)
-              </span>
-            )}
-          </div>
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0 text-sm font-medium leading-snug line-clamp-1 group-hover:text-accent transition-colors">
+          {card.titulo}
         </div>
-      )}
-
-      {card.links.length > 0 && (
-        <div
-          className="mt-2 flex flex-wrap gap-1"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {card.links.map((link) => (
-            <Button
-              key={link.id}
-              asChild
-              size="sm"
-              variant="outline"
-              className="h-6 px-2 text-[10px] gap-1"
-            >
-              <a href={link.url} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="size-3" />
-                <span className="truncate max-w-[120px]">
-                  {link.label || link.url}
-                </span>
-              </a>
-            </Button>
-          ))}
-        </div>
-      )}
-
-      {solucao && (
-        <Link
-          to={`/solucoes/${solucao.id}`}
-          onClick={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          <Badge variant="outline" className="mt-2 gap-1 text-[10px] font-normal">
-            <Link2 className="size-3" />
-            <span className="truncate max-w-[140px]">{solucao.titulo}</span>
-          </Badge>
-        </Link>
-      )}
-      <div className="mt-2.5 flex items-center justify-end">
         {responsavel ? (
-          <Avatar className="size-6" title={responsavel.nome}>
-            <AvatarFallback className="text-[10px]">
+          <Avatar className="size-5 shrink-0" title={responsavel.nome}>
+            <AvatarFallback className="text-[9px]">
               {initials(responsavel.nome)}
             </AvatarFallback>
           </Avatar>
-        ) : (
-          <span className="text-[10px] text-muted-foreground">Sem responsável</span>
-        )}
+        ) : null}
       </div>
+
+      {(card.descricao || checklistTotal > 0 || card.links.length > 0 || solucao) && (
+        <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+          {card.descricao && (
+            <span title="Possui descrição" className="flex items-center">
+              <AlignLeft className="size-3" />
+            </span>
+          )}
+          {checklistTotal > 0 && (
+            <span
+              title={`Checklist: ${checklistDone}/${checklistTotal}`}
+              className={cn(
+                "flex items-center gap-0.5 tabular-nums",
+                checklistDone === checklistTotal && "text-accent",
+              )}
+            >
+              <CheckSquare className="size-3" />
+              {checklistDone}/{checklistTotal}
+            </span>
+          )}
+          {card.links.length > 0 && (
+            <span
+              title={`${card.links.length} link(s)`}
+              className="flex items-center gap-0.5 tabular-nums"
+            >
+              <LinkIcon className="size-3" />
+              {card.links.length}
+            </span>
+          )}
+          {solucao && (
+            <Link
+              to={`/solucoes/${solucao.id}`}
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              title={`Solução: ${solucao.titulo}`}
+              className="flex items-center hover:text-accent ml-auto"
+            >
+              <Link2 className="size-3" />
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }
