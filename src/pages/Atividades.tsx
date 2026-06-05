@@ -437,7 +437,7 @@ function KanbanCard({
       )}
     >
       <div className="flex items-start gap-2">
-        <div className="flex-1 min-w-0 text-sm font-medium leading-snug line-clamp-1 group-hover:text-accent transition-colors">
+        <div className="flex-1 min-w-0 text-sm font-medium leading-snug line-clamp-3 group-hover:text-accent transition-colors">
           {card.titulo}
         </div>
         {responsavel ? (
