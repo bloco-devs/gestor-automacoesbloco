@@ -401,13 +401,13 @@ function DraftCard({
 
 function KanbanCard({
   card,
-  responsavel,
+  responsaveis,
   solucao,
   onEdit,
   onToggleChecklist,
 }: {
   card: AtividadeCard;
-  responsavel?: AssignableUser;
+  responsaveis: AssignableUser[];
   solucao?: Solucao;
   onEdit: () => void;
   onToggleChecklist: (cardId: string, itemId: string) => void;
@@ -421,7 +421,6 @@ function KanbanCard({
 
   const checklistTotal = card.checklist.length;
   const checklistDone = card.checklist.filter((c) => c.concluido).length;
-  const progress = checklistTotal > 0 ? (checklistDone / checklistTotal) * 100 : 0;
 
   return (
     <div
@@ -443,14 +442,34 @@ function KanbanCard({
         <div className="flex-1 min-w-0 text-sm font-medium leading-snug line-clamp-3 group-hover:text-accent transition-colors">
           {card.titulo}
         </div>
-        {responsavel ? (
-          <Avatar className="size-5 shrink-0" title={responsavel.nome}>
-            <AvatarFallback className="text-[9px]">
-              {initials(responsavel.nome)}
-            </AvatarFallback>
-          </Avatar>
-        ) : null}
+        {responsaveis.length > 0 && (
+          <div className="flex -space-x-1.5 shrink-0">
+            {responsaveis.slice(0, 3).map((r) => (
+              <Avatar
+                key={r.id}
+                className="size-5 ring-1 ring-background"
+                title={r.nome}
+              >
+                <AvatarFallback className="text-[9px]">
+                  {initials(r.nome)}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+            {responsaveis.length > 3 && (
+              <div
+                className="size-5 rounded-full bg-muted ring-1 ring-background flex items-center justify-center text-[9px] text-muted-foreground"
+                title={responsaveis
+                  .slice(3)
+                  .map((r) => r.nome)
+                  .join(", ")}
+              >
+                +{responsaveis.length - 3}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
 
       {(card.descricao || checklistTotal > 0 || card.links.length > 0 || solucao) && (
         <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground">
