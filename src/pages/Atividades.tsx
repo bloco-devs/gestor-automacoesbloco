@@ -329,12 +329,15 @@ function Coluna({
           <KanbanCard
             key={card.id}
             card={card}
-            responsavel={card.responsavelId ? responsaveisMap.get(card.responsavelId) : undefined}
+            responsaveis={card.responsavelIds
+              .map((id) => responsaveisMap.get(id))
+              .filter((u): u is AssignableUser => !!u)}
             solucao={card.solucaoId ? solucoesMap.get(card.solucaoId) : undefined}
             onEdit={() => onEdit(card)}
             onToggleChecklist={onToggleChecklist}
           />
         ))}
+
         {drafts.map((draft) => (
           <DraftCard
             key={draft.id}
