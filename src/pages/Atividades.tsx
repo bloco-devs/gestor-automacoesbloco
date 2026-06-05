@@ -176,7 +176,7 @@ export default function Atividades() {
           colunaId: newCardColuna,
           titulo: data.titulo,
           descricao: data.descricao,
-          responsavelId: data.responsavelId,
+          responsavelIds: data.responsavelIds,
           solucaoId: data.solucaoId,
           checklist: data.checklist,
           links: data.links,
