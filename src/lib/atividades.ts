@@ -28,6 +28,7 @@ export interface AtividadeCard {
   titulo: string;
   descricao: string;
   responsavelId: string | null;
+  responsavelIds: string[];
   solucaoId: string | null;
   ordem: number;
   checklist: ChecklistItem[];
@@ -38,7 +39,7 @@ export interface AtividadeCard {
 }
 
 const SELECT_COLS =
-  "id, coluna_id, titulo, descricao, responsavel_id, solucao_id, ordem, checklist, links, created_by, created_at, updated_at";
+  "id, coluna_id, titulo, descricao, responsavel_id, responsavel_ids, solucao_id, ordem, checklist, links, created_by, created_at, updated_at";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapCard(r: any): AtividadeCard {
@@ -48,7 +49,13 @@ function mapCard(r: any): AtividadeCard {
     titulo: r.titulo,
     descricao: r.descricao ?? "",
     responsavelId: r.responsavel_id,
+    responsavelIds: Array.isArray(r.responsavel_ids)
+      ? r.responsavel_ids
+      : r.responsavel_id
+        ? [r.responsavel_id]
+        : [],
     solucaoId: r.solucao_id,
+
     ordem: r.ordem ?? 0,
     checklist: Array.isArray(r.checklist) ? r.checklist : [],
     links: Array.isArray(r.links) ? r.links : [],
