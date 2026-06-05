@@ -35,11 +35,12 @@ import type { AssignableUser, Solucao } from "@/lib/types";
 export interface CardDraftValues {
   titulo: string;
   descricao: string;
-  responsavelId: string | null;
+  responsavelIds: string[];
   solucaoId: string | null;
   checklist: ChecklistItem[];
   links: CardLink[];
 }
+
 
 export interface CardDialogProps {
   open: boolean;
