@@ -238,21 +238,36 @@ export function CardDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Responsável</Label>
-              <Select value={responsavelId} onValueChange={setResponsavelId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sem responsável" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Sem responsável</SelectItem>
-                  {responsaveis.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Responsáveis</Label>
+              <div className="rounded-md border border-border p-2 max-h-40 overflow-y-auto space-y-1">
+                {responsaveis.length === 0 && (
+                  <p className="text-xs text-muted-foreground px-1 py-0.5">
+                    Nenhum responsável disponível.
+                  </p>
+                )}
+                {responsaveis.map((u) => {
+                  const checked = responsavelIds.includes(u.id);
+                  return (
+                    <label
+                      key={u.id}
+                      className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggleResponsavel(u.id)}
+                      />
+                      <span className="text-sm">{u.nome}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              {responsavelIds.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {responsavelIds.length} selecionado(s)
+                </p>
+              )}
             </div>
+
             <div className="space-y-1.5">
               <Label>Solução vinculada (opcional)</Label>
               <Select value={solucaoId} onValueChange={setSolucaoId}>
