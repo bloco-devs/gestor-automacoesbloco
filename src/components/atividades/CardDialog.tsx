@@ -75,7 +75,7 @@ export function CardDialog({
 }: CardDialogProps) {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [responsavelId, setResponsavelId] = useState<string>(NONE);
+  const [responsavelIds, setResponsavelIds] = useState<string[]>([]);
   const [solucaoId, setSolucaoId] = useState<string>(NONE);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [links, setLinks] = useState<CardLink[]>([]);
@@ -89,7 +89,7 @@ export function CardDialog({
       return {
         titulo: initial.titulo,
         descricao: initial.descricao,
-        responsavelId: initial.responsavelId,
+        responsavelIds: initial.responsavelIds,
         solucaoId: initial.solucaoId,
         checklist: initial.checklist,
         links: initial.links,
@@ -98,7 +98,7 @@ export function CardDialog({
     return {
       titulo: defaultValues?.titulo ?? "",
       descricao: defaultValues?.descricao ?? "",
-      responsavelId: defaultValues?.responsavelId ?? null,
+      responsavelIds: defaultValues?.responsavelIds ?? [],
       solucaoId: defaultValues?.solucaoId ?? null,
       checklist: defaultValues?.checklist ?? [],
       links: defaultValues?.links ?? [],
@@ -109,7 +109,7 @@ export function CardDialog({
     if (open) {
       setTitulo(baseline.titulo);
       setDescricao(baseline.descricao);
-      setResponsavelId(baseline.responsavelId ?? NONE);
+      setResponsavelIds(baseline.responsavelIds);
       setSolucaoId(baseline.solucaoId ?? NONE);
       setChecklist(baseline.checklist);
       setLinks(baseline.links);
@@ -122,7 +122,7 @@ export function CardDialog({
     return {
       titulo: titulo.trim(),
       descricao: descricao.trim(),
-      responsavelId: responsavelId === NONE ? null : responsavelId,
+      responsavelIds,
       solucaoId: solucaoId === NONE ? null : solucaoId,
       checklist,
       links: links
@@ -131,17 +131,26 @@ export function CardDialog({
     };
   }
 
+  function toggleResponsavel(id: string) {
+    setResponsavelIds((arr) =>
+      arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id],
+    );
+  }
+
   function isDirty(): boolean {
     const cur = currentData();
     return (
       cur.titulo !== baseline.titulo.trim() ||
       cur.descricao !== baseline.descricao.trim() ||
-      cur.responsavelId !== (baseline.responsavelId ?? null) ||
+      JSON.stringify([...cur.responsavelIds].sort()) !==
+        JSON.stringify([...baseline.responsavelIds].sort()) ||
       cur.solucaoId !== (baseline.solucaoId ?? null) ||
       JSON.stringify(cur.checklist) !== JSON.stringify(baseline.checklist) ||
       JSON.stringify(cur.links) !== JSON.stringify(baseline.links)
     );
   }
+
+
 
   function addChecklistItem() {
     const t = novoItem.trim();
