@@ -25,7 +25,7 @@ import { listAssignableUsers, listSolucoes } from "@/lib/supabaseData";
 import type { AssignableUser, Solucao } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Badge } from "@/components/ui/badge";
 import { CardDialog, type CardDraftValues } from "@/components/atividades/CardDialog";
 import { useAuth } from "@/hooks/useAuth";
