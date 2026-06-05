@@ -85,6 +85,7 @@ export type Database = {
           links: Json
           ordem: number
           responsavel_id: string | null
+          responsavel_ids: string[]
           solucao_id: string | null
           titulo: string
           updated_at: string
@@ -99,6 +100,7 @@ export type Database = {
           links?: Json
           ordem?: number
           responsavel_id?: string | null
+          responsavel_ids?: string[]
           solucao_id?: string | null
           titulo: string
           updated_at?: string
@@ -113,6 +115,7 @@ export type Database = {
           links?: Json
           ordem?: number
           responsavel_id?: string | null
+          responsavel_ids?: string[]
           solucao_id?: string | null
           titulo?: string
           updated_at?: string
