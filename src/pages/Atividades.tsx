@@ -366,7 +366,14 @@ export default function Atividades() {
       {loading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
       ) : (
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => setActiveId(null)}
+        >
           <div className="flex gap-3 overflow-x-auto pb-3">
             {colunas.map((col) => (
               <div key={col.id} className="flex-1 min-w-0 basis-0">
@@ -385,7 +392,26 @@ export default function Atividades() {
               </div>
             ))}
           </div>
+          <DragOverlay>
+            {activeCard ? (
+              <KanbanCard
+                card={activeCard}
+                responsaveis={activeCard.responsavelIds
+                  .map((id) => responsaveisMap.get(id))
+                  .filter((u): u is AssignableUser => !!u)}
+                solucao={
+                  activeCard.solucaoId
+                    ? solucoesMap.get(activeCard.solucaoId)
+                    : undefined
+                }
+                onEdit={() => {}}
+                onToggleChecklist={() => {}}
+                isOverlay
+              />
+            ) : null}
+          </DragOverlay>
         </DndContext>
+
       )}
 
       <CardDialog
