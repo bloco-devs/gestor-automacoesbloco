@@ -62,6 +62,11 @@ export default function Atividades() {
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const editingDraft = drafts.find((d) => d.id === editingDraftId) ?? null;
 
+  // Filtros
+  const [filterUserIds, setFilterUserIds] = useState<string[]>([]);
+  const [filterSolucaoIds, setFilterSolucaoIds] = useState<string[]>([]);
+  const hasFilters = filterUserIds.length > 0 || filterSolucaoIds.length > 0;
+
   useEffect(() => {
     (async () => {
       try {
