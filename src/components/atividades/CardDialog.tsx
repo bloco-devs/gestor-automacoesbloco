@@ -416,7 +416,12 @@ export function CardDialog({
                 )}
               </div>
             </div>
+
+            {initial && (
+              <ComentariosSection cardId={initial.id} responsaveis={responsaveis} />
+            )}
           </div>
+
           <DialogFooter className="gap-2 sm:gap-2">
             {initial && onDelete && (
               <Button
