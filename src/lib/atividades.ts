@@ -155,3 +155,66 @@ export async function deleteCard(id: string): Promise<void> {
   const { error } = await sb.from("atividades_cards").delete().eq("id", id);
   if (error) throw error;
 }
+
+export interface CardComentario {
+  id: string;
+  cardId: string;
+  userId: string | null;
+  texto: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapComentario(r: any): CardComentario {
+  return {
+    id: r.id,
+    cardId: r.card_id,
+    userId: r.user_id,
+    texto: r.texto,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+export async function listComentarios(cardId: string): Promise<CardComentario[]> {
+  const { data, error } = await sb
+    .from("atividades_comentarios")
+    .select("id, card_id, user_id, texto, created_at, updated_at")
+    .eq("card_id", cardId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(mapComentario);
+}
+
+export async function createComentario(input: {
+  cardId: string;
+  userId: string;
+  texto: string;
+}): Promise<CardComentario> {
+  const { data, error } = await sb
+    .from("atividades_comentarios")
+    .insert({
+      card_id: input.cardId,
+      user_id: input.userId,
+      texto: input.texto,
+    })
+    .select("id, card_id, user_id, texto, created_at, updated_at")
+    .single();
+  if (error) throw error;
+  return mapComentario(data);
+}
+
+export async function updateComentario(id: string, texto: string): Promise<void> {
+  const { error } = await sb
+    .from("atividades_comentarios")
+    .update({ texto })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteComentario(id: string): Promise<void> {
+  const { error } = await sb.from("atividades_comentarios").delete().eq("id", id);
+  if (error) throw error;
+}
+
