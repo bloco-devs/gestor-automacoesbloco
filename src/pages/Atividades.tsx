@@ -243,12 +243,41 @@ export default function Atividades() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Atividades</h1>
-        <p className="text-sm text-muted-foreground">
-          Quadro Kanban da equipe de tecnologia. Arraste os cards entre as colunas.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold">Atividades</h1>
+          <p className="text-sm text-muted-foreground">
+            Quadro Kanban da equipe de tecnologia. Arraste os cards entre as colunas.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <FilterPopover
+            label="Responsável"
+            items={responsaveis.map((u) => ({ id: u.id, label: u.nome }))}
+            selected={filterUserIds}
+            onChange={setFilterUserIds}
+          />
+          <FilterPopover
+            label="Solução"
+            items={solucoes.map((s) => ({ id: s.id, label: s.titulo }))}
+            selected={filterSolucaoIds}
+            onChange={setFilterSolucaoIds}
+          />
+          {hasFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFilterUserIds([]);
+                setFilterSolucaoIds([]);
+              }}
+            >
+              <X className="size-3.5" /> Limpar
+            </Button>
+          )}
+        </div>
       </div>
+
 
       {loading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
