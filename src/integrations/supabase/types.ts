@@ -161,6 +161,41 @@ export type Database = {
         }
         Relationships: []
       }
+      atividades_comentarios: {
+        Row: {
+          card_id: string
+          created_at: string
+          id: string
+          texto: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          id?: string
+          texto: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          id?: string
+          texto?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_comentarios_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       criterios_solucoes: {
         Row: {
           complexidade: number
