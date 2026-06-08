@@ -97,13 +97,21 @@ export default function Atividades() {
     const map: Record<string, AtividadeCard[]> = {};
     for (const c of colunas) map[c.id] = [];
     for (const card of cards) {
-      if (map[card.colunaId]) map[card.colunaId].push(card);
+      if (!map[card.colunaId]) continue;
+      if (filterUserIds.length > 0) {
+        const ids = card.responsavelIds.length ? card.responsavelIds : card.responsavelId ? [card.responsavelId] : [];
+        if (!ids.some((id) => filterUserIds.includes(id))) continue;
+      }
+      if (filterSolucaoIds.length > 0) {
+        if (!card.solucaoId || !filterSolucaoIds.includes(card.solucaoId)) continue;
+      }
+      map[card.colunaId].push(card);
     }
     for (const k of Object.keys(map)) {
       map[k].sort((a, b) => a.ordem - b.ordem || a.createdAt.localeCompare(b.createdAt));
     }
     return map;
-  }, [cards, colunas]);
+  }, [cards, colunas, filterUserIds, filterSolucaoIds]);
 
   const responsaveisMap = useMemo(
     () => new Map(responsaveis.map((u) => [u.id, u])),
