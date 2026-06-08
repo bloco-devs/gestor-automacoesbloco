@@ -667,7 +667,8 @@ function ComentariosSection({
           value={novo}
           onChange={(e) => setNovo(e.target.value)}
           placeholder="Escreva um comentário..."
-          rows={2}
+          rows={3}
+
         />
         <div className="flex justify-end">
           <Button
