@@ -25,6 +25,9 @@ import { listAssignableUsers, listSolucoes } from "@/lib/supabaseData";
 import type { AssignableUser, Solucao } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Filter, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { CardDialog, type CardDraftValues } from "@/components/atividades/CardDialog";
@@ -59,6 +62,11 @@ export default function Atividades() {
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const editingDraft = drafts.find((d) => d.id === editingDraftId) ?? null;
 
+  // Filtros
+  const [filterUserIds, setFilterUserIds] = useState<string[]>([]);
+  const [filterSolucaoIds, setFilterSolucaoIds] = useState<string[]>([]);
+  const hasFilters = filterUserIds.length > 0 || filterSolucaoIds.length > 0;
+
   useEffect(() => {
     (async () => {
       try {
@@ -89,13 +97,21 @@ export default function Atividades() {
     const map: Record<string, AtividadeCard[]> = {};
     for (const c of colunas) map[c.id] = [];
     for (const card of cards) {
-      if (map[card.colunaId]) map[card.colunaId].push(card);
+      if (!map[card.colunaId]) continue;
+      if (filterUserIds.length > 0) {
+        const ids = card.responsavelIds.length ? card.responsavelIds : card.responsavelId ? [card.responsavelId] : [];
+        if (!ids.some((id) => filterUserIds.includes(id))) continue;
+      }
+      if (filterSolucaoIds.length > 0) {
+        if (!card.solucaoId || !filterSolucaoIds.includes(card.solucaoId)) continue;
+      }
+      map[card.colunaId].push(card);
     }
     for (const k of Object.keys(map)) {
       map[k].sort((a, b) => a.ordem - b.ordem || a.createdAt.localeCompare(b.createdAt));
     }
     return map;
-  }, [cards, colunas]);
+  }, [cards, colunas, filterUserIds, filterSolucaoIds]);
 
   const responsaveisMap = useMemo(
     () => new Map(responsaveis.map((u) => [u.id, u])),
@@ -227,12 +243,41 @@ export default function Atividades() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Atividades</h1>
-        <p className="text-sm text-muted-foreground">
-          Quadro Kanban da equipe de tecnologia. Arraste os cards entre as colunas.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold">Atividades</h1>
+          <p className="text-sm text-muted-foreground">
+            Quadro Kanban da equipe de tecnologia. Arraste os cards entre as colunas.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <FilterPopover
+            label="Responsável"
+            items={responsaveis.map((u) => ({ id: u.id, label: u.nome }))}
+            selected={filterUserIds}
+            onChange={setFilterUserIds}
+          />
+          <FilterPopover
+            label="Solução"
+            items={solucoes.map((s) => ({ id: s.id, label: s.titulo }))}
+            selected={filterSolucaoIds}
+            onChange={setFilterSolucaoIds}
+          />
+          {hasFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFilterUserIds([]);
+                setFilterSolucaoIds([]);
+              }}
+            >
+              <X className="size-3.5" /> Limpar
+            </Button>
+          )}
+        </div>
       </div>
+
 
       {loading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
@@ -513,5 +558,68 @@ function KanbanCard({
         </div>
       )}
     </div>
+  );
+}
+
+function FilterPopover({
+  label,
+  items,
+  selected,
+  onChange,
+}: {
+  label: string;
+  items: { id: string; label: string }[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  function toggle(id: string) {
+    onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  }
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant={selected.length > 0 ? "secondary" : "outline"} size="sm">
+          <Filter className="size-3.5" />
+          {label}
+          {selected.length > 0 && (
+            <span className="ml-1 rounded-full bg-accent text-accent-foreground text-[10px] px-1.5 py-0.5 tabular-nums">
+              {selected.length}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-2">
+        <div className="flex items-center justify-between px-2 py-1">
+          <span className="text-xs font-medium text-muted-foreground">Filtrar por {label.toLowerCase()}</span>
+          {selected.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+        <div className="max-h-64 overflow-y-auto mt-1">
+          {items.length === 0 ? (
+            <div className="px-2 py-3 text-xs text-muted-foreground">Nenhum item disponível</div>
+          ) : (
+            items.map((it) => (
+              <label
+                key={it.id}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent/10 cursor-pointer"
+              >
+                <Checkbox
+                  checked={selected.includes(it.id)}
+                  onCheckedChange={() => toggle(it.id)}
+                />
+                <span className="text-sm truncate">{it.label}</span>
+              </label>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
