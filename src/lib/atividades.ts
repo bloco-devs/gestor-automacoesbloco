@@ -218,3 +218,16 @@ export async function deleteComentario(id: string): Promise<void> {
   if (error) throw error;
 }
 
+
+export async function reorderCards(
+  updates: { id: string; colunaId: string; ordem: number }[],
+): Promise<void> {
+  await Promise.all(
+    updates.map((u) =>
+      sb
+        .from("atividades_cards")
+        .update({ coluna_id: u.colunaId, ordem: u.ordem })
+        .eq("id", u.id),
+    ),
+  );
+}
