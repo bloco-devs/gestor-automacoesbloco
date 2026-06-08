@@ -222,7 +222,7 @@ export function CardDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[92vh] overflow-y-auto sm:p-8">
           <DialogHeader>
             <DialogTitle>{initial ? "Editar card" : "Novo card"}</DialogTitle>
           </DialogHeader>
