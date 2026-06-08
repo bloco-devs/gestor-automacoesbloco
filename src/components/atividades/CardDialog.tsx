@@ -222,7 +222,7 @@ export function CardDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[92vh] overflow-y-auto sm:p-8">
           <DialogHeader>
             <DialogTitle>{initial ? "Editar card" : "Novo card"}</DialogTitle>
           </DialogHeader>
@@ -234,6 +234,7 @@ export function CardDialog({
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Ex: Ajustar fluxo de cadastro"
+                className="h-11 text-base"
               />
             </div>
             <div className="space-y-1.5">
@@ -242,13 +243,15 @@ export function CardDialog({
                 id="card-desc"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                rows={3}
+                rows={6}
                 placeholder="Detalhe a atividade..."
+                className="text-base"
               />
             </div>
             <div className="space-y-1.5">
               <Label>Responsáveis</Label>
-              <div className="rounded-md border border-border p-2 max-h-40 overflow-y-auto space-y-1">
+              <div className="rounded-md border border-border p-2 max-h-60 overflow-y-auto space-y-1">
+
                 {responsaveis.length === 0 && (
                   <p className="text-xs text-muted-foreground px-1 py-0.5">
                     Nenhum responsável disponível.
@@ -664,7 +667,8 @@ function ComentariosSection({
           value={novo}
           onChange={(e) => setNovo(e.target.value)}
           placeholder="Escreva um comentário..."
-          rows={2}
+          rows={3}
+
         />
         <div className="flex justify-end">
           <Button
