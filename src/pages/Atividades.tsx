@@ -479,29 +479,35 @@ function Coluna({
           <Plus className="size-4" />
         </Button>
       </div>
-      <div className="space-y-2 flex-1">
-        {cards.map((card) => (
-          <KanbanCard
-            key={card.id}
-            card={card}
-            responsaveis={card.responsavelIds
-              .map((id) => responsaveisMap.get(id))
-              .filter((u): u is AssignableUser => !!u)}
-            solucao={card.solucaoId ? solucoesMap.get(card.solucaoId) : undefined}
-            onEdit={() => onEdit(card)}
-            onToggleChecklist={onToggleChecklist}
-          />
-        ))}
+      <SortableContext
+        items={cards.map((c) => c.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div className="space-y-2 flex-1">
+          {cards.map((card) => (
+            <KanbanCard
+              key={card.id}
+              card={card}
+              responsaveis={card.responsavelIds
+                .map((id) => responsaveisMap.get(id))
+                .filter((u): u is AssignableUser => !!u)}
+              solucao={card.solucaoId ? solucoesMap.get(card.solucaoId) : undefined}
+              onEdit={() => onEdit(card)}
+              onToggleChecklist={onToggleChecklist}
+            />
+          ))}
 
-        {drafts.map((draft) => (
-          <DraftCard
-            key={draft.id}
-            draft={draft}
-            onOpen={() => onOpenDraft(draft)}
-            onDelete={() => onDeleteDraft(draft.id)}
-          />
-        ))}
-      </div>
+          {drafts.map((draft) => (
+            <DraftCard
+              key={draft.id}
+              draft={draft}
+              onOpen={() => onOpenDraft(draft)}
+              onDelete={() => onDeleteDraft(draft.id)}
+            />
+          ))}
+        </div>
+      </SortableContext>
+
     </div>
   );
 }
