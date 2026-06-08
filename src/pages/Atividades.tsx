@@ -560,3 +560,66 @@ function KanbanCard({
     </div>
   );
 }
+
+function FilterPopover({
+  label,
+  items,
+  selected,
+  onChange,
+}: {
+  label: string;
+  items: { id: string; label: string }[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  function toggle(id: string) {
+    onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  }
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant={selected.length > 0 ? "secondary" : "outline"} size="sm">
+          <Filter className="size-3.5" />
+          {label}
+          {selected.length > 0 && (
+            <span className="ml-1 rounded-full bg-accent text-accent-foreground text-[10px] px-1.5 py-0.5 tabular-nums">
+              {selected.length}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-2">
+        <div className="flex items-center justify-between px-2 py-1">
+          <span className="text-xs font-medium text-muted-foreground">Filtrar por {label.toLowerCase()}</span>
+          {selected.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+        <div className="max-h-64 overflow-y-auto mt-1">
+          {items.length === 0 ? (
+            <div className="px-2 py-3 text-xs text-muted-foreground">Nenhum item disponível</div>
+          ) : (
+            items.map((it) => (
+              <label
+                key={it.id}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent/10 cursor-pointer"
+              >
+                <Checkbox
+                  checked={selected.includes(it.id)}
+                  onCheckedChange={() => toggle(it.id)}
+                />
+                <span className="text-sm truncate">{it.label}</span>
+              </label>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
