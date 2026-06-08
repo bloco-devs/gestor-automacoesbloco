@@ -566,37 +566,46 @@ function KanbanCard({
   solucao,
   onEdit,
   onToggleChecklist,
+  isOverlay,
 }: {
   card: AtividadeCard;
   responsaveis: AssignableUser[];
   solucao?: Solucao;
   onEdit: () => void;
   onToggleChecklist: (cardId: string, itemId: string) => void;
+  isOverlay?: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: card.id,
-  });
-  const style = transform
-    ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
-    : undefined;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: card.id, disabled: isOverlay });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   const checklistTotal = card.checklist.length;
   const checklistDone = card.checklist.filter((c) => c.concluido).length;
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
+      ref={isOverlay ? undefined : setNodeRef}
+      style={isOverlay ? undefined : style}
+      {...(isOverlay ? {} : listeners)}
+      {...(isOverlay ? {} : attributes)}
       onClick={(e) => {
-        if (isDragging) return;
+        if (isDragging || isOverlay) return;
         e.stopPropagation();
         onEdit();
       }}
       className={cn(
         "group rounded-md border border-border bg-background p-3 cursor-grab active:cursor-grabbing transition-shadow hover:border-accent/50",
-        isDragging && "shadow-lg opacity-80",
+        isDragging && !isOverlay && "opacity-40",
+        isOverlay && "shadow-lg ring-1 ring-accent/40",
       )}
     >
       <div className="flex items-start gap-2">
@@ -604,6 +613,7 @@ function KanbanCard({
           {card.titulo}
         </div>
         {responsaveis.length > 0 && (
+
           <div className="flex -space-x-1.5 shrink-0">
             {responsaveis.slice(0, 3).map((r) => (
               <Avatar
