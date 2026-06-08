@@ -134,22 +134,94 @@ export default function Atividades() {
     [solucoes],
   );
 
-  async function handleDragEnd(e: DragEndEvent) {
-    const cardId = String(e.active.id);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const activeCard = activeId ? cards.find((c) => c.id === activeId) ?? null : null;
+
+  function findColuna(id: string): string | null {
+    // It's a card id?
+    const c = cards.find((x) => x.id === id);
+    if (c) return c.colunaId;
+    // It's a column droppable (id === coluna.id)?
+    if (colunas.some((col) => col.id === id)) return id;
+    return null;
+  }
+
+  function handleDragStart(e: DragStartEvent) {
+    setActiveId(String(e.active.id));
+  }
+
+  function handleDragOver(e: DragOverEvent) {
+    const activeId = String(e.active.id);
     const overId = e.over?.id ? String(e.over.id) : null;
     if (!overId) return;
-    const card = cards.find((c) => c.id === cardId);
-    if (!card || card.colunaId === overId) return;
+    const activeColuna = findColuna(activeId);
+    const overColuna = findColuna(overId);
+    if (!activeColuna || !overColuna || activeColuna === overColuna) return;
+
+    setCards((cs) => {
+      const active = cs.find((c) => c.id === activeId);
+      if (!active) return cs;
+      const without = cs.filter((c) => c.id !== activeId);
+      const overIsCard = cs.some((c) => c.id === overId);
+      const moved: AtividadeCard = { ...active, colunaId: overColuna };
+      if (overIsCard) {
+        const idx = without.findIndex((c) => c.id === overId);
+        return [...without.slice(0, idx), moved, ...without.slice(idx)];
+      }
+      return [...without, moved];
+    });
+  }
+
+  async function handleDragEnd(e: DragEndEvent) {
+    setActiveId(null);
+    const activeId = String(e.active.id);
+    const overId = e.over?.id ? String(e.over.id) : null;
+    if (!overId) return;
+
+    const active = cards.find((c) => c.id === activeId);
+    if (!active) return;
+    const overColuna = findColuna(overId);
+    if (!overColuna) return;
+
+    const colCards = cards
+      .filter((c) => c.colunaId === overColuna)
+      .sort((a, b) => a.ordem - b.ordem);
+
+    const oldIdx = colCards.findIndex((c) => c.id === activeId);
+    let newIdx = oldIdx;
+    if (overId !== overColuna) {
+      newIdx = colCards.findIndex((c) => c.id === overId);
+      if (newIdx === -1) newIdx = colCards.length - 1;
+    } else {
+      newIdx = colCards.length - 1;
+    }
+
+    const reordered =
+      oldIdx === -1 ? colCards : arrayMove(colCards, oldIdx, newIdx);
+
     const prev = cards;
-    setCards((cs) => cs.map((c) => (c.id === cardId ? { ...c, colunaId: overId } : c)));
+    const updates = reordered.map((c, i) => ({
+      id: c.id,
+      colunaId: overColuna,
+      ordem: i,
+    }));
+
+    setCards((cs) =>
+      cs.map((c) => {
+        const u = updates.find((x) => x.id === c.id);
+        return u ? { ...c, colunaId: u.colunaId, ordem: u.ordem } : c;
+      }),
+    );
+
     try {
-      await updateCard(cardId, { colunaId: overId });
+      await reorderCards(updates);
     } catch (err) {
       console.error(err);
-      toast.error("Não foi possível mover o card");
+      toast.error("Não foi possível reordenar os cards");
       setCards(prev);
     }
   }
+
 
   function openNew(colunaId: string) {
     setEditing(null);
