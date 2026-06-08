@@ -1,13 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
-  useDraggable,
   useDroppable,
   useSensor,
   useSensors,
+  closestCorners,
   type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Plus, Link2, CheckSquare, AlignLeft, Link as LinkIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -16,6 +26,7 @@ import {
   createCard,
   updateCard,
   deleteCard,
+  reorderCards,
   type AtividadeColuna,
   type AtividadeCard,
   type ChecklistItem,
@@ -34,6 +45,7 @@ import { CardDialog, type CardDraftValues } from "@/components/atividades/CardDi
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
 
 function initials(nome: string) {
   return nome
