@@ -25,6 +25,9 @@ import { listAssignableUsers, listSolucoes } from "@/lib/supabaseData";
 import type { AssignableUser, Solucao } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Filter, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { CardDialog, type CardDraftValues } from "@/components/atividades/CardDialog";
