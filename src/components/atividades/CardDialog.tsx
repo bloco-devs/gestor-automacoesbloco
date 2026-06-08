@@ -471,3 +471,211 @@ export function CardDialog({
     </>
   );
 }
+
+function formatDateTime(iso: string) {
+  try {
+    return new Date(iso).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function ComentariosSection({
+  cardId,
+  responsaveis,
+}: {
+  cardId: string;
+  responsaveis: AssignableUser[];
+}) {
+  const { user } = useAuth();
+  const [items, setItems] = useState<CardComentario[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [novo, setNovo] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+
+  const nomeMap = useMemo(
+    () => new Map(responsaveis.map((u) => [u.id, u.nome])),
+    [responsaveis],
+  );
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    listComentarios(cardId)
+      .then((data) => {
+        if (alive) setItems(data);
+      })
+      .catch((e) => console.error(e))
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [cardId]);
+
+  async function handleAdd() {
+    const texto = novo.trim();
+    if (!texto || !user?.id) return;
+    setSaving(true);
+    try {
+      const created = await createComentario({ cardId, userId: user.id, texto });
+      setItems((arr) => [...arr, created]);
+      setNovo("");
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveEdit(id: string) {
+    const texto = editingText.trim();
+    if (!texto) return;
+    try {
+      await updateComentario(id, texto);
+      setItems((arr) =>
+        arr.map((c) =>
+          c.id === id ? { ...c, texto, updatedAt: new Date().toISOString() } : c,
+        ),
+      );
+      setEditingId(null);
+      setEditingText("");
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await deleteComentario(id);
+      setItems((arr) => arr.filter((c) => c.id !== id));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  return (
+    <div className="space-y-2 rounded-md border border-border p-3">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm">Comentários</Label>
+        {items.length > 0 && (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {items.length}
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {loading && (
+          <p className="text-xs text-muted-foreground">Carregando...</p>
+        )}
+        {!loading && items.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            Nenhum comentário ainda.
+          </p>
+        )}
+        {items.map((c) => {
+          const nome =
+            (c.userId && nomeMap.get(c.userId)) ||
+            (c.userId === user?.id ? "Você" : "Usuário");
+          const isMine = c.userId && c.userId === user?.id;
+          const isEditing = editingId === c.id;
+          return (
+            <div
+              key={c.id}
+              className="rounded-md border border-border/60 bg-muted/30 p-2 text-sm"
+            >
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="text-xs font-medium">
+                  {nome}{" "}
+                  <span className="font-normal text-muted-foreground">
+                    · {formatDateTime(c.createdAt)}
+                    {c.updatedAt !== c.createdAt && " (editado)"}
+                  </span>
+                </div>
+                {isMine && !isEditing && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(c.id);
+                        setEditingText(c.texto);
+                      }}
+                      className="text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(c.id)}
+                      className="text-[11px] text-muted-foreground hover:text-destructive"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                )}
+              </div>
+              {isEditing ? (
+                <div className="space-y-1.5">
+                  <Textarea
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    rows={2}
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditingId(null);
+                        setEditingText("");
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleSaveEdit(c.id)}
+                      disabled={!editingText.trim()}
+                    >
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="whitespace-pre-wrap leading-snug">{c.texto}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="space-y-1.5">
+        <Textarea
+          value={novo}
+          onChange={(e) => setNovo(e.target.value)}
+          placeholder="Escreva um comentário..."
+          rows={2}
+        />
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            onClick={handleAdd}
+            disabled={saving || !novo.trim()}
+          >
+            {saving ? "Enviando..." : "Comentar"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
