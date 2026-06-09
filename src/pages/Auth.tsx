@@ -204,6 +204,9 @@ export default function Auth() {
                 autoComplete="email"
               />
             </div>
+            <p className="text-xs text-muted-foreground">
+              Dica: alguns provedores de e-mail (antivírus, pré-visualização) podem abrir o link antes de você e invalidá-lo. Se o link não funcionar, solicite um novo aqui.
+            </p>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setResetOpen(false)}>
                 Cancelar
