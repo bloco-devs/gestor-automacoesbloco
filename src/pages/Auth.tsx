@@ -38,12 +38,26 @@ export default function Auth() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ email: "", senha: "" });
 
   const [resetOpen, setResetOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetSubmitting, setResetSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("recover") === "1") {
+      const email = searchParams.get("email") ?? "";
+      setResetEmail(email);
+      setForm((f) => ({ ...f, email: email || f.email }));
+      setResetOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("recover");
+      next.delete("email");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
