@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,12 +38,26 @@ export default function Auth() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ email: "", senha: "" });
 
   const [resetOpen, setResetOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetSubmitting, setResetSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("recover") === "1") {
+      const email = searchParams.get("email") ?? "";
+      setResetEmail(email);
+      setForm((f) => ({ ...f, email: email || f.email }));
+      setResetOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("recover");
+      next.delete("email");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -190,6 +204,9 @@ export default function Auth() {
                 autoComplete="email"
               />
             </div>
+            <p className="text-xs text-muted-foreground">
+              Dica: alguns provedores de e-mail (antivírus, pré-visualização) podem abrir o link antes de você e invalidá-lo. Se o link não funcionar, solicite um novo aqui.
+            </p>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setResetOpen(false)}>
                 Cancelar
