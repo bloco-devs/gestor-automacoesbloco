@@ -126,6 +126,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
       if (data.session) {
+        if (isPasswordRecoveryIntent()) {
+          // Em fluxo de recovery, não carregar profile (evita redirect de role).
+          setLoading(false);
+          if (
+            typeof window !== "undefined" &&
+            !window.location.pathname.startsWith("/redefinir-senha")
+          ) {
+            window.location.replace("/redefinir-senha");
+          }
+          return;
+        }
         try {
           setUser(await loadProfile(data.session.user));
         } catch {
