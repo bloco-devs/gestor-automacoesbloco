@@ -9,7 +9,19 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  isPasswordRecoveryIntent,
+  markPasswordRecoveryIntent,
+  PASSWORD_RECOVERY_KEY,
+} from "@/lib/auth-recovery";
 import type { Profile, Role } from "@/lib/types";
+
+export const PASSWORD_RESET_REDIRECT_URL =
+  "https://gestor-automacoesbloco.lovable.app/redefinir-senha";
+
+export function getPasswordResetRedirectUrl() {
+  return PASSWORD_RESET_REDIRECT_URL;
+}
 
 interface AuthContextValue {
   user: Profile | null;
@@ -77,6 +89,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // 1) Listener PRIMEIRO (recomendado pela Supabase)
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      const recoveryFlag =
+        typeof window !== "undefined" &&
+        sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === "1";
+      const isRecoveryFlow =
+        _event === "PASSWORD_RECOVERY" || (_event === "SIGNED_IN" && recoveryFlag);
+
+      if (isRecoveryFlow) {
+        markPasswordRecoveryIntent();
+        setSession(newSession);
+        // Não carrega o profile durante recovery para evitar redirecionamentos de role.
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/redefinir-senha")
+        ) {
+          window.location.replace("/redefinir-senha");
+        }
+        return;
+      }
+
       setSession(newSession);
       if (!newSession) {
         setUser(null);
@@ -95,6 +126,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
       if (data.session) {
+        if (isPasswordRecoveryIntent()) {
+          // Em fluxo de recovery, não carregar profile (evita redirect de role).
+          setLoading(false);
+          if (
+            typeof window !== "undefined" &&
+            !window.location.pathname.startsWith("/redefinir-senha")
+          ) {
+            window.location.replace("/redefinir-senha");
+          }
+          return;
+        }
         try {
           setUser(await loadProfile(data.session.user));
         } catch {
