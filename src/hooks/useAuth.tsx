@@ -89,6 +89,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // 1) Listener PRIMEIRO (recomendado pela Supabase)
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      const recoveryFlag =
+        typeof window !== "undefined" &&
+        sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === "1";
+      const isRecoveryFlow =
+        _event === "PASSWORD_RECOVERY" || (_event === "SIGNED_IN" && recoveryFlag);
+
+      if (isRecoveryFlow) {
+        markPasswordRecoveryIntent();
+        setSession(newSession);
+        // Não carrega o profile durante recovery para evitar redirecionamentos de role.
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/redefinir-senha")
+        ) {
+          window.location.replace("/redefinir-senha");
+        }
+        return;
+      }
+
       setSession(newSession);
       if (!newSession) {
         setUser(null);
