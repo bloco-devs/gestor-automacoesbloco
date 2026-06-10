@@ -15,6 +15,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import {
+  clearPasswordRecoveryIntent,
+  getAuthCallbackError,
+  isPasswordRecoveryIntent,
+  markPasswordRecoveryIntent,
+} from "@/lib/auth-recovery";
 
 const schema = z
   .object({
@@ -30,23 +36,55 @@ export default function RedefinirSenha() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [ready, setReady] = useState<"checking" | "ready" | "invalid">("checking");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ senha: "", confirmar: "" });
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setReady("ready");
+    // Mensagem de erro vinda do provedor (link expirado etc.)
+    const callbackError = getAuthCallbackError(window.location.hash, window.location.search);
+    if (callbackError) {
+      setErrorMessage(callbackError);
+      setReady("invalid");
+      clearPasswordRecoveryIntent();
+      return;
+    }
+
+    // Se já temos intent registrado, marcar pronto assim que houver sessão
+    if (isPasswordRecoveryIntent()) {
+      markPasswordRecoveryIntent();
+    }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        markPasswordRecoveryIntent();
+        setReady("ready");
+        return;
+      }
+      if (event === "SIGNED_IN" && isPasswordRecoveryIntent()) {
+        setReady("ready");
+      }
+      if (event === "SIGNED_OUT" && !session) {
+        // mantém estado
+      }
     });
-    // Caso já exista uma sessão de recovery quando o componente monta
+
     supabase.auth.getSession().then(({ data }) => {
       setReady((prev) => {
-        if (prev === "ready") return prev;
-        return data.session ? "ready" : "invalid";
+        if (prev !== "checking") return prev;
+        if (data.session && isPasswordRecoveryIntent()) return "ready";
+        return prev;
       });
     });
+
     const t = setTimeout(() => {
-      setReady((prev) => (prev === "checking" ? "invalid" : prev));
-    }, 1500);
+      setReady((prev) => {
+        if (prev !== "checking") return prev;
+        setErrorMessage("Link inválido ou expirado.");
+        return "invalid";
+      });
+    }, 3000);
+
     return () => {
       sub.subscription.unsubscribe();
       clearTimeout(t);
@@ -60,6 +98,7 @@ export default function RedefinirSenha() {
       const v = schema.parse(form);
       const { error } = await supabase.auth.updateUser({ password: v.senha });
       if (error) throw error;
+      clearPasswordRecoveryIntent();
       await supabase.auth.signOut();
       toast({ title: "Senha atualizada", description: "Faça login com a nova senha." });
       navigate("/auth");
@@ -74,6 +113,12 @@ export default function RedefinirSenha() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleBackToLogin() {
+    clearPasswordRecoveryIntent();
+    await supabase.auth.signOut().catch(() => undefined);
+    navigate("/auth");
   }
 
   return (
@@ -94,7 +139,7 @@ export default function RedefinirSenha() {
               {ready === "ready"
                 ? "Defina sua nova senha de acesso."
                 : ready === "invalid"
-                  ? "Link inválido ou expirado."
+                  ? errorMessage ?? "Link inválido ou expirado."
                   : "Validando link..."}
             </CardDescription>
           </CardHeader>
@@ -127,7 +172,7 @@ export default function RedefinirSenha() {
               </form>
             )}
             {ready === "invalid" && (
-              <Button variant="outline" className="w-full" onClick={() => navigate("/auth")}>
+              <Button variant="outline" className="w-full" onClick={handleBackToLogin}>
                 Voltar para o login
               </Button>
             )}
