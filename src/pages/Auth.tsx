@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, getPasswordResetRedirectUrl } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { isPasswordRecoveryIntent } from "@/lib/auth-recovery";
 import blocoLogo from "@/assets/bloco-logo.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,21 @@ const resetSchema = z.object({
 export default function Auth() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (
+      isPasswordRecoveryIntent({
+        pathname: location.pathname,
+        hash: location.hash,
+        search: location.search,
+      })
+    ) {
+      navigate(`/redefinir-senha${location.search}${location.hash}`, { replace: true });
+    }
+  }, [location.hash, location.pathname, location.search, navigate]);
+
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ email: "", senha: "" });
 
