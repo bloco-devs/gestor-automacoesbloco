@@ -9,7 +9,19 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  isPasswordRecoveryIntent,
+  markPasswordRecoveryIntent,
+  PASSWORD_RECOVERY_KEY,
+} from "@/lib/auth-recovery";
 import type { Profile, Role } from "@/lib/types";
+
+export const PASSWORD_RESET_REDIRECT_URL =
+  "https://gestor-automacoesbloco.lovable.app/redefinir-senha";
+
+export function getPasswordResetRedirectUrl() {
+  return PASSWORD_RESET_REDIRECT_URL;
+}
 
 interface AuthContextValue {
   user: Profile | null;
