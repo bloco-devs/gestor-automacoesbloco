@@ -98,7 +98,7 @@ export default function Auth() {
       const normalized = v.email.trim().toLowerCase();
       // allowlist check removed; reset only sends if user exists in auth
       const { error } = await supabase.auth.resetPasswordForEmail(normalized, {
-        redirectTo: `${window.location.origin}/redefinir-senha`,
+        redirectTo: getPasswordResetRedirectUrl(),
       });
       if (error) throw error;
       toast({
