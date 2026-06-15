@@ -458,9 +458,11 @@ export default function Atividades() {
                     ? solucoesMap.get(activeCard.solucaoId)
                     : undefined
                 }
+                mine={isMyCard(activeCard)}
                 onEdit={() => {}}
                 onToggleChecklist={() => {}}
                 isOverlay
+
               />
             ) : null}
           </DragOverlay>
