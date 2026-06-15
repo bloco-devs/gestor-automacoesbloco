@@ -58,6 +58,40 @@ function initials(nome: string) {
     .join("");
 }
 
+interface ResponsavelDisplay {
+  id: string;
+  nome: string;
+}
+
+function buildResponsaveisDisplay(
+  card: AtividadeCard,
+  responsaveisMap: Map<string, AssignableUser>,
+  personasMap: Map<string, AtividadePersona>,
+  personasByUser: Map<string, AtividadePersona[]>,
+): ResponsavelDisplay[] {
+  const result: ResponsavelDisplay[] = [];
+  const usersCoveredByPersona = new Set<string>();
+  for (const pid of card.responsavelPersonaIds) {
+    const p = personasMap.get(pid);
+    if (!p) continue;
+    result.push({ id: `p:${p.id}`, nome: p.nome });
+    usersCoveredByPersona.add(p.userId);
+  }
+  for (const uid of card.responsavelIds) {
+    if (usersCoveredByPersona.has(uid)) continue;
+    const u = responsaveisMap.get(uid);
+    if (!u) continue;
+    // Se o usuário tem personas mas nenhuma marcada, mostra o nome do usuário
+    const userPersonas = personasByUser.get(uid) ?? [];
+    if (userPersonas.length > 0) {
+      result.push({ id: `u:${uid}`, nome: u.nome });
+    } else {
+      result.push({ id: `u:${uid}`, nome: u.nome });
+    }
+  }
+  return result;
+}
+
 export default function Atividades() {
   const { user } = useAuth();
   const [colunas, setColunas] = useState<AtividadeColuna[]>([]);
