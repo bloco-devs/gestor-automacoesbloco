@@ -242,3 +242,42 @@ export async function reorderCards(
     ),
   );
 }
+
+// ============================================================
+// Personas (apelidos selecionáveis que apontam para um user real)
+// ============================================================
+
+export interface AtividadePersona {
+  id: string;
+  userId: string;
+  nome: string;
+  ativo: boolean;
+}
+
+export interface AtividadeAssignable {
+  /** ID que vai em responsavel_ids — pode ser um user.id real ou um persona.id. */
+  id: string;
+  nome: string;
+  email: string;
+  role: string;
+  /** ID real do usuário em auth.users (igual a `id` quando não é persona). */
+  userId: string;
+  isPersona?: boolean;
+}
+
+export async function listPersonas(): Promise<AtividadePersona[]> {
+  const { data, error } = await sb
+    .from("atividades_personas")
+    .select("id, user_id, nome, ativo")
+    .eq("ativo", true)
+    .order("nome", { ascending: true });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    userId: r.user_id,
+    nome: r.nome,
+    ativo: r.ativo,
+  }));
+}
+
