@@ -78,6 +78,7 @@ export function CardDialog({
   initial,
   defaultValues,
   responsaveis,
+  personas,
   solucoes,
   onSubmit,
   onDelete,
@@ -87,12 +88,24 @@ export function CardDialog({
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [responsavelIds, setResponsavelIds] = useState<string[]>([]);
+  const [responsavelPersonaIds, setResponsavelPersonaIds] = useState<string[]>([]);
   const [solucaoId, setSolucaoId] = useState<string>(NONE);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [links, setLinks] = useState<CardLink[]>([]);
   const [novoItem, setNovoItem] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Personas agrupadas por usuário
+  const personasByUser = useMemo(() => {
+    const m = new Map<string, AtividadePersona[]>();
+    for (const p of personas) {
+      const arr = m.get(p.userId) ?? [];
+      arr.push(p);
+      m.set(p.userId, arr);
+    }
+    return m;
+  }, [personas]);
 
   // Baseline used to detect "dirty" state
   const baseline = useMemo<CardDraftValues>(() => {
@@ -101,6 +114,7 @@ export function CardDialog({
         titulo: initial.titulo,
         descricao: initial.descricao,
         responsavelIds: initial.responsavelIds,
+        responsavelPersonaIds: initial.responsavelPersonaIds,
         solucaoId: initial.solucaoId,
         checklist: initial.checklist,
         links: initial.links,
@@ -110,6 +124,7 @@ export function CardDialog({
       titulo: defaultValues?.titulo ?? "",
       descricao: defaultValues?.descricao ?? "",
       responsavelIds: defaultValues?.responsavelIds ?? [],
+      responsavelPersonaIds: defaultValues?.responsavelPersonaIds ?? [],
       solucaoId: defaultValues?.solucaoId ?? null,
       checklist: defaultValues?.checklist ?? [],
       links: defaultValues?.links ?? [],
@@ -121,6 +136,7 @@ export function CardDialog({
       setTitulo(baseline.titulo);
       setDescricao(baseline.descricao);
       setResponsavelIds(baseline.responsavelIds);
+      setResponsavelPersonaIds(baseline.responsavelPersonaIds);
       setSolucaoId(baseline.solucaoId ?? NONE);
       setChecklist(baseline.checklist);
       setLinks(baseline.links);
@@ -130,10 +146,20 @@ export function CardDialog({
   }, [open]);
 
   function currentData(): CardDraftValues {
+    // Derive responsavelIds = direct user_ids (sem personas) ∪ user_ids das personas selecionadas
+    const direct = responsavelIds.filter((uid) => {
+      const ps = personasByUser.get(uid);
+      return !ps || ps.length === 0;
+    });
+    const fromPersonas = responsavelPersonaIds
+      .map((pid) => personas.find((p) => p.id === pid)?.userId)
+      .filter((x): x is string => !!x);
+    const allUserIds = Array.from(new Set<string>([...direct, ...fromPersonas]));
     return {
       titulo: titulo.trim(),
       descricao: descricao.trim(),
-      responsavelIds,
+      responsavelIds: allUserIds,
+      responsavelPersonaIds,
       solucaoId: solucaoId === NONE ? null : solucaoId,
       checklist,
       links: links
@@ -142,9 +168,15 @@ export function CardDialog({
     };
   }
 
-  function toggleResponsavel(id: string) {
+  function toggleUser(id: string) {
     setResponsavelIds((arr) =>
       arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id],
+    );
+  }
+
+  function togglePersona(personaId: string) {
+    setResponsavelPersonaIds((arr) =>
+      arr.includes(personaId) ? arr.filter((x) => x !== personaId) : [...arr, personaId],
     );
   }
 
