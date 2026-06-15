@@ -340,6 +340,9 @@ export function CardDialog({
                   </SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+
 
 
             <div className="space-y-2 rounded-md border border-border p-3">
