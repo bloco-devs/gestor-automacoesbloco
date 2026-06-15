@@ -187,6 +187,8 @@ export function CardDialog({
       cur.descricao !== baseline.descricao.trim() ||
       JSON.stringify([...cur.responsavelIds].sort()) !==
         JSON.stringify([...baseline.responsavelIds].sort()) ||
+      JSON.stringify([...cur.responsavelPersonaIds].sort()) !==
+        JSON.stringify([...baseline.responsavelPersonaIds].sort()) ||
       cur.solucaoId !== (baseline.solucaoId ?? null) ||
       JSON.stringify(cur.checklist) !== JSON.stringify(baseline.checklist) ||
       JSON.stringify(cur.links) !== JSON.stringify(baseline.links)
