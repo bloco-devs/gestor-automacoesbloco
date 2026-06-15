@@ -119,6 +119,7 @@ export async function createCard(input: {
   titulo: string;
   descricao?: string;
   responsavelIds?: string[];
+  responsavelPersonaIds?: string[];
   solucaoId?: string | null;
   checklist?: ChecklistItem[];
   links?: CardLink[];
@@ -126,6 +127,7 @@ export async function createCard(input: {
   ordem?: number;
 }): Promise<AtividadeCard> {
   const ids = input.responsavelIds ?? [];
+  const personaIds = input.responsavelPersonaIds ?? [];
   const { data, error } = await sb
     .from("atividades_cards")
     .insert({
@@ -134,6 +136,7 @@ export async function createCard(input: {
       descricao: input.descricao ?? "",
       responsavel_id: ids[0] ?? null,
       responsavel_ids: ids,
+      responsavel_persona_ids: personaIds,
       solucao_id: input.solucaoId ?? null,
       checklist: input.checklist ?? [],
       links: input.links ?? [],
@@ -152,6 +155,7 @@ export async function updateCard(
     titulo?: string;
     descricao?: string;
     responsavelIds?: string[];
+    responsavelPersonaIds?: string[];
     solucaoId?: string | null;
     colunaId?: string;
     ordem?: number;
@@ -166,6 +170,9 @@ export async function updateCard(
   if (patch.responsavelIds !== undefined) {
     upd.responsavel_ids = patch.responsavelIds;
     upd.responsavel_id = patch.responsavelIds[0] ?? null;
+  }
+  if (patch.responsavelPersonaIds !== undefined) {
+    upd.responsavel_persona_ids = patch.responsavelPersonaIds;
   }
   if (patch.solucaoId !== undefined) upd.solucao_id = patch.solucaoId;
   if (patch.colunaId !== undefined) upd.coluna_id = patch.colunaId;
