@@ -496,7 +496,10 @@ function Coluna({
   cards,
   drafts,
   responsaveisMap,
+  personasMap,
+  personasByUser,
   solucoesMap,
+  currentUserId,
   onNew,
   onEdit,
   onOpenDraft,
@@ -507,7 +510,10 @@ function Coluna({
   cards: AtividadeCard[];
   drafts: { id: string; colunaId: string; data: CardDraftValues }[];
   responsaveisMap: Map<string, AssignableUser>;
+  personasMap: Map<string, AtividadePersona>;
+  personasByUser: Map<string, AtividadePersona[]>;
   solucoesMap: Map<string, Solucao>;
+  currentUserId: string | null;
   onNew: () => void;
   onEdit: (c: AtividadeCard) => void;
   onOpenDraft: (d: { id: string; colunaId: string; data: CardDraftValues }) => void;
@@ -549,10 +555,14 @@ function Coluna({
             <KanbanCard
               key={card.id}
               card={card}
-              responsaveis={card.responsavelIds
-                .map((id) => responsaveisMap.get(id))
-                .filter((u): u is AssignableUser => !!u)}
+              responsaveis={buildResponsaveisDisplay(
+                card,
+                responsaveisMap,
+                personasMap,
+                personasByUser,
+              )}
               solucao={card.solucaoId ? solucoesMap.get(card.solucaoId) : undefined}
+              isMine={!!currentUserId && card.responsavelIds.includes(currentUserId)}
               onEdit={() => onEdit(card)}
               onToggleChecklist={onToggleChecklist}
             />
