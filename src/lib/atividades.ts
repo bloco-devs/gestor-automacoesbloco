@@ -22,6 +22,8 @@ export interface CardLink {
   url: string;
 }
 
+export type CardPrioridade = "baixa" | "media" | "alta" | "urgente";
+
 export interface AtividadeCard {
   id: string;
   colunaId: string;
@@ -31,6 +33,7 @@ export interface AtividadeCard {
   responsavelIds: string[];
   solucaoId: string | null;
   ordem: number;
+  prioridade: CardPrioridade;
   checklist: ChecklistItem[];
   links: CardLink[];
   createdBy: string | null;
@@ -39,7 +42,8 @@ export interface AtividadeCard {
 }
 
 const SELECT_COLS =
-  "id, coluna_id, titulo, descricao, responsavel_id, responsavel_ids, solucao_id, ordem, checklist, links, created_by, created_at, updated_at";
+  "id, coluna_id, titulo, descricao, responsavel_id, responsavel_ids, solucao_id, ordem, prioridade, checklist, links, created_by, created_at, updated_at";
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapCard(r: any): AtividadeCard {
