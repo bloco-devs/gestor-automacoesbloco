@@ -61,6 +61,8 @@ function mapCard(r: any): AtividadeCard {
     solucaoId: r.solucao_id,
 
     ordem: r.ordem ?? 0,
+    prioridade: (r.prioridade ?? "media") as CardPrioridade,
+
     checklist: Array.isArray(r.checklist) ? r.checklist : [],
     links: Array.isArray(r.links) ? r.links : [],
     createdBy: r.created_by,
