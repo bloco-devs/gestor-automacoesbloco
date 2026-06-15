@@ -287,32 +287,56 @@ export function CardDialog({
             </div>
             <div className="space-y-1.5">
               <Label>Responsáveis</Label>
-              <div className="rounded-md border border-border p-2 max-h-60 overflow-y-auto space-y-1">
-
+              <div className="rounded-md border border-border p-2 max-h-60 overflow-y-auto space-y-2">
                 {responsaveis.length === 0 && (
                   <p className="text-xs text-muted-foreground px-1 py-0.5">
                     Nenhum responsável disponível.
                   </p>
                 )}
                 {responsaveis.map((u) => {
-                  const checked = responsavelIds.includes(u.id);
+                  const userPersonas = personasByUser.get(u.id) ?? [];
+                  if (userPersonas.length === 0) {
+                    const checked = responsavelIds.includes(u.id);
+                    return (
+                      <label
+                        key={u.id}
+                        className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => toggleUser(u.id)}
+                        />
+                        <span className="text-sm">{u.nome}</span>
+                      </label>
+                    );
+                  }
                   return (
-                    <label
-                      key={u.id}
-                      className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={checked}
-                        onCheckedChange={() => toggleResponsavel(u.id)}
-                      />
-                      <span className="text-sm">{u.nome}</span>
-                    </label>
+                    <div key={u.id} className="space-y-0.5">
+                      <div className="px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {u.nome}
+                      </div>
+                      {userPersonas.map((p) => {
+                        const checked = responsavelPersonaIds.includes(p.id);
+                        return (
+                          <label
+                            key={p.id}
+                            className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted cursor-pointer"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={() => togglePersona(p.id)}
+                            />
+                            <span className="text-sm">{p.nome}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   );
                 })}
               </div>
-              {responsavelIds.length > 0 && (
+              {(responsavelIds.length + responsavelPersonaIds.length) > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  {responsavelIds.length} selecionado(s)
+                  {responsavelIds.length + responsavelPersonaIds.length} selecionado(s)
                 </p>
               )}
             </div>
