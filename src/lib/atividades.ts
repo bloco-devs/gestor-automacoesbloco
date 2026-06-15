@@ -100,6 +100,7 @@ export async function createCard(input: {
   descricao?: string;
   responsavelIds?: string[];
   solucaoId?: string | null;
+  prioridade?: CardPrioridade;
   checklist?: ChecklistItem[];
   links?: CardLink[];
   createdBy?: string | null;
@@ -115,6 +116,7 @@ export async function createCard(input: {
       responsavel_id: ids[0] ?? null,
       responsavel_ids: ids,
       solucao_id: input.solucaoId ?? null,
+      prioridade: input.prioridade ?? "media",
       checklist: input.checklist ?? [],
       links: input.links ?? [],
       created_by: input.createdBy ?? null,
@@ -135,6 +137,7 @@ export async function updateCard(
     solucaoId?: string | null;
     colunaId?: string;
     ordem?: number;
+    prioridade?: CardPrioridade;
     checklist?: ChecklistItem[];
     links?: CardLink[];
   },
@@ -150,11 +153,13 @@ export async function updateCard(
   if (patch.solucaoId !== undefined) upd.solucao_id = patch.solucaoId;
   if (patch.colunaId !== undefined) upd.coluna_id = patch.colunaId;
   if (patch.ordem !== undefined) upd.ordem = patch.ordem;
+  if (patch.prioridade !== undefined) upd.prioridade = patch.prioridade;
   if (patch.checklist !== undefined) upd.checklist = patch.checklist;
   if (patch.links !== undefined) upd.links = patch.links;
   const { error } = await sb.from("atividades_cards").update(upd).eq("id", id);
   if (error) throw error;
 }
+
 
 
 export async function deleteCard(id: string): Promise<void> {
