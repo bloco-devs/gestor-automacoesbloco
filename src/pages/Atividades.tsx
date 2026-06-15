@@ -295,6 +295,7 @@ export default function Atividades() {
           titulo: data.titulo,
           descricao: data.descricao,
           responsavelIds: data.responsavelIds,
+          responsavelPersonaIds: data.responsavelPersonaIds,
           solucaoId: data.solucaoId,
           checklist: data.checklist,
           links: data.links,
