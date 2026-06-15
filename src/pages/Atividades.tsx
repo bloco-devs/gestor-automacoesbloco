@@ -63,6 +63,7 @@ export default function Atividades() {
   const [colunas, setColunas] = useState<AtividadeColuna[]>([]);
   const [cards, setCards] = useState<AtividadeCard[]>([]);
   const [responsaveis, setResponsaveis] = useState<AssignableUser[]>([]);
+  const [personas, setPersonas] = useState<AtividadePersona[]>([]);
   const [solucoes, setSolucoes] = useState<Solucao[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -84,16 +85,18 @@ export default function Atividades() {
   useEffect(() => {
     (async () => {
       try {
-        const [cs, cds, us, ss] = await Promise.all([
+        const [cs, cds, us, ss, ps] = await Promise.all([
           listColunas(),
           listCards(),
           listAssignableUsers(),
           listSolucoes(),
+          listPersonas(),
         ]);
         setColunas(cs);
         setCards(cds);
         setResponsaveis(us);
         setSolucoes(ss);
+        setPersonas(ps);
       } catch (e) {
         console.error(e);
         toast.error("Erro ao carregar atividades");
