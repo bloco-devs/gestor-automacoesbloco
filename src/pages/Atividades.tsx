@@ -88,16 +88,18 @@ export default function Atividades() {
   useEffect(() => {
     (async () => {
       try {
-        const [cs, cds, us, ss] = await Promise.all([
+        const [cs, cds, us, ss, ps] = await Promise.all([
           listColunas(),
           listCards(),
           listAssignableUsers(),
           listSolucoes(),
+          listPersonas(),
         ]);
         setColunas(cs);
         setCards(cds);
-        setResponsaveis(us);
+        setResponsaveisRaw(us);
         setSolucoes(ss);
+        setPersonas(ps);
       } catch (e) {
         console.error(e);
         toast.error("Erro ao carregar atividades");
@@ -110,6 +112,34 @@ export default function Atividades() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
+
+  // Lista efetiva de "responsáveis" exibida no kanban: usuários reais SEM persona,
+  // mais cada persona como uma entrada separada.
+  const responsaveis = useMemo<AssignableUser[]>(() => {
+    const usersWithPersona = new Set(personas.map((p) => p.userId));
+    const realUsers = responsaveisRaw
+      .filter((u) => !usersWithPersona.has(u.id))
+      .map((u) => ({ id: u.id, nome: u.nome, email: u.email, role: u.role }));
+    const userById = new Map(responsaveisRaw.map((u) => [u.id, u]));
+    const personaEntries: AssignableUser[] = personas.map((p) => {
+      const base = userById.get(p.userId);
+      return {
+        id: p.id,
+        nome: p.nome,
+        email: base?.email ?? "",
+        role: base?.role ?? "developer",
+      };
+    });
+    return [...realUsers, ...personaEntries].sort((a, b) => a.nome.localeCompare(b.nome));
+  }, [responsaveisRaw, personas]);
+
+  // Resolve um id de responsável (real ou persona) para o user.id real.
+  const idToUserId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const u of responsaveisRaw) m.set(u.id, u.id);
+    for (const p of personas) m.set(p.id, p.userId);
+    return m;
+  }, [responsaveisRaw, personas]);
 
   const cardsByColuna = useMemo(() => {
     const map: Record<string, AtividadeCard[]> = {};
@@ -131,7 +161,7 @@ export default function Atividades() {
     return map;
   }, [cards, colunas, filterUserIds, filterSolucaoIds]);
 
-  const responsaveisMap = useMemo(
+  const responsaveisMap = useMemo<Map<string, AssignableUser>>(
     () => new Map(responsaveis.map((u) => [u.id, u])),
     [responsaveis],
   );
@@ -139,6 +169,20 @@ export default function Atividades() {
     () => new Map(solucoes.map((s) => [s.id, s])),
     [solucoes],
   );
+
+  // Helper: o card é "meu"?
+  const myUserId = user?.id ?? null;
+  function isMyCard(card: AtividadeCard): boolean {
+    if (!myUserId) return false;
+    const ids = card.responsavelIds.length
+      ? card.responsavelIds
+      : card.responsavelId
+        ? [card.responsavelId]
+        : [];
+    return ids.some((id) => (idToUserId.get(id) ?? id) === myUserId);
+  }
+
+
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const activeCard = activeId ? cards.find((c) => c.id === activeId) ?? null : null;
