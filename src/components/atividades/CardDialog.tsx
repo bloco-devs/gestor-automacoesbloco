@@ -185,11 +185,6 @@ export function CardDialog({
 
   // Intercepta fechamento (clique fora / Esc / botão Cancelar)
   function attemptClose() {
-    // Para cards existentes ou quando draft não é suportado, fecha direto
-    if (initial || !onSaveDraft) {
-      onOpenChange(false);
-      return;
-    }
     if (!isDirty()) {
       onOpenChange(false);
       return;
@@ -209,6 +204,12 @@ export function CardDialog({
     onSaveDraft?.(currentData());
     setConfirmOpen(false);
     onOpenChange(false);
+  }
+
+  async function handleConfirmSave() {
+    if (!titulo.trim()) return;
+    setConfirmOpen(false);
+    await handleSave();
   }
 
   function handleDiscard() {
@@ -451,17 +452,28 @@ export function CardDialog({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar criação do card?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {initial ? "Sair sem salvar?" : "Cancelar criação do card?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Você tem alterações não salvas. Deseja realmente cancelar ou prefere
-              guardar um rascunho na coluna para continuar mais tarde?
+              {initial
+                ? "Você tem alterações não salvas neste card. O que deseja fazer?"
+                : "Você tem alterações não salvas. Deseja realmente cancelar ou prefere guardar um rascunho na coluna para continuar mais tarde?"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-2 flex-wrap">
             <AlertDialogCancel>Continuar editando</AlertDialogCancel>
-            <Button variant="outline" onClick={handleSaveDraft}>
-              Salvar rascunho
-            </Button>
+            {initial ? (
+              <Button onClick={handleConfirmSave} disabled={!titulo.trim() || saving}>
+                Salvar alterações
+              </Button>
+            ) : (
+              onSaveDraft && (
+                <Button variant="outline" onClick={handleSaveDraft}>
+                  Salvar rascunho
+                </Button>
+              )
+            )}
             <AlertDialogAction
               onClick={handleDiscard}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
