@@ -29,6 +29,7 @@ export interface AtividadeCard {
   descricao: string;
   responsavelId: string | null;
   responsavelIds: string[];
+  responsavelPersonaIds: string[];
   solucaoId: string | null;
   ordem: number;
   checklist: ChecklistItem[];
@@ -38,8 +39,15 @@ export interface AtividadeCard {
   updatedAt: string;
 }
 
+export interface AtividadePersona {
+  id: string;
+  userId: string;
+  nome: string;
+  ativo: boolean;
+}
+
 const SELECT_COLS =
-  "id, coluna_id, titulo, descricao, responsavel_id, responsavel_ids, solucao_id, ordem, checklist, links, created_by, created_at, updated_at";
+  "id, coluna_id, titulo, descricao, responsavel_id, responsavel_ids, responsavel_persona_ids, solucao_id, ordem, checklist, links, created_by, created_at, updated_at";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapCard(r: any): AtividadeCard {
@@ -54,6 +62,9 @@ function mapCard(r: any): AtividadeCard {
       : r.responsavel_id
         ? [r.responsavel_id]
         : [],
+    responsavelPersonaIds: Array.isArray(r.responsavel_persona_ids)
+      ? r.responsavel_persona_ids
+      : [],
     solucaoId: r.solucao_id,
 
     ordem: r.ordem ?? 0,
@@ -63,6 +74,21 @@ function mapCard(r: any): AtividadeCard {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
+}
+
+export async function listPersonas(): Promise<AtividadePersona[]> {
+  const { data, error } = await sb
+    .from("atividades_personas")
+    .select("id, user_id, nome, ativo")
+    .eq("ativo", true)
+    .order("nome", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((r: { id: string; user_id: string; nome: string; ativo: boolean }) => ({
+    id: r.id,
+    userId: r.user_id,
+    nome: r.nome,
+    ativo: r.ativo,
+  }));
 }
 
 export async function listColunas(): Promise<AtividadeColuna[]> {
@@ -93,6 +119,7 @@ export async function createCard(input: {
   titulo: string;
   descricao?: string;
   responsavelIds?: string[];
+  responsavelPersonaIds?: string[];
   solucaoId?: string | null;
   checklist?: ChecklistItem[];
   links?: CardLink[];
@@ -100,6 +127,7 @@ export async function createCard(input: {
   ordem?: number;
 }): Promise<AtividadeCard> {
   const ids = input.responsavelIds ?? [];
+  const personaIds = input.responsavelPersonaIds ?? [];
   const { data, error } = await sb
     .from("atividades_cards")
     .insert({
@@ -108,6 +136,7 @@ export async function createCard(input: {
       descricao: input.descricao ?? "",
       responsavel_id: ids[0] ?? null,
       responsavel_ids: ids,
+      responsavel_persona_ids: personaIds,
       solucao_id: input.solucaoId ?? null,
       checklist: input.checklist ?? [],
       links: input.links ?? [],
@@ -126,6 +155,7 @@ export async function updateCard(
     titulo?: string;
     descricao?: string;
     responsavelIds?: string[];
+    responsavelPersonaIds?: string[];
     solucaoId?: string | null;
     colunaId?: string;
     ordem?: number;
@@ -140,6 +170,9 @@ export async function updateCard(
   if (patch.responsavelIds !== undefined) {
     upd.responsavel_ids = patch.responsavelIds;
     upd.responsavel_id = patch.responsavelIds[0] ?? null;
+  }
+  if (patch.responsavelPersonaIds !== undefined) {
+    upd.responsavel_persona_ids = patch.responsavelPersonaIds;
   }
   if (patch.solucaoId !== undefined) upd.solucao_id = patch.solucaoId;
   if (patch.colunaId !== undefined) upd.coluna_id = patch.colunaId;
