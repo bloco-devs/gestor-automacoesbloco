@@ -138,6 +138,19 @@ export default function Atividades() {
     () => new Map(solucoes.map((s) => [s.id, s])),
     [solucoes],
   );
+  const personasMap = useMemo(
+    () => new Map(personas.map((p) => [p.id, p])),
+    [personas],
+  );
+  const personasByUser = useMemo(() => {
+    const m = new Map<string, AtividadePersona[]>();
+    for (const p of personas) {
+      const arr = m.get(p.userId) ?? [];
+      arr.push(p);
+      m.set(p.userId, arr);
+    }
+    return m;
+  }, [personas]);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const activeCard = activeId ? cards.find((c) => c.id === activeId) ?? null : null;
