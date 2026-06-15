@@ -490,6 +490,7 @@ function Coluna({
   drafts,
   responsaveisMap,
   solucoesMap,
+  isMyCard,
   onNew,
   onEdit,
   onOpenDraft,
@@ -501,6 +502,7 @@ function Coluna({
   drafts: { id: string; colunaId: string; data: CardDraftValues }[];
   responsaveisMap: Map<string, AssignableUser>;
   solucoesMap: Map<string, Solucao>;
+  isMyCard: (c: AtividadeCard) => boolean;
   onNew: () => void;
   onEdit: (c: AtividadeCard) => void;
   onOpenDraft: (d: { id: string; colunaId: string; data: CardDraftValues }) => void;
@@ -508,6 +510,7 @@ function Coluna({
   onToggleChecklist: (cardId: string, itemId: string) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: coluna.id });
+  const myCount = cards.filter(isMyCard).length;
   return (
     <div
       ref={setNodeRef}
@@ -522,6 +525,14 @@ function Coluna({
           <span className="text-xs text-muted-foreground tabular-nums">
             {cards.length}
           </span>
+          {myCount > 0 && (
+            <span
+              className="text-[10px] font-medium tabular-nums rounded-full bg-primary/15 text-primary px-1.5 py-0.5"
+              title={`${myCount} card(s) seu(s) nesta coluna`}
+            >
+              {myCount} seu{myCount > 1 ? "s" : ""}
+            </span>
+          )}
         </div>
         <Button
           variant="ghost"
@@ -546,10 +557,12 @@ function Coluna({
                 .map((id) => responsaveisMap.get(id))
                 .filter((u): u is AssignableUser => !!u)}
               solucao={card.solucaoId ? solucoesMap.get(card.solucaoId) : undefined}
+              mine={isMyCard(card)}
               onEdit={() => onEdit(card)}
               onToggleChecklist={onToggleChecklist}
             />
           ))}
+
 
           {drafts.map((draft) => (
             <DraftCard
