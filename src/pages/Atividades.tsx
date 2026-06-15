@@ -23,12 +23,14 @@ import { Link } from "react-router-dom";
 import {
   listColunas,
   listCards,
+  listPersonas,
   createCard,
   updateCard,
   deleteCard,
   reorderCards,
   type AtividadeColuna,
   type AtividadeCard,
+  type AtividadePersona,
   type ChecklistItem,
   type CardLink,
 } from "@/lib/atividades";
