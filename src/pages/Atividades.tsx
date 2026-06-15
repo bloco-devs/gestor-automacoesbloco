@@ -435,7 +435,10 @@ export default function Atividades() {
                   cards={cardsByColuna[col.id] ?? []}
                   drafts={drafts.filter((d) => d.colunaId === col.id)}
                   responsaveisMap={responsaveisMap}
+                  personasMap={personasMap}
+                  personasByUser={personasByUser}
                   solucoesMap={solucoesMap}
+                  currentUserId={user?.id ?? null}
                   onNew={() => openNew(col.id)}
                   onEdit={openEdit}
                   onOpenDraft={openDraft}
@@ -449,14 +452,18 @@ export default function Atividades() {
             {activeCard ? (
               <KanbanCard
                 card={activeCard}
-                responsaveis={activeCard.responsavelIds
-                  .map((id) => responsaveisMap.get(id))
-                  .filter((u): u is AssignableUser => !!u)}
+                responsaveis={buildResponsaveisDisplay(
+                  activeCard,
+                  responsaveisMap,
+                  personasMap,
+                  personasByUser,
+                )}
                 solucao={
                   activeCard.solucaoId
                     ? solucoesMap.get(activeCard.solucaoId)
                     : undefined
                 }
+                isMine={!!user?.id && activeCard.responsavelIds.includes(user.id)}
                 onEdit={() => {}}
                 onToggleChecklist={() => {}}
                 isOverlay
@@ -473,6 +480,7 @@ export default function Atividades() {
         initial={editing}
         defaultValues={editingDraft?.data ?? null}
         responsaveis={responsaveis}
+        personas={personas}
         solucoes={solucoes}
         onSubmit={handleSubmit}
         onDelete={editing ? handleDelete : undefined}
