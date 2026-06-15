@@ -627,10 +627,18 @@ function DraftCard({
   );
 }
 
+const PRIORIDADE_META: Record<CardPrioridade, { label: string; bar: string; dot: string }> = {
+  baixa: { label: "Baixa", bar: "bg-priority-low", dot: "bg-priority-low" },
+  media: { label: "Média", bar: "bg-priority-medium", dot: "bg-priority-medium" },
+  alta: { label: "Alta", bar: "bg-priority-high", dot: "bg-priority-high" },
+  urgente: { label: "Urgente", bar: "bg-priority-urgent", dot: "bg-priority-urgent" },
+};
+
 function KanbanCard({
   card,
   responsaveis,
   solucao,
+  mine,
   onEdit,
   onToggleChecklist,
   isOverlay,
@@ -638,6 +646,7 @@ function KanbanCard({
   card: AtividadeCard;
   responsaveis: AssignableUser[];
   solucao?: Solucao;
+  mine?: boolean;
   onEdit: () => void;
   onToggleChecklist: (cardId: string, itemId: string) => void;
   isOverlay?: boolean;
@@ -657,6 +666,7 @@ function KanbanCard({
 
   const checklistTotal = card.checklist.length;
   const checklistDone = card.checklist.filter((c) => c.concluido).length;
+  const prio = PRIORIDADE_META[card.prioridade] ?? PRIORIDADE_META.media;
 
   return (
     <div
@@ -670,11 +680,18 @@ function KanbanCard({
         onEdit();
       }}
       className={cn(
-        "group rounded-md border border-border bg-background p-3 cursor-grab active:cursor-grabbing transition-shadow hover:border-accent/50",
+        "group relative overflow-hidden rounded-md border border-border bg-background p-3 pl-4 cursor-grab active:cursor-grabbing transition-shadow hover:border-accent/50",
         isDragging && !isOverlay && "opacity-40",
         isOverlay && "shadow-lg ring-1 ring-accent/40",
+        mine && "ring-2 ring-primary/60 bg-primary/5 shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]",
       )}
     >
+      <span
+        aria-hidden
+        className={cn("absolute left-0 top-0 bottom-0 w-1", prio.bar)}
+        title={`Prioridade: ${prio.label}`}
+      />
+
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0 text-sm font-medium leading-snug line-clamp-3 group-hover:text-accent transition-colors">
           {card.titulo}
