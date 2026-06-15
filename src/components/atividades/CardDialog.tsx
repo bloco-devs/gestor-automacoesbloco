@@ -185,11 +185,6 @@ export function CardDialog({
 
   // Intercepta fechamento (clique fora / Esc / botão Cancelar)
   function attemptClose() {
-    // Para cards existentes ou quando draft não é suportado, fecha direto
-    if (initial || !onSaveDraft) {
-      onOpenChange(false);
-      return;
-    }
     if (!isDirty()) {
       onOpenChange(false);
       return;
@@ -209,6 +204,12 @@ export function CardDialog({
     onSaveDraft?.(currentData());
     setConfirmOpen(false);
     onOpenChange(false);
+  }
+
+  async function handleConfirmSave() {
+    if (!titulo.trim()) return;
+    setConfirmOpen(false);
+    await handleSave();
   }
 
   function handleDiscard() {
