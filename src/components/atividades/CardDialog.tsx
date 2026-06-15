@@ -163,6 +163,7 @@ export function CardDialog({
       JSON.stringify([...cur.responsavelIds].sort()) !==
         JSON.stringify([...baseline.responsavelIds].sort()) ||
       cur.solucaoId !== (baseline.solucaoId ?? null) ||
+      cur.prioridade !== baseline.prioridade ||
       JSON.stringify(cur.checklist) !== JSON.stringify(baseline.checklist) ||
       JSON.stringify(cur.links) !== JSON.stringify(baseline.links)
     );
