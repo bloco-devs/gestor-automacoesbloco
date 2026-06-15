@@ -88,11 +88,13 @@ export function CardDialog({
   const [descricao, setDescricao] = useState("");
   const [responsavelIds, setResponsavelIds] = useState<string[]>([]);
   const [solucaoId, setSolucaoId] = useState<string>(NONE);
+  const [prioridade, setPrioridade] = useState<CardPrioridade>("media");
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [links, setLinks] = useState<CardLink[]>([]);
   const [novoItem, setNovoItem] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
 
   // Baseline used to detect "dirty" state
   const baseline = useMemo<CardDraftValues>(() => {
