@@ -308,6 +308,40 @@ export function CardDialog({
               </Select>
             </div>
 
+            <div className="space-y-1.5">
+              <Label>Prioridade</Label>
+              <Select
+                value={prioridade}
+                onValueChange={(v) => setPrioridade(v as CardPrioridade)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="baixa">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="size-2 rounded-full bg-priority-low" /> Baixa
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="media">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="size-2 rounded-full bg-priority-medium" /> Média
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="alta">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="size-2 rounded-full bg-priority-high" /> Alta
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="urgente">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="size-2 rounded-full bg-priority-urgent" /> Urgente
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+
             <div className="space-y-2 rounded-md border border-border p-3">
               <div className="flex items-center justify-between">
                 <Label className="text-sm">Checklist</Label>
