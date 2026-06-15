@@ -1,84 +1,85 @@
-## Objetivo
+## Visão geral
+Duas frentes para a aba **Atividades**:
+1. Permitir que um mesmo login (ex.: `tecnologiabloco@gmail.com`) apareça como dois responsáveis distintos no kanban (Nielson e André).
+2. Tornar o board mais visual: destaque dos cards do usuário logado (anel + fundo iluminado) e uma faixa lateral colorida indicando prioridade.
 
-Replicar no projeto atual o fluxo robusto de recuperação de senha do sistema 'Gestão de Processo', garantindo que o link enviado por email sempre abra direto a tela de redefinição do app publicado (sem cair na tela de login, sem perder o token, e sem ser sequestrado por outras rotas/guards).
+---
 
-## Problemas do fluxo atual
+## 1. Dois responsáveis para o mesmo login (personas)
 
-O `RedefinirSenha.tsx` atual depende exclusivamente do evento `PASSWORD_RECOVERY` do Supabase. Isso falha em vários cenários comuns:
+A tabela `allowed_emails` tem `UNIQUE(email)`, então não dá para duplicar o usuário lá. A solução é introduzir o conceito de **persona**: um "responsável" exibido no kanban que aponta para um `auth.users` real.
 
-1. O `redirectTo` usa `window.location.origin`, então um reset solicitado no preview gera link para o preview (que muitas vezes redireciona para `/auth` e descarta o token).
-2. Se o usuário já estiver logado, o `AuthProvider` carrega o perfil e o usuário é jogado para `/dashboard`/`/minhas-solicitacoes` antes do formulário de nova senha aparecer.
-3. Tokens no hash (`#access_token=...&type=recovery`) ou code no query (`?code=...`) podem ser consumidos pelo `onAuthStateChange` em outra rota e perdidos.
-4. Não há um "guard" que force o usuário a permanecer em `/redefinir-senha` até concluir o fluxo.
+### Banco
+- Nova tabela `public.atividades_personas` com:
+  - `id` (uuid, PK) — usado em `atividades_cards.responsavel_ids`
+  - `user_id` (uuid, FK lógica para `auth.users.id`)
+  - `nome` (text)
+  - `ativo` (bool, default true)
+  - timestamps + trigger de `updated_at`
+- GRANTs + RLS (leitura para `authenticated`, escrita restrita a admin via `has_role`).
+- Para `tecnologiabloco@gmail.com`, seed manual de duas personas: "Nielson" e "André".
 
-## Solução (espelhada do projeto de referência)
+### Backend / helpers
+- Nova função em `src/lib/atividades.ts`: `listAtividadesAssignables()` que devolve a união de:
+  - usuários reais de `list_assignable_users` que **não** têm personas, e
+  - todas as personas ativas (cada uma com seu próprio id mas resolvendo para o `user_id` real).
+- Tipo `AtividadeAssignable = { id, nome, email, role, userId }` onde `userId` é o `auth.users.id` real (igual a `id` quando não é persona).
 
-### 1. Fixar destino do link de reset
-Em `src/pages/Auth.tsx`, no `handleReset`, trocar o `redirectTo` de `${window.location.origin}/redefinir-senha` para a URL publicada fixa:
+### UI
+- `CardDialog` e filtros do `Atividades.tsx` passam a usar `AtividadeAssignable` em vez de `AssignableUser`. Quando um usuário tem personas, **somente** as personas aparecem (não o nome "cru") para evitar três opções para a mesma pessoa.
+- Cards existentes que apontam para o user_id real continuam funcionando: o mapa de resolução faz fallback para o nome real do usuário quando o id não bate com nenhuma persona.
 
-```
-https://gestor-automacoesbloco.lovable.app/redefinir-senha
-```
+---
 
-Encapsular numa função `getPasswordResetRedirectUrl()` (em `useAuth.tsx` ou em um util) para centralizar.
+## 2. Kanban mais visual
 
-### 2. Capturar o callback de auth antes do React montar
-Criar `src/lib/capture-auth-callback.ts`:
-- Lê `window.location.hash` e `window.location.search` no carregamento do módulo.
-- Se encontrar `access_token + refresh_token` (com `type=recovery` ou ausente/não-signup), ou `?code=...` em `/redefinir-senha`, grava `sessionStorage["bloco:password-recovery"] = "1"`.
-- Executado imediatamente (top-level) e importado como primeira linha de `src/main.tsx`.
+### 2a. Destaque dos cards do usuário logado
+- Helper `isMyCard(card)` que retorna true se o `auth.user.id` aparece em `responsavelIds` **ou** se alguma persona ligada a esse `user_id` aparece em `responsavelIds`.
+- No `KanbanCard`:
+  - **Anel colorido**: `ring-2 ring-primary/60` quando `isMyCard`.
+  - **Fundo iluminado**: gradiente tonal suave usando tokens (`bg-primary/5` + leve glow via `shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]`). Todos os valores via tokens semânticos do `index.css` — sem cores hardcoded.
+- Sem badge "Você" e sem esmaecer os outros (conforme escolhido).
 
-### 3. Helpers de detecção de recovery
-Criar `src/lib/auth-recovery.ts` com:
-- `PASSWORD_RECOVERY_KEY`
-- `hasAuthTokensInHash`, `hasAuthCodeInSearch`, `isRecoveryTypeInUrl`
-- `markPasswordRecoveryIntent()`
-- `getAuthCallbackError(hash, search)` → mensagem para `otp_expired` / `access_denied`
-- `isPasswordRecoveryIntent({ pathname, hash, search })` → verdadeira se sessionStorage marcado, ou URL contém `type=recovery`, ou tokens na URL em `/redefinir-senha`.
+### 2b. Cor por prioridade
+- Adicionar coluna `prioridade` em `atividades_cards`:
+  - tipo: `text` com check (`baixa | media | alta | urgente`), default `media`, nullable false.
+- Tokens novos em `src/index.css` (HSL): `--priority-low`, `--priority-medium`, `--priority-high`, `--priority-urgent` + mapeados em `tailwind.config.ts`.
+- `CardDialog` ganha um `Select` "Prioridade".
+- `KanbanCard` recebe uma **faixa lateral esquerda** de 4px usando a cor da prioridade (`border-l-4` + bg do token correspondente). Cards sem prioridade definida ficam neutros.
+- Tooltip no chip mostrando o nome da prioridade.
 
-### 4. AuthProvider: detectar recovery e redirecionar
-Em `src/hooks/useAuth.tsx`, dentro do listener `onAuthStateChange`:
-- Se `event === "PASSWORD_RECOVERY"` ou (`SIGNED_IN` e flag em sessionStorage), marcar intent e `window.location.replace("/redefinir-senha")` caso não esteja lá.
-- Pular o `loadProfile` durante recovery para não disparar redirecionamentos de role.
-
-### 5. RecoveryGuard
-Criar `src/components/RecoveryGuard.tsx` que, em qualquer rota diferente de `/redefinir-senha`, redireciona para `/redefinir-senha` se `isPasswordRecoveryIntent()` for verdadeiro. Renderizado dentro do `<AuthProvider>` no `App.tsx`, antes das `<Routes>`.
-
-### 6. ProtectedRoute
-Em `src/components/ProtectedRoute.tsx`, antes de checar `session`, se `isPasswordRecoveryIntent()` for verdadeiro, redirecionar para `/redefinir-senha` preservando `search`+`hash`.
-
-### 7. RedefinirSenha
-Em `src/pages/RedefinirSenha.tsx`:
-- Substituir a checagem por timeout pelo helper `isPasswordRecoveryIntent()` + escuta do evento `PASSWORD_RECOVERY`.
-- Usar `getAuthCallbackError` para mostrar mensagem clara quando o link estiver expirado.
-- Ao concluir com sucesso: `sessionStorage.removeItem(PASSWORD_RECOVERY_KEY)`, `signOut`, navegar para `/auth`.
-
-### 8. Auth.tsx
-- Se a página `/auth` for carregada com tokens/code de recovery na URL (caso o provedor de email reescreva o link), redirecionar imediatamente para `/redefinir-senha` preservando `search+hash`.
+---
 
 ## Detalhes técnicos
 
-- Rota e nome do arquivo continuam `/redefinir-senha` e `RedefinirSenha.tsx` (consistência com o projeto).
-- Nenhuma migração de banco necessária.
-- Nenhum impacto em RLS, edge functions, ou Supabase Auth settings (basta que a URL publicada esteja em "Redirect URLs" do Supabase — verificar e instruir o usuário se necessário).
-- A URL fixa publicada é `https://gestor-automacoesbloco.lovable.app`.
+### Migração SQL (estrutura)
+```text
+1) CREATE TABLE public.atividades_personas (...)
+   GRANT SELECT TO authenticated; GRANT ALL TO service_role;
+   ENABLE RLS;
+   POLICY select: authenticated
+   POLICY insert/update/delete: has_role(auth.uid(),'admin')
 
-## Arquivos a criar
-- `src/lib/auth-recovery.ts`
-- `src/lib/capture-auth-callback.ts`
-- `src/components/RecoveryGuard.tsx`
+2) ALTER TABLE public.atividades_cards
+   ADD COLUMN prioridade text NOT NULL DEFAULT 'media'
+   CHECK (prioridade IN ('baixa','media','alta','urgente'));
+```
 
-## Arquivos a editar
-- `src/main.tsx` (importar capture-auth-callback como primeira linha)
-- `src/App.tsx` (montar `<RecoveryGuard />` dentro do `AuthProvider`)
-- `src/hooks/useAuth.tsx` (tratar recovery no listener; expor `getPasswordResetRedirectUrl`)
-- `src/pages/Auth.tsx` (usar URL fixa no `resetPasswordForEmail`; redirecionar se tokens chegarem aqui)
-- `src/pages/RedefinirSenha.tsx` (usar helpers, tratamento de erro, signOut + redirect ao final)
-- `src/components/ProtectedRoute.tsx` (curto-circuito para recovery)
+### Insert de personas (separado, via data tool)
+- `INSERT INTO atividades_personas (user_id, nome) VALUES ((select id from auth.users where email='tecnologiabloco@gmail.com'), 'Nielson'), (..., 'André');`
 
-## Validação manual
+### Arquivos a tocar
+- **Editar**: `src/lib/atividades.ts` (novo helper + tipo + prioridade em mapCard/createCard/updateCard), `src/pages/Atividades.tsx` (uso de assignables, isMyCard, faixa de prioridade, anel/fundo), `src/components/atividades/CardDialog.tsx` (select de prioridade + uso do novo tipo de assignable), `src/index.css` (tokens de prioridade), `tailwind.config.ts` (mapear tokens).
+- **Sem mudança**: `list_assignable_users` continua existindo para o resto do app; só a aba Atividades passa pelo novo helper.
 
-1. Solicitar reset com a tela aberta no preview.
-2. Abrir o email → clicar no link → confirmar que abre `https://gestor-automacoesbloco.lovable.app/redefinir-senha` com o formulário visível, mesmo se já houver sessão ativa.
-3. Definir nova senha → logout automático → login com a nova senha.
-4. Tentar abrir um link expirado → ver mensagem clara de "link expirado".
+### Compatibilidade
+- Cards antigos sem prioridade recebem `media` pelo default.
+- Cards antigos com `responsavel_ids` apontando para o user real continuam mostrando o nome real (fallback no mapa).
+- Atribuir um card ao "Nielson" grava o id da persona; ao filtrar/destacar pelo usuário logado, comparamos o `userId` resolvido — então um card atribuído a "André" ainda acende para o login `tecnologiabloco@gmail.com`.
+
+---
+
+## Fora de escopo (não fazer agora)
+- Renomear personas via UI / CRUD de personas (pode ser feito depois pelo admin via SQL).
+- Reordenar prioridades automaticamente.
+- Filtro por prioridade (pode entrar numa próxima iteração).
