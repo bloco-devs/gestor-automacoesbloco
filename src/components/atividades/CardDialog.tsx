@@ -104,6 +104,7 @@ export function CardDialog({
         descricao: initial.descricao,
         responsavelIds: initial.responsavelIds,
         solucaoId: initial.solucaoId,
+        prioridade: initial.prioridade ?? "media",
         checklist: initial.checklist,
         links: initial.links,
       };
@@ -113,6 +114,7 @@ export function CardDialog({
       descricao: defaultValues?.descricao ?? "",
       responsavelIds: defaultValues?.responsavelIds ?? [],
       solucaoId: defaultValues?.solucaoId ?? null,
+      prioridade: defaultValues?.prioridade ?? "media",
       checklist: defaultValues?.checklist ?? [],
       links: defaultValues?.links ?? [],
     };
@@ -124,6 +126,7 @@ export function CardDialog({
       setDescricao(baseline.descricao);
       setResponsavelIds(baseline.responsavelIds);
       setSolucaoId(baseline.solucaoId ?? NONE);
+      setPrioridade(baseline.prioridade);
       setChecklist(baseline.checklist);
       setLinks(baseline.links);
       setNovoItem("");
@@ -137,12 +140,14 @@ export function CardDialog({
       descricao: descricao.trim(),
       responsavelIds,
       solucaoId: solucaoId === NONE ? null : solucaoId,
+      prioridade,
       checklist,
       links: links
         .map((l) => ({ ...l, label: l.label.trim(), url: l.url.trim() }))
         .filter((l) => l.url),
     };
   }
+
 
   function toggleResponsavel(id: string) {
     setResponsavelIds((arr) =>
