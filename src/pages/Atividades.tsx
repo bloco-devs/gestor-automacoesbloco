@@ -435,12 +435,14 @@ export default function Atividades() {
                   drafts={drafts.filter((d) => d.colunaId === col.id)}
                   responsaveisMap={responsaveisMap}
                   solucoesMap={solucoesMap}
+                  isMyCard={isMyCard}
                   onNew={() => openNew(col.id)}
                   onEdit={openEdit}
                   onOpenDraft={openDraft}
                   onDeleteDraft={handleDeleteDraft}
                   onToggleChecklist={toggleChecklistItem}
                 />
+
               </div>
             ))}
           </div>
