@@ -64,9 +64,11 @@ export default function Atividades() {
   const { user } = useAuth();
   const [colunas, setColunas] = useState<AtividadeColuna[]>([]);
   const [cards, setCards] = useState<AtividadeCard[]>([]);
-  const [responsaveis, setResponsaveis] = useState<AssignableUser[]>([]);
+  const [responsaveisRaw, setResponsaveisRaw] = useState<AssignableUser[]>([]);
+  const [personas, setPersonas] = useState<AtividadePersona[]>([]);
   const [solucoes, setSolucoes] = useState<Solucao[]>([]);
   const [loading, setLoading] = useState(true);
+
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AtividadeCard | null>(null);
