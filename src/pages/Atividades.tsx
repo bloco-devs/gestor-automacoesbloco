@@ -27,17 +27,13 @@ import {
   updateCard,
   deleteCard,
   reorderCards,
-  listPersonas,
   type AtividadeColuna,
   type AtividadeCard,
   type ChecklistItem,
   type CardLink,
-  type CardPrioridade,
-  type AtividadePersona,
 } from "@/lib/atividades";
 import { listAssignableUsers, listSolucoes } from "@/lib/supabaseData";
 import type { AssignableUser, Solucao } from "@/lib/types";
-
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -64,11 +60,9 @@ export default function Atividades() {
   const { user } = useAuth();
   const [colunas, setColunas] = useState<AtividadeColuna[]>([]);
   const [cards, setCards] = useState<AtividadeCard[]>([]);
-  const [responsaveisRaw, setResponsaveisRaw] = useState<AssignableUser[]>([]);
-  const [personas, setPersonas] = useState<AtividadePersona[]>([]);
+  const [responsaveis, setResponsaveis] = useState<AssignableUser[]>([]);
   const [solucoes, setSolucoes] = useState<Solucao[]>([]);
   const [loading, setLoading] = useState(true);
-
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AtividadeCard | null>(null);
@@ -88,18 +82,16 @@ export default function Atividades() {
   useEffect(() => {
     (async () => {
       try {
-        const [cs, cds, us, ss, ps] = await Promise.all([
+        const [cs, cds, us, ss] = await Promise.all([
           listColunas(),
           listCards(),
           listAssignableUsers(),
           listSolucoes(),
-          listPersonas(),
         ]);
         setColunas(cs);
         setCards(cds);
-        setResponsaveisRaw(us);
+        setResponsaveis(us);
         setSolucoes(ss);
-        setPersonas(ps);
       } catch (e) {
         console.error(e);
         toast.error("Erro ao carregar atividades");
@@ -112,34 +104,6 @@ export default function Atividades() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
-
-  // Lista efetiva de "responsáveis" exibida no kanban: usuários reais SEM persona,
-  // mais cada persona como uma entrada separada.
-  const responsaveis = useMemo<AssignableUser[]>(() => {
-    const usersWithPersona = new Set(personas.map((p) => p.userId));
-    const realUsers = responsaveisRaw
-      .filter((u) => !usersWithPersona.has(u.id))
-      .map((u) => ({ id: u.id, nome: u.nome, email: u.email, role: u.role }));
-    const userById = new Map(responsaveisRaw.map((u) => [u.id, u]));
-    const personaEntries: AssignableUser[] = personas.map((p) => {
-      const base = userById.get(p.userId);
-      return {
-        id: p.id,
-        nome: p.nome,
-        email: base?.email ?? "",
-        role: base?.role ?? "developer",
-      };
-    });
-    return [...realUsers, ...personaEntries].sort((a, b) => a.nome.localeCompare(b.nome));
-  }, [responsaveisRaw, personas]);
-
-  // Resolve um id de responsável (real ou persona) para o user.id real.
-  const idToUserId = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const u of responsaveisRaw) m.set(u.id, u.id);
-    for (const p of personas) m.set(p.id, p.userId);
-    return m;
-  }, [responsaveisRaw, personas]);
 
   const cardsByColuna = useMemo(() => {
     const map: Record<string, AtividadeCard[]> = {};
@@ -161,7 +125,7 @@ export default function Atividades() {
     return map;
   }, [cards, colunas, filterUserIds, filterSolucaoIds]);
 
-  const responsaveisMap = useMemo<Map<string, AssignableUser>>(
+  const responsaveisMap = useMemo(
     () => new Map(responsaveis.map((u) => [u.id, u])),
     [responsaveis],
   );
@@ -169,20 +133,6 @@ export default function Atividades() {
     () => new Map(solucoes.map((s) => [s.id, s])),
     [solucoes],
   );
-
-  // Helper: o card é "meu"?
-  const myUserId = user?.id ?? null;
-  function isMyCard(card: AtividadeCard): boolean {
-    if (!myUserId) return false;
-    const ids = card.responsavelIds.length
-      ? card.responsavelIds
-      : card.responsavelId
-        ? [card.responsavelId]
-        : [];
-    return ids.some((id) => (idToUserId.get(id) ?? id) === myUserId);
-  }
-
-
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const activeCard = activeId ? cards.find((c) => c.id === activeId) ?? null : null;
@@ -328,13 +278,11 @@ export default function Atividades() {
           descricao: data.descricao,
           responsavelIds: data.responsavelIds,
           solucaoId: data.solucaoId,
-          prioridade: data.prioridade,
           checklist: data.checklist,
           links: data.links,
           createdBy: user?.id,
           ordem: (cardsByColuna[newCardColuna]?.length ?? 0) + 1,
         });
-
         setCards((cs) => [...cs, created]);
         if (editingDraftId) {
           setDrafts((ds) => ds.filter((d) => d.id !== editingDraftId));
@@ -435,14 +383,12 @@ export default function Atividades() {
                   drafts={drafts.filter((d) => d.colunaId === col.id)}
                   responsaveisMap={responsaveisMap}
                   solucoesMap={solucoesMap}
-                  isMyCard={isMyCard}
                   onNew={() => openNew(col.id)}
                   onEdit={openEdit}
                   onOpenDraft={openDraft}
                   onDeleteDraft={handleDeleteDraft}
                   onToggleChecklist={toggleChecklistItem}
                 />
-
               </div>
             ))}
           </div>
@@ -458,11 +404,9 @@ export default function Atividades() {
                     ? solucoesMap.get(activeCard.solucaoId)
                     : undefined
                 }
-                mine={isMyCard(activeCard)}
                 onEdit={() => {}}
                 onToggleChecklist={() => {}}
                 isOverlay
-
               />
             ) : null}
           </DragOverlay>
@@ -492,7 +436,6 @@ function Coluna({
   drafts,
   responsaveisMap,
   solucoesMap,
-  isMyCard,
   onNew,
   onEdit,
   onOpenDraft,
@@ -504,7 +447,6 @@ function Coluna({
   drafts: { id: string; colunaId: string; data: CardDraftValues }[];
   responsaveisMap: Map<string, AssignableUser>;
   solucoesMap: Map<string, Solucao>;
-  isMyCard: (c: AtividadeCard) => boolean;
   onNew: () => void;
   onEdit: (c: AtividadeCard) => void;
   onOpenDraft: (d: { id: string; colunaId: string; data: CardDraftValues }) => void;
@@ -512,7 +454,6 @@ function Coluna({
   onToggleChecklist: (cardId: string, itemId: string) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: coluna.id });
-  const myCount = cards.filter(isMyCard).length;
   return (
     <div
       ref={setNodeRef}
@@ -527,14 +468,6 @@ function Coluna({
           <span className="text-xs text-muted-foreground tabular-nums">
             {cards.length}
           </span>
-          {myCount > 0 && (
-            <span
-              className="text-[10px] font-medium tabular-nums rounded-full bg-primary/15 text-primary px-1.5 py-0.5"
-              title={`${myCount} card(s) seu(s) nesta coluna`}
-            >
-              {myCount} seu{myCount > 1 ? "s" : ""}
-            </span>
-          )}
         </div>
         <Button
           variant="ghost"
@@ -559,12 +492,10 @@ function Coluna({
                 .map((id) => responsaveisMap.get(id))
                 .filter((u): u is AssignableUser => !!u)}
               solucao={card.solucaoId ? solucoesMap.get(card.solucaoId) : undefined}
-              mine={isMyCard(card)}
               onEdit={() => onEdit(card)}
               onToggleChecklist={onToggleChecklist}
             />
           ))}
-
 
           {drafts.map((draft) => (
             <DraftCard
@@ -629,18 +560,10 @@ function DraftCard({
   );
 }
 
-const PRIORIDADE_META: Record<CardPrioridade, { label: string; bar: string; dot: string }> = {
-  baixa: { label: "Baixa", bar: "bg-priority-low", dot: "bg-priority-low" },
-  media: { label: "Média", bar: "bg-priority-medium", dot: "bg-priority-medium" },
-  alta: { label: "Alta", bar: "bg-priority-high", dot: "bg-priority-high" },
-  urgente: { label: "Urgente", bar: "bg-priority-urgent", dot: "bg-priority-urgent" },
-};
-
 function KanbanCard({
   card,
   responsaveis,
   solucao,
-  mine,
   onEdit,
   onToggleChecklist,
   isOverlay,
@@ -648,7 +571,6 @@ function KanbanCard({
   card: AtividadeCard;
   responsaveis: AssignableUser[];
   solucao?: Solucao;
-  mine?: boolean;
   onEdit: () => void;
   onToggleChecklist: (cardId: string, itemId: string) => void;
   isOverlay?: boolean;
@@ -668,7 +590,6 @@ function KanbanCard({
 
   const checklistTotal = card.checklist.length;
   const checklistDone = card.checklist.filter((c) => c.concluido).length;
-  const prio = PRIORIDADE_META[card.prioridade] ?? PRIORIDADE_META.media;
 
   return (
     <div
@@ -682,18 +603,11 @@ function KanbanCard({
         onEdit();
       }}
       className={cn(
-        "group relative overflow-hidden rounded-md border border-border bg-background p-3 pl-4 cursor-grab active:cursor-grabbing transition-shadow hover:border-accent/50",
+        "group rounded-md border border-border bg-background p-3 cursor-grab active:cursor-grabbing transition-shadow hover:border-accent/50",
         isDragging && !isOverlay && "opacity-40",
         isOverlay && "shadow-lg ring-1 ring-accent/40",
-        mine && "ring-2 ring-primary/60 bg-primary/5 shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]",
       )}
     >
-      <span
-        aria-hidden
-        className={cn("absolute left-0 top-0 bottom-0 w-1", prio.bar)}
-        title={`Prioridade: ${prio.label}`}
-      />
-
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0 text-sm font-medium leading-snug line-clamp-3 group-hover:text-accent transition-colors">
           {card.titulo}

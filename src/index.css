@@ -120,14 +120,7 @@
     --sidebar-ring: 47 100% 55%;
 
     --surface-2: 40 10% 94%;
-
-    /* Prioridades de cards (Atividades) */
-    --priority-low: 142 45% 45%;
-    --priority-medium: 210 70% 50%;
-    --priority-high: 28 92% 50%;
-    --priority-urgent: 0 75% 50%;
   }
-
 
   .dark {
     /* ===== DARK — base preto profundo (#0C0C0C) + areia/amarelo ===== */
@@ -178,14 +171,7 @@
     --sidebar-ring: 47 100% 68%;
 
     --surface-2: 0 0% 9%;
-
-    /* Prioridades de cards (Atividades) — variantes dark */
-    --priority-low: 142 55% 55%;
-    --priority-medium: 210 75% 62%;
-    --priority-high: 28 92% 58%;
-    --priority-urgent: 0 80% 60%;
   }
-
 }
 
 @layer base {

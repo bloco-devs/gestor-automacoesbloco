@@ -84,7 +84,6 @@ export type Database = {
           id: string
           links: Json
           ordem: number
-          prioridade: string
           responsavel_id: string | null
           responsavel_ids: string[]
           solucao_id: string | null
@@ -100,7 +99,6 @@ export type Database = {
           id?: string
           links?: Json
           ordem?: number
-          prioridade?: string
           responsavel_id?: string | null
           responsavel_ids?: string[]
           solucao_id?: string | null
@@ -116,7 +114,6 @@ export type Database = {
           id?: string
           links?: Json
           ordem?: number
-          prioridade?: string
           responsavel_id?: string | null
           responsavel_ids?: string[]
           solucao_id?: string | null
@@ -198,33 +195,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      atividades_personas: {
-        Row: {
-          ativo: boolean
-          created_at: string
-          id: string
-          nome: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          ativo?: boolean
-          created_at?: string
-          id?: string
-          nome: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          ativo?: boolean
-          created_at?: string
-          id?: string
-          nome?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       criterios_solucoes: {
         Row: {

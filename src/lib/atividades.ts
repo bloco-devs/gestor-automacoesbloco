@@ -22,8 +22,6 @@ export interface CardLink {
   url: string;
 }
 
-export type CardPrioridade = "baixa" | "media" | "alta" | "urgente";
-
 export interface AtividadeCard {
   id: string;
   colunaId: string;
@@ -33,7 +31,6 @@ export interface AtividadeCard {
   responsavelIds: string[];
   solucaoId: string | null;
   ordem: number;
-  prioridade: CardPrioridade;
   checklist: ChecklistItem[];
   links: CardLink[];
   createdBy: string | null;
@@ -42,8 +39,7 @@ export interface AtividadeCard {
 }
 
 const SELECT_COLS =
-  "id, coluna_id, titulo, descricao, responsavel_id, responsavel_ids, solucao_id, ordem, prioridade, checklist, links, created_by, created_at, updated_at";
-
+  "id, coluna_id, titulo, descricao, responsavel_id, responsavel_ids, solucao_id, ordem, checklist, links, created_by, created_at, updated_at";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapCard(r: any): AtividadeCard {
@@ -61,8 +57,6 @@ function mapCard(r: any): AtividadeCard {
     solucaoId: r.solucao_id,
 
     ordem: r.ordem ?? 0,
-    prioridade: (r.prioridade ?? "media") as CardPrioridade,
-
     checklist: Array.isArray(r.checklist) ? r.checklist : [],
     links: Array.isArray(r.links) ? r.links : [],
     createdBy: r.created_by,
@@ -100,7 +94,6 @@ export async function createCard(input: {
   descricao?: string;
   responsavelIds?: string[];
   solucaoId?: string | null;
-  prioridade?: CardPrioridade;
   checklist?: ChecklistItem[];
   links?: CardLink[];
   createdBy?: string | null;
@@ -116,7 +109,6 @@ export async function createCard(input: {
       responsavel_id: ids[0] ?? null,
       responsavel_ids: ids,
       solucao_id: input.solucaoId ?? null,
-      prioridade: input.prioridade ?? "media",
       checklist: input.checklist ?? [],
       links: input.links ?? [],
       created_by: input.createdBy ?? null,
@@ -137,7 +129,6 @@ export async function updateCard(
     solucaoId?: string | null;
     colunaId?: string;
     ordem?: number;
-    prioridade?: CardPrioridade;
     checklist?: ChecklistItem[];
     links?: CardLink[];
   },
@@ -153,13 +144,11 @@ export async function updateCard(
   if (patch.solucaoId !== undefined) upd.solucao_id = patch.solucaoId;
   if (patch.colunaId !== undefined) upd.coluna_id = patch.colunaId;
   if (patch.ordem !== undefined) upd.ordem = patch.ordem;
-  if (patch.prioridade !== undefined) upd.prioridade = patch.prioridade;
   if (patch.checklist !== undefined) upd.checklist = patch.checklist;
   if (patch.links !== undefined) upd.links = patch.links;
   const { error } = await sb.from("atividades_cards").update(upd).eq("id", id);
   if (error) throw error;
 }
-
 
 
 export async function deleteCard(id: string): Promise<void> {
@@ -242,42 +231,3 @@ export async function reorderCards(
     ),
   );
 }
-
-// ============================================================
-// Personas (apelidos selecionáveis que apontam para um user real)
-// ============================================================
-
-export interface AtividadePersona {
-  id: string;
-  userId: string;
-  nome: string;
-  ativo: boolean;
-}
-
-export interface AtividadeAssignable {
-  /** ID que vai em responsavel_ids — pode ser um user.id real ou um persona.id. */
-  id: string;
-  nome: string;
-  email: string;
-  role: string;
-  /** ID real do usuário em auth.users (igual a `id` quando não é persona). */
-  userId: string;
-  isPersona?: boolean;
-}
-
-export async function listPersonas(): Promise<AtividadePersona[]> {
-  const { data, error } = await sb
-    .from("atividades_personas")
-    .select("id, user_id, nome, ativo")
-    .eq("ativo", true)
-    .order("nome", { ascending: true });
-  if (error) throw error;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data ?? []).map((r: any) => ({
-    id: r.id,
-    userId: r.user_id,
-    nome: r.nome,
-    ativo: r.ativo,
-  }));
-}
-

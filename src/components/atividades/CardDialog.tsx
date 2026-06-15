@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2, Link2 } from "lucide-react";
-import type { AtividadeCard, ChecklistItem, CardLink, CardPrioridade } from "@/lib/atividades";
+import type { AtividadeCard, ChecklistItem, CardLink } from "@/lib/atividades";
 import type { AssignableUser, Solucao } from "@/lib/types";
 
 export interface CardDraftValues {
@@ -46,7 +46,6 @@ export interface CardDraftValues {
   descricao: string;
   responsavelIds: string[];
   solucaoId: string | null;
-  prioridade: CardPrioridade;
   checklist: ChecklistItem[];
   links: CardLink[];
 }
@@ -64,7 +63,6 @@ export interface CardDialogProps {
   onSaveDraft?: (data: CardDraftValues) => void;
   onDiscardDraft?: () => void;
 }
-
 
 const NONE = "__none__";
 
@@ -88,13 +86,11 @@ export function CardDialog({
   const [descricao, setDescricao] = useState("");
   const [responsavelIds, setResponsavelIds] = useState<string[]>([]);
   const [solucaoId, setSolucaoId] = useState<string>(NONE);
-  const [prioridade, setPrioridade] = useState<CardPrioridade>("media");
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [links, setLinks] = useState<CardLink[]>([]);
   const [novoItem, setNovoItem] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-
 
   // Baseline used to detect "dirty" state
   const baseline = useMemo<CardDraftValues>(() => {
@@ -104,7 +100,6 @@ export function CardDialog({
         descricao: initial.descricao,
         responsavelIds: initial.responsavelIds,
         solucaoId: initial.solucaoId,
-        prioridade: initial.prioridade ?? "media",
         checklist: initial.checklist,
         links: initial.links,
       };
@@ -114,7 +109,6 @@ export function CardDialog({
       descricao: defaultValues?.descricao ?? "",
       responsavelIds: defaultValues?.responsavelIds ?? [],
       solucaoId: defaultValues?.solucaoId ?? null,
-      prioridade: defaultValues?.prioridade ?? "media",
       checklist: defaultValues?.checklist ?? [],
       links: defaultValues?.links ?? [],
     };
@@ -126,7 +120,6 @@ export function CardDialog({
       setDescricao(baseline.descricao);
       setResponsavelIds(baseline.responsavelIds);
       setSolucaoId(baseline.solucaoId ?? NONE);
-      setPrioridade(baseline.prioridade);
       setChecklist(baseline.checklist);
       setLinks(baseline.links);
       setNovoItem("");
@@ -140,14 +133,12 @@ export function CardDialog({
       descricao: descricao.trim(),
       responsavelIds,
       solucaoId: solucaoId === NONE ? null : solucaoId,
-      prioridade,
       checklist,
       links: links
         .map((l) => ({ ...l, label: l.label.trim(), url: l.url.trim() }))
         .filter((l) => l.url),
     };
   }
-
 
   function toggleResponsavel(id: string) {
     setResponsavelIds((arr) =>
@@ -163,7 +154,6 @@ export function CardDialog({
       JSON.stringify([...cur.responsavelIds].sort()) !==
         JSON.stringify([...baseline.responsavelIds].sort()) ||
       cur.solucaoId !== (baseline.solucaoId ?? null) ||
-      cur.prioridade !== baseline.prioridade ||
       JSON.stringify(cur.checklist) !== JSON.stringify(baseline.checklist) ||
       JSON.stringify(cur.links) !== JSON.stringify(baseline.links)
     );
@@ -307,43 +297,6 @@ export function CardDialog({
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-1.5">
-              <Label>Prioridade</Label>
-              <Select
-                value={prioridade}
-                onValueChange={(v) => setPrioridade(v as CardPrioridade)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="baixa">
-                    <span className="inline-flex items-center gap-2">
-                      <span className="size-2 rounded-full bg-priority-low" /> Baixa
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="media">
-                    <span className="inline-flex items-center gap-2">
-                      <span className="size-2 rounded-full bg-priority-medium" /> Média
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="alta">
-                    <span className="inline-flex items-center gap-2">
-                      <span className="size-2 rounded-full bg-priority-high" /> Alta
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="urgente">
-                    <span className="inline-flex items-center gap-2">
-                      <span className="size-2 rounded-full bg-priority-urgent" /> Urgente
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-
-
 
             <div className="space-y-2 rounded-md border border-border p-3">
               <div className="flex items-center justify-between">
