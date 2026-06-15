@@ -69,6 +69,13 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        priority: {
+          low: "hsl(var(--priority-low))",
+          medium: "hsl(var(--priority-medium))",
+          high: "hsl(var(--priority-high))",
+          urgent: "hsl(var(--priority-urgent))",
+        },
+
       },
       fontFamily: {
         brand: ['NewBlackTypeface', 'system-ui', 'sans-serif'],
