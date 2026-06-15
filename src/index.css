@@ -178,7 +178,14 @@
     --sidebar-ring: 47 100% 68%;
 
     --surface-2: 0 0% 9%;
+
+    /* Prioridades de cards (Atividades) — variantes dark */
+    --priority-low: 142 55% 55%;
+    --priority-medium: 210 75% 62%;
+    --priority-high: 28 92% 58%;
+    --priority-urgent: 0 80% 60%;
   }
+
 }
 
 @layer base {
