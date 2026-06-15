@@ -635,13 +635,15 @@ function KanbanCard({
   card,
   responsaveis,
   solucao,
+  isMine,
   onEdit,
   onToggleChecklist,
   isOverlay,
 }: {
   card: AtividadeCard;
-  responsaveis: AssignableUser[];
+  responsaveis: ResponsavelDisplay[];
   solucao?: Solucao;
+  isMine?: boolean;
   onEdit: () => void;
   onToggleChecklist: (cardId: string, itemId: string) => void;
   isOverlay?: boolean;
@@ -674,7 +676,10 @@ function KanbanCard({
         onEdit();
       }}
       className={cn(
-        "group rounded-md border border-border bg-background p-3 cursor-grab active:cursor-grabbing transition-shadow hover:border-accent/50",
+        "group rounded-md border bg-background p-3 cursor-grab active:cursor-grabbing transition-shadow hover:border-accent/50",
+        isMine
+          ? "border-yellow-400/70 ring-2 ring-yellow-400/70 shadow-[0_0_18px_rgba(250,204,21,0.55)] bg-yellow-50/40 dark:bg-yellow-500/5"
+          : "border-border",
         isDragging && !isOverlay && "opacity-40",
         isOverlay && "shadow-lg ring-1 ring-accent/40",
       )}
