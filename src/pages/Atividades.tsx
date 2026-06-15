@@ -328,11 +328,13 @@ export default function Atividades() {
           descricao: data.descricao,
           responsavelIds: data.responsavelIds,
           solucaoId: data.solucaoId,
+          prioridade: data.prioridade,
           checklist: data.checklist,
           links: data.links,
           createdBy: user?.id,
           ordem: (cardsByColuna[newCardColuna]?.length ?? 0) + 1,
         });
+
         setCards((cs) => [...cs, created]);
         if (editingDraftId) {
           setDrafts((ds) => ds.filter((d) => d.id !== editingDraftId));
