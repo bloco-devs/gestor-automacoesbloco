@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2, Link2 } from "lucide-react";
-import type { AtividadeCard, ChecklistItem, CardLink } from "@/lib/atividades";
+import type { AtividadeCard, ChecklistItem, CardLink, CardPrioridade } from "@/lib/atividades";
 import type { AssignableUser, Solucao } from "@/lib/types";
 
 export interface CardDraftValues {
@@ -46,6 +46,7 @@ export interface CardDraftValues {
   descricao: string;
   responsavelIds: string[];
   solucaoId: string | null;
+  prioridade: CardPrioridade;
   checklist: ChecklistItem[];
   links: CardLink[];
 }
@@ -63,6 +64,7 @@ export interface CardDialogProps {
   onSaveDraft?: (data: CardDraftValues) => void;
   onDiscardDraft?: () => void;
 }
+
 
 const NONE = "__none__";
 
