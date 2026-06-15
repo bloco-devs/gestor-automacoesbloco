@@ -678,7 +678,7 @@ function KanbanCard({
       className={cn(
         "group rounded-md border bg-background p-3 cursor-grab active:cursor-grabbing transition-shadow hover:border-accent/50",
         isMine
-          ? "border-yellow-400/70 ring-2 ring-yellow-400/70 shadow-[0_0_18px_rgba(250,204,21,0.55)] bg-yellow-50/40 dark:bg-yellow-500/5"
+          ? "border-yellow-400/70 ring-2 ring-yellow-400/60 shadow-[0_0_10px_rgba(250,204,21,0.35)]"
           : "border-border",
         isDragging && !isOverlay && "opacity-40",
         isOverlay && "shadow-lg ring-1 ring-accent/40",
