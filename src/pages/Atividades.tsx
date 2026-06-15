@@ -27,13 +27,17 @@ import {
   updateCard,
   deleteCard,
   reorderCards,
+  listPersonas,
   type AtividadeColuna,
   type AtividadeCard,
   type ChecklistItem,
   type CardLink,
+  type CardPrioridade,
+  type AtividadePersona,
 } from "@/lib/atividades";
 import { listAssignableUsers, listSolucoes } from "@/lib/supabaseData";
 import type { AssignableUser, Solucao } from "@/lib/types";
+
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
