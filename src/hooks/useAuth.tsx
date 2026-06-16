@@ -147,10 +147,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       // Defer Supabase calls to avoid deadlock no callback
       setTimeout(() => {
-        loadProfile(newSession.user).then(setUser).catch(async () => {
-          setUser(null);
-          await supabase.auth.signOut();
-        });
+        loadProfile(newSession.user)
+          .then(setUser)
+          .catch((err) => handleLoadProfileError(err, setUser));
       }, 0);
     });
 
@@ -171,9 +170,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         try {
           setUser(await loadProfile(data.session.user));
-        } catch {
-          setUser(null);
-          await supabase.auth.signOut();
+        } catch (err) {
+          await handleLoadProfileError(err, setUser);
         }
       }
       setLoading(false);
