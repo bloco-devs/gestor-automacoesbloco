@@ -1,64 +1,81 @@
-# Melhorias na aba Atividades
+## Objetivo
 
-## 1. Múltiplos nomes por usuário (Nielson e André no mesmo login)
+Fazer com que o usuário fique logado por até **30 dias** sem precisar passar pela tela `/auth` novamente, mesmo fechando a aba ou o navegador.
 
-A tabela `atividades_personas` já existe (id, user_id, nome, ativo). Vamos reaproveitá-la — cada usuário pode ter N personas; quem não tem nenhuma cai num modo "1 persona = nome do perfil".
+## Diagnóstico
 
-### Modelagem
+O cliente Supabase em `src/integrations/supabase/client.ts` **já está corretamente configurado** com `persistSession: true` + `autoRefreshToken: true` + `storage: localStorage`. Em teoria, a sessão já deveria sobreviver ao fechamento da aba.
 
-- Inserir 2 personas para `tecnologiabloco@gmail.com`: "Nielson" e "André".
-- Em `atividades_cards`, adicionar coluna `responsavel_persona_ids uuid[]` (default `{}`). Mantemos `responsavel_ids` (user_ids) para compatibilidade e regras de permissão/notificação — preenchido automaticamente a partir das personas selecionadas.
-- Sem mudança de RLS: personas herdam permissão do dono do card (já coberta).
+Investigando, encontrei **dois pontos** que explicam por que isso não está acontecendo:
 
-### UX no CardDialog
+### Problema 1 (código) — logout automático em erro transitório
 
-- A lista atual de "Responsáveis" passa a mostrar **personas** em vez de usuários:
-  - Para usuários sem persona cadastrada: aparece 1 item com o nome do perfil.
-  - Para `tecnologiabloco@gmail.com`: aparecem 2 itens — "Nielson" e "André" — agrupados visualmente sob o e-mail do usuário (label pequena em cinza).
-- Seleção é multi-check, igual hoje. Ao salvar, persistimos `responsavel_persona_ids` e derivamos `responsavel_ids` (distinct user_ids das personas escolhidas).
-- Exibição do card no board: chips mostram o **nome da persona** (não mais o nome do usuário).
+Em `src/hooks/useAuth.tsx`, ao reabrir o app, a função `loadProfile` faz 3 chamadas ao Supabase em paralelo (`profiles`, `get_my_role`, `is_allowed_user`). Se **qualquer uma** falhar — uma instabilidade de rede de 1 segundo, um RPC lento, um 5xx esporádico — o código entra no `catch` e chama `supabase.auth.signOut()`, **apagando a sessão persistida do localStorage**. Resultado: o usuário é jogado de volta para `/auth` mesmo tendo um refresh token válido.
 
-### Onde personas são gerenciadas (escopo desta entrega)
+Isso acontece em dois lugares:
+- linhas 118-121 (listener `onAuthStateChange`)
+- linhas 142-145 (recuperação inicial de sessão)
 
-- Apenas seed inicial das 2 personas do `tecnologiabloco@gmail.com` via migration. UI de gestão de personas fica fora deste plano (pode ser feita depois em Configurações).
+### Problema 2 (dashboard Supabase) — duração dos tokens
 
-## 2. Iluminação amarela nos cards do usuário logado
+A duração real de uma sessão depende de duas configurações que **só existem no painel do Supabase**, não no código:
+- **JWT expiry** (access token) — default 1h
+- **Refresh token inactivity timeout** — define por quantos dias um refresh token sem uso continua válido
 
-- No `Atividades.tsx`, ao renderizar cada card, comparar `currentUser.id` com `card.responsavelIds` (após a migração, equivalente ao conjunto de `user_id` das personas selecionadas).
-- Quando o usuário logado é responsável, aplicar destaque amarelo:
-  - `ring-2 ring-yellow-400/70`
-  - `shadow-[0_0_18px_rgba(250,204,21,0.55)]`
-  - fundo levemente amarelado: `bg-yellow-50/40 dark:bg-yellow-500/5`
-  - transição suave (`transition-shadow`)
-- Sem animação pulsante (pode distrair em colunas com muitos cards). Se preferir glow pulsante depois, ajustamos.
+Para "30 dias sem relogar" é preciso garantir que o inactivity timeout esteja ≥ 30 dias.
+
+## O que vou fazer
+
+### 1. Tornar `loadProfile` tolerante a falhas transitórias
+
+Em `src/hooks/useAuth.tsx`:
+
+- Diferenciar **erro de autorização** ("não está na lista de e-mails permitidos") de **erro técnico** (rede, RPC, etc).
+- **Só** chamar `supabase.auth.signOut()` quando for erro de autorização explícito.
+- Em erro técnico, manter a sessão, logar no console e tentar de novo (1 retry com pequeno backoff). Se ainda assim falhar, manter o `session` populado mas deixar `user = null` com `loading = false`, e exibir uma mensagem amigável — sem destruir o token.
+
+### 2. Não relogar ao reabrir a aba se a sessão existe
+
+Pequena melhoria no fluxo de inicialização: se `getSession()` retorna uma sessão válida, o usuário continua logado mesmo que `loadProfile` ainda esteja resolvendo. A tela de loading vai aguardar, em vez de redirecionar para `/auth`.
+
+### 3. Instruções para você ajustar o dashboard Supabase (passo manual)
+
+Vou listar os caminhos exatos para você setar 30 dias:
+
+1. Abrir **Authentication → Sign In / Up → Auth Providers** (ou **Settings → Auth**, depende da versão do painel).
+2. Localizar **"Refresh token reuse interval"** e **"Inactivity timeout"** (ou "Session inactivity timeout" / "JWT expiry") e configurar:
+   - **JWT expiry**: 3600 (1h) — pode manter o default, é renovado em background.
+   - **Inactivity timeout**: **2592000** segundos (= 30 dias).
+3. Salvar.
+
+Vou colocar o link direto pro painel ao final da implementação para facilitar.
+
+## O que NÃO vou mudar
+
+- `src/integrations/supabase/client.ts` — já está correto.
+- Tela `/auth`, `ProtectedRoute`, `RecoveryGuard` — funcionam como esperado; o problema não está neles.
+- Fluxo de password recovery — fica intacto.
 
 ## Detalhes técnicos
 
-**Migration**
-```sql
-ALTER TABLE public.atividades_cards
-  ADD COLUMN IF NOT EXISTS responsavel_persona_ids uuid[] NOT NULL DEFAULT '{}';
+Resumo dos arquivos tocados:
 
--- Seed personas do tecnologiabloco@gmail.com
-INSERT INTO public.atividades_personas (user_id, nome, ativo)
-SELECT u.id, x.nome, true
-FROM auth.users u
-CROSS JOIN (VALUES ('Nielson'), ('André')) AS x(nome)
-WHERE lower(u.email) = 'tecnologiabloco@gmail.com'
-  AND NOT EXISTS (
-    SELECT 1 FROM public.atividades_personas p
-    WHERE p.user_id = u.id AND p.nome = x.nome
-  );
+```text
+src/hooks/useAuth.tsx
+  - loadProfile(): tipar erro de "não autorizado" como classe própria
+                   (ex.: throw new NotAllowedError(...)) para o caller distinguir.
+  - useEffect inicial:
+      catch -> se NotAllowedError: signOut + setUser(null)
+               senão: log + setUser(null) SEM signOut (preserva token)
+  - listener onAuthStateChange: mesma lógica do catch.
+  - Adicionar 1 retry com 500ms de backoff em loadProfile() para
+    suavizar falhas de rede momentâneas.
 ```
 
-**Frontend**
-- `src/lib/atividades.ts`: incluir `responsavel_persona_ids` no select/insert/update; expor `responsavelPersonaIds` no tipo `Card`. Nova função `fetchPersonas()` (id, userId, nome).
-- `src/components/atividades/CardDialog.tsx`: trocar lista de usuários por lista de personas (agrupadas por usuário). Estado `responsavelPersonaIds`. Ao salvar, derivar `responsavelIds` a partir das personas.
-- `src/pages/Atividades.tsx`:
-  - Carregar personas junto com cards (mapa `personaId → { userId, nome }`).
-  - Renderizar chips do card usando nomes de persona.
-  - Aplicar classes de glow amarelo quando `card.responsavelIds.includes(currentUser.id)`.
+Nenhuma migração de banco, nenhuma edge function, nenhuma mudança de schema.
 
-## Fora do escopo
-- Tela de CRUD de personas.
-- Mudar regras de notificação/permissão (continuam baseadas em `responsavel_ids`/`user_id`).
+## Resultado esperado
+
+- Fechar a aba/navegador e reabrir → continua logado.
+- Ficar até 30 dias sem usar o app → continua logado.
+- Após 30 dias sem acesso, ou após `signOut` explícito, ou após o admin remover o e-mail da lista → cai em `/auth`.

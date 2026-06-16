@@ -42,7 +42,14 @@ function getStoredViewAs(): Role | null {
   return v === "developer" || v === "requester" || v === "builder" ? v : null;
 }
 
-async function loadProfile(authUser: User): Promise<Profile & { isAdministrador: boolean }> {
+class NotAllowedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NotAllowedError";
+  }
+}
+
+async function loadProfileOnce(authUser: User): Promise<Profile & { isAdministrador: boolean }> {
   const [{ data: prof }, { data: roleStr, error: roleErr }, { data: allowed, error: allowedErr }] =
     await Promise.all([
       supabase.from("profiles").select("nome, email").eq("id", authUser.id).maybeSingle(),
@@ -51,11 +58,12 @@ async function loadProfile(authUser: User): Promise<Profile & { isAdministrador:
     ]);
 
   if (roleErr || allowedErr) {
+    // Erro técnico (rede, RPC). Não destruir sessão.
     throw new Error("Não foi possível verificar suas permissões. Tente novamente.");
   }
 
   if (!allowed) {
-    throw new Error("Este aplicativo aceita apenas os logins autorizados.");
+    throw new NotAllowedError("Este aplicativo aceita apenas os logins autorizados.");
   }
 
   const isAdministrador = roleStr === "administrador";
@@ -80,6 +88,30 @@ async function loadProfile(authUser: User): Promise<Profile & { isAdministrador:
     isAdministrador,
   };
 }
+
+async function loadProfile(authUser: User): Promise<Profile & { isAdministrador: boolean }> {
+  try {
+    return await loadProfileOnce(authUser);
+  } catch (err) {
+    if (err instanceof NotAllowedError) throw err;
+    // 1 retry após backoff curto para suavizar falhas transitórias
+    await new Promise((r) => setTimeout(r, 500));
+    return await loadProfileOnce(authUser);
+  }
+}
+
+async function handleLoadProfileError(err: unknown, setUser: (p: Profile | null) => void) {
+  if (err instanceof NotAllowedError) {
+    setUser(null);
+    await supabase.auth.signOut();
+    return;
+  }
+  // Erro técnico: preservar a sessão (refresh token) para não forçar relogin.
+  console.warn("[auth] loadProfile falhou (sessão preservada):", err);
+  setUser(null);
+}
+
+export { NotAllowedError };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -115,10 +147,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       // Defer Supabase calls to avoid deadlock no callback
       setTimeout(() => {
-        loadProfile(newSession.user).then(setUser).catch(async () => {
-          setUser(null);
-          await supabase.auth.signOut();
-        });
+        loadProfile(newSession.user)
+          .then(setUser)
+          .catch((err) => handleLoadProfileError(err, setUser));
       }, 0);
     });
 
@@ -139,9 +170,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         try {
           setUser(await loadProfile(data.session.user));
-        } catch {
-          setUser(null);
-          await supabase.auth.signOut();
+        } catch (err) {
+          await handleLoadProfileError(err, setUser);
         }
       }
       setLoading(false);
