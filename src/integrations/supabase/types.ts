@@ -229,6 +229,39 @@ export type Database = {
         }
         Relationships: []
       }
+      bloco_connect_recursos: {
+        Row: {
+          ativo: boolean
+          chave: string | null
+          colunas: string[]
+          created_at: string
+          id: string
+          nome_logico: string
+          recurso: string
+          tipo: string
+        }
+        Insert: {
+          ativo?: boolean
+          chave?: string | null
+          colunas?: string[]
+          created_at?: string
+          id?: string
+          nome_logico: string
+          recurso: string
+          tipo: string
+        }
+        Update: {
+          ativo?: boolean
+          chave?: string | null
+          colunas?: string[]
+          created_at?: string
+          id?: string
+          nome_logico?: string
+          recurso?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       criterios_solucoes: {
         Row: {
           complexidade: number

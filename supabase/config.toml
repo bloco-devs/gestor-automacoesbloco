@@ -2,3 +2,12 @@ project_id = "cgbhpenkytibgiosksrb"
 
 [functions.assistente-demanda]
 verify_jwt = true
+
+[functions.sso-login]
+verify_jwt = false
+
+[functions.provision-user]
+verify_jwt = false
+
+[functions.bloco-connect]
+verify_jwt = false
