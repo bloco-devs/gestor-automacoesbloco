@@ -14,6 +14,7 @@ import { RecoveryGuard } from "@/components/RecoveryGuard";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import SsoCallback from "./pages/SsoCallback";
 import RedefinirSenha from "./pages/RedefinirSenha";
 import EscolherPerfil from "./pages/EscolherPerfil";
 import SolicitarSolucao from "./pages/SolicitarSolucao";
@@ -48,6 +49,7 @@ const App = () => (
           <RecoveryGuard />
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/sso/callback" element={<SsoCallback />} />
             <Route path="/redefinir-senha" element={<RedefinirSenha />} />
             <Route path="/escolher-perfil" element={<ProtectedRoute><EscolherPerfil /></ProtectedRoute>} />
             <Route path="/solicitar" element={<SolicitarSolucao />} />
