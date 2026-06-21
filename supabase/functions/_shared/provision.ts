@@ -32,18 +32,54 @@ export async function findUserByEmail(sb: SupabaseClient, email: string) {
   return null;
 }
 
+export async function findUserByBlocoSub(sb: SupabaseClient, blocoSub: string) {
+  if (!blocoSub) return null;
+  let page = 1;
+  while (page < 50) {
+    const { data, error } = await sb.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) throw error;
+    const u = data.users.find((x) => {
+      const meta = (x.app_metadata ?? {}) as Record<string, unknown>;
+      return meta.bloco_sub != null && String(meta.bloco_sub) === String(blocoSub);
+    });
+    if (u) return u;
+    if (data.users.length < 200) break;
+    page++;
+  }
+  return null;
+}
+
+export async function stampSsoMetadata(
+  sb: SupabaseClient,
+  userId: string,
+  current: Record<string, unknown> | null | undefined,
+  blocoSub?: string | null,
+) {
+  const base = { ...(current ?? {}), sso_provider: "bloco_id" } as Record<string, unknown>;
+  if (blocoSub) base.bloco_sub = String(blocoSub);
+  try {
+    await sb.auth.admin.updateUserById(userId, { app_metadata: base });
+  } catch (_) { /* ignore */ }
+}
+
 export async function ensureAuthUser(
   sb: SupabaseClient,
   email: string,
   nome?: string | null,
+  blocoSub?: string | null,
 ) {
   const lower = email.toLowerCase().trim();
-  let user = await findUserByEmail(sb, lower);
+  // 1) tenta por bloco_sub
+  let user = blocoSub ? await findUserByBlocoSub(sb, blocoSub) : null;
+  // 2) fallback por e-mail
+  if (!user) user = await findUserByEmail(sb, lower);
   if (!user) {
+    const app_metadata: Record<string, unknown> = { sso_provider: "bloco_id" };
+    if (blocoSub) app_metadata.bloco_sub = String(blocoSub);
     const { data, error } = await sb.auth.admin.createUser({
       email: lower,
       email_confirm: true,
-      app_metadata: { sso_provider: "bloco_id" },
+      app_metadata,
       user_metadata: { nome: nome ?? lower.split("@")[0] },
     });
     if (error) throw error;
@@ -53,8 +89,27 @@ export async function ensureAuthUser(
     try {
       await sb.auth.admin.updateUserById(user.id, { ban_duration: "none" });
     } catch (_) { /* ignore */ }
+    await stampSsoMetadata(sb, user.id, user.app_metadata as Record<string, unknown> | undefined, blocoSub);
   }
   return user!;
+}
+
+export async function updateAuthEmail(
+  sb: SupabaseClient,
+  userId: string,
+  novoEmail: string,
+) {
+  const lower = novoEmail.toLowerCase().trim();
+  const { data, error } = await sb.auth.admin.updateUserById(userId, {
+    email: lower,
+    email_confirm: true,
+  });
+  if (error) throw error;
+  // Reflete em profiles (se houver coluna email).
+  try {
+    await sb.from("profiles").update({ email: lower }).eq("id", userId);
+  } catch (_) { /* ignore (coluna pode não existir) */ }
+  return data.user;
 }
 
 type Mapeamento = {
