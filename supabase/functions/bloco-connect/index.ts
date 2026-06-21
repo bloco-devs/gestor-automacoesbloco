@@ -39,6 +39,57 @@ Deno.serve(async (req) => {
 
   const sb = admin();
 
+  // ===== Ops administrativos da whitelist (service role; ANTES do lookup por nome_logico) =====
+  const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_\.]*$/;
+
+  if (op === "registrar_recurso") {
+    const nl = String(body?.nome_logico ?? "");
+    const tipo = String(body?.tipo ?? "");
+    const recurso = String(body?.recurso ?? "");
+    const colunas: string[] = Array.isArray(body?.colunas) ? body.colunas.map(String) : [];
+    const chave = body?.chave != null ? String(body.chave) : null;
+    const ativo = body?.ativo == null ? true : Boolean(body.ativo);
+
+    if (!nl || !IDENT_RE.test(nl)) return json(cors, { ok: false, error: "nome_logico_invalido" }, 400);
+    if (tipo !== "leitura" && tipo !== "escrita") return json(cors, { ok: false, error: "tipo_invalido" }, 400);
+    if (!recurso || !IDENT_RE.test(recurso)) return json(cors, { ok: false, error: "recurso_invalido" }, 400);
+    for (const c of colunas) {
+      if (!IDENT_RE.test(c)) return json(cors, { ok: false, error: `coluna_invalida:${c}` }, 400);
+    }
+    if (chave && !IDENT_RE.test(chave)) return json(cors, { ok: false, error: "chave_invalida" }, 400);
+
+    const { data, error } = await sb
+      .from("bloco_connect_recursos")
+      .upsert(
+        { nome_logico: nl, tipo, recurso, colunas, chave, ativo },
+        { onConflict: "nome_logico" }
+      )
+      .select()
+      .maybeSingle();
+    if (error) return json(cors, { ok: false, error: error.message }, 500);
+    return json(cors, { ok: true, recurso: data });
+  }
+
+  if (op === "listar_recursos") {
+    const { data, error } = await sb
+      .from("bloco_connect_recursos")
+      .select("id, nome_logico, tipo, recurso, colunas, chave, ativo, created_at")
+      .order("nome_logico");
+    if (error) return json(cors, { ok: false, error: error.message }, 500);
+    return json(cors, { ok: true, recursos: data ?? [] });
+  }
+
+  if (op === "desativar_recurso") {
+    const nl = String(body?.nome_logico ?? "");
+    if (!nl) return json(cors, { ok: false, error: "nome_logico_required" }, 400);
+    const { error } = await sb
+      .from("bloco_connect_recursos")
+      .update({ ativo: false })
+      .eq("nome_logico", nl);
+    if (error) return json(cors, { ok: false, error: error.message }, 500);
+    return json(cors, { ok: true });
+  }
+
   // Aceita "recurso" (canônico) e "nome_logico" (legado/interno).
   const nomeLogico = String(body?.recurso ?? body?.nome_logico ?? "");
   if (!nomeLogico) return json(cors, { ok: false, error: "recurso_required" }, 400);
