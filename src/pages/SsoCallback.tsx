@@ -25,7 +25,7 @@ export default function SsoCallback() {
           throw new Error(data?.error ?? "Falha ao autenticar via Bloco ID.");
         }
         try { localStorage.setItem("__debug_sso_redirect", String(data.redirect_url)); } catch {}
-        window.location.replace(data.redirect_url);
+        // window.location.replace(data.redirect_url);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Erro desconhecido";
         setError(msg);
