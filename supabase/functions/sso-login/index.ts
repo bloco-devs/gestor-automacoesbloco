@@ -73,7 +73,9 @@ Deno.serve(async (req) => {
       ?? (linkData as any)?.action_link;
     if (!action_link) throw new Error("no_action_link");
 
-    return new Response(JSON.stringify({ ok: true, redirect_url: action_link, user_id: user.id }), {
+    const token_hash = (linkData as any)?.properties?.hashed_token ?? null;
+
+    return new Response(JSON.stringify({ ok: true, redirect_url: action_link, token_hash, email, user_id: user.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
