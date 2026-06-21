@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { blocoIdLoginUrl } from "@/lib/bloco-id";
 
 const signInSchema = z.object({
   email: z.string().trim().email("Email inválido").max(255),
@@ -197,7 +198,7 @@ export default function Auth() {
               variant="outline"
               className="w-full"
               onClick={() => {
-                window.location.href = "https://blocoid.lovable.app/?abrir=automacoes";
+                window.location.href = blocoIdLoginUrl();
               }}
             >
               Entrar com Bloco ID

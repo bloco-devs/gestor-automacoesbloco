@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { BLOCO_ID_LAUNCHER_URL } from "@/lib/bloco-id";
 
-const LAUNCHER_URL = "https://blocoid.lovable.app";
+const LAUNCHER_URL = BLOCO_ID_LAUNCHER_URL;
 
 export default function SsoCallback() {
   const [params] = useSearchParams();
