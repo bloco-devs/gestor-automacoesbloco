@@ -21,11 +21,18 @@ export default function SsoCallback() {
           body: { sso_token },
         });
         if (error) throw error;
-        if (!data?.ok || !data?.redirect_url) {
+        if (!data?.ok) {
           throw new Error(data?.error ?? "Falha ao autenticar via Bloco ID.");
         }
-        try { localStorage.setItem("__debug_sso_redirect", String(data.redirect_url)); } catch {}
-        // window.location.replace(data.redirect_url);
+        if (data.token_hash) {
+          const { error: vErr } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash: data.token_hash });
+          if (vErr) throw vErr;
+          window.location.replace("/");
+        } else if (data.redirect_url) {
+          window.location.replace(data.redirect_url);
+        } else {
+          throw new Error("Sem credencial de login.");
+        }
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Erro desconhecido";
         setError(msg);
