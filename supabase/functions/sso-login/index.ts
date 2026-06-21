@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
     const organization_ref = data?.organization_ref ? String(data.organization_ref) : null;
     const mapeamento = data?.mapeamento ?? { estrategia: "allowed_emails" };
     const estrategia = String(mapeamento?.estrategia ?? "allowed_emails");
+    const blocoSub = data?.bloco_sub ? String(data.bloco_sub) : null;
 
     if (!email) {
       return new Response(JSON.stringify({ ok: false, error: "no_email" }), {
@@ -57,8 +58,8 @@ Deno.serve(async (req) => {
       organization_ref, mapeamento,
     });
 
-    // garante usuário
-    const user = await ensureAuthUser(sb, email, nome);
+    // garante usuário — prefere lookup por bloco_sub, fallback e-mail; carimba app_metadata
+    const user = await ensureAuthUser(sb, email, nome, blocoSub);
     await applyAtivacao(sb, email, mapeamento, true);
 
     // Magic link
