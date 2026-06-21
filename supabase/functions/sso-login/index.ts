@@ -62,13 +62,10 @@ Deno.serve(async (req) => {
     const user = await ensureAuthUser(sb, email, nome, blocoSub);
     await applyAtivacao(sb, email, mapeamento, true);
 
-    // Magic link
-    const origin = req.headers.get("origin") ?? LAUNCHER;
-    const redirectTo = `${origin}/`;
+    // Magic link — sem redirectTo: usa o Site URL do projeto (allowlist garantida)
     const { data: linkData, error: linkErr } = await sb.auth.admin.generateLink({
       type: "magiclink",
       email,
-      options: { redirectTo },
     });
     if (linkErr) throw linkErr;
 
