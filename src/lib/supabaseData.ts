@@ -236,16 +236,13 @@ export async function updateOwnSolicitacao(
 
 /**
  * Atualiza campos arbitrários da solicitação (uso do dev, ou setores admin).
- * Quando o trigger SQL do Prompt 5 estiver ativo, os campos `score`,
- * `score_solicitante` e `score_final` deixam de ser gravados aqui — o banco
- * recalcula automaticamente a partir dos fatores.
+ * Os campos `score`, `score_solicitante` e `score_final` são recalculados
+ * automaticamente pelo trigger SQL compute_scores() — nunca enviá-los daqui.
  */
 export async function updateSolicitacao(
   id: string,
   patch: Partial<Solicitacao>,
 ): Promise<Solicitacao | null> {
-  const current = await getSolicitacao(id);
-  const merged = { ...current, ...patch } as Solicitacao;
   const candidate: Record<string, unknown> = {
     descricao: patch.descricao,
     titulo: patch.titulo,
@@ -261,20 +258,13 @@ export async function updateSolicitacao(
     data_inicio_prevista: patch.dataInicioPrevista,
     data_fim_prevista: patch.dataFimPrevista,
   };
-  // Score legado recalculado localmente — substituído pelo trigger SQL no Prompt 5.
   const payload: Record<string, unknown> = {
-    score: Math.round(
-      computeScoreSolicitante(
-        merged.frequencia,
-        merged.dificuldade ?? merged.complexidade,
-        merged.retorno,
-      ),
-    ),
     updated_at: new Date().toISOString(),
   };
   for (const [key, value] of Object.entries(candidate)) {
     if (value !== undefined) payload[key] = value;
   }
+
   const { error } = await supabase.from("solicitacoes").update(payload as never).eq("id", id);
   if (error) throw error;
   return await getSolicitacao(id);
