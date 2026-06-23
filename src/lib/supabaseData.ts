@@ -50,10 +50,12 @@ function asStatus(value: string): PipelineStatus {
 }
 
 function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
-  // scoreV2 espelha a futura função SQL compute_scores(); migrar para RPC após o trigger.
-  const dificuldade = row.complexidade; // TODO Prompt 2: usar coluna `dificuldade` própria após backfill
-  const scoreSolicitante = computeScoreSolicitante(row.frequencia, dificuldade, row.retorno);
-  const scoreFinal = computeScoreFinal(scoreSolicitante, row.complexidade_dev);
+  // Fonte de verdade: colunas score_solicitante / score_final calculadas pelo
+  // trigger SQL compute_scores(). Fallback local em scoreV2 só para linhas
+  // muito antigas que ainda não foram tocadas pelo backfill.
+  const dificuldade = row.complexidade;
+  const scoreSolicitante = row.score_solicitante ?? computeScoreSolicitante(row.frequencia, dificuldade, row.retorno);
+  const scoreFinal = row.score_final ?? computeScoreFinal(scoreSolicitante, row.complexidade_dev);
   return {
     id: row.id,
     titulo: row.titulo || row.descricao.slice(0, 80) || "Solicitação",
@@ -82,6 +84,7 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     updatedAt: row.updated_at,
   };
 }
+
 
 function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; link: string | null; created_at: string; created_by?: string | null; data_inicio_prevista?: string | null; data_fim_prevista?: string | null; responsavel_id?: string | null }): Solucao {
   return {
