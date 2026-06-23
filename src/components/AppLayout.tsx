@@ -111,7 +111,7 @@ export default function AppLayout() {
     window.localStorage.setItem("app:sidebarHidden", sidebarHidden ? "1" : "0");
   }, [sidebarHidden]);
   const draggingRef = useRef(false);
-  const isDeveloper = user?.role === "developer";
+  const isDeveloper = isDeveloperEffective;
   const [pendingEvalCount, setPendingEvalCount] = useState<number>(0);
 
   const navOrderKey = `app:sidebarNavOrder:${user?.role ?? "anon"}`;
