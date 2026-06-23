@@ -12,6 +12,8 @@ type SolicitacaoRow = {
   retorno: number;
   status: string;
   score: number;
+  score_solicitante: number | null;
+  score_final: number | null;
   notas_tecnicas: string | null;
   notas_tecnicas_complexidade: string | null;
   setor: string | null;
@@ -29,7 +31,8 @@ type SolicitacaoRow = {
   avaliado_em: string | null;
 };
 
-const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em";
+const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,score_solicitante,score_final,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em";
+
 
 const SOLUCAO_COLS = "id,solicitacao_id,titulo,descricao,link,created_at,created_by,data_inicio_prevista,data_fim_prevista,responsavel_id";
 
@@ -47,10 +50,12 @@ function asStatus(value: string): PipelineStatus {
 }
 
 function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
-  // scoreV2 espelha a futura função SQL compute_scores(); migrar para RPC após o trigger.
-  const dificuldade = row.complexidade; // TODO Prompt 2: usar coluna `dificuldade` própria após backfill
-  const scoreSolicitante = computeScoreSolicitante(row.frequencia, dificuldade, row.retorno);
-  const scoreFinal = computeScoreFinal(scoreSolicitante, row.complexidade_dev);
+  // Fonte de verdade: colunas score_solicitante / score_final calculadas pelo
+  // trigger SQL compute_scores(). Fallback local em scoreV2 só para linhas
+  // muito antigas que ainda não foram tocadas pelo backfill.
+  const dificuldade = row.complexidade;
+  const scoreSolicitante = row.score_solicitante ?? computeScoreSolicitante(row.frequencia, dificuldade, row.retorno);
+  const scoreFinal = row.score_final ?? computeScoreFinal(scoreSolicitante, row.complexidade_dev);
   return {
     id: row.id,
     titulo: row.titulo || row.descricao.slice(0, 80) || "Solicitação",
@@ -79,6 +84,7 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     updatedAt: row.updated_at,
   };
 }
+
 
 function mapSolucao(row: { id: string; solicitacao_id: string | null; titulo: string; descricao: string; link: string | null; created_at: string; created_by?: string | null; data_inicio_prevista?: string | null; data_fim_prevista?: string | null; responsavel_id?: string | null }): Solucao {
   return {
@@ -162,9 +168,8 @@ export async function createSolicitacao(data: {
     throw new Error("Faça login novamente para enviar uma solicitação.");
   }
 
-  // Espelho local — remover quando o trigger SQL existir.
-  const scoreSolicitanteLocal = computeScoreSolicitante(data.frequencia, data.dificuldade, data.retorno);
-
+  // score / score_solicitante / score_final são calculados pelo trigger SQL
+  // compute_scores() no servidor — qualquer valor enviado daqui seria sobrescrito.
   const { data: inserted, error } = await supabase
     .from("solicitacoes")
     .insert({
@@ -175,7 +180,6 @@ export async function createSolicitacao(data: {
       complexidade: data.dificuldade,
       retorno: data.retorno,
       setor: data.setor,
-      score: Math.round(scoreSolicitanteLocal),
       user_id: authData.user.id,
       solicitante_nome: data.solicitanteNome,
       nome: data.solicitanteNome,
@@ -189,6 +193,7 @@ export async function createSolicitacao(data: {
   if (error) throw error;
   return mapSolicitacao(inserted as SolicitacaoRow);
 }
+
 
 export async function updateOwnSolicitacao(
   id: string,
@@ -207,11 +212,7 @@ export async function updateOwnSolicitacao(
     throw new Error("Faça login novamente para editar a solicitação.");
   }
 
-  // Espelho local do score — substituído por trigger SQL no Prompt 5.
-  const scoreLocal = Math.round(
-    computeScoreSolicitante(data.frequencia, data.complexidade, data.retorno),
-  );
-
+  // score é calculado pelo trigger compute_scores() no servidor.
   const payload = {
     titulo: data.titulo,
     descricao: data.descricao,
@@ -221,9 +222,9 @@ export async function updateOwnSolicitacao(
     setor: data.setor,
     tem_integracao: data.softwares.length > 0,
     integracoes: data.softwares,
-    score: scoreLocal,
     updated_at: new Date().toISOString(),
   };
+
 
   const { error } = await supabase
     .from("solicitacoes")
@@ -235,16 +236,13 @@ export async function updateOwnSolicitacao(
 
 /**
  * Atualiza campos arbitrários da solicitação (uso do dev, ou setores admin).
- * Quando o trigger SQL do Prompt 5 estiver ativo, os campos `score`,
- * `score_solicitante` e `score_final` deixam de ser gravados aqui — o banco
- * recalcula automaticamente a partir dos fatores.
+ * Os campos `score`, `score_solicitante` e `score_final` são recalculados
+ * automaticamente pelo trigger SQL compute_scores() — nunca enviá-los daqui.
  */
 export async function updateSolicitacao(
   id: string,
   patch: Partial<Solicitacao>,
 ): Promise<Solicitacao | null> {
-  const current = await getSolicitacao(id);
-  const merged = { ...current, ...patch } as Solicitacao;
   const candidate: Record<string, unknown> = {
     descricao: patch.descricao,
     titulo: patch.titulo,
@@ -260,20 +258,13 @@ export async function updateSolicitacao(
     data_inicio_prevista: patch.dataInicioPrevista,
     data_fim_prevista: patch.dataFimPrevista,
   };
-  // Score legado recalculado localmente — substituído pelo trigger SQL no Prompt 5.
   const payload: Record<string, unknown> = {
-    score: Math.round(
-      computeScoreSolicitante(
-        merged.frequencia,
-        merged.dificuldade ?? merged.complexidade,
-        merged.retorno,
-      ),
-    ),
     updated_at: new Date().toISOString(),
   };
   for (const [key, value] of Object.entries(candidate)) {
     if (value !== undefined) payload[key] = value;
   }
+
   const { error } = await supabase.from("solicitacoes").update(payload as never).eq("id", id);
   if (error) throw error;
   return await getSolicitacao(id);

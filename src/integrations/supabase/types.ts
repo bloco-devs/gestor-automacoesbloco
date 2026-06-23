@@ -554,6 +554,8 @@ export type Database = {
           notas_tecnicas_complexidade: string | null
           retorno: number
           score: number
+          score_final: number | null
+          score_solicitante: number | null
           setor: string | null
           solicitante_nome: string
           status: string
@@ -582,6 +584,8 @@ export type Database = {
           notas_tecnicas_complexidade?: string | null
           retorno?: number
           score?: number
+          score_final?: number | null
+          score_solicitante?: number | null
           setor?: string | null
           solicitante_nome?: string
           status?: string
@@ -610,6 +614,8 @@ export type Database = {
           notas_tecnicas_complexidade?: string | null
           retorno?: number
           score?: number
+          score_final?: number | null
+          score_solicitante?: number | null
           setor?: string | null
           solicitante_nome?: string
           status?: string

@@ -88,8 +88,13 @@ const SIDEBAR_STORAGE_KEY = "app:sidebarWidth";
 export default function AppLayout() {
   const { user, signOut, isDual } = useAuth();
   const navigate = useNavigate();
-  const nav = user?.role === "developer" ? devNav : requesterNav;
+  // Administrador sempre vê a navegação completa de dev — mesmo que tenha
+  // trocado viewAs para requester/builder — para não ficar sem acesso a
+  // Configurações nem ao seletor de perfil.
+  const isDeveloperEffective = user?.role === "developer" || !!user?.isAdministrador;
+  const nav = isDeveloperEffective ? devNav : requesterNav;
   const roleLabel = user?.role === "developer" ? "Desenvolvedor" : user?.role === "builder" ? "Builder" : "Solicitante";
+
 
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     if (typeof window === "undefined") return SIDEBAR_DEFAULT;
@@ -106,7 +111,7 @@ export default function AppLayout() {
     window.localStorage.setItem("app:sidebarHidden", sidebarHidden ? "1" : "0");
   }, [sidebarHidden]);
   const draggingRef = useRef(false);
-  const isDeveloper = user?.role === "developer";
+  const isDeveloper = isDeveloperEffective;
   const [pendingEvalCount, setPendingEvalCount] = useState<number>(0);
 
   const navOrderKey = `app:sidebarNavOrder:${user?.role ?? "anon"}`;

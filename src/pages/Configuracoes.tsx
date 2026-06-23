@@ -71,13 +71,14 @@ const ROLE_BADGE: Record<DbRole, string> = {
 
 export default function Configuracoes() {
   const { user } = useAuth();
-  if (user?.role !== "developer") {
+  if (user?.role !== "developer" && !user?.isAdministrador) {
     return (
       <div className="text-sm text-muted-foreground">
         Acesso restrito a desenvolvedores.
       </div>
     );
   }
+
   return (
     <div className="space-y-6">
       <header>

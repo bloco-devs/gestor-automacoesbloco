@@ -25,10 +25,14 @@ export function ProtectedRoute({
 
   if (loading) return null;
   if (!user || !session) return <Navigate to="/auth" replace />;
+  // Administrador (mesmo com viewAs em outro perfil) tem acesso pleno a rotas
+  // protegidas por role="developer" para não ficar preso sem como voltar.
+  const isAdminBypass = role === "developer" && !!user.isAdministrador;
   // Builder inherits all requester routes.
   const effectiveRole = user.role === "builder" ? "requester" : user.role;
-  if (role && effectiveRole !== role) {
+  if (role && effectiveRole !== role && !isAdminBypass) {
     return <Navigate to={user.role === "developer" ? "/dashboard" : "/minhas-solicitacoes"} replace />;
   }
+
   return <>{children}</>;
 }
