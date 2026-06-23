@@ -212,11 +212,7 @@ export async function updateOwnSolicitacao(
     throw new Error("Faça login novamente para editar a solicitação.");
   }
 
-  // Espelho local do score — substituído por trigger SQL no Prompt 5.
-  const scoreLocal = Math.round(
-    computeScoreSolicitante(data.frequencia, data.complexidade, data.retorno),
-  );
-
+  // score é calculado pelo trigger compute_scores() no servidor.
   const payload = {
     titulo: data.titulo,
     descricao: data.descricao,
@@ -226,9 +222,9 @@ export async function updateOwnSolicitacao(
     setor: data.setor,
     tem_integracao: data.softwares.length > 0,
     integracoes: data.softwares,
-    score: scoreLocal,
     updated_at: new Date().toISOString(),
   };
+
 
   const { error } = await supabase
     .from("solicitacoes")
