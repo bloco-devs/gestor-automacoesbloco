@@ -168,9 +168,8 @@ export async function createSolicitacao(data: {
     throw new Error("Faça login novamente para enviar uma solicitação.");
   }
 
-  // Espelho local — remover quando o trigger SQL existir.
-  const scoreSolicitanteLocal = computeScoreSolicitante(data.frequencia, data.dificuldade, data.retorno);
-
+  // score / score_solicitante / score_final são calculados pelo trigger SQL
+  // compute_scores() no servidor — qualquer valor enviado daqui seria sobrescrito.
   const { data: inserted, error } = await supabase
     .from("solicitacoes")
     .insert({
@@ -181,7 +180,6 @@ export async function createSolicitacao(data: {
       complexidade: data.dificuldade,
       retorno: data.retorno,
       setor: data.setor,
-      score: Math.round(scoreSolicitanteLocal),
       user_id: authData.user.id,
       solicitante_nome: data.solicitanteNome,
       nome: data.solicitanteNome,
@@ -195,6 +193,7 @@ export async function createSolicitacao(data: {
   if (error) throw error;
   return mapSolicitacao(inserted as SolicitacaoRow);
 }
+
 
 export async function updateOwnSolicitacao(
   id: string,
