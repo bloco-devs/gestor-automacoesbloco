@@ -393,6 +393,7 @@ export default function AppLayout() {
           ))}
         </nav>
         <div className="w-full min-w-0 p-4 md:p-8">
+          <OnboardingTour />
           <Outlet />
         </div>
       </main>
