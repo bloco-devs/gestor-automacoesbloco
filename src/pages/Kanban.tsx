@@ -162,13 +162,22 @@ function Column({ stage, items, loading }: { stage: Stage; items: Solicitacao[];
             aria-hidden
           />
           <h3 className="text-sm font-medium">{stage.label}</h3>
+          <FieldHelp>{STAGE_HELP[stage.id]}</FieldHelp>
         </div>
         <span className="text-xs text-muted-foreground tabular-nums">
           {items.length}
         </span>
       </div>
       <div className="space-y-2 flex-1">
-        {items.map((s) => <KanbanCard key={s.id} item={s} />)}
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))
+        ) : items.length === 0 ? (
+          <div className="text-xs text-muted-foreground text-center py-6">Nenhum cartão</div>
+        ) : (
+          items.map((s) => <KanbanCard key={s.id} item={s} />)
+        )}
       </div>
     </div>
   );
