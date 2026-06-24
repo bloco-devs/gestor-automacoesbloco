@@ -88,6 +88,14 @@ const SIDEBAR_MAX = 480;
 const SIDEBAR_DEFAULT = 256;
 const SIDEBAR_STORAGE_KEY = "app:sidebarWidth";
 
+function dataTourFor(item: NavItem): string | null {
+  if (item.to === "/dashboard" || item.to === "/dashboard-solicitante") return "nav-dashboard";
+  if (item.matchPrefix === "/solicitacoes" || item.to === "/minhas-solicitacoes") return "nav-solicitacoes";
+  if (item.matchPrefix === "/solucoes") return "nav-solucoes";
+  if (item.to === "/ajuda") return "nav-ajuda";
+  return null;
+}
+
 export default function AppLayout() {
   const { user, signOut, isDual } = useAuth();
   const navigate = useNavigate();
