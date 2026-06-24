@@ -9,8 +9,8 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { Calendar, User } from "lucide-react";
-import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { AlertTriangle, Calendar, User } from "lucide-react";
+import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import { listSolicitacoes, updateSolicitacao } from "@/lib/supabaseData";
 import {
   STATUS_LABEL,
@@ -20,6 +20,10 @@ import {
 } from "@/lib/types";
 import { ScorePill } from "@/components/ScorePill";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FieldHelp } from "@/components/FieldHelp";
+import { EmptyState } from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils";
 
