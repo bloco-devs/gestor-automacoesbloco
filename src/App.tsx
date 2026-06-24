@@ -8,9 +8,10 @@ function RedirectLegacySolicitacao() {
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RecoveryGuard } from "@/components/RecoveryGuard";
+import AuthErrorScreen from "@/components/AuthErrorScreen";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -39,6 +40,54 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AppRoutes = () => {
+  const { authError, loading } = useAuth();
+  if (authError && !loading) return <AuthErrorScreen />;
+  return (
+    <Routes>
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/sso/callback" element={<SsoCallback />} />
+      <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+      <Route path="/escolher-perfil" element={<ProtectedRoute><EscolherPerfil /></ProtectedRoute>} />
+      <Route path="/solicitar" element={<SolicitarSolucao />} />
+      <Route path="/" element={<Index />} />
+
+      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+        {/* Solicitante */}
+        <Route path="/dashboard-solicitante" element={<ProtectedRoute role="requester"><RequesterDashboard /></ProtectedRoute>} />
+        <Route path="/minhas-solicitacoes" element={<ProtectedRoute role="requester"><MinhasSolicitacoes /></ProtectedRoute>} />
+        <Route path="/nova-solicitacao" element={<ProtectedRoute role="requester"><NovaSolicitacao /></ProtectedRoute>} />
+
+        {/* Desenvolvedor */}
+        <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
+        <Route path="/solicitacoes" element={<ProtectedRoute><Solicitacoes /></ProtectedRoute>} />
+        <Route path="/solicitacoes/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
+        <Route path="/solicitacoes/gantt" element={<ProtectedRoute><SolicitacoesGantt /></ProtectedRoute>} />
+        <Route path="/kanban" element={<Navigate to="/solicitacoes/kanban" replace />} />
+        <Route path="/solucoes" element={<ProtectedRoute role="developer"><Solucoes /></ProtectedRoute>} />
+        <Route path="/solucoes/kanban" element={<ProtectedRoute role="developer"><SolucoesKanban /></ProtectedRoute>} />
+        <Route path="/solucoes/gantt" element={<ProtectedRoute role="developer"><SolucoesGantt /></ProtectedRoute>} />
+        <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
+        <Route path="/configuracoes" element={<ProtectedRoute role="developer"><Configuracoes /></ProtectedRoute>} />
+        <Route path="/diagrama" element={<ProtectedRoute role="developer"><Diagrama /></ProtectedRoute>} />
+        <Route path="/atividades" element={<ProtectedRoute role="developer"><Atividades /></ProtectedRoute>} />
+
+        
+
+        {/* Compartilhado */}
+        <Route path="/solicitacao/:id" element={<SolicitacaoDetail />} />
+      </Route>
+
+      {/* Redirecionamentos de rotas antigas (compatibilidade) */}
+      <Route path="/minhas-demandas" element={<Navigate to="/minhas-solicitacoes" replace />} />
+      <Route path="/nova-demanda" element={<Navigate to="/nova-solicitacao" replace />} />
+      <Route path="/demanda/:id" element={<RedirectLegacySolicitacao />} />
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -47,47 +96,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <RecoveryGuard />
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/sso/callback" element={<SsoCallback />} />
-            <Route path="/redefinir-senha" element={<RedefinirSenha />} />
-            <Route path="/escolher-perfil" element={<ProtectedRoute><EscolherPerfil /></ProtectedRoute>} />
-            <Route path="/solicitar" element={<SolicitarSolucao />} />
-            <Route path="/" element={<Index />} />
-
-            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              {/* Solicitante */}
-              <Route path="/dashboard-solicitante" element={<ProtectedRoute role="requester"><RequesterDashboard /></ProtectedRoute>} />
-              <Route path="/minhas-solicitacoes" element={<ProtectedRoute role="requester"><MinhasSolicitacoes /></ProtectedRoute>} />
-              <Route path="/nova-solicitacao" element={<ProtectedRoute role="requester"><NovaSolicitacao /></ProtectedRoute>} />
-
-              {/* Desenvolvedor */}
-              <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
-              <Route path="/solicitacoes" element={<ProtectedRoute><Solicitacoes /></ProtectedRoute>} />
-              <Route path="/solicitacoes/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
-              <Route path="/solicitacoes/gantt" element={<ProtectedRoute><SolicitacoesGantt /></ProtectedRoute>} />
-              <Route path="/kanban" element={<Navigate to="/solicitacoes/kanban" replace />} />
-              <Route path="/solucoes" element={<ProtectedRoute role="developer"><Solucoes /></ProtectedRoute>} />
-              <Route path="/solucoes/kanban" element={<ProtectedRoute role="developer"><SolucoesKanban /></ProtectedRoute>} />
-              <Route path="/solucoes/gantt" element={<ProtectedRoute role="developer"><SolucoesGantt /></ProtectedRoute>} />
-              <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
-              <Route path="/configuracoes" element={<ProtectedRoute role="developer"><Configuracoes /></ProtectedRoute>} />
-              <Route path="/diagrama" element={<ProtectedRoute role="developer"><Diagrama /></ProtectedRoute>} />
-              <Route path="/atividades" element={<ProtectedRoute role="developer"><Atividades /></ProtectedRoute>} />
-
-              
-
-              {/* Compartilhado */}
-              <Route path="/solicitacao/:id" element={<SolicitacaoDetail />} />
-            </Route>
-
-            {/* Redirecionamentos de rotas antigas (compatibilidade) */}
-            <Route path="/minhas-demandas" element={<Navigate to="/minhas-solicitacoes" replace />} />
-            <Route path="/nova-demanda" element={<Navigate to="/nova-solicitacao" replace />} />
-            <Route path="/demanda/:id" element={<RedirectLegacySolicitacao />} />
-
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
