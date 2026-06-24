@@ -16,6 +16,7 @@ import { computeScoreSolicitante, scoreTone } from "@/lib/scoreV2";
 import { useSetoresNomes } from "@/hooks/useSetores";
 import { ScorePill } from "@/components/ScorePill";
 import { AssistenteDescricao } from "@/components/AssistenteDescricao";
+import { FieldHelp } from "@/components/FieldHelp";
 
 const schema = z.object({
   titulo: z.string().trim().min(3, "Título muito curto").max(120),
@@ -96,7 +97,12 @@ export default function NovaSolicitacao() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <Label htmlFor="descricao">Descrição da atividade atual</Label>
-                  {!isDeveloper && <AssistenteDescricao onAccept={setDescricao} />}
+                  {!isDeveloper && (
+                    <div className="flex items-center gap-1.5">
+                      <AssistenteDescricao onAccept={setDescricao} />
+                      <FieldHelp>A IA ajuda a redigir a descrição a partir de perguntas.</FieldHelp>
+                    </div>
+                  )}
                 </div>
                 <Textarea
                   id="descricao"
@@ -178,7 +184,12 @@ export default function NovaSolicitacao() {
           {!isDeveloper && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-border bg-card/40 p-4">
               <div>
-                <div className="text-sm font-medium">Score estimado: <span className="tabular-nums">{previewScore}/100</span></div>
+                <div className="text-sm font-medium flex items-center gap-1.5">
+                  Score estimado: <span className="tabular-nums">{previewScore}/100</span>
+                  <FieldHelp>
+                    Score de priorização (0-100). Será ajustado pela complexidade técnica avaliada pelo desenvolvedor.
+                  </FieldHelp>
+                </div>
                 <div className="text-xs text-muted-foreground">Será ajustado quando o dev fizer a avaliação técnica.</div>
               </div>
               <Button type="submit" className="w-full sm:w-auto">
