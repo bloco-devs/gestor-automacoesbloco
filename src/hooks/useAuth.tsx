@@ -173,9 +173,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }, 0);
     });
 
-    // 2) Depois recupera sessão atual
-    supabase.auth
-      .getSession()
+    // 2) Depois recupera sessão atual (com timeout para evitar tela preta se o servidor travar)
+    withTimeout(supabase.auth.getSession(), 8000)
       .then(async ({ data }) => {
         setSession(data.session);
         if (data.session) {
