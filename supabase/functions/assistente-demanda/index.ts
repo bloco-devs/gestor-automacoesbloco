@@ -1,3 +1,5 @@
+import { callAI } from "../_shared/ia-gateway.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -9,28 +11,6 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
 const SYSTEM_BASE = `Você é um assistente que ajuda colaboradores a descrever uma demanda de automação/melhoria de processo de forma clara e objetiva.
 Faça perguntas curtas, em português, UMA de cada vez. Cubra ao longo da conversa: (1) o que a pessoa faz hoje no processo, (2) com qual frequência/contexto, (3) qual a maior dor/dificuldade, (4) qual o resultado esperado.
 Seja amigável e direto. Não dê sugestões nem soluções — apenas pergunte para entender melhor.`;
-
-async function callAI(body: unknown) {
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!apiKey) throw new Error("LOVABLE_API_KEY não configurado");
-
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!resp.ok) {
-    const text = await resp.text();
-    if (resp.status === 429) throw new Error("Limite de requisições atingido. Tente novamente em instantes.");
-    if (resp.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos em Configurações.");
-    throw new Error(`Erro IA (${resp.status}): ${text}`);
-  }
-  return await resp.json();
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -60,7 +40,7 @@ Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeraç�
       const data = await callAI({
         model: "google/gemini-3-flash-preview",
         messages: [{ role: "system", content: system }, ...messages],
-      });
+      }) as any;
       const content: string = data.choices?.[0]?.message?.content?.trim() ?? "";
       const done = content.includes("[FIM]") || userTurns >= 4;
       return new Response(JSON.stringify({ done, question: done ? null : content }), {
@@ -73,7 +53,7 @@ Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeraç�
       const data = await callAI({
         model: "google/gemini-3-flash-preview",
         messages: [{ role: "system", content: system }, ...messages],
-      });
+      }) as any;
       const description: string = data.choices?.[0]?.message?.content?.trim() ?? "";
       return new Response(JSON.stringify({ description }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
