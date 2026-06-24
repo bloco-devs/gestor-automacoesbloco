@@ -27,6 +27,8 @@ interface AuthContextValue {
   user: Profile | null;
   session: Session | null;
   loading: boolean;
+  authError: Error | null;
+  retryAuth: () => void;
   signIn: (email: string, senha: string) => Promise<Profile>;
   signOut: () => Promise<void>;
   isDual: boolean;
@@ -117,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<Error | null>(null);
 
   useEffect(() => {
     // 1) Listener PRIMEIRO (recomendado pela Supabase)
@@ -154,28 +157,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // 2) Depois recupera sessão atual
-    supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session);
-      if (data.session) {
-        if (isPasswordRecoveryIntent()) {
-          // Em fluxo de recovery, não carregar profile (evita redirect de role).
-          setLoading(false);
-          if (
-            typeof window !== "undefined" &&
-            !window.location.pathname.startsWith("/redefinir-senha")
-          ) {
-            window.location.replace("/redefinir-senha");
+    supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        setSession(data.session);
+        if (data.session) {
+          if (isPasswordRecoveryIntent()) {
+            // Em fluxo de recovery, não carregar profile (evita redirect de role).
+            setLoading(false);
+            if (
+              typeof window !== "undefined" &&
+              !window.location.pathname.startsWith("/redefinir-senha")
+            ) {
+              window.location.replace("/redefinir-senha");
+            }
+            return;
           }
-          return;
+          try {
+            setUser(await loadProfile(data.session.user));
+          } catch (err) {
+            await handleLoadProfileError(err, setUser);
+          }
         }
-        try {
-          setUser(await loadProfile(data.session.user));
-        } catch (err) {
-          await handleLoadProfileError(err, setUser);
-        }
-      }
-      setLoading(false);
-    });
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("[auth] getSession falhou:", err);
+        setAuthError(err instanceof Error ? err : new Error(String(err)));
+        setLoading(false);
+      });
 
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -210,11 +220,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const retryAuth = useCallback(() => {
+    if (typeof window !== "undefined") window.location.reload();
+  }, []);
+
   const isDual = !!user?.isAdministrador;
 
   const value = useMemo(
-    () => ({ user, session, loading, signIn, signOut, isDual, setViewAs }),
-    [user, session, loading, signIn, signOut, isDual, setViewAs],
+    () => ({ user, session, loading, authError, retryAuth, signIn, signOut, isDual, setViewAs }),
+    [user, session, loading, authError, retryAuth, signIn, signOut, isDual, setViewAs],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
