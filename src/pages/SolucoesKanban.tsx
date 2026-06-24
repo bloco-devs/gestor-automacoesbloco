@@ -320,12 +320,35 @@ export default function SolucoesKanban() {
         </Popover>
       </div>
 
-      {grouped.length === 0 ? (
-        <Card className="surface-1">
-          <CardContent className="p-12 text-center text-sm text-muted-foreground">
-            Nenhuma solução cadastrada.
-          </CardContent>
-        </Card>
+      {loading ? (
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="surface-1">
+              <CardContent className="p-3 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : error ? (
+        <EmptyState
+          icon={AlertTriangle}
+          title="Não foi possível carregar"
+          description={error}
+          action={
+            <Button variant="outline" size="sm" onClick={refetch}>
+              Tentar novamente
+            </Button>
+          }
+        />
+      ) : grouped.length === 0 ? (
+        <EmptyState
+          icon={Sparkles}
+          title="Nenhuma solução cadastrada ainda"
+          description="Cadastre a primeira solução no botão acima."
+        />
       ) : (
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {grouped.map(({ key, items }) => {
