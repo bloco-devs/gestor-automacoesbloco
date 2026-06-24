@@ -40,7 +40,7 @@ Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeraç�
       const data = await callAI({
         model: "google/gemini-3-flash-preview",
         messages: [{ role: "system", content: system }, ...messages],
-      });
+      }) as any;
       const content: string = data.choices?.[0]?.message?.content?.trim() ?? "";
       const done = content.includes("[FIM]") || userTurns >= 4;
       return new Response(JSON.stringify({ done, question: done ? null : content }), {
