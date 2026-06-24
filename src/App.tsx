@@ -36,6 +36,7 @@ import SolucaoDetail from "./pages/SolucaoDetail";
 import Configuracoes from "./pages/Configuracoes";
 import Diagrama from "./pages/Diagrama";
 import Atividades from "./pages/Atividades";
+import Ajuda from "./pages/Ajuda";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -72,9 +73,8 @@ const AppRoutes = () => {
         <Route path="/diagrama" element={<ProtectedRoute role="developer"><Diagrama /></ProtectedRoute>} />
         <Route path="/atividades" element={<ProtectedRoute role="developer"><Atividades /></ProtectedRoute>} />
 
-        
-
         {/* Compartilhado */}
+        <Route path="/ajuda" element={<Ajuda />} />
         <Route path="/solicitacao/:id" element={<SolicitacaoDetail />} />
       </Route>
 

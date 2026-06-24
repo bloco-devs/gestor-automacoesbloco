@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, GanttChartSquare, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, Compass, GanttChartSquare, HelpCircle, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import {
   DndContext,
   DragEndEvent,
@@ -26,6 +26,7 @@ import { NotificacoesBell } from "@/components/NotificacoesBell";
 import { cn } from "@/lib/utils";
 import { countPendingDevEvaluations } from "@/lib/supabaseData";
 import { supabase } from "@/integrations/supabase/client";
+import { OnboardingTour, useOnboardingTour } from "@/components/OnboardingTour";
 import blocoLogo from "@/assets/bloco-logo.png";
 
 type NavItem = {
@@ -62,6 +63,7 @@ const devNav: NavItem[] = [
   },
   { to: "/diagrama", label: "Diagrama", icon: Network },
   { to: "/atividades", label: "Atividades", icon: KanbanSquare },
+  { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 const requesterNav: NavItem[] = [
@@ -78,6 +80,7 @@ const requesterNav: NavItem[] = [
       { to: "/solicitacoes/gantt", label: "Gantt", icon: GanttChartSquare },
     ],
   },
+  { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
 ];
 
 const SIDEBAR_MIN = 160;
@@ -85,9 +88,18 @@ const SIDEBAR_MAX = 480;
 const SIDEBAR_DEFAULT = 256;
 const SIDEBAR_STORAGE_KEY = "app:sidebarWidth";
 
+function dataTourFor(item: NavItem): string | null {
+  if (item.to === "/dashboard" || item.to === "/dashboard-solicitante") return "nav-dashboard";
+  if (item.matchPrefix === "/solicitacoes" || item.to === "/minhas-solicitacoes") return "nav-solicitacoes";
+  if (item.matchPrefix === "/solucoes") return "nav-solucoes";
+  if (item.to === "/ajuda") return "nav-ajuda";
+  return null;
+}
+
 export default function AppLayout() {
   const { user, signOut, isDual } = useAuth();
   const navigate = useNavigate();
+  const { start: startTour } = useOnboardingTour();
   // Administrador sempre vê a navegação completa de dev — mesmo que tenha
   // trocado viewAs para requester/builder — para não ficar sem acesso a
   // Configurações nem ao seletor de perfil.
@@ -282,7 +294,17 @@ export default function AppLayout() {
               <LogOut className="size-4 shrink-0" />
               <span className="truncate">Sair</span>
             </Button>
-            <NotificacoesBell />
+            <span data-tour="nav-notificacoes" className="inline-flex"><NotificacoesBell /></span>
+            <Button
+              variant="ghost"
+              size="icon"
+              data-tour="nav-tour"
+              onClick={startTour}
+              title="Refazer tour"
+              aria-label="Refazer tour"
+            >
+              <Compass className="size-4" />
+            </Button>
             <ThemeToggle />
           </div>
         </div>
@@ -335,7 +357,17 @@ export default function AppLayout() {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <NotificacoesBell />
+            <span data-tour="nav-notificacoes" className="inline-flex"><NotificacoesBell /></span>
+            <Button
+              variant="ghost"
+              size="icon"
+              data-tour="nav-tour"
+              onClick={startTour}
+              title="Refazer tour"
+              aria-label="Refazer tour"
+            >
+              <Compass className="size-4" />
+            </Button>
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/auth"); }}>
               <LogOut className="size-4" />
@@ -361,6 +393,7 @@ export default function AppLayout() {
           ))}
         </nav>
         <div className="w-full min-w-0 p-4 md:p-8">
+          <OnboardingTour />
           <Outlet />
         </div>
       </main>
@@ -395,12 +428,14 @@ function SidebarNavItem({
 
   const showBadge =
     isDeveloper && item.matchPrefix === "/solicitacoes" && pendingEvalCount > 0;
+  const dataTour = dataTourFor(item);
 
   if (!hasChildren) {
     return (
       <NavLink
         to={item.to!}
         end
+        {...(dataTour ? { "data-tour": dataTour } : {})}
         {...(dragHandleProps as Record<string, unknown>)}
         className={({ isActive }) =>
           cn(
@@ -423,6 +458,7 @@ function SidebarNavItem({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        {...(dataTour ? { "data-tour": dataTour } : {})}
         {...dragHandleProps}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0 cursor-grab active:cursor-grabbing touch-none",

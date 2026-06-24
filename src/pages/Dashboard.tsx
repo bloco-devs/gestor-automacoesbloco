@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Calendar, CheckCircle2, Filter, Inbox, KanbanSquare, Search, TrendingUp, User } from "lucide-react";
-import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import { listSolicitacoes } from "@/lib/supabaseData";
 import { STATUS_LABEL, type PipelineStatus, FREQUENCIA_LABEL, freqLabel, type Frequencia } from "@/lib/types";
 import { useSetoresNomes } from "@/hooks/useSetores";
@@ -9,8 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ScorePill } from "@/components/ScorePill";
+import { FieldHelp } from "@/components/FieldHelp";
+import { DataSourceBadge } from "@/components/DataSourceBadge";
+import { EmptyState } from "@/components/EmptyState";
+import { ListState } from "@/components/ListState";
 
 const DASHBOARD_STATUSES: PipelineStatus[] = [
   "novo",
@@ -20,7 +25,8 @@ const DASHBOARD_STATUSES: PipelineStatus[] = [
 ];
 
 export default function Dashboard() {
-  const all = useSupabaseData(() => listSolicitacoes(), []);
+  const { data, loading, error, refetch } = useSupabaseQuery(() => listSolicitacoes(), []);
+  const all = data ?? [];
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [tipoFilter, setTipoFilter] = useState<string>("all");
   const [setorFilter, setSetorFilter] = useState<string>("all");
@@ -145,25 +151,59 @@ export default function Dashboard() {
 
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
             Solicitações ({filtered.length})
+            <FieldHelp>
+              Score de priorização de 0 a 100, calculado a partir de frequência, dificuldade e
+              retorno. O score final é ajustado pela complexidade técnica.
+            </FieldHelp>
           </h2>
         </div>
 
-        {filtered.length === 0 ? (
-          <Card className="surface-1">
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <Inbox className="size-8 mx-auto mb-3 opacity-60" />
-              <p className="text-sm">Nenhuma solicitação encontrada com esses filtros.</p>
-            </CardContent>
-          </Card>
-        ) : (
+        <ListState
+          loading={loading}
+          error={error}
+          isEmpty={filtered.length === 0}
+          onRetry={refetch}
+          skeleton={
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="surface-1">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex justify-between gap-2">
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-5 w-10" />
+                    </div>
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-2/3" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          }
+          empty={
+            all.length === 0 ? (
+              <EmptyState
+                icon={Inbox}
+                title="Nenhuma solicitação por aqui ainda"
+                description="As demandas aparecem aqui assim que os solicitantes as cadastram."
+              />
+            ) : (
+              <EmptyState
+                icon={Inbox}
+                title="Nada com esses filtros"
+                description="Tente limpar ou alterar os filtros acima."
+              />
+            )
+          }
+        >
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((s) => (
               <SolicitacaoCard key={s.id} s={s} />
             ))}
           </div>
-        )}
+        </ListState>
       </section>
     </div>
   );
@@ -217,6 +257,7 @@ function SolicitacaoCard({ s }: { s: import("@/lib/types").Solicitacao }) {
           <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-5 font-normal">
             {freqLabel(s.frequencia)}
           </Badge>
+          <DataSourceBadge source="Cadastro manual" updatedAt={s.createdAt} />
         </div>
       </CardContent>
     </Card>

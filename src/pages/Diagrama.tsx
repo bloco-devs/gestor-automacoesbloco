@@ -83,7 +83,9 @@ import {
 
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { Trash2, Plus, Workflow, StickyNote, FileDown } from "lucide-react";
+import { Skeleton as SkeletonDg } from "@/components/ui/skeleton";
+import { EmptyState as EmptyStateDg } from "@/components/EmptyState";
+import { Trash2, Plus, Workflow, Workflow as WorkflowIcon, StickyNote, FileDown } from "lucide-react";
 import { FlowEdge } from "@/components/diagrama/FlowEdge";
 import { StickyNoteNode, type StickyNoteData } from "@/components/diagrama/StickyNoteNode";
 import { toast } from "@/hooks/use-toast";
@@ -756,12 +758,18 @@ function DiagramaInner() {
 
       <div ref={flowWrapperRef} className="w-full h-[calc(100%-4rem)]">
         {loading ? (
-          <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-            Carregando diagrama...
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SkeletonDg key={i} className="h-32 w-full" />
+            ))}
           </div>
         ) : nodes.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-            Nenhuma Solução cadastrada ainda.
+          <div className="flex items-center justify-center h-full p-6">
+            <EmptyStateDg
+              icon={WorkflowIcon}
+              title="Nenhuma solução cadastrada ainda"
+              description="Cadastre uma solução para que ela apareça no diagrama de integrações."
+            />
           </div>
         ) : (
           <ReactFlow
@@ -828,7 +836,10 @@ function DiagramaInner() {
 
           <div className="space-y-3">
             {colunasLoading ? (
-              <div className="text-sm text-muted-foreground py-4 text-center">Carregando colunas...</div>
+              <div className="space-y-2 py-2">
+                <SkeletonDg className="h-8 w-full" />
+                <SkeletonDg className="h-8 w-full" />
+              </div>
             ) : colunas.length === 0 ? (
               <div className="text-sm text-muted-foreground py-2 text-center italic">
                 Nenhuma coluna cadastrada ainda.

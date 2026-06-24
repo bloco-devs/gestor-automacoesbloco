@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, ChevronsUpDown, ExternalLink, Plus, Search } from "lucide-react";
+import { AlertTriangle, Check, ChevronsUpDown, ExternalLink, Plus, Search, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import { createSolucao, listSolicitacoes, listSolucoes } from "@/lib/supabaseData";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,7 +37,8 @@ export default function SolucoesKanban() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const solucoes = useSupabaseData(() => listSolucoes(), []);
+  const { data: solucoesData, loading, error, refetch } = useSupabaseQuery(() => listSolucoes(), []);
+  const solucoes = solucoesData ?? [];
   const solicitacoes = useSupabaseData(() => listSolicitacoes(), []);
 
   const [novoTitulo, setNovoTitulo] = useState("");
@@ -316,12 +320,35 @@ export default function SolucoesKanban() {
         </Popover>
       </div>
 
-      {grouped.length === 0 ? (
-        <Card className="surface-1">
-          <CardContent className="p-12 text-center text-sm text-muted-foreground">
-            Nenhuma solução cadastrada.
-          </CardContent>
-        </Card>
+      {loading ? (
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="surface-1">
+              <CardContent className="p-3 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : error ? (
+        <EmptyState
+          icon={AlertTriangle}
+          title="Não foi possível carregar"
+          description={error}
+          action={
+            <Button variant="outline" size="sm" onClick={refetch}>
+              Tentar novamente
+            </Button>
+          }
+        />
+      ) : grouped.length === 0 ? (
+        <EmptyState
+          icon={Sparkles}
+          title="Nenhuma solução cadastrada ainda"
+          description="Cadastre a primeira solução no botão acima."
+        />
       ) : (
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {grouped.map(({ key, items }) => {

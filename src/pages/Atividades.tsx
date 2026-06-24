@@ -47,6 +47,7 @@ import { CardDialog, type CardDraftValues } from "@/components/atividades/CardDi
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Skeleton as SkeletonAt } from "@/components/ui/skeleton";
 
 
 function initials(nome: string) {
@@ -417,7 +418,15 @@ export default function Atividades() {
 
 
       {loading ? (
-        <div className="text-sm text-muted-foreground">Carregando...</div>
+        <div className="flex gap-3 overflow-x-auto pb-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex-1 min-w-0 basis-0 space-y-2 rounded-lg border bg-card p-3">
+              <SkeletonAt className="h-4 w-1/2" />
+              <SkeletonAt className="h-16 w-full" />
+              <SkeletonAt className="h-16 w-full" />
+            </div>
+          ))}
+        </div>
       ) : (
         <DndContext
           sensors={sensors}

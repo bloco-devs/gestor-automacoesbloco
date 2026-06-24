@@ -9,8 +9,8 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { Calendar, User } from "lucide-react";
-import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { AlertTriangle, Calendar, User } from "lucide-react";
+import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import { listSolicitacoes, updateSolicitacao } from "@/lib/supabaseData";
 import {
   STATUS_LABEL,
@@ -20,6 +20,10 @@ import {
 } from "@/lib/types";
 import { ScorePill } from "@/components/ScorePill";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FieldHelp } from "@/components/FieldHelp";
+import { EmptyState } from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils";
 
@@ -53,8 +57,16 @@ const STAGES: Stage[] = [
   },
 ];
 
+const STAGE_HELP: Record<StageId, string> = {
+  novo: "Demanda recém cadastrada, aguardando triagem.",
+  em_analise: "O desenvolvedor está avaliando viabilidade e complexidade.",
+  aceito: "Solução já está sendo construída pelo time de tecnologia.",
+  concluido: "Solução entregue.",
+};
+
 export default function Kanban() {
-  const all = useSupabaseData(() => listSolicitacoes(), []);
+  const { data, loading, error, refetch } = useSupabaseQuery(() => listSolicitacoes(), []);
+  const all = useMemo(() => data ?? [], [data]);
   const [items, setItems] = useState<Solicitacao[]>([]);
 
   useEffect(() => {
@@ -106,10 +118,23 @@ export default function Kanban() {
         </p>
       </div>
 
+      {error && (
+        <EmptyState
+          icon={AlertTriangle}
+          title="Não foi possível carregar"
+          description={error}
+          action={
+            <Button variant="outline" size="sm" onClick={refetch}>
+              Tentar novamente
+            </Button>
+          }
+        />
+      )}
+
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {STAGES.map((stage) => (
-            <Column key={stage.id} stage={stage} items={grouped[stage.id]} />
+            <Column key={stage.id} stage={stage} items={grouped[stage.id]} loading={loading} />
           ))}
         </div>
       </DndContext>
@@ -117,7 +142,7 @@ export default function Kanban() {
   );
 }
 
-function Column({ stage, items }: { stage: Stage; items: Solicitacao[] }) {
+function Column({ stage, items, loading }: { stage: Stage; items: Solicitacao[]; loading: boolean }) {
   const { isOver, setNodeRef } = useDroppable({ id: stage.id });
   return (
     <div
@@ -137,13 +162,22 @@ function Column({ stage, items }: { stage: Stage; items: Solicitacao[] }) {
             aria-hidden
           />
           <h3 className="text-sm font-medium">{stage.label}</h3>
+          <FieldHelp>{STAGE_HELP[stage.id]}</FieldHelp>
         </div>
         <span className="text-xs text-muted-foreground tabular-nums">
           {items.length}
         </span>
       </div>
       <div className="space-y-2 flex-1">
-        {items.map((s) => <KanbanCard key={s.id} item={s} />)}
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))
+        ) : items.length === 0 ? (
+          <div className="text-xs text-muted-foreground text-center py-6">Nenhum cartão</div>
+        ) : (
+          items.map((s) => <KanbanCard key={s.id} item={s} />)
+        )}
       </div>
     </div>
   );

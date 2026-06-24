@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { DataSourceBadge } from "@/components/DataSourceBadge";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -183,6 +184,10 @@ export function AssistenteDescricao({ onAccept }: Props) {
           </>
         ) : (
           <>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Descrição gerada</span>
+              <DataSourceBadge source="IA" />
+            </div>
             <Textarea
               rows={8}
               value={draft}
