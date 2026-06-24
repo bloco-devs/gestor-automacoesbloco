@@ -47,6 +47,7 @@ import { CardDialog, type CardDraftValues } from "@/components/atividades/CardDi
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Skeleton as SkeletonAt } from "@/components/ui/skeleton";
 
 
 function initials(nome: string) {
