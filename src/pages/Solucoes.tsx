@@ -11,6 +11,7 @@ import {
   Search,
 } from "lucide-react";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import {
   createSolucao,
   listSolicitacoes,
@@ -38,6 +39,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/EmptyState";
+import { AlertTriangle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type SortKey = "titulo" | "solicitação" | "createdAt";
@@ -49,7 +53,8 @@ export default function Solucoes() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const solucoes = useSupabaseData(() => listSolucoes(), []);
+  const { data: solucoesData, loading, error, refetch } = useSupabaseQuery(() => listSolucoes(), []);
+  const solucoes = solucoesData ?? [];
   const solicitacoes = useSupabaseData(() => listSolicitacoes(), []);
 
   const solicitacaoTituloById = useMemo(() => {
