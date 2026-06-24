@@ -57,8 +57,16 @@ const STAGES: Stage[] = [
   },
 ];
 
+const STAGE_HELP: Record<StageId, string> = {
+  novo: "Demanda recém cadastrada, aguardando triagem.",
+  em_analise: "O desenvolvedor está avaliando viabilidade e complexidade.",
+  aceito: "Solução já está sendo construída pelo time de tecnologia.",
+  concluido: "Solução entregue.",
+};
+
 export default function Kanban() {
-  const all = useSupabaseData(() => listSolicitacoes(), []);
+  const { data, loading, error, refetch } = useSupabaseQuery(() => listSolicitacoes(), []);
+  const all = useMemo(() => data ?? [], [data]);
   const [items, setItems] = useState<Solicitacao[]>([]);
 
   useEffect(() => {
@@ -110,10 +118,23 @@ export default function Kanban() {
         </p>
       </div>
 
+      {error && (
+        <EmptyState
+          icon={AlertTriangle}
+          title="Não foi possível carregar"
+          description={error}
+          action={
+            <Button variant="outline" size="sm" onClick={refetch}>
+              Tentar novamente
+            </Button>
+          }
+        />
+      )}
+
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {STAGES.map((stage) => (
-            <Column key={stage.id} stage={stage} items={grouped[stage.id]} />
+            <Column key={stage.id} stage={stage} items={grouped[stage.id]} loading={loading} />
           ))}
         </div>
       </DndContext>
@@ -121,7 +142,7 @@ export default function Kanban() {
   );
 }
 
-function Column({ stage, items }: { stage: Stage; items: Solicitacao[] }) {
+function Column({ stage, items, loading }: { stage: Stage; items: Solicitacao[]; loading: boolean }) {
   const { isOver, setNodeRef } = useDroppable({ id: stage.id });
   return (
     <div
