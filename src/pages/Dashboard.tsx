@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Calendar, CheckCircle2, Filter, Inbox, KanbanSquare, Search, TrendingUp, User } from "lucide-react";
-import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import { listSolicitacoes } from "@/lib/supabaseData";
 import { STATUS_LABEL, type PipelineStatus, FREQUENCIA_LABEL, freqLabel, type Frequencia } from "@/lib/types";
 import { useSetoresNomes } from "@/hooks/useSetores";
@@ -9,8 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ScorePill } from "@/components/ScorePill";
+import { FieldHelp } from "@/components/FieldHelp";
+import { DataSourceBadge } from "@/components/DataSourceBadge";
+import { EmptyState } from "@/components/EmptyState";
+import { ListState } from "@/components/ListState";
 
 const DASHBOARD_STATUSES: PipelineStatus[] = [
   "novo",
@@ -20,7 +25,8 @@ const DASHBOARD_STATUSES: PipelineStatus[] = [
 ];
 
 export default function Dashboard() {
-  const all = useSupabaseData(() => listSolicitacoes(), []);
+  const { data, loading, error, refetch } = useSupabaseQuery(() => listSolicitacoes(), []);
+  const all = data ?? [];
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [tipoFilter, setTipoFilter] = useState<string>("all");
   const [setorFilter, setSetorFilter] = useState<string>("all");
