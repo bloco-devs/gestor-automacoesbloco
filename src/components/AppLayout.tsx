@@ -63,6 +63,7 @@ const devNav: NavItem[] = [
   },
   { to: "/diagrama", label: "Diagrama", icon: Network },
   { to: "/atividades", label: "Atividades", icon: KanbanSquare },
+  { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 const requesterNav: NavItem[] = [
@@ -79,6 +80,7 @@ const requesterNav: NavItem[] = [
       { to: "/solicitacoes/gantt", label: "Gantt", icon: GanttChartSquare },
     ],
   },
+  { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
 ];
 
 const SIDEBAR_MIN = 160;
