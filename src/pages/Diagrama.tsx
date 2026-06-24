@@ -836,7 +836,10 @@ function DiagramaInner() {
 
           <div className="space-y-3">
             {colunasLoading ? (
-              <div className="text-sm text-muted-foreground py-4 text-center">Carregando colunas...</div>
+              <div className="space-y-2 py-2">
+                <SkeletonDg className="h-8 w-full" />
+                <SkeletonDg className="h-8 w-full" />
+              </div>
             ) : colunas.length === 0 ? (
               <div className="text-sm text-muted-foreground py-2 text-center italic">
                 Nenhuma coluna cadastrada ainda.
