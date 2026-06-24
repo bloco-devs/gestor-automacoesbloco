@@ -253,10 +253,37 @@ export default function Solucoes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pageItems.length === 0 ? (
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-2/3" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-1/2" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : error ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center py-12 text-muted-foreground">
-                      Nenhuma solução encontrada.
+                    <TableCell colSpan={3} className="py-8">
+                      <EmptyState
+                        icon={AlertTriangle}
+                        title="Não foi possível carregar"
+                        description={error}
+                        action={
+                          <Button variant="outline" size="sm" onClick={refetch}>
+                            Tentar novamente
+                          </Button>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : pageItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-8">
+                      <EmptyState
+                        icon={Sparkles}
+                        title="Nenhuma solução cadastrada ainda"
+                        description="Cadastre a primeira solução no botão acima."
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (
