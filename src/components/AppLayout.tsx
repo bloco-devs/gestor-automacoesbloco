@@ -294,7 +294,17 @@ export default function AppLayout() {
               <LogOut className="size-4 shrink-0" />
               <span className="truncate">Sair</span>
             </Button>
-            <NotificacoesBell />
+            <span data-tour="nav-notificacoes" className="inline-flex"><NotificacoesBell /></span>
+            <Button
+              variant="ghost"
+              size="icon"
+              data-tour="nav-tour"
+              onClick={startTour}
+              title="Refazer tour"
+              aria-label="Refazer tour"
+            >
+              <Compass className="size-4" />
+            </Button>
             <ThemeToggle />
           </div>
         </div>
@@ -347,7 +357,17 @@ export default function AppLayout() {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <NotificacoesBell />
+            <span data-tour="nav-notificacoes" className="inline-flex"><NotificacoesBell /></span>
+            <Button
+              variant="ghost"
+              size="icon"
+              data-tour="nav-tour"
+              onClick={startTour}
+              title="Refazer tour"
+              aria-label="Refazer tour"
+            >
+              <Compass className="size-4" />
+            </Button>
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/auth"); }}>
               <LogOut className="size-4" />
