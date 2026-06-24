@@ -398,12 +398,14 @@ function SidebarNavItem({
 
   const showBadge =
     isDeveloper && item.matchPrefix === "/solicitacoes" && pendingEvalCount > 0;
+  const dataTour = dataTourFor(item);
 
   if (!hasChildren) {
     return (
       <NavLink
         to={item.to!}
         end
+        {...(dataTour ? { "data-tour": dataTour } : {})}
         {...(dragHandleProps as Record<string, unknown>)}
         className={({ isActive }) =>
           cn(
@@ -426,6 +428,7 @@ function SidebarNavItem({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        {...(dataTour ? { "data-tour": dataTour } : {})}
         {...dragHandleProps}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0 cursor-grab active:cursor-grabbing touch-none",
