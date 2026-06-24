@@ -151,25 +151,59 @@ export default function Dashboard() {
 
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
             Solicitações ({filtered.length})
+            <FieldHelp>
+              Score de priorização de 0 a 100, calculado a partir de frequência, dificuldade e
+              retorno. O score final é ajustado pela complexidade técnica.
+            </FieldHelp>
           </h2>
         </div>
 
-        {filtered.length === 0 ? (
-          <Card className="surface-1">
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <Inbox className="size-8 mx-auto mb-3 opacity-60" />
-              <p className="text-sm">Nenhuma solicitação encontrada com esses filtros.</p>
-            </CardContent>
-          </Card>
-        ) : (
+        <ListState
+          loading={loading}
+          error={error}
+          isEmpty={filtered.length === 0}
+          onRetry={refetch}
+          skeleton={
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="surface-1">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex justify-between gap-2">
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-5 w-10" />
+                    </div>
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-2/3" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          }
+          empty={
+            all.length === 0 ? (
+              <EmptyState
+                icon={Inbox}
+                title="Nenhuma solicitação por aqui ainda"
+                description="As demandas aparecem aqui assim que os solicitantes as cadastram."
+              />
+            ) : (
+              <EmptyState
+                icon={Inbox}
+                title="Nada com esses filtros"
+                description="Tente limpar ou alterar os filtros acima."
+              />
+            )
+          }
+        >
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((s) => (
               <SolicitacaoCard key={s.id} s={s} />
             ))}
           </div>
-        )}
+        </ListState>
       </section>
     </div>
   );
