@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, ChevronsUpDown, ExternalLink, Plus, Search } from "lucide-react";
+import { AlertTriangle, Check, ChevronsUpDown, ExternalLink, Plus, Search, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
+import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import { createSolucao, listSolicitacoes, listSolucoes } from "@/lib/supabaseData";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,7 +37,8 @@ export default function SolucoesKanban() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const solucoes = useSupabaseData(() => listSolucoes(), []);
+  const { data: solucoesData, loading, error, refetch } = useSupabaseQuery(() => listSolucoes(), []);
+  const solucoes = solucoesData ?? [];
   const solicitacoes = useSupabaseData(() => listSolicitacoes(), []);
 
   const [novoTitulo, setNovoTitulo] = useState("");
