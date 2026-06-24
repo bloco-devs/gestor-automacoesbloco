@@ -39,6 +39,7 @@ import { StatusTimeline } from "@/components/StatusTimeline";
 import { TasksChecklist } from "@/components/TasksChecklist";
 import { ScorePill } from "@/components/ScorePill";
 import { AssistenteDescricao } from "@/components/AssistenteDescricao";
+import { DataSourceBadge } from "@/components/DataSourceBadge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -380,9 +381,12 @@ export default function SolicitacaoDetail() {
             )}
           </div>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          Solicitado por <span className="text-foreground">{solicitacao.solicitanteNome}</span> ·{" "}
-          {new Date(solicitacao.createdAt).toLocaleDateString("pt-BR")}
+        <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+          <span>
+            Solicitado por <span className="text-foreground">{solicitacao.solicitanteNome}</span> ·{" "}
+            {new Date(solicitacao.createdAt).toLocaleDateString("pt-BR")}
+          </span>
+          <DataSourceBadge source="Cadastro manual" updatedAt={solicitacao.createdAt} />
         </p>
       </div>
 
