@@ -83,7 +83,9 @@ import {
 
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { Trash2, Plus, Workflow, StickyNote, FileDown } from "lucide-react";
+import { Skeleton as SkeletonDg } from "@/components/ui/skeleton";
+import { EmptyState as EmptyStateDg } from "@/components/EmptyState";
+import { Trash2, Plus, Workflow, Workflow as WorkflowIcon, StickyNote, FileDown } from "lucide-react";
 import { FlowEdge } from "@/components/diagrama/FlowEdge";
 import { StickyNoteNode, type StickyNoteData } from "@/components/diagrama/StickyNoteNode";
 import { toast } from "@/hooks/use-toast";
