@@ -53,7 +53,7 @@ Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeraç�
       const data = await callAI({
         model: "google/gemini-3-flash-preview",
         messages: [{ role: "system", content: system }, ...messages],
-      });
+      }) as any;
       const description: string = data.choices?.[0]?.message?.content?.trim() ?? "";
       return new Response(JSON.stringify({ description }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
