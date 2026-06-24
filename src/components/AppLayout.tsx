@@ -99,6 +99,7 @@ function dataTourFor(item: NavItem): string | null {
 export default function AppLayout() {
   const { user, signOut, isDual } = useAuth();
   const navigate = useNavigate();
+  const { start: startTour } = useOnboardingTour();
   // Administrador sempre vê a navegação completa de dev — mesmo que tenha
   // trocado viewAs para requester/builder — para não ficar sem acesso a
   // Configurações nem ao seletor de perfil.
