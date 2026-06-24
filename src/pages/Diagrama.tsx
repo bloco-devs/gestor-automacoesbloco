@@ -756,12 +756,18 @@ function DiagramaInner() {
 
       <div ref={flowWrapperRef} className="w-full h-[calc(100%-4rem)]">
         {loading ? (
-          <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-            Carregando diagrama...
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SkeletonDg key={i} className="h-32 w-full" />
+            ))}
           </div>
         ) : nodes.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-            Nenhuma Solução cadastrada ainda.
+          <div className="flex items-center justify-center h-full p-6">
+            <EmptyStateDg
+              icon={WorkflowIcon}
+              title="Nenhuma solução cadastrada ainda"
+              description="Cadastre uma solução para que ela apareça no diagrama de integrações."
+            />
           </div>
         ) : (
           <ReactFlow
