@@ -257,6 +257,7 @@ function SolicitacaoCard({ s }: { s: import("@/lib/types").Solicitacao }) {
           <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-5 font-normal">
             {freqLabel(s.frequencia)}
           </Badge>
+          <DataSourceBadge source="Cadastro manual" updatedAt={s.createdAt} />
         </div>
       </CardContent>
     </Card>
