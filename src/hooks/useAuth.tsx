@@ -51,6 +51,23 @@ class NotAllowedError extends Error {
   }
 }
 
+class AuthTimeoutError extends Error {
+  constructor() {
+    super("Tempo limite ao conectar ao servidor de autenticação.");
+    this.name = "AuthTimeoutError";
+  }
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const id = setTimeout(() => reject(new AuthTimeoutError()), ms);
+    promise.then(
+      (value) => { clearTimeout(id); resolve(value); },
+      (err) => { clearTimeout(id); reject(err); },
+    );
+  });
+}
+
 async function loadProfileOnce(authUser: User): Promise<Profile & { isAdministrador: boolean }> {
   const [{ data: prof }, { data: roleStr, error: roleErr }, { data: allowed, error: allowedErr }] =
     await Promise.all([
