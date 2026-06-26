@@ -37,6 +37,7 @@ import Configuracoes from "./pages/Configuracoes";
 import Diagrama from "./pages/Diagrama";
 import Atividades from "./pages/Atividades";
 import Ajuda from "./pages/Ajuda";
+import ObservabilidadeIA from "./pages/ObservabilidadeIA";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
