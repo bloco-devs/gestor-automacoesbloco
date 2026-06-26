@@ -111,7 +111,11 @@ export default function Kanban() {
     try {
       await updateSolicitacao(id, { status: stage.target });
     } catch (err) {
+      console.error("Kanban updateSolicitacao", err);
       setItems(previous);
+      toast.error("Não foi possível atualizar o status", {
+        description: "Verifique sua permissão e tente novamente.",
+      });
     }
   }
 
