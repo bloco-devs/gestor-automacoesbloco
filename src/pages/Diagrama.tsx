@@ -217,7 +217,7 @@ function DiagramaInner() {
       const existing = timers.get(id);
       if (existing) clearTimeout(existing);
       const handle = setTimeout(() => {
-        updateNota(id, patch).catch((err) => console.error("updateNota", err));
+        updateNota(id, patch).catch((err) => toastErr("updateNota", err));
         timers.delete(id);
       }, 400);
       timers.set(id, handle);
@@ -244,13 +244,13 @@ function DiagramaInner() {
   const handleNotaColorChange = useCallback(
     (id: string, cor: string) => {
       setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, cor } } : n)));
-      updateNota(id, { cor }).catch((err) => console.error("updateNota", err));
+      updateNota(id, { cor }).catch((err) => toastErr("updateNota", err));
     },
     [],
   );
   const handleNotaDelete = useCallback((id: string) => {
     setNodes((nds) => nds.filter((n) => n.id !== id));
-    deleteNota(id).catch((err) => console.error("deleteNota", err));
+    deleteNota(id).catch((err) => toastErr("deleteNota", err));
   }, []);
 
   const buildNotaNode = useCallback(
@@ -313,7 +313,7 @@ function DiagramaInner() {
       setNovaColuna({ nome: "", tipo: "VARCHAR" });
       listColunas(edgeId)
         .then((cols) => setColunas(cols))
-        .catch((err) => console.error("listColunas", err))
+        .catch((err) => toastErr("listColunas", err))
         .finally(() => setColunasLoading(false));
       return eds;
     });
@@ -399,7 +399,7 @@ function DiagramaInner() {
       const existing = timers.get(id);
       if (existing) clearTimeout(existing);
       const handle = setTimeout(() => {
-        upsertPosicao(id, x, y, user?.id).catch((err) => console.error("upsertPosicao", err));
+        upsertPosicao(id, x, y, user?.id).catch((err) => toastErr("upsertPosicao", err));
         timers.delete(id);
       }, 500);
       timers.set(id, handle);
@@ -434,7 +434,7 @@ function DiagramaInner() {
           } else if (ch.type === "remove") {
             const node = current.find((n) => n.id === ch.id);
             if (node?.type === "nota") {
-              deleteNota(node.id).catch((err) => console.error("deleteNota", err));
+              deleteNota(node.id).catch((err) => toastErr("deleteNota", err));
             }
           }
         }
@@ -457,7 +457,7 @@ function DiagramaInner() {
             continue;
           }
           filtered.push(ch);
-          deleteConexao(ch.id).catch((err) => console.error("deleteConexao", err));
+          deleteConexao(ch.id).catch((err) => toastErr("deleteConexao", err));
         } else {
           filtered.push(ch);
         }
@@ -470,7 +470,7 @@ function DiagramaInner() {
     if (!deleteEdgeDialog) return;
     const { edgeId } = deleteEdgeDialog;
     setEdges((eds) => applyEdgeChanges([{ type: "remove", id: edgeId }], eds));
-    deleteConexao(edgeId).catch((err) => console.error("deleteConexao", err));
+    deleteConexao(edgeId).catch((err) => toastErr("deleteConexao", err));
     setDeleteEdgeDialog(null);
   }, [deleteEdgeDialog]);
 
@@ -509,7 +509,7 @@ function DiagramaInner() {
     setEdges((eds) =>
       eds.map((e) => (e.id === edgeId ? { ...e, label: trimmed || undefined } : e)),
     );
-    updateConexaoLabel(edgeId, trimmed || null).catch((err) => console.error("updateConexaoLabel", err));
+    updateConexaoLabel(edgeId, trimmed || null).catch((err) => toastErr("updateConexaoLabel", err));
     setLabelDialog(null);
   }, [labelDialog]);
 
@@ -535,14 +535,14 @@ function DiagramaInner() {
   const handleUpdateColuna = useCallback(
     (id: string, patch: { nome?: string; tipo?: string }) => {
       setColunas((cs) => cs.map((c) => (c.id === id ? { ...c, ...patch } : c)));
-      updateColuna(id, patch).catch((err) => console.error("updateColuna", err));
+      updateColuna(id, patch).catch((err) => toastErr("updateColuna", err));
     },
     [],
   );
 
   const handleDeleteColuna = useCallback((id: string) => {
     setColunas((cs) => cs.filter((c) => c.id !== id));
-    deleteColuna(id).catch((err) => console.error("deleteColuna", err));
+    deleteColuna(id).catch((err) => toastErr("deleteColuna", err));
   }, []);
 
   const handleAddNota = useCallback(async () => {
