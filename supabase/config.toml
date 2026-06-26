@@ -3,6 +3,9 @@ project_id = "cgbhpenkytibgiosksrb"
 [functions.assistente-demanda]
 verify_jwt = true
 
+[functions.triagem-demanda]
+verify_jwt = true
+
 [functions.sso-login]
 verify_jwt = false
 

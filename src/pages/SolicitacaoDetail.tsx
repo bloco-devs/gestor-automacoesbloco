@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ChevronDown, ClipboardList, ExternalLink, Lightbulb, Pencil, Save, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ClipboardList, ExternalLink, Lightbulb, Loader2, Pencil, Save, Sparkles, Trash2, X } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
@@ -155,6 +155,8 @@ export default function SolicitacaoDetail() {
   const [hasOverride, setHasOverride] = useState<boolean>(false);
   const [overrideComplexidade, setOverrideComplexidade] = useState<number>(0);
   const [overrideMotivo, setOverrideMotivo] = useState<string>("");
+  const [sugerindoComplexidade, setSugerindoComplexidade] = useState(false);
+  const [sugestaoComplexJustificativa, setSugestaoComplexJustificativa] = useState<string | null>(null);
 
   const calculatedComplexidade = useMemo(
     () => computeComplexidadeFromChecklist(marcados),
@@ -280,6 +282,48 @@ export default function SolicitacaoDetail() {
     await deleteSolicitacao(id);
     toast({ title: "Solicitação excluída" });
     navigate("/solicitacoes", { replace: true });
+  }
+
+  async function handleSugerirComplexidade() {
+    if (sugerindoComplexidade || !solicitacao) return;
+    const desc = solicitacao.descricao?.trim() ?? "";
+    if (desc.length < 10) {
+      toast({
+        title: "Descrição insuficiente",
+        description: "A solicitação precisa ter descrição para a IA estimar a complexidade.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSugerindoComplexidade(true);
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data, error } = await supabase.functions.invoke("triagem-demanda", {
+        body: { titulo: solicitacao.titulo, descricao: desc, setor: solicitacao.setor ?? "" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const c = typeof data?.complexidade_dev === "number" ? data.complexidade_dev : null;
+      if (c !== null) {
+        setHasOverride(true);
+        setOverrideComplexidade(c);
+      }
+      if (data?.justificativa) {
+        setSugestaoComplexJustificativa(data.justificativa);
+        setNotasTecnicasComplexidade((prev) =>
+          prev?.trim() ? prev : `Sugestão IA: ${data.justificativa}`,
+        );
+      }
+      toast({ title: "Complexidade sugerida", description: "Revise e ajuste antes de salvar." });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Tente novamente.";
+      const friendly = /429|muitas solicita/i.test(msg)
+        ? "Muitas solicitações à IA. Aguarde alguns instantes."
+        : msg;
+      toast({ title: "Não foi possível sugerir", description: friendly, variant: "destructive" });
+    } finally {
+      setSugerindoComplexidade(false);
+    }
   }
 
   async function handleSaveComplexidadeDev() {
@@ -629,15 +673,36 @@ export default function SolicitacaoDetail() {
       {isDev && (
         <Card className="surface-1">
           <CardHeader>
-            <CardTitle className="text-base">Avaliação Técnica do Dev</CardTitle>
-            <CardDescription>
-              Define o fator de penalização aplicado ao score do solicitante para gerar o score final.
-              {solicitacao.complexidadeDev === null && (
-                <span className="ml-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border border-dashed border-border bg-muted/40 text-muted-foreground">
-                  ⚙ Aguardando avaliação técnica
-                </span>
-              )}
-            </CardDescription>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <CardTitle className="text-base">Avaliação Técnica do Dev</CardTitle>
+                <CardDescription>
+                  Define o fator de penalização aplicado ao score do solicitante para gerar o score final.
+                  {solicitacao.complexidadeDev === null && (
+                    <span className="ml-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border border-dashed border-border bg-muted/40 text-muted-foreground">
+                      ⚙ Aguardando avaliação técnica
+                    </span>
+                  )}
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSugerirComplexidade}
+                disabled={sugerindoComplexidade}
+                aria-label="Sugerir complexidade com IA"
+              >
+                {sugerindoComplexidade ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                Sugerir com IA
+              </Button>
+            </div>
+            {sugestaoComplexJustificativa && (
+              <div className="mt-2 rounded-md border border-border bg-muted/30 p-2.5 text-xs text-muted-foreground space-y-1">
+                <DataSourceBadge source="IA" />
+                <p className="leading-snug">{sugestaoComplexJustificativa}</p>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <ChecklistAvaliacao
