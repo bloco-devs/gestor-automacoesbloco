@@ -60,7 +60,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
-import { listSolucoes, listSolicitacoes } from "@/lib/supabaseData";
 import {
   createConexao,
   createColuna,
@@ -69,9 +68,6 @@ import {
   deleteConexao,
   deleteNota,
   listColunas,
-  listConexoes,
-  listNotas,
-  listPosicoes,
   TIPOS_DADO,
   updateColuna,
   updateConexaoCurvatura,
@@ -80,14 +76,18 @@ import {
   upsertPosicao,
   type DiagramaConexaoColuna,
 } from "@/lib/diagrama";
+import { MAPA_PROVIDERS, type CamadaMapa } from "@/lib/mapaSource";
 
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Skeleton as SkeletonDg } from "@/components/ui/skeleton";
 import { EmptyState as EmptyStateDg } from "@/components/EmptyState";
-import { Trash2, Plus, Workflow, Workflow as WorkflowIcon, StickyNote, FileDown } from "lucide-react";
+import { Trash2, Plus, Workflow, Workflow as WorkflowIcon, StickyNote, FileDown, Layers } from "lucide-react";
 import { FlowEdge } from "@/components/diagrama/FlowEdge";
 import { StickyNoteNode, type StickyNoteData } from "@/components/diagrama/StickyNoteNode";
+import { MapaNarrativa, type MapaNarrativaPayload } from "@/components/diagrama/MapaNarrativa";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 
 
