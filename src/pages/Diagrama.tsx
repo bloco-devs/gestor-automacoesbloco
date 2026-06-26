@@ -477,9 +477,10 @@ function DiagramaInner() {
             const node = current.find((n) => n.id === ch.id);
             if (node?.type === "nota") {
               scheduleNotaUpdate(node.id, { x: ch.position.x, y: ch.position.y });
-            } else {
+            } else if (node?.type === "solucao") {
               schedulePersistPosition(ch.id, ch.position.x, ch.position.y);
             }
+            // sistema (ecossistema seed): drag livre, sem persistência.
           } else if (
             ch.type === "dimensions" &&
             ch.dimensions &&
