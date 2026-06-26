@@ -488,7 +488,7 @@ function DiagramaInner() {
         }
         setEdges((eds) => eds.map((e) => (e.id === tempId ? { ...e, id: created.id } : e)));
       } catch (err) {
-        console.error("createConexao", err);
+        toastErr("createConexao", err);
         setEdges((eds) => eds.filter((e) => e.id !== tempId));
       }
     },
@@ -528,7 +528,7 @@ function DiagramaInner() {
       setColunas((cs) => [...cs, created]);
       setNovaColuna({ nome: "", tipo: novaColuna.tipo });
     } catch (err) {
-      console.error("createColuna", err);
+      toastErr("createColuna", err);
     }
   }, [detailsDialog, novaColuna, colunas.length, user?.id]);
 
