@@ -77,6 +77,7 @@ import {
   type DiagramaConexaoColuna,
 } from "@/lib/diagrama";
 import { MAPA_PROVIDERS, type CamadaMapa } from "@/lib/mapaSource";
+import { computeEcossistemaLayout } from "@/lib/ecossistemaSeed";
 
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
