@@ -172,8 +172,29 @@ export default function NovaSolicitacao() {
 
           <Card className="surface-1">
             <CardHeader>
-              <CardTitle className="text-base">Critérios de priorização</CardTitle>
-              <CardDescription>Tudo na escala 0-10. O score final será ajustado quando o dev fizer a avaliação técnica.</CardDescription>
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <CardTitle className="text-base">Critérios de priorização</CardTitle>
+                  <CardDescription>Tudo na escala 0-10. O score final será ajustado quando o dev fizer a avaliação técnica.</CardDescription>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSugerirPrioridade}
+                  disabled={sugerindo || !descricao.trim()}
+                  aria-label="Sugerir prioridade com IA"
+                >
+                  {sugerindo ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                  Sugerir com IA
+                </Button>
+              </div>
+              {sugestaoJustificativa && (
+                <div className="mt-2 rounded-md border border-border bg-muted/30 p-2.5 text-xs text-muted-foreground space-y-1">
+                  <DataSourceBadge source="IA" />
+                  <p className="leading-snug">{sugestaoJustificativa}</p>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="space-y-6">
               <ScaleSlider
