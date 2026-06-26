@@ -1,10 +1,7 @@
-import { callAI } from "../_shared/ia-gateway.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { callAI, IAUsageError } from "../_shared/ia-gateway.ts";
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { checkRateLimit } from "../_shared/rate-limit.ts";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -12,7 +9,32 @@ const SYSTEM_BASE = `Você é um assistente que ajuda colaboradores a descrever 
 Faça perguntas curtas, em português, UMA de cada vez. Cubra ao longo da conversa: (1) o que a pessoa faz hoje no processo, (2) com qual frequência/contexto, (3) qual a maior dor/dificuldade, (4) qual o resultado esperado.
 Seja amigável e direto. Não dê sugestões nem soluções — apenas pergunte para entender melhor.`;
 
+function getServiceClient() {
+  const url = Deno.env.get("SUPABASE_URL") ?? "";
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+async function getUserIdFromAuth(req: Request): Promise<string | null> {
+  const auth = req.headers.get("Authorization") ?? "";
+  const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "";
+  if (!token) return null;
+  try {
+    const url = Deno.env.get("SUPABASE_URL") ?? "";
+    const anon = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const client = createClient(url, anon, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data } = await client.auth.getUser();
+    return data.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -28,6 +50,18 @@ Deno.serve(async (req) => {
       });
     }
 
+    const userId = await getUserIdFromAuth(req);
+
+    // Rate limit (best-effort) — 20 req/60s por usuário.
+    const svc = getServiceClient();
+    const rl = await checkRateLimit(svc, userId);
+    if (!rl.permitido) {
+      return new Response(
+        JSON.stringify({ error: "Muitas solicitações à IA. Aguarde alguns instantes." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const userTurns = messages.filter((m) => m.role === "user").length;
 
     if (action === "next_question") {
@@ -37,10 +71,13 @@ Você já fez ${messages.filter((m) => m.role === "assistant").length} pergunta(
 Limite total: 4 perguntas. Se já tiver informação suficiente OU já fez 4 perguntas, retorne apenas a string especial "[FIM]".
 Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeração).`;
 
-      const data = await callAI({
-        model: "google/gemini-3-flash-preview",
-        messages: [{ role: "system", content: system }, ...messages],
-      }) as any;
+      const data = await callAI(
+        {
+          model: "google/gemini-3-flash-preview",
+          messages: [{ role: "system", content: system }, ...messages],
+        },
+        { acao: "assistente-demanda:next_question", userId },
+      ) as any;
       const content: string = data.choices?.[0]?.message?.content?.trim() ?? "";
       const done = content.includes("[FIM]") || userTurns >= 4;
       return new Response(JSON.stringify({ done, question: done ? null : content }), {
@@ -50,10 +87,13 @@ Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeraç�
 
     if (action === "generate_description") {
       const system = `Com base na conversa abaixo entre o assistente e o solicitante, escreva uma DESCRIÇÃO DA DEMANDA em português, em 1 a 2 parágrafos, em primeira pessoa do solicitante, de forma objetiva e completa. Não inclua perguntas, não use bullet points, não inclua título. Retorne apenas o texto da descrição.`;
-      const data = await callAI({
-        model: "google/gemini-3-flash-preview",
-        messages: [{ role: "system", content: system }, ...messages],
-      }) as any;
+      const data = await callAI(
+        {
+          model: "google/gemini-3-flash-preview",
+          messages: [{ role: "system", content: system }, ...messages],
+        },
+        { acao: "assistente-demanda:generate_description", userId },
+      ) as any;
       const description: string = data.choices?.[0]?.message?.content?.trim() ?? "";
       return new Response(JSON.stringify({ description }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -65,10 +105,11 @@ Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeraç�
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    const status = e instanceof IAUsageError ? e.status : 500;
     const message = e instanceof Error ? e.message : "Erro desconhecido";
     console.error("assistente-demanda error:", message);
     return new Response(JSON.stringify({ error: message }), {
-      status: 500,
+      status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
