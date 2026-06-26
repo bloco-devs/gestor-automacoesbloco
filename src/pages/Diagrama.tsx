@@ -390,11 +390,38 @@ function DiagramaInner() {
     setEdges([]);
     (async () => {
       try {
-        const provider = MAPA_PROVIDERS[camada];
-        if (!provider.disponivel) {
-          // Camada futura (ex.: Ecossistema). Mostra estado vazio sem chamar nada.
+        // Camada Ecossistema: render a partir do SEED estático (Onda 7).
+        if (camada === "ecossistema") {
+          const { nodes: nseed, edges: eseed } = computeEcossistemaLayout();
+          if (cancelled) return;
+          setNodes(
+            nseed.map<Node>((n) => ({
+              id: n.id,
+              type: "sistema",
+              position: { x: n.x, y: n.y },
+              deletable: false,
+              draggable: true,
+              data: { nome: n.nome, grupo: n.grupo, externo: n.externo } satisfies SistemaNodeData,
+            })),
+          );
+          setEdges(
+            eseed.map<Edge>((e) => ({
+              id: e.id,
+              source: e.source,
+              target: e.target,
+              label: e.label,
+              type: "flow",
+              animated: true,
+              data: {},
+              markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--primary))", width: 18, height: 18 },
+              style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
+            })),
+          );
           return;
         }
+
+        const provider = MAPA_PROVIDERS[camada];
+        if (!provider.disponivel) return;
         const { solucoes, solicitacoes, posicoes, conexoes, notas } = await provider.load();
         if (cancelled) return;
         const posMap = new Map<string, { x: number; y: number }>(
