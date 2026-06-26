@@ -134,8 +134,15 @@ export default function AppLayout() {
   // trocado viewAs para requester/builder — para não ficar sem acesso a
   // Configurações nem ao seletor de perfil.
   const isDeveloperEffective = user?.role === "developer" || !!user?.isAdministrador;
-  const nav = isDeveloperEffective ? devNav : requesterNav;
-  const roleLabel = user?.role === "developer" ? "Desenvolvedor" : user?.role === "builder" ? "Builder" : "Solicitante";
+  const isBuilderRole = user?.role === "builder";
+  const nav = isDeveloperEffective ? devNav : isBuilderRole ? builderNav : requesterNav;
+  const roleLabel = user?.isAdministrador
+    ? "Administrador"
+    : user?.role === "developer"
+      ? "Desenvolvedor"
+      : user?.role === "builder"
+        ? "Builder"
+        : "Solicitante";
 
 
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
