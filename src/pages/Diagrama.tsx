@@ -950,14 +950,16 @@ function DiagramaInner() {
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onEdgeDoubleClick={onEdgeDoubleClick}
+            onEdgesChange={camada === "ecossistema" ? undefined : onEdgesChange}
+            onConnect={camada === "ecossistema" ? undefined : onConnect}
+            onEdgeDoubleClick={camada === "ecossistema" ? undefined : onEdgeDoubleClick}
+            nodesConnectable={camada !== "ecossistema"}
+            edgesFocusable={camada !== "ecossistema"}
             fitView
             minZoom={0.1}
             maxZoom={4}
             proOptions={{ hideAttribution: true }}
-            deleteKeyCode={["Delete", "Backspace"]}
+            deleteKeyCode={camada === "ecossistema" ? null : ["Delete", "Backspace"]}
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
             <Controls />
