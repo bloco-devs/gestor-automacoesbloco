@@ -40,6 +40,7 @@ import { TasksChecklist } from "@/components/TasksChecklist";
 import { ScorePill } from "@/components/ScorePill";
 import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 import { DataSourceBadge } from "@/components/DataSourceBadge";
+import { DemandasSimilares } from "@/components/DemandasSimilares";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -644,6 +645,14 @@ export default function SolicitacaoDetail() {
         </Dialog>
 
       </div>
+
+      {isDev && (
+        <DemandasSimilares
+          titulo={solicitacao.titulo}
+          descricao={solicitacao.descricao ?? ""}
+          excluirId={solicitacao.id}
+        />
+      )}
 
       {isDev && (
         <Card className="surface-1">

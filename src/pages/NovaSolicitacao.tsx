@@ -18,6 +18,7 @@ import { useSetoresNomes } from "@/hooks/useSetores";
 import { ScorePill } from "@/components/ScorePill";
 import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 import { DataSourceBadge } from "@/components/DataSourceBadge";
+import { DemandasSimilares } from "@/components/DemandasSimilares";
 import { FieldHelp } from "@/components/FieldHelp";
 
 const schema = z.object({
@@ -238,6 +239,9 @@ export default function NovaSolicitacao() {
               />
             </CardContent>
           </Card>
+
+          <DemandasSimilares titulo={titulo} descricao={descricao} />
+
 
           {!isDeveloper && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-border bg-card/40 p-4">
