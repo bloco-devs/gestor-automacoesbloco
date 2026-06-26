@@ -291,7 +291,7 @@ function DiagramaInner() {
         if (existing) clearTimeout(existing);
         const handle = setTimeout(() => {
           updateConexaoCurvatura(edgeId, dx, dy).catch((err) =>
-            console.error("updateConexaoCurvatura", err),
+            toastErr("updateConexaoCurvatura", err),
           );
           timers.delete(edgeId);
         }, 200);
