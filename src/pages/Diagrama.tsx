@@ -153,7 +153,40 @@ function SolucaoNode({ data }: NodeProps) {
   );
 }
 
-const nodeTypes = { solucao: SolucaoNode, nota: StickyNoteNode };
+type SistemaNodeData = {
+  nome: string;
+  grupo: string;
+  externo: boolean;
+};
+
+function SistemaNode({ data }: NodeProps) {
+  const d = data as unknown as SistemaNodeData;
+  return (
+    <Card
+      className={`w-[220px] overflow-hidden border-2 shadow-md ${
+        d.externo
+          ? "border-dashed border-muted-foreground/60 bg-muted/40"
+          : "border-border bg-card"
+      }`}
+    >
+      <Handle type="target" position={Position.Left} className="!bg-primary !w-2.5 !h-2.5" />
+      <div className="flex">
+        <div className={`w-1.5 shrink-0 ${d.externo ? "bg-muted-foreground/60" : "bg-primary"}`} />
+        <div className="flex-1 px-3 py-2.5">
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">
+            {d.externo ? "Conector externo" : d.grupo}
+          </div>
+          <div className="text-sm font-semibold leading-tight mt-0.5" title={d.nome}>
+            {d.nome}
+          </div>
+        </div>
+      </div>
+      <Handle type="source" position={Position.Right} className="!bg-primary !w-2.5 !h-2.5" />
+    </Card>
+  );
+}
+
+const nodeTypes = { solucao: SolucaoNode, nota: StickyNoteNode, sistema: SistemaNode };
 const edgeTypes = { flow: FlowEdge };
 
 function buildEdge(
