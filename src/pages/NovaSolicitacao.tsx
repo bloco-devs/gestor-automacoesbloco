@@ -240,6 +240,9 @@ export default function NovaSolicitacao() {
             </CardContent>
           </Card>
 
+          <DemandasSimilares titulo={titulo} descricao={descricao} />
+
+
           {!isDeveloper && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-border bg-card/40 p-4">
               <div>
