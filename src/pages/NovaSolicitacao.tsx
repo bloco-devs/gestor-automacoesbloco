@@ -18,6 +18,7 @@ import { useSetoresNomes } from "@/hooks/useSetores";
 import { ScorePill } from "@/components/ScorePill";
 import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 import { DataSourceBadge } from "@/components/DataSourceBadge";
+import { DemandasSimilares } from "@/components/DemandasSimilares";
 import { FieldHelp } from "@/components/FieldHelp";
 
 const schema = z.object({
