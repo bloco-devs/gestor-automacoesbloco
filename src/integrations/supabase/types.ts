@@ -418,6 +418,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ia_uso_log: {
+        Row: {
+          acao: string | null
+          created_at: string
+          id: string
+          modelo: string | null
+          status: string | null
+          tokens_in: number | null
+          tokens_out: number | null
+          user_id: string | null
+        }
+        Insert: {
+          acao?: string | null
+          created_at?: string
+          id?: string
+          modelo?: string | null
+          status?: string | null
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string | null
+          created_at?: string
+          id?: string
+          modelo?: string | null
+          status?: string | null
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           created_at: string
