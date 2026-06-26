@@ -10,6 +10,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { AlertTriangle, Calendar, User } from "lucide-react";
+import { toast } from "sonner";
 import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import { listSolicitacoes, updateSolicitacao } from "@/lib/supabaseData";
 import {
