@@ -342,17 +342,21 @@ function DiagramaInner() {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setNodes([]);
+    setEdges([]);
     (async () => {
       try {
-        const [solucoes, solicitacoes, posicoes, conexoes, notas] = await Promise.all([
-          listSolucoes(),
-          listSolicitacoes(),
-          listPosicoes(),
-          listConexoes(),
-          listNotas(),
-        ]);
+        const provider = MAPA_PROVIDERS[camada];
+        if (!provider.disponivel) {
+          // Camada futura (ex.: Ecossistema). Mostra estado vazio sem chamar nada.
+          return;
+        }
+        const { solucoes, solicitacoes, posicoes, conexoes, notas } = await provider.load();
         if (cancelled) return;
-        const posMap = new Map(posicoes.map((p) => [p.solucaoId, { x: p.x, y: p.y }]));
+        const posMap = new Map<string, { x: number; y: number }>(
+          posicoes.map((p) => [p.solucaoId, { x: p.x, y: p.y }]),
+        );
         const solucaoNodes = buildNodes(solucoes, solicitacoes, posMap);
         const notaNodes = notas.map(buildNotaNode);
         setNodes([...solucaoNodes, ...notaNodes]);
@@ -362,6 +366,15 @@ function DiagramaInner() {
             .filter((c) => validIds.has(c.sourceId) && validIds.has(c.targetId))
             .map<Edge>((c) => buildEdge(c.id, c.sourceId, c.targetId, c.label ?? undefined, openDetails, c.curvX, c.curvY, handleCurvatureDrag)),
         );
+      } catch (err) {
+        console.error("mapa load", err);
+        if (!cancelled) {
+          toast({
+            title: "Falha ao carregar o diagrama",
+            description: "Tente recarregar a página.",
+            variant: "destructive",
+          });
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -369,7 +382,7 @@ function DiagramaInner() {
     return () => {
       cancelled = true;
     };
-  }, [buildNodes, openDetails, handleCurvatureDrag, buildNotaNode]);
+  }, [camada, buildNodes, openDetails, handleCurvatureDrag, buildNotaNode]);
 
   const schedulePersistPosition = useCallback(
     (id: string, x: number, y: number) => {
