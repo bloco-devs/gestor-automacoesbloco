@@ -855,11 +855,19 @@ function DiagramaInner() {
           </div>
         ) : nodes.length === 0 ? (
           <div className="flex items-center justify-center h-full p-6">
-            <EmptyStateDg
-              icon={WorkflowIcon}
-              title="Nenhuma solução cadastrada ainda"
-              description="Cadastre uma solução para que ela apareça no diagrama de integrações."
-            />
+            {!camadaDisponivel ? (
+              <EmptyStateDg
+                icon={Layers}
+                title="Camada Ecossistema — em breve"
+                description={camadaAtiva.indisponivelMotivo ?? "Esta camada virá do HUB em uma próxima entrega."}
+              />
+            ) : (
+              <EmptyStateDg
+                icon={WorkflowIcon}
+                title="Nenhuma solução cadastrada ainda"
+                description="Cadastre uma solução para que ela apareça no diagrama de integrações."
+              />
+            )}
           </div>
         ) : (
           <ReactFlow
