@@ -179,6 +179,15 @@ function buildEdge(
 }
 
 
+function toastErr(ctx: string, err: unknown) {
+  console.error(ctx, err);
+  toast({
+    title: "Não foi possível salvar a alteração",
+    description: `Falha em "${ctx}". Tente novamente.`,
+    variant: "destructive",
+  });
+}
+
 
 
 function DiagramaInner() {
