@@ -883,33 +883,34 @@ function DiagramaInner() {
             >
               <Layers className="size-3.5" /> Soluções
             </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button
-                    role="tab"
-                    aria-selected={camada === "ecossistema"}
-                    size="sm"
-                    variant={camada === "ecossistema" ? "default" : "ghost"}
-                    className="h-7 px-2 text-xs gap-1"
-                    onClick={() => setCamada("ecossistema")}
-                  >
-                    <Layers className="size-3.5" /> Ecossistema
-                    <Badge variant="outline" className="ml-1 h-4 px-1 text-[9px] uppercase">
-                      Em breve
-                    </Badge>
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {MAPA_PROVIDERS.ecossistema.indisponivelMotivo ?? "Em breve"}
-              </TooltipContent>
-            </Tooltip>
+            <Button
+              role="tab"
+              aria-selected={camada === "ecossistema"}
+              size="sm"
+              variant={camada === "ecossistema" ? "default" : "ghost"}
+              className="h-7 px-2 text-xs gap-1"
+              onClick={() => setCamada("ecossistema")}
+            >
+              <Layers className="size-3.5" /> Ecossistema
+            </Button>
           </div>
+          {camada === "ecossistema" && camadaAtiva.aviso && (
+            <div className="mt-2 flex items-center gap-2 rounded-md border border-dashed border-border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground">
+              <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">
+                Semente
+              </Badge>
+              <span>{camadaAtiva.aviso}</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0 mt-2">
           <MapaNarrativa buildPayload={buildNarrativaPayload} disabled={!camadaDisponivel || nodes.length === 0} />
-          <Button variant="outline" size="sm" onClick={handleAddNota} disabled={!camadaDisponivel}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAddNota}
+            disabled={!camadaDisponivel || camada === "ecossistema"}
+          >
             <StickyNote className="size-4 mr-1" /> Nota
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={exporting || nodes.length === 0}>
@@ -917,6 +918,7 @@ function DiagramaInner() {
           </Button>
         </div>
       </div>
+
 
       <div ref={flowWrapperRef} className="w-full h-[calc(100%-4rem)]">
         {loading ? (
