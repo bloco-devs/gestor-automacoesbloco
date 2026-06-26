@@ -83,6 +83,36 @@ const requesterNav: NavItem[] = [
   { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
 ];
 
+// Builder: pode cadastrar soluções nas próprias solicitações; precisa ver
+// Soluções e Diagrama além do menu base do solicitante.
+const builderNav: NavItem[] = [
+  { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
+  { to: "/minhas-solicitacoes", label: "Minhas Solicitações", icon: ListTodo },
+  { to: "/nova-solicitacao", label: "Nova Solicitação", icon: Plus },
+  {
+    label: "Solicitações",
+    icon: ListChecks,
+    matchPrefix: "/solicitacoes",
+    children: [
+      { to: "/solicitacoes", label: "Lista", icon: List },
+      { to: "/solicitacoes/kanban", label: "Kanban", icon: KanbanSquare },
+      { to: "/solicitacoes/gantt", label: "Gantt", icon: GanttChartSquare },
+    ],
+  },
+  {
+    label: "Soluções",
+    icon: Sparkles,
+    matchPrefix: "/solucoes",
+    children: [
+      { to: "/solucoes", label: "Lista", icon: List },
+      { to: "/solucoes/kanban", label: "Kanban", icon: KanbanSquare },
+      { to: "/solucoes/gantt", label: "Gantt", icon: GanttChartSquare },
+    ],
+  },
+  { to: "/diagrama", label: "Diagrama", icon: Network },
+  { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
+];
+
 const SIDEBAR_MIN = 160;
 const SIDEBAR_MAX = 480;
 const SIDEBAR_DEFAULT = 256;
