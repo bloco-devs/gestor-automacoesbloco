@@ -24,6 +24,7 @@ import {
   type CardComentario,
 } from "@/lib/atividades";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
