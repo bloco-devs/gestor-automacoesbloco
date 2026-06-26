@@ -63,6 +63,7 @@ const devNav: NavItem[] = [
   },
   { to: "/diagrama", label: "Diagrama", icon: Network },
   { to: "/atividades", label: "Atividades", icon: KanbanSquare },
+  { to: "/observabilidade-ia", label: "Observabilidade IA", icon: Activity },
   { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
