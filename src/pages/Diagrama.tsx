@@ -758,7 +758,34 @@ function DiagramaInner() {
   }, [nodes, resolvedTheme]);
 
 
-  return (
+  const buildNarrativaPayload = useCallback((): MapaNarrativaPayload => {
+    const tituloPorId = new Map<string, string>();
+    for (const n of nodes) {
+      if (n.type === "solucao") {
+        const d = n.data as unknown as SolucaoNodeData;
+        tituloPorId.set(n.id, d.titulo);
+      }
+    }
+    const solucoes: MapaNarrativaPayload["solucoes"] = nodes
+      .filter((n) => n.type === "solucao")
+      .map((n) => {
+        const d = n.data as unknown as SolucaoNodeData;
+        return { titulo: d.titulo, solicitacaoTitulo: d.solicitacaoTitulo ?? null };
+      });
+    const conexoes: MapaNarrativaPayload["conexoes"] = edges
+      .filter((e) => !e.id.startsWith("tmp-"))
+      .map((e) => ({
+        origem: tituloPorId.get(e.source) ?? e.source,
+        destino: tituloPorId.get(e.target) ?? e.target,
+        label: typeof e.label === "string" ? e.label : null,
+      }));
+    return { solucoes, conexoes };
+  }, [nodes, edges]);
+
+  const camadaAtiva = MAPA_PROVIDERS[camada];
+  const camadaDisponivel = camadaAtiva.disponivel;
+
+
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
       <div className="px-4 md:px-8 py-3 border-b border-border bg-background flex items-start justify-between gap-4 flex-wrap">
         <div className="flex-1 min-w-[260px]">
