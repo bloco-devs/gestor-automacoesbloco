@@ -77,6 +77,7 @@ import {
   type DiagramaConexaoColuna,
 } from "@/lib/diagrama";
 import { MAPA_PROVIDERS, type CamadaMapa } from "@/lib/mapaSource";
+import { computeEcossistemaLayout } from "@/lib/ecossistemaSeed";
 
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
@@ -86,7 +87,7 @@ import { Trash2, Plus, Workflow, Workflow as WorkflowIcon, StickyNote, FileDown,
 import { FlowEdge } from "@/components/diagrama/FlowEdge";
 import { StickyNoteNode, type StickyNoteData } from "@/components/diagrama/StickyNoteNode";
 import { MapaNarrativa, type MapaNarrativaPayload } from "@/components/diagrama/MapaNarrativa";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 
@@ -152,7 +153,40 @@ function SolucaoNode({ data }: NodeProps) {
   );
 }
 
-const nodeTypes = { solucao: SolucaoNode, nota: StickyNoteNode };
+type SistemaNodeData = {
+  nome: string;
+  grupo: string;
+  externo: boolean;
+};
+
+function SistemaNode({ data }: NodeProps) {
+  const d = data as unknown as SistemaNodeData;
+  return (
+    <Card
+      className={`w-[220px] overflow-hidden border-2 shadow-md ${
+        d.externo
+          ? "border-dashed border-muted-foreground/60 bg-muted/40"
+          : "border-border bg-card"
+      }`}
+    >
+      <Handle type="target" position={Position.Left} className="!bg-primary !w-2.5 !h-2.5" />
+      <div className="flex">
+        <div className={`w-1.5 shrink-0 ${d.externo ? "bg-muted-foreground/60" : "bg-primary"}`} />
+        <div className="flex-1 px-3 py-2.5">
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">
+            {d.externo ? "Conector externo" : d.grupo}
+          </div>
+          <div className="text-sm font-semibold leading-tight mt-0.5" title={d.nome}>
+            {d.nome}
+          </div>
+        </div>
+      </div>
+      <Handle type="source" position={Position.Right} className="!bg-primary !w-2.5 !h-2.5" />
+    </Card>
+  );
+}
+
+const nodeTypes = { solucao: SolucaoNode, nota: StickyNoteNode, sistema: SistemaNode };
 const edgeTypes = { flow: FlowEdge };
 
 function buildEdge(
@@ -356,11 +390,38 @@ function DiagramaInner() {
     setEdges([]);
     (async () => {
       try {
-        const provider = MAPA_PROVIDERS[camada];
-        if (!provider.disponivel) {
-          // Camada futura (ex.: Ecossistema). Mostra estado vazio sem chamar nada.
+        // Camada Ecossistema: render a partir do SEED estático (Onda 7).
+        if (camada === "ecossistema") {
+          const { nodes: nseed, edges: eseed } = computeEcossistemaLayout();
+          if (cancelled) return;
+          setNodes(
+            nseed.map<Node>((n) => ({
+              id: n.id,
+              type: "sistema",
+              position: { x: n.x, y: n.y },
+              deletable: false,
+              draggable: true,
+              data: { nome: n.nome, grupo: n.grupo, externo: n.externo } satisfies SistemaNodeData,
+            })),
+          );
+          setEdges(
+            eseed.map<Edge>((e) => ({
+              id: e.id,
+              source: e.source,
+              target: e.target,
+              label: e.label,
+              type: "flow",
+              animated: true,
+              data: {},
+              markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--primary))", width: 18, height: 18 },
+              style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
+            })),
+          );
           return;
         }
+
+        const provider = MAPA_PROVIDERS[camada];
+        if (!provider.disponivel) return;
         const { solucoes, solicitacoes, posicoes, conexoes, notas } = await provider.load();
         if (cancelled) return;
         const posMap = new Map<string, { x: number; y: number }>(
@@ -416,9 +477,10 @@ function DiagramaInner() {
             const node = current.find((n) => n.id === ch.id);
             if (node?.type === "nota") {
               scheduleNotaUpdate(node.id, { x: ch.position.x, y: ch.position.y });
-            } else {
+            } else if (node?.type === "solucao") {
               schedulePersistPosition(ch.id, ch.position.x, ch.position.y);
             }
+            // sistema (ecossistema seed): drag livre, sem persistência.
           } else if (
             ch.type === "dimensions" &&
             ch.dimensions &&
@@ -764,11 +826,21 @@ function DiagramaInner() {
       if (n.type === "solucao") {
         const d = n.data as unknown as SolucaoNodeData;
         tituloPorId.set(n.id, d.titulo);
+      } else if (n.type === "sistema") {
+        const d = n.data as unknown as SistemaNodeData;
+        tituloPorId.set(n.id, d.nome);
       }
     }
     const solucoes: MapaNarrativaPayload["solucoes"] = nodes
-      .filter((n) => n.type === "solucao")
+      .filter((n) => n.type === "solucao" || n.type === "sistema")
       .map((n) => {
+        if (n.type === "sistema") {
+          const d = n.data as unknown as SistemaNodeData;
+          return {
+            titulo: d.nome,
+            solicitacaoTitulo: d.externo ? "Conector externo" : d.grupo,
+          };
+        }
         const d = n.data as unknown as SolucaoNodeData;
         return { titulo: d.titulo, solicitacaoTitulo: d.solicitacaoTitulo ?? null };
       });
@@ -811,33 +883,34 @@ function DiagramaInner() {
             >
               <Layers className="size-3.5" /> Soluções
             </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button
-                    role="tab"
-                    aria-selected={camada === "ecossistema"}
-                    size="sm"
-                    variant={camada === "ecossistema" ? "default" : "ghost"}
-                    className="h-7 px-2 text-xs gap-1"
-                    onClick={() => setCamada("ecossistema")}
-                  >
-                    <Layers className="size-3.5" /> Ecossistema
-                    <Badge variant="outline" className="ml-1 h-4 px-1 text-[9px] uppercase">
-                      Em breve
-                    </Badge>
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {MAPA_PROVIDERS.ecossistema.indisponivelMotivo ?? "Em breve"}
-              </TooltipContent>
-            </Tooltip>
+            <Button
+              role="tab"
+              aria-selected={camada === "ecossistema"}
+              size="sm"
+              variant={camada === "ecossistema" ? "default" : "ghost"}
+              className="h-7 px-2 text-xs gap-1"
+              onClick={() => setCamada("ecossistema")}
+            >
+              <Layers className="size-3.5" /> Ecossistema
+            </Button>
           </div>
+          {camada === "ecossistema" && camadaAtiva.aviso && (
+            <div className="mt-2 flex items-center gap-2 rounded-md border border-dashed border-border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground">
+              <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">
+                Semente
+              </Badge>
+              <span>{camadaAtiva.aviso}</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0 mt-2">
           <MapaNarrativa buildPayload={buildNarrativaPayload} disabled={!camadaDisponivel || nodes.length === 0} />
-          <Button variant="outline" size="sm" onClick={handleAddNota} disabled={!camadaDisponivel}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAddNota}
+            disabled={!camadaDisponivel || camada === "ecossistema"}
+          >
             <StickyNote className="size-4 mr-1" /> Nota
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={exporting || nodes.length === 0}>
@@ -845,6 +918,7 @@ function DiagramaInner() {
           </Button>
         </div>
       </div>
+
 
       <div ref={flowWrapperRef} className="w-full h-[calc(100%-4rem)]">
         {loading ? (
@@ -876,14 +950,16 @@ function DiagramaInner() {
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onEdgeDoubleClick={onEdgeDoubleClick}
+            onEdgesChange={camada === "ecossistema" ? undefined : onEdgesChange}
+            onConnect={camada === "ecossistema" ? undefined : onConnect}
+            onEdgeDoubleClick={camada === "ecossistema" ? undefined : onEdgeDoubleClick}
+            nodesConnectable={camada !== "ecossistema"}
+            edgesFocusable={camada !== "ecossistema"}
             fitView
             minZoom={0.1}
             maxZoom={4}
             proOptions={{ hideAttribution: true }}
-            deleteKeyCode={["Delete", "Backspace"]}
+            deleteKeyCode={camada === "ecossistema" ? null : ["Delete", "Backspace"]}
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
             <Controls />

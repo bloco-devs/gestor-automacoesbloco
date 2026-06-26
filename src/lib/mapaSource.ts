@@ -23,6 +23,7 @@ import { listSolicitacoes, listSolucoes } from "@/lib/supabaseData";
 import type { Solicitacao, Solucao } from "@/lib/types";
 
 export type CamadaMapa = "solucoes" | "ecossistema";
+export type FonteMapa = "local" | "semente" | "hub";
 
 export interface MapaSnapshot {
   solucoes: Solucao[];
@@ -36,6 +37,10 @@ export interface MapaProvider {
   id: CamadaMapa;
   label: string;
   disponivel: boolean;
+  /** Origem dos dados desta camada. */
+  fonte: FonteMapa;
+  /** Aviso opcional a exibir na UI (ex.: "dados de exemplo"). */
+  aviso?: string;
   /** Mensagem para exibir quando `disponivel === false`. */
   indisponivelMotivo?: string;
   load(): Promise<MapaSnapshot>;
@@ -57,6 +62,7 @@ export const localSolucoesProvider: MapaProvider = {
   id: "solucoes",
   label: "Soluções",
   disponivel: true,
+  fonte: "local",
   async load() {
     const [solucoes, solicitacoes, posicoes, conexoes, notas] = await Promise.all([
       listSolucoes(),
@@ -70,14 +76,17 @@ export const localSolucoesProvider: MapaProvider = {
 };
 
 /**
- * Camada "Ecossistema" (futura — Onda 5): virá do HUB.
- * Stub: indisponível e retorna snapshot vazio. NÃO chama o HUB nesta onda.
+ * Camada "Ecossistema" — Onda 7: renderizada a partir de DADOS-SEMENTE
+ * estáticos (`src/lib/ecossistemaSeed.ts`). A fonte real virá do HUB nas
+ * ondas 5/6. Esta `load()` retorna snapshot vazio porque o Diagrama
+ * monta os nós/arestas a partir do seed (ver `computeEcossistemaLayout`).
  */
 export const hubEcossistemaProvider: MapaProvider = {
   id: "ecossistema",
   label: "Ecossistema",
-  disponivel: false,
-  indisponivelMotivo: "Em breve — virá do HUB",
+  disponivel: true,
+  fonte: "semente",
+  aviso: "Dados de exemplo (semente) — a fonte real virá do HUB",
   async load() {
     return EMPTY_SNAPSHOT;
   },
