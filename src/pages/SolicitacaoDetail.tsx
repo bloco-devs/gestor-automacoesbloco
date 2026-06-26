@@ -284,6 +284,48 @@ export default function SolicitacaoDetail() {
     navigate("/solicitacoes", { replace: true });
   }
 
+  async function handleSugerirComplexidade() {
+    if (sugerindoComplexidade || !solicitacao) return;
+    const desc = solicitacao.descricao?.trim() ?? "";
+    if (desc.length < 10) {
+      toast({
+        title: "Descrição insuficiente",
+        description: "A solicitação precisa ter descrição para a IA estimar a complexidade.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSugerindoComplexidade(true);
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data, error } = await supabase.functions.invoke("triagem-demanda", {
+        body: { titulo: solicitacao.titulo, descricao: desc, setor: solicitacao.setor ?? "" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const c = typeof data?.complexidade_dev === "number" ? data.complexidade_dev : null;
+      if (c !== null) {
+        setHasOverride(true);
+        setOverrideComplexidade(c);
+      }
+      if (data?.justificativa) {
+        setSugestaoComplexJustificativa(data.justificativa);
+        setNotasTecnicasComplexidade((prev) =>
+          prev?.trim() ? prev : `Sugestão IA: ${data.justificativa}`,
+        );
+      }
+      toast({ title: "Complexidade sugerida", description: "Revise e ajuste antes de salvar." });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Tente novamente.";
+      const friendly = /429|muitas solicita/i.test(msg)
+        ? "Muitas solicitações à IA. Aguarde alguns instantes."
+        : msg;
+      toast({ title: "Não foi possível sugerir", description: friendly, variant: "destructive" });
+    } finally {
+      setSugerindoComplexidade(false);
+    }
+  }
+
   async function handleSaveComplexidadeDev() {
     const final = effectiveComplexidade;
     if (
