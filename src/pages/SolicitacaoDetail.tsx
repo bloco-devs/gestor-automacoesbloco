@@ -673,15 +673,36 @@ export default function SolicitacaoDetail() {
       {isDev && (
         <Card className="surface-1">
           <CardHeader>
-            <CardTitle className="text-base">Avaliação Técnica do Dev</CardTitle>
-            <CardDescription>
-              Define o fator de penalização aplicado ao score do solicitante para gerar o score final.
-              {solicitacao.complexidadeDev === null && (
-                <span className="ml-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border border-dashed border-border bg-muted/40 text-muted-foreground">
-                  ⚙ Aguardando avaliação técnica
-                </span>
-              )}
-            </CardDescription>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <CardTitle className="text-base">Avaliação Técnica do Dev</CardTitle>
+                <CardDescription>
+                  Define o fator de penalização aplicado ao score do solicitante para gerar o score final.
+                  {solicitacao.complexidadeDev === null && (
+                    <span className="ml-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border border-dashed border-border bg-muted/40 text-muted-foreground">
+                      ⚙ Aguardando avaliação técnica
+                    </span>
+                  )}
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSugerirComplexidade}
+                disabled={sugerindoComplexidade}
+                aria-label="Sugerir complexidade com IA"
+              >
+                {sugerindoComplexidade ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                Sugerir com IA
+              </Button>
+            </div>
+            {sugestaoComplexJustificativa && (
+              <div className="mt-2 rounded-md border border-border bg-muted/30 p-2.5 text-xs text-muted-foreground space-y-1">
+                <DataSourceBadge source="IA" />
+                <p className="leading-snug">{sugestaoComplexJustificativa}</p>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <ChecklistAvaliacao
