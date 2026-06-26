@@ -87,7 +87,7 @@ import { Trash2, Plus, Workflow, Workflow as WorkflowIcon, StickyNote, FileDown,
 import { FlowEdge } from "@/components/diagrama/FlowEdge";
 import { StickyNoteNode, type StickyNoteData } from "@/components/diagrama/StickyNoteNode";
 import { MapaNarrativa, type MapaNarrativaPayload } from "@/components/diagrama/MapaNarrativa";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 
