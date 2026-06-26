@@ -155,6 +155,8 @@ export default function SolicitacaoDetail() {
   const [hasOverride, setHasOverride] = useState<boolean>(false);
   const [overrideComplexidade, setOverrideComplexidade] = useState<number>(0);
   const [overrideMotivo, setOverrideMotivo] = useState<string>("");
+  const [sugerindoComplexidade, setSugerindoComplexidade] = useState(false);
+  const [sugestaoComplexJustificativa, setSugestaoComplexJustificativa] = useState<string | null>(null);
 
   const calculatedComplexidade = useMemo(
     () => computeComplexidadeFromChecklist(marcados),
