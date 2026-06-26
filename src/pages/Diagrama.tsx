@@ -826,11 +826,21 @@ function DiagramaInner() {
       if (n.type === "solucao") {
         const d = n.data as unknown as SolucaoNodeData;
         tituloPorId.set(n.id, d.titulo);
+      } else if (n.type === "sistema") {
+        const d = n.data as unknown as SistemaNodeData;
+        tituloPorId.set(n.id, d.nome);
       }
     }
     const solucoes: MapaNarrativaPayload["solucoes"] = nodes
-      .filter((n) => n.type === "solucao")
+      .filter((n) => n.type === "solucao" || n.type === "sistema")
       .map((n) => {
+        if (n.type === "sistema") {
+          const d = n.data as unknown as SistemaNodeData;
+          return {
+            titulo: d.nome,
+            solicitacaoTitulo: d.externo ? "Conector externo" : d.grupo,
+          };
+        }
         const d = n.data as unknown as SolucaoNodeData;
         return { titulo: d.titulo, solicitacaoTitulo: d.solicitacaoTitulo ?? null };
       });
