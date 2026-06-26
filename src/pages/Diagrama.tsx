@@ -60,7 +60,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
-import { listSolucoes, listSolicitacoes } from "@/lib/supabaseData";
 import {
   createConexao,
   createColuna,
@@ -69,9 +68,6 @@ import {
   deleteConexao,
   deleteNota,
   listColunas,
-  listConexoes,
-  listNotas,
-  listPosicoes,
   TIPOS_DADO,
   updateColuna,
   updateConexaoCurvatura,
@@ -80,14 +76,18 @@ import {
   upsertPosicao,
   type DiagramaConexaoColuna,
 } from "@/lib/diagrama";
+import { MAPA_PROVIDERS, type CamadaMapa } from "@/lib/mapaSource";
 
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Skeleton as SkeletonDg } from "@/components/ui/skeleton";
 import { EmptyState as EmptyStateDg } from "@/components/EmptyState";
-import { Trash2, Plus, Workflow, Workflow as WorkflowIcon, StickyNote, FileDown } from "lucide-react";
+import { Trash2, Plus, Workflow, Workflow as WorkflowIcon, StickyNote, FileDown, Layers } from "lucide-react";
 import { FlowEdge } from "@/components/diagrama/FlowEdge";
 import { StickyNoteNode, type StickyNoteData } from "@/components/diagrama/StickyNoteNode";
+import { MapaNarrativa, type MapaNarrativaPayload } from "@/components/diagrama/MapaNarrativa";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 
 
@@ -179,6 +179,15 @@ function buildEdge(
 }
 
 
+function toastErr(ctx: string, err: unknown) {
+  console.error(ctx, err);
+  toast({
+    title: "Não foi possível salvar a alteração",
+    description: `Falha em "${ctx}". Tente novamente.`,
+    variant: "destructive",
+  });
+}
+
 
 
 function DiagramaInner() {
@@ -189,6 +198,7 @@ function DiagramaInner() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [camada, setCamada] = useState<CamadaMapa>("solucoes");
   const [exporting, setExporting] = useState(false);
   const [labelDialog, setLabelDialog] = useState<{ edgeId: string; value: string } | null>(null);
   const [detailsDialog, setDetailsDialog] = useState<{ edgeId: string; label: string } | null>(null);
@@ -207,7 +217,7 @@ function DiagramaInner() {
       const existing = timers.get(id);
       if (existing) clearTimeout(existing);
       const handle = setTimeout(() => {
-        updateNota(id, patch).catch((err) => console.error("updateNota", err));
+        updateNota(id, patch).catch((err) => toastErr("updateNota", err));
         timers.delete(id);
       }, 400);
       timers.set(id, handle);
@@ -234,13 +244,13 @@ function DiagramaInner() {
   const handleNotaColorChange = useCallback(
     (id: string, cor: string) => {
       setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, cor } } : n)));
-      updateNota(id, { cor }).catch((err) => console.error("updateNota", err));
+      updateNota(id, { cor }).catch((err) => toastErr("updateNota", err));
     },
     [],
   );
   const handleNotaDelete = useCallback((id: string) => {
     setNodes((nds) => nds.filter((n) => n.id !== id));
-    deleteNota(id).catch((err) => console.error("deleteNota", err));
+    deleteNota(id).catch((err) => toastErr("deleteNota", err));
   }, []);
 
   const buildNotaNode = useCallback(
@@ -281,7 +291,7 @@ function DiagramaInner() {
         if (existing) clearTimeout(existing);
         const handle = setTimeout(() => {
           updateConexaoCurvatura(edgeId, dx, dy).catch((err) =>
-            console.error("updateConexaoCurvatura", err),
+            toastErr("updateConexaoCurvatura", err),
           );
           timers.delete(edgeId);
         }, 200);
@@ -303,7 +313,7 @@ function DiagramaInner() {
       setNovaColuna({ nome: "", tipo: "VARCHAR" });
       listColunas(edgeId)
         .then((cols) => setColunas(cols))
-        .catch((err) => console.error("listColunas", err))
+        .catch((err) => toastErr("listColunas", err))
         .finally(() => setColunasLoading(false));
       return eds;
     });
@@ -341,17 +351,21 @@ function DiagramaInner() {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setNodes([]);
+    setEdges([]);
     (async () => {
       try {
-        const [solucoes, solicitacoes, posicoes, conexoes, notas] = await Promise.all([
-          listSolucoes(),
-          listSolicitacoes(),
-          listPosicoes(),
-          listConexoes(),
-          listNotas(),
-        ]);
+        const provider = MAPA_PROVIDERS[camada];
+        if (!provider.disponivel) {
+          // Camada futura (ex.: Ecossistema). Mostra estado vazio sem chamar nada.
+          return;
+        }
+        const { solucoes, solicitacoes, posicoes, conexoes, notas } = await provider.load();
         if (cancelled) return;
-        const posMap = new Map(posicoes.map((p) => [p.solucaoId, { x: p.x, y: p.y }]));
+        const posMap = new Map<string, { x: number; y: number }>(
+          posicoes.map((p) => [p.solucaoId, { x: p.x, y: p.y }]),
+        );
         const solucaoNodes = buildNodes(solucoes, solicitacoes, posMap);
         const notaNodes = notas.map(buildNotaNode);
         setNodes([...solucaoNodes, ...notaNodes]);
@@ -361,6 +375,15 @@ function DiagramaInner() {
             .filter((c) => validIds.has(c.sourceId) && validIds.has(c.targetId))
             .map<Edge>((c) => buildEdge(c.id, c.sourceId, c.targetId, c.label ?? undefined, openDetails, c.curvX, c.curvY, handleCurvatureDrag)),
         );
+      } catch (err) {
+        console.error("mapa load", err);
+        if (!cancelled) {
+          toast({
+            title: "Falha ao carregar o diagrama",
+            description: "Tente recarregar a página.",
+            variant: "destructive",
+          });
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -368,7 +391,7 @@ function DiagramaInner() {
     return () => {
       cancelled = true;
     };
-  }, [buildNodes, openDetails, handleCurvatureDrag, buildNotaNode]);
+  }, [camada, buildNodes, openDetails, handleCurvatureDrag, buildNotaNode]);
 
   const schedulePersistPosition = useCallback(
     (id: string, x: number, y: number) => {
@@ -376,7 +399,7 @@ function DiagramaInner() {
       const existing = timers.get(id);
       if (existing) clearTimeout(existing);
       const handle = setTimeout(() => {
-        upsertPosicao(id, x, y, user?.id).catch((err) => console.error("upsertPosicao", err));
+        upsertPosicao(id, x, y, user?.id).catch((err) => toastErr("upsertPosicao", err));
         timers.delete(id);
       }, 500);
       timers.set(id, handle);
@@ -411,7 +434,7 @@ function DiagramaInner() {
           } else if (ch.type === "remove") {
             const node = current.find((n) => n.id === ch.id);
             if (node?.type === "nota") {
-              deleteNota(node.id).catch((err) => console.error("deleteNota", err));
+              deleteNota(node.id).catch((err) => toastErr("deleteNota", err));
             }
           }
         }
@@ -434,7 +457,7 @@ function DiagramaInner() {
             continue;
           }
           filtered.push(ch);
-          deleteConexao(ch.id).catch((err) => console.error("deleteConexao", err));
+          deleteConexao(ch.id).catch((err) => toastErr("deleteConexao", err));
         } else {
           filtered.push(ch);
         }
@@ -447,7 +470,7 @@ function DiagramaInner() {
     if (!deleteEdgeDialog) return;
     const { edgeId } = deleteEdgeDialog;
     setEdges((eds) => applyEdgeChanges([{ type: "remove", id: edgeId }], eds));
-    deleteConexao(edgeId).catch((err) => console.error("deleteConexao", err));
+    deleteConexao(edgeId).catch((err) => toastErr("deleteConexao", err));
     setDeleteEdgeDialog(null);
   }, [deleteEdgeDialog]);
 
@@ -465,7 +488,7 @@ function DiagramaInner() {
         }
         setEdges((eds) => eds.map((e) => (e.id === tempId ? { ...e, id: created.id } : e)));
       } catch (err) {
-        console.error("createConexao", err);
+        toastErr("createConexao", err);
         setEdges((eds) => eds.filter((e) => e.id !== tempId));
       }
     },
@@ -486,7 +509,7 @@ function DiagramaInner() {
     setEdges((eds) =>
       eds.map((e) => (e.id === edgeId ? { ...e, label: trimmed || undefined } : e)),
     );
-    updateConexaoLabel(edgeId, trimmed || null).catch((err) => console.error("updateConexaoLabel", err));
+    updateConexaoLabel(edgeId, trimmed || null).catch((err) => toastErr("updateConexaoLabel", err));
     setLabelDialog(null);
   }, [labelDialog]);
 
@@ -505,21 +528,21 @@ function DiagramaInner() {
       setColunas((cs) => [...cs, created]);
       setNovaColuna({ nome: "", tipo: novaColuna.tipo });
     } catch (err) {
-      console.error("createColuna", err);
+      toastErr("createColuna", err);
     }
   }, [detailsDialog, novaColuna, colunas.length, user?.id]);
 
   const handleUpdateColuna = useCallback(
     (id: string, patch: { nome?: string; tipo?: string }) => {
       setColunas((cs) => cs.map((c) => (c.id === id ? { ...c, ...patch } : c)));
-      updateColuna(id, patch).catch((err) => console.error("updateColuna", err));
+      updateColuna(id, patch).catch((err) => toastErr("updateColuna", err));
     },
     [],
   );
 
   const handleDeleteColuna = useCallback((id: string) => {
     setColunas((cs) => cs.filter((c) => c.id !== id));
-    deleteColuna(id).catch((err) => console.error("deleteColuna", err));
+    deleteColuna(id).catch((err) => toastErr("deleteColuna", err));
   }, []);
 
   const handleAddNota = useCallback(async () => {
@@ -735,7 +758,35 @@ function DiagramaInner() {
   }, [nodes, resolvedTheme]);
 
 
+  const buildNarrativaPayload = useCallback((): MapaNarrativaPayload => {
+    const tituloPorId = new Map<string, string>();
+    for (const n of nodes) {
+      if (n.type === "solucao") {
+        const d = n.data as unknown as SolucaoNodeData;
+        tituloPorId.set(n.id, d.titulo);
+      }
+    }
+    const solucoes: MapaNarrativaPayload["solucoes"] = nodes
+      .filter((n) => n.type === "solucao")
+      .map((n) => {
+        const d = n.data as unknown as SolucaoNodeData;
+        return { titulo: d.titulo, solicitacaoTitulo: d.solicitacaoTitulo ?? null };
+      });
+    const conexoes: MapaNarrativaPayload["conexoes"] = edges
+      .filter((e) => !e.id.startsWith("tmp-"))
+      .map((e) => ({
+        origem: tituloPorId.get(e.source) ?? e.source,
+        destino: tituloPorId.get(e.target) ?? e.target,
+        label: typeof e.label === "string" ? e.label : null,
+      }));
+    return { solucoes, conexoes };
+  }, [nodes, edges]);
+
+  const camadaAtiva = MAPA_PROVIDERS[camada];
+  const camadaDisponivel = camadaAtiva.disponivel;
+
   return (
+    <TooltipProvider>
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
       <div className="px-4 md:px-8 py-3 border-b border-border bg-background flex items-start justify-between gap-4 flex-wrap">
         <div className="flex-1 min-w-[260px]">
@@ -745,9 +796,48 @@ function DiagramaInner() {
             para nomear o dado trafegado. Clique no chip para detalhar as colunas. Arraste a linha para ajustar a curva
             (duplo clique reseta). Use as notas adesivas para anotações livres.
           </p>
+          <div
+            role="tablist"
+            aria-label="Camadas do mapa"
+            className="mt-2 inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 p-0.5"
+          >
+            <Button
+              role="tab"
+              aria-selected={camada === "solucoes"}
+              size="sm"
+              variant={camada === "solucoes" ? "default" : "ghost"}
+              className="h-7 px-2 text-xs gap-1"
+              onClick={() => setCamada("solucoes")}
+            >
+              <Layers className="size-3.5" /> Soluções
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    role="tab"
+                    aria-selected={camada === "ecossistema"}
+                    size="sm"
+                    variant={camada === "ecossistema" ? "default" : "ghost"}
+                    className="h-7 px-2 text-xs gap-1"
+                    onClick={() => setCamada("ecossistema")}
+                  >
+                    <Layers className="size-3.5" /> Ecossistema
+                    <Badge variant="outline" className="ml-1 h-4 px-1 text-[9px] uppercase">
+                      Em breve
+                    </Badge>
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {MAPA_PROVIDERS.ecossistema.indisponivelMotivo ?? "Em breve"}
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 mt-2">
-          <Button variant="outline" size="sm" onClick={handleAddNota}>
+          <MapaNarrativa buildPayload={buildNarrativaPayload} disabled={!camadaDisponivel || nodes.length === 0} />
+          <Button variant="outline" size="sm" onClick={handleAddNota} disabled={!camadaDisponivel}>
             <StickyNote className="size-4 mr-1" /> Nota
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={exporting || nodes.length === 0}>
@@ -765,11 +855,19 @@ function DiagramaInner() {
           </div>
         ) : nodes.length === 0 ? (
           <div className="flex items-center justify-center h-full p-6">
-            <EmptyStateDg
-              icon={WorkflowIcon}
-              title="Nenhuma solução cadastrada ainda"
-              description="Cadastre uma solução para que ela apareça no diagrama de integrações."
-            />
+            {!camadaDisponivel ? (
+              <EmptyStateDg
+                icon={Layers}
+                title="Camada Ecossistema — em breve"
+                description={camadaAtiva.indisponivelMotivo ?? "Esta camada virá do HUB em uma próxima entrega."}
+              />
+            ) : (
+              <EmptyStateDg
+                icon={WorkflowIcon}
+                title="Nenhuma solução cadastrada ainda"
+                description="Cadastre uma solução para que ela apareça no diagrama de integrações."
+              />
+            )}
           </div>
         ) : (
           <ReactFlow
@@ -955,6 +1053,7 @@ function DiagramaInner() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </TooltipProvider>
 
   );
 }

@@ -12,6 +12,9 @@ verify_jwt = true
 [functions.resumo-pipeline]
 verify_jwt = true
 
+[functions.mapa-narrativa]
+verify_jwt = true
+
 [functions.sso-login]
 verify_jwt = false
 
