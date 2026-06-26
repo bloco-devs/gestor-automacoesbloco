@@ -16,6 +16,7 @@ import { FieldHelp } from "@/components/FieldHelp";
 import { DataSourceBadge } from "@/components/DataSourceBadge";
 import { EmptyState } from "@/components/EmptyState";
 import { ListState } from "@/components/ListState";
+import { ResumoPipeline } from "@/components/ResumoPipeline";
 
 const DASHBOARD_STATUSES: PipelineStatus[] = [
   "novo",
