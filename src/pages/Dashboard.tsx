@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, CheckCircle2, Filter, Inbox, KanbanSquare, Search, TrendingUp, User } from "lucide-react";
+import { Calendar, CheckCircle2, CheckSquare, Filter, Inbox, KanbanSquare, PlayCircle, Rocket, Search, ThumbsUp, TrendingUp, User } from "lucide-react";
 import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import { listSolicitacoes } from "@/lib/supabaseData";
 import { STATUS_LABEL, type PipelineStatus, FREQUENCIA_LABEL, freqLabel, type Frequencia } from "@/lib/types";
@@ -21,9 +21,22 @@ import { ResumoPipeline } from "@/components/ResumoPipeline";
 const DASHBOARD_STATUSES: PipelineStatus[] = [
   "novo",
   "em_analise",
+  "aprovado",
   "em_desenvolvimento",
+  "testando",
   "pronto",
+  "em_producao",
 ];
+
+const STATUS_ICONS: Record<PipelineStatus, typeof Inbox> = {
+  novo: Inbox,
+  em_analise: Search,
+  aprovado: ThumbsUp,
+  em_desenvolvimento: TrendingUp,
+  testando: PlayCircle,
+  pronto: CheckCircle2,
+  em_producao: Rocket,
+};
 
 export default function Dashboard() {
   const { data, loading, error, refetch } = useSupabaseQuery(() => listSolicitacoes(), []);
@@ -50,15 +63,13 @@ export default function Dashboard() {
       .sort((a, b) => b.score - a.score);
   }, [all, statusFilter, tipoFilter, setorFilter]);
 
-  const metrics = useMemo(
-    () => ({
-      novo: all.filter((s) => s.status === "novo").length,
-      em_analise: all.filter((s) => s.status === "em_analise").length,
-      em_desenvolvimento: all.filter((s) => s.status === "em_desenvolvimento").length,
-      pronto: all.filter((s) => s.status === "pronto").length,
-    }),
-    [all],
-  );
+  const metrics = useMemo(() => {
+    const m = {} as Record<PipelineStatus, number>;
+    for (const status of DASHBOARD_STATUSES) {
+      m[status] = all.filter((s) => s.status === status).length;
+    }
+    return m;
+  }, [all]);
 
   return (
     <div className="space-y-6">
@@ -76,18 +87,13 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {([
-          { status: "novo" as PipelineStatus, icon: Inbox },
-          { status: "em_analise" as PipelineStatus, icon: Search },
-          { status: "em_desenvolvimento" as PipelineStatus, icon: TrendingUp },
-          { status: "pronto" as PipelineStatus, icon: CheckCircle2 },
-        ]).map(({ status, icon }) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+        {DASHBOARD_STATUSES.map((status) => (
           <MetricCard
             key={status}
-            icon={icon}
+            icon={STATUS_ICONS[status]}
             label={STATUS_LABEL[status]}
-            value={metrics[status as keyof typeof metrics]}
+            value={metrics[status]}
             active={statusFilter === status}
             onClick={() => setStatusFilter((prev) => (prev === status ? "all" : status))}
           />

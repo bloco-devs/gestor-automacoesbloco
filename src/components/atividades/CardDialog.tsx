@@ -24,6 +24,7 @@ import {
   type CardComentario,
 } from "@/lib/atividades";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -588,7 +589,10 @@ function ComentariosSection({
       .then((data) => {
         if (alive) setItems(data);
       })
-      .catch((e) => console.error(e))
+      .catch((e) => {
+        console.error(e);
+        toast.error("Não foi possível carregar os comentários");
+      })
       .finally(() => {
         if (alive) setLoading(false);
       });
@@ -607,6 +611,7 @@ function ComentariosSection({
       setNovo("");
     } catch (e) {
       console.error(e);
+      toast.error("Não foi possível enviar o comentário");
     } finally {
       setSaving(false);
     }
@@ -626,6 +631,7 @@ function ComentariosSection({
       setEditingText("");
     } catch (e) {
       console.error(e);
+      toast.error("Não foi possível editar o comentário");
     }
   }
 
@@ -635,6 +641,7 @@ function ComentariosSection({
       setItems((arr) => arr.filter((c) => c.id !== id));
     } catch (e) {
       console.error(e);
+      toast.error("Não foi possível excluir o comentário");
     }
   }
 

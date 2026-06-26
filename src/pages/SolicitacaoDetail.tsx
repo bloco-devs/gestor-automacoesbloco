@@ -62,7 +62,8 @@ export default function SolicitacaoDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
-  const isDev = user?.role === "developer";
+  // Administrador tem as mesmas permissões de developer (avaliação técnica + pipeline).
+  const isDev = user?.role === "developer" || !!user?.isAdministrador;
   const isBuilder = user?.role === "builder";
 
   const [solucoesReloadKey, setSolucoesReloadKey] = useState(0);
