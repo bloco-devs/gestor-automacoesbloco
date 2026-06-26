@@ -40,6 +40,7 @@ import { TasksChecklist } from "@/components/TasksChecklist";
 import { ScorePill } from "@/components/ScorePill";
 import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 import { DataSourceBadge } from "@/components/DataSourceBadge";
+import { DemandasSimilares } from "@/components/DemandasSimilares";
 import {
   AlertDialog,
   AlertDialogAction,
