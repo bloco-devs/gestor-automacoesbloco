@@ -1045,6 +1045,7 @@ function DiagramaInner() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </TooltipProvider>
 
   );
 }
