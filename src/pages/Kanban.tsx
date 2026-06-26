@@ -28,7 +28,14 @@ import { Button } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils";
 
-type StageId = "novo" | "em_analise" | "aceito" | "concluido";
+type StageId =
+  | "novo"
+  | "em_analise"
+  | "aprovado"
+  | "em_desenvolvimento"
+  | "testando"
+  | "pronto"
+  | "em_producao";
 
 type Stage = {
   id: StageId;
@@ -41,28 +48,23 @@ type Stage = {
 };
 
 const STAGES: Stage[] = [
-  { id: "novo", label: "Novo", statuses: ["novo"], target: "novo" },
-  { id: "em_analise", label: "Em Análise", statuses: ["em_analise"], target: "em_analise" },
-  {
-    id: "aceito",
-    label: "Em Desenvolvimento",
-    statuses: ["em_desenvolvimento"],
-    target: "em_desenvolvimento",
-  },
-  {
-    id: "concluido",
-    label: "Pronto",
-    statuses: ["pronto"],
-    target: "pronto",
-    accent: true,
-  },
+  { id: "novo", label: STATUS_LABEL.novo, statuses: ["novo"], target: "novo" },
+  { id: "em_analise", label: STATUS_LABEL.em_analise, statuses: ["em_analise"], target: "em_analise" },
+  { id: "aprovado", label: STATUS_LABEL.aprovado, statuses: ["aprovado"], target: "aprovado" },
+  { id: "em_desenvolvimento", label: STATUS_LABEL.em_desenvolvimento, statuses: ["em_desenvolvimento"], target: "em_desenvolvimento" },
+  { id: "testando", label: STATUS_LABEL.testando, statuses: ["testando"], target: "testando" },
+  { id: "pronto", label: STATUS_LABEL.pronto, statuses: ["pronto"], target: "pronto", accent: true },
+  { id: "em_producao", label: STATUS_LABEL.em_producao, statuses: ["em_producao"], target: "em_producao", accent: true },
 ];
 
 const STAGE_HELP: Record<StageId, string> = {
   novo: "Demanda recém cadastrada, aguardando triagem.",
   em_analise: "O desenvolvedor está avaliando viabilidade e complexidade.",
-  aceito: "Solução já está sendo construída pelo time de tecnologia.",
-  concluido: "Solução entregue.",
+  aprovado: "Demanda aprovada, aguardando início do desenvolvimento.",
+  em_desenvolvimento: "Solução já está sendo construída pelo time de tecnologia.",
+  testando: "Solução em fase de testes/validação.",
+  pronto: "Solução entregue, aguardando publicação.",
+  em_producao: "Solução em uso em produção.",
 };
 
 export default function Kanban() {
