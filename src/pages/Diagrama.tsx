@@ -785,7 +785,8 @@ function DiagramaInner() {
   const camadaAtiva = MAPA_PROVIDERS[camada];
   const camadaDisponivel = camadaAtiva.disponivel;
 
-
+  return (
+    <TooltipProvider>
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
       <div className="px-4 md:px-8 py-3 border-b border-border bg-background flex items-start justify-between gap-4 flex-wrap">
         <div className="flex-1 min-w-[260px]">
@@ -795,9 +796,48 @@ function DiagramaInner() {
             para nomear o dado trafegado. Clique no chip para detalhar as colunas. Arraste a linha para ajustar a curva
             (duplo clique reseta). Use as notas adesivas para anotações livres.
           </p>
+          <div
+            role="tablist"
+            aria-label="Camadas do mapa"
+            className="mt-2 inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 p-0.5"
+          >
+            <Button
+              role="tab"
+              aria-selected={camada === "solucoes"}
+              size="sm"
+              variant={camada === "solucoes" ? "default" : "ghost"}
+              className="h-7 px-2 text-xs gap-1"
+              onClick={() => setCamada("solucoes")}
+            >
+              <Layers className="size-3.5" /> Soluções
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    role="tab"
+                    aria-selected={camada === "ecossistema"}
+                    size="sm"
+                    variant={camada === "ecossistema" ? "default" : "ghost"}
+                    className="h-7 px-2 text-xs gap-1"
+                    onClick={() => setCamada("ecossistema")}
+                  >
+                    <Layers className="size-3.5" /> Ecossistema
+                    <Badge variant="outline" className="ml-1 h-4 px-1 text-[9px] uppercase">
+                      Em breve
+                    </Badge>
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {MAPA_PROVIDERS.ecossistema.indisponivelMotivo ?? "Em breve"}
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 mt-2">
-          <Button variant="outline" size="sm" onClick={handleAddNota}>
+          <MapaNarrativa buildPayload={buildNarrativaPayload} disabled={!camadaDisponivel || nodes.length === 0} />
+          <Button variant="outline" size="sm" onClick={handleAddNota} disabled={!camadaDisponivel}>
             <StickyNote className="size-4 mr-1" /> Nota
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={exporting || nodes.length === 0}>
