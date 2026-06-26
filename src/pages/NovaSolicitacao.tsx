@@ -40,6 +40,41 @@ export default function NovaSolicitacao() {
   const [frequencia, setFrequencia] = useState<number>(5);
   const [dificuldade, setDificuldade] = useState<number>(5);
   const [retorno, setRetorno] = useState<number>(5);
+  const [sugerindo, setSugerindo] = useState(false);
+  const [sugestaoJustificativa, setSugestaoJustificativa] = useState<string | null>(null);
+
+  async function handleSugerirPrioridade() {
+    if (sugerindo) return;
+    if (!descricao.trim() || descricao.trim().length < 10) {
+      toast({
+        title: "Descreva a demanda",
+        description: "Escreva ao menos uma frase na descrição para a IA estimar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSugerindo(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("triagem-demanda", {
+        body: { titulo, descricao, setor },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (typeof data?.frequencia === "number") setFrequencia(data.frequencia);
+      if (typeof data?.dificuldade === "number") setDificuldade(data.dificuldade);
+      if (typeof data?.retorno === "number") setRetorno(data.retorno);
+      setSugestaoJustificativa(data?.justificativa ?? null);
+      toast({ title: "Prioridade sugerida", description: "Ajuste os valores se necessário." });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Tente novamente.";
+      const friendly = /429|muitas solicita/i.test(msg)
+        ? "Muitas solicitações à IA. Aguarde alguns instantes."
+        : msg;
+      toast({ title: "Não foi possível sugerir", description: friendly, variant: "destructive" });
+    } finally {
+      setSugerindo(false);
+    }
+  }
 
   const previewScore = useMemo(
     () => Math.round(computeScoreSolicitante(frequencia, dificuldade, retorno)),
