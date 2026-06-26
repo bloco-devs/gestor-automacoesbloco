@@ -647,6 +647,14 @@ export default function SolicitacaoDetail() {
       </div>
 
       {isDev && (
+        <DemandasSimilares
+          titulo={solicitacao.titulo}
+          descricao={solicitacao.descricao ?? ""}
+          excluirId={solicitacao.id}
+        />
+      )}
+
+      {isDev && (
         <Card className="surface-1">
           <CardHeader>
             <CardTitle className="text-base">Status do Pipeline</CardTitle>
