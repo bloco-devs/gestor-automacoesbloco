@@ -84,8 +84,11 @@ export default function Kanban() {
     const map: Record<StageId, Solicitacao[]> = {
       novo: [],
       em_analise: [],
-      aceito: [],
-      concluido: [],
+      aprovado: [],
+      em_desenvolvimento: [],
+      testando: [],
+      pronto: [],
+      em_producao: [],
     };
     const sorted = [...items].sort((a, b) => b.score - a.score);
     for (const s of sorted) {
