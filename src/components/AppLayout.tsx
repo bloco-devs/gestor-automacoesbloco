@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, Compass, GanttChartSquare, HelpCircle, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, Compass, GanttChartSquare, HelpCircle, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen, Activity } from "lucide-react";
 import {
   DndContext,
   DragEndEvent,
@@ -63,6 +63,7 @@ const devNav: NavItem[] = [
   },
   { to: "/diagrama", label: "Diagrama", icon: Network },
   { to: "/atividades", label: "Atividades", icon: KanbanSquare },
+  { to: "/observabilidade-ia", label: "Observabilidade IA", icon: Activity },
   { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
