@@ -6,14 +6,16 @@ import { checkRateLimit } from "../_shared/rate-limit.ts";
 const MAX_SOLUCOES = 40;
 const MAX_CONEXOES = 60;
 const MAX_COLUNAS = 8;
+const MAX_SAUDE = 10;
+const MAX_OBS = 12;
 
 const SYSTEM = `Você é um arquiteto de soluções analisando um diagrama de integrações de sistemas internos. Escreva em PT-BR, texto corrido (sem markdown pesado, sem títulos com #), estrutura:
 
 Explicação do diagrama: 1-2 parágrafos curtos descrevendo o que o mapa representa e as principais relações.
-Riscos e observações: 2-4 bullets curtos (use "- "). Aponte soluções sem conexão, possíveis pontos únicos de falha, acoplamentos suspeitos.
+Riscos e observações: 2-4 bullets curtos (use "- "). Se houver dados de SAUDE ou OBSERVACOES no payload, PRIORIZE-OS: cite nomes e porcentagens de falha, sistemas/conectores desativado/catálogo/inativo, e pontos únicos de falha (conectores com muitos consumidores). Caso contrário, aponte soluções sem conexão e acoplamentos suspeitos.
 Conexões/integrações que poderiam faltar: 2-3 bullets curtos sugerindo integrações plausíveis com base no que já existe.
 
-Não invente nomes de soluções que não estejam na lista. Seja específico e prático.`;
+Não invente nomes que não estejam na lista. Seja específico e prático.`;
 
 interface SolucaoIn {
   titulo: string;
