@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const introspect = await fetch(`${HUB_URL}/sso-introspect`, {
+    const introspect = await fetch(`${HUB_FN}/sso-introspect`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
