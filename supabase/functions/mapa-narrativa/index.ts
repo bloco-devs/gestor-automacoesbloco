@@ -37,6 +37,8 @@ interface ConexaoIn {
 interface Payload {
   solucoes: SolucaoIn[];
   conexoes: ConexaoIn[];
+  saude?: Array<{ nome: string; execs: number; falhas: number; taxa: number; ultima?: string | null }>;
+  observacoes?: string[];
 }
 
 async function getUserIdFromAuth(req: Request): Promise<string | null> {
