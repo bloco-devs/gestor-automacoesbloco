@@ -160,7 +160,8 @@ export function computeEcossistemaLayout(
     "Contratos",
   ];
 
-  const porGrupo = new Map<string, typeof sistemasIn>();
+  type SistemaItem = { id: string; nome: string; grupo: string; status?: string | null };
+  const porGrupo = new Map<string, SistemaItem[]>();
   const ordemGrupos: string[] = [];
   for (const s of sistemasIn) {
     const g = s.grupo || "Outros";
