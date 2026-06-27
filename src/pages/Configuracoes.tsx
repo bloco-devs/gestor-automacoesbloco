@@ -240,6 +240,8 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | DbRole>("all");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
   const [createOpen, setCreateOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newNome, setNewNome] = useState("");
