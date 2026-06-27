@@ -2,7 +2,8 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { admin, ensureAuthUser, provisionByStrategy, applyAtivacao } from "../_shared/provision.ts";
 
 const HUB_TOKEN = Deno.env.get("BLOCO_ID_TOKEN") ?? "";
-const HUB_URL = Deno.env.get("BLOCO_ID_HUB_URL") ?? "";
+const HUB_RAW = (Deno.env.get("BLOCO_ID_HUB_URL") ?? "").replace(/\/+$/, "");
+const HUB_FN = HUB_RAW.endsWith("/functions/v1") ? HUB_RAW : `${HUB_RAW}/functions/v1`;
 const LAUNCHER = Deno.env.get("BLOCO_ID_LAUNCHER_URL") ?? "https://blocoid.lovable.app";
 
 Deno.serve(async (req) => {
