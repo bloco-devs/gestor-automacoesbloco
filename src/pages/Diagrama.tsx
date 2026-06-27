@@ -450,6 +450,8 @@ function DiagramaInner() {
           let layoutInput: Parameters<typeof computeEcossistemaLayout>[0] | undefined;
           let fonte: "hub" | "semente" = "semente";
           let geradoEm: string | null = null;
+          let saudeMap: Record<string, SaudeInfo> = {};
+          let statusMap: Record<string, string | null> = {};
           try {
             const { data, error } = await supabase.functions.invoke<EcossistemaHubData>(
               "ecossistema-mapa",
@@ -463,12 +465,17 @@ function DiagramaInner() {
               };
               fonte = "hub";
               geradoEm = data.gerado_em ?? null;
+              saudeMap = (data.saude ?? {}) as Record<string, SaudeInfo>;
+              for (const s of data.sistemas ?? []) statusMap[s.id] = s.status ?? null;
+              for (const c of data.conectoresExternos ?? []) statusMap[c.id] = c.status ?? null;
             }
           } catch (e) {
             console.warn("ecossistema-mapa indisponível, usando seed.", e);
           }
           const { nodes: nseed, edges: eseed } = computeEcossistemaLayout(layoutInput);
           if (cancelled) return;
+          ecoSaudeRef.current = saudeMap;
+          ecoStatusRef.current = statusMap;
           setEcoFonte(fonte);
           setEcoGeradoEm(geradoEm);
           setNodes(
@@ -478,7 +485,13 @@ function DiagramaInner() {
               position: { x: n.x, y: n.y },
               deletable: false,
               draggable: true,
-              data: { nome: n.nome, grupo: n.grupo, externo: n.externo } satisfies SistemaNodeData,
+              data: {
+                nome: n.nome,
+                grupo: n.grupo,
+                externo: n.externo,
+                status: statusMap[n.id] ?? null,
+                saude: saudeMap[n.id] ?? null,
+              } satisfies SistemaNodeData,
             })),
           );
           setEdges(
