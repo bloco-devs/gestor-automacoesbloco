@@ -76,21 +76,29 @@ export const localSolucoesProvider: MapaProvider = {
 };
 
 /**
- * Camada "Ecossistema" — Onda 7: renderizada a partir de DADOS-SEMENTE
- * estáticos (`src/lib/ecossistemaSeed.ts`). A fonte real virá do HUB nas
- * ondas 5/6. Esta `load()` retorna snapshot vazio porque o Diagrama
- * monta os nós/arestas a partir do seed (ver `computeEcossistemaLayout`).
+ * Camada "Ecossistema" — Onda 5: tenta ler o catálogo do HUB via edge function
+ * `ecossistema-mapa` (token só no servidor). Em caso de falha/HUB ausente,
+ * o Diagrama cai para o seed estático (`computeEcossistemaLayout()`).
  */
 export const hubEcossistemaProvider: MapaProvider = {
   id: "ecossistema",
   label: "Ecossistema",
   disponivel: true,
-  fonte: "semente",
-  aviso: "Dados de exemplo (semente) — a fonte real virá do HUB",
+  fonte: "hub",
   async load() {
     return EMPTY_SNAPSHOT;
   },
 };
+
+export interface EcossistemaHubData {
+  fonte: "hub" | "erro";
+  gerado_em?: string;
+  erro?: string;
+  sistemas?: { id: string; nome: string; grupo: string; status?: string | null }[];
+  conectoresExternos?: { id: string; nome: string; status?: string | null }[];
+  integracoes?: { origem: string; destino: string; label: string }[];
+  saude?: Record<string, { execs: number; ok: number; falhas: number; ultima: string | null }>;
+}
 
 export const MAPA_PROVIDERS: Record<CamadaMapa, MapaProvider> = {
   solucoes: localSolucoesProvider,
