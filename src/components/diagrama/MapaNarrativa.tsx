@@ -20,6 +20,10 @@ export interface MapaNarrativaPayload {
     label?: string | null;
     colunas?: Array<{ nome: string; tipo: string }>;
   }>;
+  /** Onda 6 — opcional: top nós por falha (camada Ecossistema). */
+  saude?: Array<{ nome: string; execs: number; falhas: number; taxa: number; ultima?: string | null }>;
+  /** Onda 6 — observações já compiladas (ex.: itens desativados, gargalos). */
+  observacoes?: string[];
 }
 
 interface Props {
