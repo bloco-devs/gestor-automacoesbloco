@@ -76,8 +76,9 @@ import {
   upsertPosicao,
   type DiagramaConexaoColuna,
 } from "@/lib/diagrama";
-import { MAPA_PROVIDERS, type CamadaMapa } from "@/lib/mapaSource";
+import { MAPA_PROVIDERS, type CamadaMapa, type EcossistemaHubData } from "@/lib/mapaSource";
 import { computeEcossistemaLayout } from "@/lib/ecossistemaSeed";
+import { supabase } from "@/integrations/supabase/client";
 
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
