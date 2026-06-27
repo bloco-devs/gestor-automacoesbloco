@@ -154,32 +154,80 @@ function SolucaoNode({ data }: NodeProps) {
   );
 }
 
+type SaudeInfo = { execs: number; ok: number; falhas: number; ultima: string | null };
 type SistemaNodeData = {
   nome: string;
   grupo: string;
   externo: boolean;
+  status?: string | null;
+  saude?: SaudeInfo | null;
 };
+
+function classifySaude(s?: SaudeInfo | null): {
+  level: "none" | "ok" | "warn" | "crit";
+  taxa: number | null;
+  color: string;
+  ring: string;
+  label: string;
+} {
+  if (!s || !s.execs || s.execs <= 0) {
+    return { level: "none", taxa: null, color: "bg-muted-foreground/50", ring: "ring-muted-foreground/30", label: "sem tráfego 30d" };
+  }
+  const taxa = s.falhas / s.execs;
+  if (taxa > 0.4) return { level: "crit", taxa, color: "bg-destructive", ring: "ring-destructive/60", label: "crítico" };
+  if (taxa >= 0.1) return { level: "warn", taxa, color: "bg-amber-500", ring: "ring-amber-500/60", label: "atenção" };
+  return { level: "ok", taxa, color: "bg-emerald-500", ring: "ring-emerald-500/60", label: "saudável" };
+}
 
 function SistemaNode({ data }: NodeProps) {
   const d = data as unknown as SistemaNodeData;
+  const c = classifySaude(d.saude);
+  const isInativo =
+    d.status && ["desativado", "catalogo", "catálogo", "inativo"].includes(String(d.status).toLowerCase());
+  const tooltipText = d.saude && d.saude.execs > 0
+    ? `${d.saude.execs} execs · ${Math.round((c.taxa ?? 0) * 100)}% falhas${d.saude.ultima ? ` · última ${new Date(d.saude.ultima).toLocaleDateString("pt-BR")}` : ""}`
+    : "sem tráfego nos últimos 30 dias";
   return (
     <Card
-      className={`w-[220px] overflow-hidden border-2 shadow-md ${
+      className={`w-[220px] overflow-hidden border-2 shadow-md ring-1 ${c.ring} ${
         d.externo
           ? "border-dashed border-muted-foreground/60 bg-muted/40"
           : "border-border bg-card"
-      }`}
+      } ${isInativo ? "opacity-70" : ""}`}
     >
       <Handle type="target" position={Position.Left} className="!bg-primary !w-2.5 !h-2.5" />
       <div className="flex">
         <div className={`w-1.5 shrink-0 ${d.externo ? "bg-muted-foreground/60" : "bg-primary"}`} />
         <div className="flex-1 px-3 py-2.5">
-          <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">
-            {d.externo ? "Conector externo" : d.grupo}
+          <div className="flex items-center justify-between gap-1">
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium truncate">
+              {d.externo ? "Conector externo" : d.grupo}
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={`inline-block size-2.5 rounded-full ${c.color}`}
+                  aria-label={`Saúde: ${c.label}. ${tooltipText}`}
+                />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                <div className="font-medium">Saúde: {c.label}</div>
+                <div className="text-muted-foreground">{tooltipText}</div>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="text-sm font-semibold leading-tight mt-0.5" title={d.nome}>
             {d.nome}
           </div>
+          {isInativo && (
+            <div className="mt-1">
+              <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">
+                {String(d.status).toLowerCase() === "catalogo" || String(d.status).toLowerCase() === "catálogo"
+                  ? "catálogo"
+                  : String(d.status).toLowerCase()}
+              </Badge>
+            </div>
+          )}
         </div>
       </div>
       <Handle type="source" position={Position.Right} className="!bg-primary !w-2.5 !h-2.5" />
