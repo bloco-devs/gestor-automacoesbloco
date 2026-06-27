@@ -129,8 +129,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    const userMsg = `RESUMO DO MAPA ATUAL (limitado em tamanho):
-${JSON.stringify(resumo, null, 2)}`;
+    const partes: string[] = [
+      `MAPA (solucoes/sistemas e conexoes):\n${JSON.stringify({ solucoes: resumo.solucoes, conexoes: resumo.conexoes }, null, 2)}`,
+    ];
+    if (resumo.saude && resumo.saude.length > 0) {
+      const linhas = resumo.saude.map(
+        (s) => `- ${s.nome}: ${s.execs} execs, ${s.falhas} falhas (${Math.round(s.taxa * 100)}%)${s.ultima ? `, última ${s.ultima}` : ""}`,
+      );
+      partes.push(`SAUDE (top ${linhas.length} nós por taxa de falha, 30d):\n${linhas.join("\n")}`);
+    }
+    if (resumo.observacoes && resumo.observacoes.length > 0) {
+      partes.push(`OBSERVACOES (já compiladas pelo cliente):\n- ${resumo.observacoes.join("\n- ")}`);
+    }
+    const userMsg = `RESUMO DO MAPA ATUAL (limitado em tamanho):\n\n${partes.join("\n\n")}`;
 
     const data = (await callAI(
       {
