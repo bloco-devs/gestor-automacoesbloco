@@ -1060,6 +1060,15 @@ function DiagramaInner() {
               )}
             </div>
           )}
+          {camada === "ecossistema" && (
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+              <span className="font-medium uppercase tracking-wider">Saúde 30d:</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-emerald-500" /> saudável (&lt;10% falha)</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-amber-500" /> atenção (10–40%)</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-destructive" /> crítico (&gt;40%)</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-muted-foreground/50" /> sem tráfego</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0 mt-2">
           <MapaNarrativa buildPayload={buildNarrativaPayload} disabled={!camadaDisponivel || nodes.length === 0} />
