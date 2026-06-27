@@ -234,6 +234,8 @@ function DiagramaInner() {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
   const [camada, setCamada] = useState<CamadaMapa>("solucoes");
+  const [ecoFonte, setEcoFonte] = useState<"hub" | "semente" | null>(null);
+  const [ecoGeradoEm, setEcoGeradoEm] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [labelDialog, setLabelDialog] = useState<{ edgeId: string; value: string } | null>(null);
   const [detailsDialog, setDetailsDialog] = useState<{ edgeId: string; label: string } | null>(null);
