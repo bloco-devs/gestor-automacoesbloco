@@ -88,7 +88,7 @@ import { Trash2, Plus, Workflow, Workflow as WorkflowIcon, StickyNote, FileDown,
 import { FlowEdge } from "@/components/diagrama/FlowEdge";
 import { StickyNoteNode, type StickyNoteData } from "@/components/diagrama/StickyNoteNode";
 import { MapaNarrativa, type MapaNarrativaPayload } from "@/components/diagrama/MapaNarrativa";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 
@@ -154,32 +154,80 @@ function SolucaoNode({ data }: NodeProps) {
   );
 }
 
+type SaudeInfo = { execs: number; ok: number; falhas: number; ultima: string | null };
 type SistemaNodeData = {
   nome: string;
   grupo: string;
   externo: boolean;
+  status?: string | null;
+  saude?: SaudeInfo | null;
 };
+
+function classifySaude(s?: SaudeInfo | null): {
+  level: "none" | "ok" | "warn" | "crit";
+  taxa: number | null;
+  color: string;
+  ring: string;
+  label: string;
+} {
+  if (!s || !s.execs || s.execs <= 0) {
+    return { level: "none", taxa: null, color: "bg-muted-foreground/50", ring: "ring-muted-foreground/30", label: "sem tráfego 30d" };
+  }
+  const taxa = s.falhas / s.execs;
+  if (taxa > 0.4) return { level: "crit", taxa, color: "bg-destructive", ring: "ring-destructive/60", label: "crítico" };
+  if (taxa >= 0.1) return { level: "warn", taxa, color: "bg-amber-500", ring: "ring-amber-500/60", label: "atenção" };
+  return { level: "ok", taxa, color: "bg-emerald-500", ring: "ring-emerald-500/60", label: "saudável" };
+}
 
 function SistemaNode({ data }: NodeProps) {
   const d = data as unknown as SistemaNodeData;
+  const c = classifySaude(d.saude);
+  const isInativo =
+    d.status && ["desativado", "catalogo", "catálogo", "inativo"].includes(String(d.status).toLowerCase());
+  const tooltipText = d.saude && d.saude.execs > 0
+    ? `${d.saude.execs} execs · ${Math.round((c.taxa ?? 0) * 100)}% falhas${d.saude.ultima ? ` · última ${new Date(d.saude.ultima).toLocaleDateString("pt-BR")}` : ""}`
+    : "sem tráfego nos últimos 30 dias";
   return (
     <Card
-      className={`w-[220px] overflow-hidden border-2 shadow-md ${
+      className={`w-[220px] overflow-hidden border-2 shadow-md ring-1 ${c.ring} ${
         d.externo
           ? "border-dashed border-muted-foreground/60 bg-muted/40"
           : "border-border bg-card"
-      }`}
+      } ${isInativo ? "opacity-70" : ""}`}
     >
       <Handle type="target" position={Position.Left} className="!bg-primary !w-2.5 !h-2.5" />
       <div className="flex">
         <div className={`w-1.5 shrink-0 ${d.externo ? "bg-muted-foreground/60" : "bg-primary"}`} />
         <div className="flex-1 px-3 py-2.5">
-          <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">
-            {d.externo ? "Conector externo" : d.grupo}
+          <div className="flex items-center justify-between gap-1">
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium truncate">
+              {d.externo ? "Conector externo" : d.grupo}
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={`inline-block size-2.5 rounded-full ${c.color}`}
+                  aria-label={`Saúde: ${c.label}. ${tooltipText}`}
+                />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                <div className="font-medium">Saúde: {c.label}</div>
+                <div className="text-muted-foreground">{tooltipText}</div>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="text-sm font-semibold leading-tight mt-0.5" title={d.nome}>
             {d.nome}
           </div>
+          {isInativo && (
+            <div className="mt-1">
+              <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">
+                {String(d.status).toLowerCase() === "catalogo" || String(d.status).toLowerCase() === "catálogo"
+                  ? "catálogo"
+                  : String(d.status).toLowerCase()}
+              </Badge>
+            </div>
+          )}
         </div>
       </div>
       <Handle type="source" position={Position.Right} className="!bg-primary !w-2.5 !h-2.5" />
@@ -236,6 +284,8 @@ function DiagramaInner() {
   const [camada, setCamada] = useState<CamadaMapa>("solucoes");
   const [ecoFonte, setEcoFonte] = useState<"hub" | "semente" | null>(null);
   const [ecoGeradoEm, setEcoGeradoEm] = useState<string | null>(null);
+  const ecoSaudeRef = useRef<Record<string, SaudeInfo>>({});
+  const ecoStatusRef = useRef<Record<string, string | null>>({});
   const [exporting, setExporting] = useState(false);
   const [labelDialog, setLabelDialog] = useState<{ edgeId: string; value: string } | null>(null);
   const [detailsDialog, setDetailsDialog] = useState<{ edgeId: string; label: string } | null>(null);
@@ -400,6 +450,8 @@ function DiagramaInner() {
           let layoutInput: Parameters<typeof computeEcossistemaLayout>[0] | undefined;
           let fonte: "hub" | "semente" = "semente";
           let geradoEm: string | null = null;
+          let saudeMap: Record<string, SaudeInfo> = {};
+          let statusMap: Record<string, string | null> = {};
           try {
             const { data, error } = await supabase.functions.invoke<EcossistemaHubData>(
               "ecossistema-mapa",
@@ -413,12 +465,17 @@ function DiagramaInner() {
               };
               fonte = "hub";
               geradoEm = data.gerado_em ?? null;
+              saudeMap = (data.saude ?? {}) as Record<string, SaudeInfo>;
+              for (const s of data.sistemas ?? []) statusMap[s.id] = s.status ?? null;
+              for (const c of data.conectoresExternos ?? []) statusMap[c.id] = c.status ?? null;
             }
           } catch (e) {
             console.warn("ecossistema-mapa indisponível, usando seed.", e);
           }
           const { nodes: nseed, edges: eseed } = computeEcossistemaLayout(layoutInput);
           if (cancelled) return;
+          ecoSaudeRef.current = saudeMap;
+          ecoStatusRef.current = statusMap;
           setEcoFonte(fonte);
           setEcoGeradoEm(geradoEm);
           setNodes(
@@ -428,7 +485,13 @@ function DiagramaInner() {
               position: { x: n.x, y: n.y },
               deletable: false,
               draggable: true,
-              data: { nome: n.nome, grupo: n.grupo, externo: n.externo } satisfies SistemaNodeData,
+              data: {
+                nome: n.nome,
+                grupo: n.grupo,
+                externo: n.externo,
+                status: statusMap[n.id] ?? null,
+                saude: saudeMap[n.id] ?? null,
+              } satisfies SistemaNodeData,
             })),
           );
           setEdges(
@@ -878,8 +941,59 @@ function DiagramaInner() {
         destino: tituloPorId.get(e.target) ?? e.target,
         label: typeof e.label === "string" ? e.label : null,
       }));
-    return { solucoes, conexoes };
-  }, [nodes, edges]);
+    // Onda 6: enriquece com saúde/observações somente na camada Ecossistema.
+    let saude: MapaNarrativaPayload["saude"];
+    let observacoes: MapaNarrativaPayload["observacoes"];
+    if (camada === "ecossistema") {
+      const saudeMap = ecoSaudeRef.current ?? {};
+      const statusMap = ecoStatusRef.current ?? {};
+      const nomeById = new Map<string, string>();
+      for (const n of nodes) {
+        if (n.type === "sistema") {
+          const d = n.data as unknown as SistemaNodeData;
+          nomeById.set(n.id, d.nome);
+        }
+      }
+      const ranked = Object.entries(saudeMap)
+        .filter(([, s]) => s && s.execs > 0)
+        .map(([id, s]) => ({
+          nome: nomeById.get(id) ?? id,
+          execs: s.execs,
+          falhas: s.falhas,
+          taxa: s.falhas / s.execs,
+          ultima: s.ultima ?? null,
+        }))
+        .sort((a, b) => b.taxa - a.taxa || b.falhas - a.falhas)
+        .slice(0, 10);
+      saude = ranked;
+
+      const obs: string[] = [];
+      for (const r of ranked) {
+        if (r.taxa > 0.4) obs.push(`Conector "${r.nome}" com ${Math.round(r.taxa * 100)}% de falha em ${r.execs} execs (crítico).`);
+        else if (r.taxa >= 0.1) obs.push(`Conector "${r.nome}" com ${Math.round(r.taxa * 100)}% de falha em ${r.execs} execs (atenção).`);
+      }
+      for (const [id, st] of Object.entries(statusMap)) {
+        if (!st) continue;
+        const k = String(st).toLowerCase();
+        if (k === "desativado" || k === "inativo" || k === "catalogo" || k === "catálogo") {
+          obs.push(`Sistema/conector "${nomeById.get(id) ?? id}" está ${k}.`);
+        }
+      }
+      // Ponto único de falha: nós com >=3 consumidores distintos saindo deles.
+      const outDeg = new Map<string, Set<string>>();
+      for (const e of edges) {
+        if (!outDeg.has(e.source)) outDeg.set(e.source, new Set());
+        outDeg.get(e.source)!.add(e.target);
+      }
+      for (const [src, dests] of outDeg) {
+        if (dests.size >= 3) {
+          obs.push(`"${nomeById.get(src) ?? src}" alimenta ${dests.size} consumidores — possível ponto único de falha.`);
+        }
+      }
+      observacoes = obs.slice(0, 12);
+    }
+    return { solucoes, conexoes, saude, observacoes };
+  }, [nodes, edges, camada]);
 
   const camadaAtiva = MAPA_PROVIDERS[camada];
   const camadaDisponivel = camadaAtiva.disponivel;
@@ -944,6 +1058,15 @@ function DiagramaInner() {
                   <span>Dados de exemplo (semente) — HUB indisponível</span>
                 </>
               )}
+            </div>
+          )}
+          {camada === "ecossistema" && (
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+              <span className="font-medium uppercase tracking-wider">Saúde 30d:</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-emerald-500" /> saudável (&lt;10% falha)</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-amber-500" /> atenção (10–40%)</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-destructive" /> crítico (&gt;40%)</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-muted-foreground/50" /> sem tráfego</span>
             </div>
           )}
         </div>

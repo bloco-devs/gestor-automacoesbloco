@@ -6,14 +6,16 @@ import { checkRateLimit } from "../_shared/rate-limit.ts";
 const MAX_SOLUCOES = 40;
 const MAX_CONEXOES = 60;
 const MAX_COLUNAS = 8;
+const MAX_SAUDE = 10;
+const MAX_OBS = 12;
 
 const SYSTEM = `Você é um arquiteto de soluções analisando um diagrama de integrações de sistemas internos. Escreva em PT-BR, texto corrido (sem markdown pesado, sem títulos com #), estrutura:
 
 Explicação do diagrama: 1-2 parágrafos curtos descrevendo o que o mapa representa e as principais relações.
-Riscos e observações: 2-4 bullets curtos (use "- "). Aponte soluções sem conexão, possíveis pontos únicos de falha, acoplamentos suspeitos.
+Riscos e observações: 2-4 bullets curtos (use "- "). Se houver dados de SAUDE ou OBSERVACOES no payload, PRIORIZE-OS: cite nomes e porcentagens de falha, sistemas/conectores desativado/catálogo/inativo, e pontos únicos de falha (conectores com muitos consumidores). Caso contrário, aponte soluções sem conexão e acoplamentos suspeitos.
 Conexões/integrações que poderiam faltar: 2-3 bullets curtos sugerindo integrações plausíveis com base no que já existe.
 
-Não invente nomes de soluções que não estejam na lista. Seja específico e prático.`;
+Não invente nomes que não estejam na lista. Seja específico e prático.`;
 
 interface SolucaoIn {
   titulo: string;
@@ -35,6 +37,8 @@ interface ConexaoIn {
 interface Payload {
   solucoes: SolucaoIn[];
   conexoes: ConexaoIn[];
+  saude?: Array<{ nome: string; execs: number; falhas: number; taxa: number; ultima?: string | null }>;
+  observacoes?: string[];
 }
 
 async function getUserIdFromAuth(req: Request): Promise<string | null> {
@@ -81,6 +85,18 @@ function sanitize(payload: unknown): Payload {
           }))
         : undefined,
     })),
+    saude: Array.isArray(p.saude)
+      ? p.saude.slice(0, MAX_SAUDE).map((s) => ({
+          nome: String(s?.nome ?? "").slice(0, 120),
+          execs: Number.isFinite(s?.execs) ? Math.max(0, Math.floor(Number(s.execs))) : 0,
+          falhas: Number.isFinite(s?.falhas) ? Math.max(0, Math.floor(Number(s.falhas))) : 0,
+          taxa: Number.isFinite(s?.taxa) ? Math.max(0, Math.min(1, Number(s.taxa))) : 0,
+          ultima: s?.ultima ? String(s.ultima).slice(0, 40) : null,
+        }))
+      : undefined,
+    observacoes: Array.isArray(p.observacoes)
+      ? p.observacoes.slice(0, MAX_OBS).map((o) => String(o ?? "").slice(0, 240)).filter(Boolean)
+      : undefined,
   };
 }
 
@@ -113,8 +129,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    const userMsg = `RESUMO DO MAPA ATUAL (limitado em tamanho):
-${JSON.stringify(resumo, null, 2)}`;
+    const partes: string[] = [
+      `MAPA (solucoes/sistemas e conexoes):\n${JSON.stringify({ solucoes: resumo.solucoes, conexoes: resumo.conexoes }, null, 2)}`,
+    ];
+    if (resumo.saude && resumo.saude.length > 0) {
+      const linhas = resumo.saude.map(
+        (s) => `- ${s.nome}: ${s.execs} execs, ${s.falhas} falhas (${Math.round(s.taxa * 100)}%)${s.ultima ? `, última ${s.ultima}` : ""}`,
+      );
+      partes.push(`SAUDE (top ${linhas.length} nós por taxa de falha, 30d):\n${linhas.join("\n")}`);
+    }
+    if (resumo.observacoes && resumo.observacoes.length > 0) {
+      partes.push(`OBSERVACOES (já compiladas pelo cliente):\n- ${resumo.observacoes.join("\n- ")}`);
+    }
+    const userMsg = `RESUMO DO MAPA ATUAL (limitado em tamanho):\n\n${partes.join("\n\n")}`;
 
     const data = (await callAI(
       {
