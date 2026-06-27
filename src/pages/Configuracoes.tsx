@@ -315,6 +315,16 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
     });
   }, [accounts, filter, roleFilter]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage],
+  );
+  useEffect(() => {
+    setPage(1);
+  }, [filter, roleFilter]);
+
   async function handleCreate() {
     const email = newEmail.trim().toLowerCase();
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
