@@ -104,6 +104,7 @@ export interface EcossistemaNodeSeed {
   externo: boolean;
   x: number;
   y: number;
+  status?: string | null;
 }
 
 export interface EcossistemaEdgeSeed {
@@ -113,20 +114,38 @@ export interface EcossistemaEdgeSeed {
   label: string;
 }
 
+export interface EcossistemaLayoutInput {
+  sistemas: { id: string; nome: string; grupo: string; status?: string | null }[];
+  conectoresExternos: { id: string; nome: string; status?: string | null }[];
+  integracoes: { origem: string; destino: string; label: string }[];
+}
+
 /**
  * Auto-layout simples por grupo (colunas). Cada grupo vira uma coluna
  * vertical; conectores externos formam uma coluna final destacada.
+ *
+ * Sem `data` → usa as constantes do seed (comportamento Onda 7).
+ * Com `data` → monta o layout a partir dos dados (Onda 5, fonte HUB).
  */
-export function computeEcossistemaLayout(): {
-  nodes: EcossistemaNodeSeed[];
-  edges: EcossistemaEdgeSeed[];
-} {
+export function computeEcossistemaLayout(
+  data?: EcossistemaLayoutInput,
+): { nodes: EcossistemaNodeSeed[]; edges: EcossistemaEdgeSeed[] } {
   const COL_W = 280;
   const ROW_H = 140;
 
-  // Ordem das colunas (grupos) — coloca Identidade no centro lógico (primeira),
-  // Plataforma logo ao lado, demais por afinidade.
-  const ORDER: SistemaGrupo[] = [
+  const sistemasIn = data
+    ? data.sistemas
+    : SISTEMAS_SEED.map((s) => ({ id: s.id, nome: s.nome, grupo: s.grupo, status: null }));
+  const externosIn = data
+    ? data.conectoresExternos
+    : CONECTORES_EXTERNOS_SEED.map((c) => ({ id: c.id, nome: c.nome, status: null }));
+  const integracoesIn: { origem: string; destino: string; label: string }[] = data
+    ? data.integracoes
+    : [...INTEGRACOES_SEED, ...INTEGRACOES_HUB_SEED];
+
+  // Ordem preferencial dos grupos; grupos desconhecidos são anexados ao final
+  // mantendo ordem de aparição estável.
+  const ORDER_PREF: string[] = [
     "Identidade",
     "Plataforma",
     "Pessoas",
@@ -141,12 +160,21 @@ export function computeEcossistemaLayout(): {
     "Contratos",
   ];
 
-  const porGrupo = new Map<SistemaGrupo, SistemaSeed[]>();
-  for (const s of SISTEMAS_SEED) {
-    const arr = porGrupo.get(s.grupo) ?? [];
-    arr.push(s);
-    porGrupo.set(s.grupo, arr);
+  type SistemaItem = { id: string; nome: string; grupo: string; status?: string | null };
+  const porGrupo = new Map<string, SistemaItem[]>();
+  const ordemGrupos: string[] = [];
+  for (const s of sistemasIn) {
+    const g = s.grupo || "Outros";
+    if (!porGrupo.has(g)) {
+      porGrupo.set(g, []);
+      ordemGrupos.push(g);
+    }
+    porGrupo.get(g)!.push(s);
   }
+  const ORDER: string[] = [
+    ...ORDER_PREF.filter((g) => porGrupo.has(g)),
+    ...ordemGrupos.filter((g) => !ORDER_PREF.includes(g)),
+  ];
 
   const nodes: EcossistemaNodeSeed[] = [];
   ORDER.forEach((grupo, colIdx) => {
@@ -155,17 +183,17 @@ export function computeEcossistemaLayout(): {
       nodes.push({
         id: s.id,
         nome: s.nome,
-        grupo: s.grupo,
+        grupo,
         externo: false,
         x: colIdx * COL_W,
         y: rowIdx * ROW_H,
+        status: s.status ?? null,
       });
     });
   });
 
-  // Conectores externos: coluna à direita
   const externCol = ORDER.length;
-  CONECTORES_EXTERNOS_SEED.forEach((c, i) => {
+  externosIn.forEach((c, i) => {
     nodes.push({
       id: c.id,
       nome: c.nome,
@@ -173,23 +201,16 @@ export function computeEcossistemaLayout(): {
       externo: true,
       x: externCol * COL_W,
       y: i * ROW_H,
+      status: c.status ?? null,
     });
   });
 
-  const edges: EcossistemaEdgeSeed[] = [
-    ...INTEGRACOES_SEED.map((it, i) => ({
-      id: `int-${i}-${it.origem}-${it.destino}`,
-      source: it.origem,
-      target: it.destino,
-      label: it.label,
-    })),
-    ...INTEGRACOES_HUB_SEED.map((it, i) => ({
-      id: `hub-${i}-${it.origem}-${it.destino}`,
-      source: it.origem,
-      target: it.destino,
-      label: it.label,
-    })),
-  ];
+  const edges: EcossistemaEdgeSeed[] = integracoesIn.map((it, i) => ({
+    id: `edge-${i}-${it.origem}-${it.destino}`,
+    source: it.origem,
+    target: it.destino,
+    label: it.label,
+  }));
 
   return { nodes, edges };
 }

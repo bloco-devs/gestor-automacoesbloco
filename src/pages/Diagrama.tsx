@@ -76,8 +76,9 @@ import {
   upsertPosicao,
   type DiagramaConexaoColuna,
 } from "@/lib/diagrama";
-import { MAPA_PROVIDERS, type CamadaMapa } from "@/lib/mapaSource";
+import { MAPA_PROVIDERS, type CamadaMapa, type EcossistemaHubData } from "@/lib/mapaSource";
 import { computeEcossistemaLayout } from "@/lib/ecossistemaSeed";
+import { supabase } from "@/integrations/supabase/client";
 
 import type { Solucao, Solicitacao } from "@/lib/types";
 import { Card } from "@/components/ui/card";
@@ -233,6 +234,8 @@ function DiagramaInner() {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
   const [camada, setCamada] = useState<CamadaMapa>("solucoes");
+  const [ecoFonte, setEcoFonte] = useState<"hub" | "semente" | null>(null);
+  const [ecoGeradoEm, setEcoGeradoEm] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [labelDialog, setLabelDialog] = useState<{ edgeId: string; value: string } | null>(null);
   const [detailsDialog, setDetailsDialog] = useState<{ edgeId: string; label: string } | null>(null);
@@ -390,10 +393,34 @@ function DiagramaInner() {
     setEdges([]);
     (async () => {
       try {
-        // Camada Ecossistema: render a partir do SEED estático (Onda 7).
+        // Camada Ecossistema: tenta HUB ao vivo; em qualquer falha, cai p/ seed.
         if (camada === "ecossistema") {
-          const { nodes: nseed, edges: eseed } = computeEcossistemaLayout();
+          setEcoFonte(null);
+          setEcoGeradoEm(null);
+          let layoutInput: Parameters<typeof computeEcossistemaLayout>[0] | undefined;
+          let fonte: "hub" | "semente" = "semente";
+          let geradoEm: string | null = null;
+          try {
+            const { data, error } = await supabase.functions.invoke<EcossistemaHubData>(
+              "ecossistema-mapa",
+              { method: "GET" },
+            );
+            if (!error && data && data.fonte === "hub" && Array.isArray(data.sistemas)) {
+              layoutInput = {
+                sistemas: data.sistemas,
+                conectoresExternos: data.conectoresExternos ?? [],
+                integracoes: data.integracoes ?? [],
+              };
+              fonte = "hub";
+              geradoEm = data.gerado_em ?? null;
+            }
+          } catch (e) {
+            console.warn("ecossistema-mapa indisponível, usando seed.", e);
+          }
+          const { nodes: nseed, edges: eseed } = computeEcossistemaLayout(layoutInput);
           if (cancelled) return;
+          setEcoFonte(fonte);
+          setEcoGeradoEm(geradoEm);
           setNodes(
             nseed.map<Node>((n) => ({
               id: n.id,
@@ -894,12 +921,29 @@ function DiagramaInner() {
               <Layers className="size-3.5" /> Ecossistema
             </Button>
           </div>
-          {camada === "ecossistema" && camadaAtiva.aviso && (
+          {camada === "ecossistema" && (
             <div className="mt-2 flex items-center gap-2 rounded-md border border-dashed border-border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground">
-              <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">
-                Semente
-              </Badge>
-              <span>{camadaAtiva.aviso}</span>
+              {ecoFonte === null ? (
+                <>
+                  <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">…</Badge>
+                  <span>Carregando catálogo do HUB…</span>
+                </>
+              ) : ecoFonte === "hub" ? (
+                <>
+                  <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">Ao vivo</Badge>
+                  <span>
+                    Fonte: HUB
+                    {ecoGeradoEm
+                      ? ` · atualizado ${new Date(ecoGeradoEm).toLocaleString("pt-BR")}`
+                      : ""}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">Semente</Badge>
+                  <span>Dados de exemplo (semente) — HUB indisponível</span>
+                </>
+              )}
             </div>
           )}
         </div>
