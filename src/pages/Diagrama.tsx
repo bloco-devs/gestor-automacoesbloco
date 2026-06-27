@@ -921,12 +921,29 @@ function DiagramaInner() {
               <Layers className="size-3.5" /> Ecossistema
             </Button>
           </div>
-          {camada === "ecossistema" && camadaAtiva.aviso && (
+          {camada === "ecossistema" && (
             <div className="mt-2 flex items-center gap-2 rounded-md border border-dashed border-border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground">
-              <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">
-                Semente
-              </Badge>
-              <span>{camadaAtiva.aviso}</span>
+              {ecoFonte === null ? (
+                <>
+                  <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">…</Badge>
+                  <span>Carregando catálogo do HUB…</span>
+                </>
+              ) : ecoFonte === "hub" ? (
+                <>
+                  <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">Ao vivo</Badge>
+                  <span>
+                    Fonte: HUB
+                    {ecoGeradoEm
+                      ? ` · atualizado ${new Date(ecoGeradoEm).toLocaleString("pt-BR")}`
+                      : ""}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">Semente</Badge>
+                  <span>Dados de exemplo (semente) — HUB indisponível</span>
+                </>
+              )}
             </div>
           )}
         </div>
