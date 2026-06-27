@@ -472,7 +472,7 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((account) => {
+              pageItems.map((account) => {
                 const isSelf = account.user_id === currentUserId;
                 const displayName =
                   account.profile_nome || account.nome || "—";
