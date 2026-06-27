@@ -85,6 +85,18 @@ function sanitize(payload: unknown): Payload {
           }))
         : undefined,
     })),
+    saude: Array.isArray(p.saude)
+      ? p.saude.slice(0, MAX_SAUDE).map((s) => ({
+          nome: String(s?.nome ?? "").slice(0, 120),
+          execs: Number.isFinite(s?.execs) ? Math.max(0, Math.floor(Number(s.execs))) : 0,
+          falhas: Number.isFinite(s?.falhas) ? Math.max(0, Math.floor(Number(s.falhas))) : 0,
+          taxa: Number.isFinite(s?.taxa) ? Math.max(0, Math.min(1, Number(s.taxa))) : 0,
+          ultima: s?.ultima ? String(s.ultima).slice(0, 40) : null,
+        }))
+      : undefined,
+    observacoes: Array.isArray(p.observacoes)
+      ? p.observacoes.slice(0, MAX_OBS).map((o) => String(o ?? "").slice(0, 240)).filter(Boolean)
+      : undefined,
   };
 }
 
