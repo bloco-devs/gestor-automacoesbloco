@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Check, ChevronsUpDown, ExternalLink, Plus, Search, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, ChevronsUpDown, ExternalLink, Plus, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
@@ -20,14 +20,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -47,11 +39,7 @@ export default function SolucoesKanban() {
   const [novoSolicitacaoId, setNovoSolicitacaoId] = useState<string>("none");
   const [salvando, setSalvando] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
-  // Toggle entre as duas variantes do seletor de vínculo (A: combobox / B: modal com busca)
-  const [vinculoVariant, setVinculoVariant] = useState<"A" | "B">("A");
   const [comboOpen, setComboOpen] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogSearch, setDialogSearch] = useState("");
 
   const solicitacoesMap = useMemo(() => {
     const m = new Map(solicitacoes.map((s) => [s.id, s]));
@@ -145,170 +133,66 @@ export default function SolucoesKanban() {
               value={novoLink}
               onChange={(e) => setNovoLink(e.target.value)}
             />
-            {/* Toggle entre as duas variantes (para avaliação) */}
-            <div className="flex items-center gap-1 rounded-md border border-border p-0.5 text-xs">
-              <button
-                type="button"
-                onClick={() => setVinculoVariant("A")}
-                className={cn(
-                  "flex-1 rounded px-2 py-1 transition",
-                  vinculoVariant === "A" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Opção A · Combobox
-              </button>
-              <button
-                type="button"
-                onClick={() => setVinculoVariant("B")}
-                className={cn(
-                  "flex-1 rounded px-2 py-1 transition",
-                  vinculoVariant === "B" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Opção B · Modal
-              </button>
-            </div>
-
             {(() => {
               const selectedTitulo = novoSolicitacaoId === "none"
                 ? null
                 : solicitacoesMap.get(novoSolicitacaoId)?.titulo ?? null;
               const triggerLabel = selectedTitulo ?? "Vincular a uma solicitação (opcional)";
-
-              if (vinculoVariant === "A") {
-                // === Opção A — Combobox com busca (altura limitada + rolagem) ===
-                return (
-                  <Popover open={comboOpen} onOpenChange={setComboOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className={cn(
-                          "w-full justify-between font-normal",
-                          !selectedTitulo && "text-muted-foreground",
-                        )}
-                      >
-                        <span className="truncate">{triggerLabel}</span>
-                        <ChevronsUpDown className="size-4 opacity-50 shrink-0 ml-2" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      align="start"
-                      side="bottom"
-                      className="w-[var(--radix-popover-trigger-width)] p-0"
-                    >
-                      <Command>
-                        <CommandInput placeholder="Buscar solicitação..." className="h-8 text-xs" />
-                        <CommandList className="max-h-28">
-                          <CommandEmpty className="py-2 text-xs">Nenhuma solicitação encontrada.</CommandEmpty>
-                          <CommandGroup>
-                            <CommandItem
-                              value="sem vínculo"
-                              className="py-1 text-xs"
-                              onSelect={() => {
-                                setNovoSolicitacaoId("none");
-                                setComboOpen(false);
-                              }}
-                            >
-                              <Check className={cn("mr-2 size-3", novoSolicitacaoId === "none" ? "opacity-100" : "opacity-0")} />
-                              Sem vínculo
-                            </CommandItem>
-                            {solicitacoes.map((s) => (
-                              <CommandItem
-                                key={s.id}
-                                value={s.titulo}
-                                className="py-1 text-xs"
-                                onSelect={() => {
-                                  setNovoSolicitacaoId(s.id);
-                                  setComboOpen(false);
-                                }}
-                              >
-                                <Check className={cn("mr-2 size-3 shrink-0", novoSolicitacaoId === s.id ? "opacity-100" : "opacity-0")} />
-                                <span className="truncate">{s.titulo}</span>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-
-                    </PopoverContent>
-                  </Popover>
-                );
-              }
-
-              // === Opção B — Modal centralizado com busca e lista rolável ===
-              const filtradas = solicitacoes.filter((s) =>
-                s.titulo.toLowerCase().includes(dialogSearch.trim().toLowerCase()),
-              );
               return (
-                <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setDialogSearch(""); }}>
-                  <DialogTrigger asChild>
+                <Popover open={comboOpen} onOpenChange={setComboOpen}>
+                  <PopoverTrigger asChild>
                     <Button
                       variant="outline"
+                      role="combobox"
                       className={cn(
                         "w-full justify-between font-normal",
                         !selectedTitulo && "text-muted-foreground",
                       )}
                     >
                       <span className="truncate">{triggerLabel}</span>
-                      <Search className="size-4 opacity-50 shrink-0 ml-2" />
+                      <ChevronsUpDown className="size-4 opacity-50 shrink-0 ml-2" />
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Vincular a uma solicitação</DialogTitle>
-                    </DialogHeader>
-                    <Input
-                      autoFocus
-                      placeholder="Buscar por título..."
-                      value={dialogSearch}
-                      onChange={(e) => setDialogSearch(e.target.value)}
-                    />
-                    <ScrollArea className="h-48 rounded-md border border-border">
-                      <div className="p-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNovoSolicitacaoId("none");
-                            setDialogOpen(false);
-                            setDialogSearch("");
-                          }}
-                          className={cn(
-                            "w-full flex items-center gap-2 rounded px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
-                            novoSolicitacaoId === "none" && "bg-accent/50",
-                          )}
-                        >
-                          <Check className={cn("size-4", novoSolicitacaoId === "none" ? "opacity-100" : "opacity-0")} />
-                          Sem vínculo
-                        </button>
-                        {filtradas.length === 0 ? (
-                          <div className="px-2 py-6 text-center text-xs text-muted-foreground">
-                            Nenhuma solicitação encontrada.
-                          </div>
-                        ) : (
-                          filtradas.map((s) => (
-                            <button
-                              type="button"
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    side="bottom"
+                    className="w-[var(--radix-popover-trigger-width)] p-0"
+                  >
+                    <Command>
+                      <CommandInput placeholder="Buscar solicitação..." className="h-8 text-xs" />
+                      <CommandList className="max-h-28">
+                        <CommandEmpty className="py-2 text-xs">Nenhuma solicitação encontrada.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="sem vínculo"
+                            className="py-1 text-xs"
+                            onSelect={() => {
+                              setNovoSolicitacaoId("none");
+                              setComboOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 size-3", novoSolicitacaoId === "none" ? "opacity-100" : "opacity-0")} />
+                            Sem vínculo
+                          </CommandItem>
+                          {solicitacoes.map((s) => (
+                            <CommandItem
                               key={s.id}
-                              onClick={() => {
+                              value={s.titulo}
+                              className="py-1 text-xs"
+                              onSelect={() => {
                                 setNovoSolicitacaoId(s.id);
-                                setDialogOpen(false);
-                                setDialogSearch("");
+                                setComboOpen(false);
                               }}
-                              className={cn(
-                                "w-full flex items-center gap-2 rounded px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
-                                novoSolicitacaoId === s.id && "bg-accent/50",
-                              )}
                             >
-                              <Check className={cn("size-4 shrink-0", novoSolicitacaoId === s.id ? "opacity-100" : "opacity-0")} />
+                              <Check className={cn("mr-2 size-3 shrink-0", novoSolicitacaoId === s.id ? "opacity-100" : "opacity-0")} />
                               <span className="truncate">{s.titulo}</span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </ScrollArea>
-                  </DialogContent>
-                </Dialog>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               );
             })()}
             <div className="flex justify-end">

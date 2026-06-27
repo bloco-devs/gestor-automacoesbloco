@@ -240,6 +240,8 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | DbRole>("all");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
   const [createOpen, setCreateOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newNome, setNewNome] = useState("");
@@ -312,6 +314,16 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
       );
     });
   }, [accounts, filter, roleFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage],
+  );
+  useEffect(() => {
+    setPage(1);
+  }, [filter, roleFilter]);
 
   async function handleCreate() {
     const email = newEmail.trim().toLowerCase();
@@ -460,7 +472,7 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((account) => {
+              pageItems.map((account) => {
                 const isSelf = account.user_id === currentUserId;
                 const displayName =
                   account.profile_nome || account.nome || "—";
@@ -562,6 +574,38 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
           </TableBody>
         </Table>
       </div>
+
+      {!loading && filtered.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+          <span>
+            Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–
+            {Math.min(currentPage * PAGE_SIZE, filtered.length)} de {filtered.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              aria-label="Página anterior"
+            >
+              Anterior
+            </Button>
+            <span>
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              aria-label="Próxima página"
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+      )}
 
       <p className="text-xs text-muted-foreground">
         Após cadastrar uma conta, o usuário precisa criar a senha pelo fluxo de login
