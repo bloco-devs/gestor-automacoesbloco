@@ -941,8 +941,59 @@ function DiagramaInner() {
         destino: tituloPorId.get(e.target) ?? e.target,
         label: typeof e.label === "string" ? e.label : null,
       }));
-    return { solucoes, conexoes };
-  }, [nodes, edges]);
+    // Onda 6: enriquece com saúde/observações somente na camada Ecossistema.
+    let saude: MapaNarrativaPayload["saude"];
+    let observacoes: MapaNarrativaPayload["observacoes"];
+    if (camada === "ecossistema") {
+      const saudeMap = ecoSaudeRef.current ?? {};
+      const statusMap = ecoStatusRef.current ?? {};
+      const nomeById = new Map<string, string>();
+      for (const n of nodes) {
+        if (n.type === "sistema") {
+          const d = n.data as unknown as SistemaNodeData;
+          nomeById.set(n.id, d.nome);
+        }
+      }
+      const ranked = Object.entries(saudeMap)
+        .filter(([, s]) => s && s.execs > 0)
+        .map(([id, s]) => ({
+          nome: nomeById.get(id) ?? id,
+          execs: s.execs,
+          falhas: s.falhas,
+          taxa: s.falhas / s.execs,
+          ultima: s.ultima ?? null,
+        }))
+        .sort((a, b) => b.taxa - a.taxa || b.falhas - a.falhas)
+        .slice(0, 10);
+      saude = ranked;
+
+      const obs: string[] = [];
+      for (const r of ranked) {
+        if (r.taxa > 0.4) obs.push(`Conector "${r.nome}" com ${Math.round(r.taxa * 100)}% de falha em ${r.execs} execs (crítico).`);
+        else if (r.taxa >= 0.1) obs.push(`Conector "${r.nome}" com ${Math.round(r.taxa * 100)}% de falha em ${r.execs} execs (atenção).`);
+      }
+      for (const [id, st] of Object.entries(statusMap)) {
+        if (!st) continue;
+        const k = String(st).toLowerCase();
+        if (k === "desativado" || k === "inativo" || k === "catalogo" || k === "catálogo") {
+          obs.push(`Sistema/conector "${nomeById.get(id) ?? id}" está ${k}.`);
+        }
+      }
+      // Ponto único de falha: nós com >=3 consumidores distintos saindo deles.
+      const outDeg = new Map<string, Set<string>>();
+      for (const e of edges) {
+        if (!outDeg.has(e.source)) outDeg.set(e.source, new Set());
+        outDeg.get(e.source)!.add(e.target);
+      }
+      for (const [src, dests] of outDeg) {
+        if (dests.size >= 3) {
+          obs.push(`"${nomeById.get(src) ?? src}" alimenta ${dests.size} consumidores — possível ponto único de falha.`);
+        }
+      }
+      observacoes = obs.slice(0, 12);
+    }
+    return { solucoes, conexoes, saude, observacoes };
+  }, [nodes, edges, camada]);
 
   const camadaAtiva = MAPA_PROVIDERS[camada];
   const camadaDisponivel = camadaAtiva.disponivel;
