@@ -393,10 +393,34 @@ function DiagramaInner() {
     setEdges([]);
     (async () => {
       try {
-        // Camada Ecossistema: render a partir do SEED estático (Onda 7).
+        // Camada Ecossistema: tenta HUB ao vivo; em qualquer falha, cai p/ seed.
         if (camada === "ecossistema") {
-          const { nodes: nseed, edges: eseed } = computeEcossistemaLayout();
+          setEcoFonte(null);
+          setEcoGeradoEm(null);
+          let layoutInput: Parameters<typeof computeEcossistemaLayout>[0] | undefined;
+          let fonte: "hub" | "semente" = "semente";
+          let geradoEm: string | null = null;
+          try {
+            const { data, error } = await supabase.functions.invoke<EcossistemaHubData>(
+              "ecossistema-mapa",
+              { method: "GET" },
+            );
+            if (!error && data && data.fonte === "hub" && Array.isArray(data.sistemas)) {
+              layoutInput = {
+                sistemas: data.sistemas,
+                conectoresExternos: data.conectoresExternos ?? [],
+                integracoes: data.integracoes ?? [],
+              };
+              fonte = "hub";
+              geradoEm = data.gerado_em ?? null;
+            }
+          } catch (e) {
+            console.warn("ecossistema-mapa indisponível, usando seed.", e);
+          }
+          const { nodes: nseed, edges: eseed } = computeEcossistemaLayout(layoutInput);
           if (cancelled) return;
+          setEcoFonte(fonte);
+          setEcoGeradoEm(geradoEm);
           setNodes(
             nseed.map<Node>((n) => ({
               id: n.id,
