@@ -575,6 +575,38 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
         </Table>
       </div>
 
+      {!loading && filtered.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+          <span>
+            Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–
+            {Math.min(currentPage * PAGE_SIZE, filtered.length)} de {filtered.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              aria-label="Página anterior"
+            >
+              Anterior
+            </Button>
+            <span>
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              aria-label="Próxima página"
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+      )}
+
       <p className="text-xs text-muted-foreground">
         Após cadastrar uma conta, o usuário precisa criar a senha pelo fluxo de login
         (link "Esqueci minha senha"). O papel é aplicado automaticamente no primeiro acesso.
