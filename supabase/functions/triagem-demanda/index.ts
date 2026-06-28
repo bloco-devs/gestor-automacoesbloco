@@ -127,11 +127,23 @@ ${descricao}${sistemasBloco}`;
       }
     }
 
+    const TIPOS_VALIDOS = new Set(["ajuste_existente", "novo_modulo", "novo_sistema"]);
+    const tipoRaw = typeof parsed.tipo_demanda === "string" ? parsed.tipo_demanda.trim() : null;
+    const tipo_demanda = tipoRaw && TIPOS_VALIDOS.has(tipoRaw) ? tipoRaw : null;
+
+    const slugRaw = typeof parsed.sistema_alvo_slug === "string" ? parsed.sistema_alvo_slug.trim() : null;
+    let sistema_alvo_slug: string | null = null;
+    if (slugRaw && slugsValidos.has(slugRaw) && tipo_demanda !== "novo_sistema") {
+      sistema_alvo_slug = slugRaw;
+    }
+
     const resposta = {
       frequencia: clamp10(parsed.frequencia),
       dificuldade: clamp10(parsed.dificuldade),
       retorno: clamp10(parsed.retorno),
       complexidade_dev: clamp10(parsed.complexidade_dev),
+      tipo_demanda,
+      sistema_alvo_slug,
       justificativa:
         typeof parsed.justificativa === "string" && parsed.justificativa.trim()
           ? parsed.justificativa.trim().slice(0, 500)
