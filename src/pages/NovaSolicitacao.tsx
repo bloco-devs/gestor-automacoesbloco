@@ -63,13 +63,32 @@ export default function NovaSolicitacao() {
     setSugerindo(true);
     try {
       const { data, error } = await supabase.functions.invoke("triagem-demanda", {
-        body: { titulo, descricao, setor },
+        body: {
+          titulo,
+          descricao,
+          setor,
+          sistemas: sistemasEcossistema.map((s) => ({ slug: s.id, nome: s.nome })),
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (typeof data?.frequencia === "number") setFrequencia(data.frequencia);
       if (typeof data?.dificuldade === "number") setDificuldade(data.dificuldade);
       if (typeof data?.retorno === "number") setRetorno(data.retorno);
+      const sugTipo = data?.tipo_demanda;
+      const TIPOS_VALIDOS: TipoDemanda[] = ["ajuste_existente", "novo_modulo", "novo_sistema"];
+      if (!tipoDemanda && typeof sugTipo === "string" && (TIPOS_VALIDOS as string[]).includes(sugTipo)) {
+        setTipoDemanda(sugTipo as TipoDemanda);
+        const sugSlug = data?.sistema_alvo_slug;
+        if (
+          !sistemaAlvoSlug &&
+          (sugTipo === "ajuste_existente" || sugTipo === "novo_modulo") &&
+          typeof sugSlug === "string" &&
+          sistemasEcossistema.some((s) => s.id === sugSlug)
+        ) {
+          setSistemaAlvoSlug(sugSlug);
+        }
+      }
       setSugestaoJustificativa(data?.justificativa ?? null);
       toast({ title: "Prioridade sugerida", description: "Ajuste os valores se necessário." });
     } catch (err) {
