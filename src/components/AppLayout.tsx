@@ -282,10 +282,22 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen flex">
-      {!sidebarHidden && (
+      {isMobile && mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      {(isMobile ? mobileOpen : !sidebarHidden) && (
       <aside
-        className="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar relative shrink-0"
-        style={{ width: sidebarWidth }}
+        className={cn(
+          "flex-col border-sidebar-border bg-sidebar shrink-0",
+          isMobile
+            ? "fixed inset-y-0 left-0 z-50 w-72 flex border-r shadow-xl"
+            : "hidden md:flex relative border-r",
+        )}
+        style={isMobile ? undefined : { width: sidebarWidth }}
       >
         <div className="px-5 py-6 flex items-center gap-3 min-w-0">
           <img
@@ -370,12 +382,15 @@ export default function AppLayout() {
 
         <button
           type="button"
-          onClick={() => setSidebarHidden(true)}
-          title="Esconder barra lateral"
-          aria-label="Esconder barra lateral"
-          className="hidden md:flex absolute top-2 right-1 z-10 items-center justify-center size-5 rounded text-muted-foreground/40 hover:text-foreground hover:bg-muted/60 transition-colors"
+          onClick={() => (isMobile ? setMobileOpen(false) : setSidebarHidden(true))}
+          title={isMobile ? "Fechar menu" : "Esconder barra lateral"}
+          aria-label={isMobile ? "Fechar menu" : "Esconder barra lateral"}
+          className={cn(
+            "absolute z-10 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors flex",
+            isMobile ? "top-3 right-3 size-8" : "top-2 right-1 size-5 text-muted-foreground/40",
+          )}
         >
-          <PanelLeftClose className="size-3.5" />
+          {isMobile ? <X className="size-4" /> : <PanelLeftClose className="size-3.5" />}
         </button>
       </aside>
       )}
