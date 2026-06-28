@@ -48,16 +48,21 @@ export default function Consolidacao() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <Layers className="size-6" />
-          Consolidação
-        </h1>
-        <p className="text-sm text-muted-foreground max-w-3xl">
-          Para cada demanda aberta, verifique se a funcionalidade já existe em um sistema do
-          ecossistema ou se a demanda é complementar de outra. A resposta ao solicitante é tratada
-          em outra etapa — aqui apenas a decisão fica registrada.
-        </p>
+      <header className="space-y-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold flex items-center gap-2">
+              <Layers className="size-6" />
+              Consolidação
+            </h1>
+            <p className="text-sm text-muted-foreground max-w-3xl">
+              Para cada demanda aberta, verifique se a funcionalidade já existe em um sistema do
+              ecossistema ou se a demanda é complementar de outra. A resposta ao solicitante é tratada
+              em outra etapa — aqui apenas a decisão fica registrada.
+            </p>
+          </div>
+          <ReprocessarPendentesButton onDone={() => setReloadKey((k) => k + 1)} />
+        </div>
       </header>
 
       {pendentes.length === 0 ? (
@@ -398,5 +403,43 @@ function DemandaCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ReprocessarPendentesButton({ onDone }: { onDone: () => void }) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={loading}
+      onClick={async () => {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase.functions.invoke("reprocessar-matches", {
+            body: {},
+          });
+          if (error) throw error;
+          const d = (data ?? {}) as { processadas?: number; total_pendentes?: number };
+          toast({
+            title: "Reprocessamento concluído",
+            description: `Processadas ${d.processadas ?? 0} demanda(s). Pendentes restantes: ${Math.max(0, (d.total_pendentes ?? 0) - (d.processadas ?? 0))}.`,
+          });
+          onDone();
+        } catch (e) {
+          toast({
+            title: "Falha ao reprocessar",
+            description: e instanceof Error ? e.message : "Tente novamente.",
+            variant: "destructive",
+          });
+        } finally {
+          setLoading(false);
+        }
+      }}
+    >
+      {loading ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+      Reprocessar pendentes (IA)
+    </Button>
   );
 }

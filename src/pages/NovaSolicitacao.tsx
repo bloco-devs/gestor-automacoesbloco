@@ -116,7 +116,7 @@ export default function NovaSolicitacao() {
         .split(",")
         .map((software) => software.trim())
         .filter(Boolean);
-      await createSolicitacao({
+      const novaDemanda = await createSolicitacao({
         titulo: v.titulo,
         descricao: v.descricao,
         softwares: softwaresList,
@@ -130,6 +130,28 @@ export default function NovaSolicitacao() {
         tipoDemanda: tipoDemanda || null,
         sistemaAlvoSlug: precisaSistema && sistemaAlvoSlug ? sistemaAlvoSlug : null,
       });
+      // Fire-and-forget: roda o match-ecossistema em background e popula o cache para o
+      // gestor já encontrar as sugestões na Consolidação. Não exibimos ao solicitante (Q2).
+      void (async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke("match-ecossistema", {
+            body: {
+              titulo: v.titulo,
+              descricao: v.descricao,
+              tipo_demanda: tipoDemanda || null,
+              sistema_alvo_slug: precisaSistema && sistemaAlvoSlug ? sistemaAlvoSlug : null,
+            },
+          });
+          if (error) return;
+          const candidatos = Array.isArray((data as { candidatos?: unknown[] } | null)?.candidatos)
+            ? (data as { candidatos: unknown[] }).candidatos
+            : [];
+          const { salvarMatchEcossistema } = await import("@/lib/supabaseData");
+          await salvarMatchEcossistema(novaDemanda.id, candidatos as never);
+        } catch {
+          // silencioso — match é best-effort
+        }
+      })();
       toast({ title: "Solicitação registrada", description: "Você poderá acompanhar o status em tempo real." });
       navigate("/minhas-solicitacoes");
     } catch (err) {
