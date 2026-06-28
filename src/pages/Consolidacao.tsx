@@ -405,3 +405,41 @@ function DemandaCard({
     </Card>
   );
 }
+
+function ReprocessarPendentesButton({ onDone }: { onDone: () => void }) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={loading}
+      onClick={async () => {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase.functions.invoke("reprocessar-matches", {
+            body: {},
+          });
+          if (error) throw error;
+          const d = (data ?? {}) as { processadas?: number; total_pendentes?: number };
+          toast({
+            title: "Reprocessamento concluído",
+            description: `Processadas ${d.processadas ?? 0} demanda(s). Pendentes restantes: ${Math.max(0, (d.total_pendentes ?? 0) - (d.processadas ?? 0))}.`,
+          });
+          onDone();
+        } catch (e) {
+          toast({
+            title: "Falha ao reprocessar",
+            description: e instanceof Error ? e.message : "Tente novamente.",
+            variant: "destructive",
+          });
+        } finally {
+          setLoading(false);
+        }
+      }}
+    >
+      {loading ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+      Reprocessar pendentes (IA)
+    </Button>
+  );
+}
