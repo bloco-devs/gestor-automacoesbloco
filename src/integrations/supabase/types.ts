@@ -570,18 +570,26 @@ export type Database = {
       }
       solicitacoes: {
         Row: {
+          atendida_em: string | null
+          atendida_por: string | null
+          atendida_por_sistema_slug: string | null
+          atendida_url: string | null
           avaliado_em: string | null
           avaliado_por: string | null
           complexidade: number
           complexidade_dev: number | null
+          consolidada_em: string | null
           created_at: string
           data_fim_prevista: string | null
           data_inicio_prevista: string | null
           descricao: string
+          desfecho: string | null
           email: string
           frequencia: number
           id: string
           integracoes: string[]
+          match_atualizado_em: string | null
+          match_sugestoes: Json | null
           nome: string
           notas_tecnicas: string | null
           notas_tecnicas_complexidade: string | null
@@ -602,18 +610,26 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          atendida_em?: string | null
+          atendida_por?: string | null
+          atendida_por_sistema_slug?: string | null
+          atendida_url?: string | null
           avaliado_em?: string | null
           avaliado_por?: string | null
           complexidade?: number
           complexidade_dev?: number | null
+          consolidada_em?: string | null
           created_at?: string
           data_fim_prevista?: string | null
           data_inicio_prevista?: string | null
           descricao: string
+          desfecho?: string | null
           email: string
           frequencia?: number
           id?: string
           integracoes?: string[]
+          match_atualizado_em?: string | null
+          match_sugestoes?: Json | null
           nome: string
           notas_tecnicas?: string | null
           notas_tecnicas_complexidade?: string | null
@@ -634,18 +650,26 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          atendida_em?: string | null
+          atendida_por?: string | null
+          atendida_por_sistema_slug?: string | null
+          atendida_url?: string | null
           avaliado_em?: string | null
           avaliado_por?: string | null
           complexidade?: number
           complexidade_dev?: number | null
+          consolidada_em?: string | null
           created_at?: string
           data_fim_prevista?: string | null
           data_inicio_prevista?: string | null
           descricao?: string
+          desfecho?: string | null
           email?: string
           frequencia?: number
           id?: string
           integracoes?: string[]
+          match_atualizado_em?: string | null
+          match_sugestoes?: Json | null
           nome?: string
           notas_tecnicas?: string | null
           notas_tecnicas_complexidade?: string | null
@@ -665,7 +689,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_consolidada_em_fkey"
+            columns: ["consolidada_em"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       solicitacoes_score_history: {
         Row: {
