@@ -96,7 +96,6 @@ function DemandaCard({
   onChanged: () => void;
   onError: (msg: string) => void;
 }) {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [analisando, setAnalisando] = useState(false);
   const [erroMatch, setErroMatch] = useState<string | null>(null);
