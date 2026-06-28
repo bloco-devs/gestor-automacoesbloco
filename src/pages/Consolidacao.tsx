@@ -8,7 +8,6 @@ import {
   consolidarDemanda,
   limparDesfecho,
   listSolicitacoes,
-  marcarAtendidaPorSistema,
   salvarMatchEcossistema,
 } from "@/lib/supabaseData";
 import { TIPO_DEMANDA_LABEL } from "@/lib/types";
@@ -97,7 +96,7 @@ function DemandaCard({
   onChanged: () => void;
   onError: (msg: string) => void;
 }) {
-  const { user } = useAuth();
+  const { toast } = useToast();
   const [analisando, setAnalisando] = useState(false);
   const [erroMatch, setErroMatch] = useState<string | null>(null);
   const [candidatos, setCandidatos] = useState<MatchCandidato[] | null>(
@@ -169,10 +168,26 @@ function DemandaCard({
     async (c: MatchCandidato) => {
       setSalvando(true);
       try {
-        await marcarAtendidaPorSistema(demanda.id, {
-          slug: c.sistema_slug,
-          url: c.url_app,
-          atendidaPor: user?.id ?? null,
+        const { data, error } = await supabase.functions.invoke(
+          "confirmar-atendimento-existente",
+          {
+            body: {
+              solicitacao_id: demanda.id,
+              sistema_slug: c.sistema_slug,
+              nome_sistema: c.nome,
+              url_app: c.url_app,
+              modulo: c.modulo,
+              justificativa: c.justificativa,
+            },
+          },
+        );
+        if (error) throw error;
+        const emailEnviado = Boolean((data as { email_enviado?: boolean } | null)?.email_enviado);
+        toast({
+          title: "Solicitante notificado",
+          description: emailEnviado
+            ? "Notificação na tela e e-mail enviados."
+            : "Notificação na tela criada. E-mail não foi enviado.",
         });
         onChanged();
       } catch (e) {
@@ -181,7 +196,7 @@ function DemandaCard({
         setSalvando(false);
       }
     },
-    [demanda.id, user?.id, onChanged, onError],
+    [demanda.id, onChanged, onError, toast],
   );
 
   const handleConsolidar = useCallback(async () => {
