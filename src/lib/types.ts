@@ -63,6 +63,17 @@ export function freqLabel(n: number): string {
 
 export type TipoDemanda = "ajuste_existente" | "novo_modulo" | "novo_sistema";
 
+export type DesfechoDemanda = "atendida_existente" | "consolidada";
+
+export interface MatchCandidato {
+  sistema_slug: string;
+  nome: string;
+  modulo: string | null;
+  url_app: string | null;
+  confianca: number;
+  justificativa: string;
+}
+
 export const TIPO_DEMANDA_LABEL: Record<TipoDemanda, string> = {
   ajuste_existente: "Ajuste em sistema existente",
   novo_modulo: "Novo módulo em sistema existente",
@@ -114,6 +125,17 @@ export interface Solicitacao {
   tipoDemanda?: TipoDemanda | null;
   /** Onda A1 — Slug do sistema-alvo do ecossistema (quando aplicável). */
   sistemaAlvoSlug?: string | null;
+  /** Onda B3 — Cache das sugestões da IA sobre funcionalidades já existentes (de match-ecossistema). */
+  matchSugestoes?: MatchCandidato[] | null;
+  matchAtualizadoEm?: string | null;
+  /** Onda B3 — Desfecho do gestor (null = pendente). */
+  desfecho?: DesfechoDemanda | null;
+  atendidaPorSistemaSlug?: string | null;
+  atendidaUrl?: string | null;
+  atendidaEm?: string | null;
+  atendidaPor?: string | null;
+  /** Demanda canônica em que esta foi consolidada (quando desfecho = consolidada). */
+  consolidadaEm?: string | null;
   /** ID do dev/admin que salvou a última avaliação técnica. NULL se nunca avaliada. */
   avaliadoPor?: string | null;
   /** Timestamp ISO de quando a última avaliação técnica foi salva. NULL se nunca avaliada. */
