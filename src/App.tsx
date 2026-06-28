@@ -38,6 +38,7 @@ import Diagrama from "./pages/Diagrama";
 import Atividades from "./pages/Atividades";
 import Ajuda from "./pages/Ajuda";
 import ObservabilidadeIA from "./pages/ObservabilidadeIA";
+import Consolidacao from "./pages/Consolidacao";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,6 +75,7 @@ const AppRoutes = () => {
         <Route path="/diagrama" element={<ProtectedRoute role="developer"><Diagrama /></ProtectedRoute>} />
         <Route path="/atividades" element={<ProtectedRoute role="developer"><Atividades /></ProtectedRoute>} />
         <Route path="/observabilidade-ia" element={<ProtectedRoute role="developer"><ObservabilidadeIA /></ProtectedRoute>} />
+        <Route path="/consolidacao" element={<ProtectedRoute role="developer"><Consolidacao /></ProtectedRoute>} />
 
         {/* Compartilhado */}
         <Route path="/ajuda" element={<Ajuda />} />

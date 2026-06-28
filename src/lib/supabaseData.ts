@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { calcScore } from "@/lib/score";
 import { computeScoreFinal, computeScoreSolicitante } from "@/lib/scoreV2";
-import type { AssignableUser, AssignableRole, Frequencia, Melhoria, MelhoriaStatus, PipelineStatus, Solicitacao, Solucao, TipoDemanda } from "@/lib/types";
+import type { AssignableUser, AssignableRole, DesfechoDemanda, Frequencia, MatchCandidato, Melhoria, MelhoriaStatus, PipelineStatus, Solicitacao, Solucao, TipoDemanda } from "@/lib/types";
 
 type SolicitacaoRow = {
   id: string;
@@ -31,9 +31,17 @@ type SolicitacaoRow = {
   avaliado_em: string | null;
   tipo_demanda: string | null;
   sistema_alvo_slug: string | null;
+  match_sugestoes: unknown | null;
+  match_atualizado_em: string | null;
+  desfecho: string | null;
+  atendida_por_sistema_slug: string | null;
+  atendida_url: string | null;
+  atendida_em: string | null;
+  atendida_por: string | null;
+  consolidada_em: string | null;
 };
 
-const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,score_solicitante,score_final,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em,tipo_demanda,sistema_alvo_slug";
+const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,score_solicitante,score_final,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em,tipo_demanda,sistema_alvo_slug,match_sugestoes,match_atualizado_em,desfecho,atendida_por_sistema_slug,atendida_url,atendida_em,atendida_por,consolidada_em";
 
 
 const SOLUCAO_COLS = "id,solicitacao_id,titulo,descricao,link,created_at,created_by,data_inicio_prevista,data_fim_prevista,responsavel_id";
@@ -84,6 +92,14 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     avaliadoEm: row.avaliado_em,
     tipoDemanda: (row.tipo_demanda as TipoDemanda | null) ?? null,
     sistemaAlvoSlug: row.sistema_alvo_slug ?? null,
+    matchSugestoes: Array.isArray(row.match_sugestoes) ? (row.match_sugestoes as MatchCandidato[]) : null,
+    matchAtualizadoEm: row.match_atualizado_em ?? null,
+    desfecho: (row.desfecho as DesfechoDemanda | null) ?? null,
+    atendidaPorSistemaSlug: row.atendida_por_sistema_slug ?? null,
+    atendidaUrl: row.atendida_url ?? null,
+    atendidaEm: row.atendida_em ?? null,
+    atendidaPor: row.atendida_por ?? null,
+    consolidadaEm: row.consolidada_em ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -575,4 +591,68 @@ export async function countPendingDevEvaluations(): Promise<number> {
   }
   return count ?? 0;
 }
+
+// ===== Onda B3 — Consolidação (desfecho da demanda) =====
+
+export async function salvarMatchEcossistema(id: string, candidatos: MatchCandidato[]): Promise<void> {
+  const { error } = await supabase
+    .from("solicitacoes")
+    .update({
+      match_sugestoes: candidatos as unknown as never,
+      match_atualizado_em: new Date().toISOString(),
+    } as never)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function marcarAtendidaPorSistema(
+  id: string,
+  data: { slug: string; url: string | null; atendidaPor?: string | null },
+): Promise<void> {
+  const { error } = await supabase
+    .from("solicitacoes")
+    .update({
+      desfecho: "atendida_existente",
+      atendida_por_sistema_slug: data.slug,
+      atendida_url: data.url,
+      atendida_em: new Date().toISOString(),
+      atendida_por: data.atendidaPor ?? null,
+      consolidada_em: null,
+    } as never)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function consolidarDemanda(id: string, canonicaId: string): Promise<void> {
+  const { error } = await supabase
+    .from("solicitacoes")
+    .update({
+      desfecho: "consolidada",
+      consolidada_em: canonicaId,
+      atendida_por_sistema_slug: null,
+      atendida_url: null,
+      atendida_em: null,
+      atendida_por: null,
+    } as never)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function limparDesfecho(id: string, opts: { limparCache?: boolean } = {}): Promise<void> {
+  const payload: Record<string, unknown> = {
+    desfecho: null,
+    atendida_por_sistema_slug: null,
+    atendida_url: null,
+    atendida_em: null,
+    atendida_por: null,
+    consolidada_em: null,
+  };
+  if (opts.limparCache) {
+    payload.match_sugestoes = null;
+    payload.match_atualizado_em = null;
+  }
+  const { error } = await supabase.from("solicitacoes").update(payload as never).eq("id", id);
+  if (error) throw error;
+}
+
 
