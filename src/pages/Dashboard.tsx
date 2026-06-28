@@ -157,6 +157,20 @@ export default function Dashboard() {
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground">Tipo de demanda</label>
+            <Select value={tipoDemandaFilter} onValueChange={setTipoDemandaFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos de demanda</SelectItem>
+                {(Object.keys(TIPO_DEMANDA_LABEL) as TipoDemanda[]).map((t) => (
+                  <SelectItem key={t} value={t}>{TIPO_DEMANDA_LABEL[t]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
