@@ -3,7 +3,8 @@ import { callAI, IAUsageError } from "../_shared/ia-gateway.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
 
-type Body = { titulo?: string; descricao?: string; setor?: string };
+type SistemaItem = { slug?: string; id?: string; nome?: string };
+type Body = { titulo?: string; descricao?: string; setor?: string; sistemas?: SistemaItem[] };
 
 const SYSTEM = `Você é um analista de priorização de demandas de automação interna na escala 0-10 para CADA fator. Devolva APENAS um objeto JSON, sem texto fora do JSON, com EXATAMENTE estes campos:
 {
@@ -11,9 +12,17 @@ const SYSTEM = `Você é um analista de priorização de demandas de automação
   "dificuldade": number,       // 0-10. 0=Trivial, 2=Fácil, 4=Moderada, 6=Difícil, 8=Muito difícil, 10=Crítica
   "retorno": number,           // 0-10. Retorno financeiro mensal. 0=Nenhum, 2=R$0-500, 4=R$500-2,5k, 6=R$2,5k-10k, 8=R$10k-50k, 10=R$50k+
   "complexidade_dev": number,  // 0-10. Estimativa de complexidade TÉCNICA de implementar. 0=trivial automação, 10=projeto longo/integração crítica
-  "justificativa": string      // 1-2 frases curtas em PT-BR explicando a estimativa
+  "tipo_demanda": "ajuste_existente" | "novo_modulo" | "novo_sistema" | null,
+  "sistema_alvo_slug": string | null,   // DEVE ser um slug exato da lista de sistemas fornecida, ou null
+  "justificativa": string      // 1-2 frases curtas em PT-BR explicando a estimativa e a classificação (tipo/sistema)
 }
-Regras: números inteiros entre 0 e 10. Se a descrição for vaga, escolha valores medianos plausíveis e diga isso na justificativa. Nada além do JSON.`;
+Regras de classificação:
+- "ajuste_existente": melhoria/correção em capacidade que provavelmente já existe em um sistema do ecossistema.
+- "novo_modulo": capacidade NOVA dentro de um sistema já existente (escolha o sistema-alvo).
+- "novo_sistema": não cabe em nenhum sistema do ecossistema (sistema_alvo_slug deve ser null).
+- sistema_alvo_slug: SOMENTE um slug presente na lista enviada pelo usuário (campo SISTEMAS). NUNCA invente slug. Se incerto, use null.
+- Se a lista de SISTEMAS não foi fornecida, defina tipo_demanda e sistema_alvo_slug como null.
+Regras gerais: números inteiros entre 0 e 10. Se a descrição for vaga, escolha valores medianos plausíveis e diga isso na justificativa. Nada além do JSON.`;
 
 function getServiceClient() {
   const url = Deno.env.get("SUPABASE_URL") ?? "";
@@ -54,6 +63,15 @@ Deno.serve(async (req) => {
     const titulo = (body.titulo ?? "").trim();
     const descricao = (body.descricao ?? "").trim();
     const setor = (body.setor ?? "").trim();
+    const sistemasInput = Array.isArray(body.sistemas) ? body.sistemas : [];
+    const sistemas = sistemasInput
+      .map((s) => ({
+        slug: String(s?.slug ?? s?.id ?? "").trim(),
+        nome: String(s?.nome ?? "").trim(),
+      }))
+      .filter((s) => s.slug && s.nome)
+      .slice(0, 60);
+    const slugsValidos = new Set(sistemas.map((s) => s.slug));
 
     if (!descricao || descricao.length < 10) {
       return new Response(
@@ -72,10 +90,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    const sistemasBloco = sistemas.length
+      ? `\nSISTEMAS (use APENAS um destes slugs em sistema_alvo_slug, ou null):\n${sistemas
+          .map((s) => `- ${s.slug} — ${s.nome}`)
+          .join("\n")}`
+      : `\nSISTEMAS: (não fornecidos — devolva tipo_demanda e sistema_alvo_slug como null)`;
+
     const userMsg = `TÍTULO: ${titulo || "(sem título)"}
 SETOR: ${setor || "(não informado)"}
 DESCRIÇÃO:
-${descricao}`;
+${descricao}${sistemasBloco}`;
 
     const data = await callAI(
       {
@@ -103,11 +127,23 @@ ${descricao}`;
       }
     }
 
+    const TIPOS_VALIDOS = new Set(["ajuste_existente", "novo_modulo", "novo_sistema"]);
+    const tipoRaw = typeof parsed.tipo_demanda === "string" ? parsed.tipo_demanda.trim() : null;
+    const tipo_demanda = tipoRaw && TIPOS_VALIDOS.has(tipoRaw) ? tipoRaw : null;
+
+    const slugRaw = typeof parsed.sistema_alvo_slug === "string" ? parsed.sistema_alvo_slug.trim() : null;
+    let sistema_alvo_slug: string | null = null;
+    if (slugRaw && slugsValidos.has(slugRaw) && tipo_demanda !== "novo_sistema") {
+      sistema_alvo_slug = slugRaw;
+    }
+
     const resposta = {
       frequencia: clamp10(parsed.frequencia),
       dificuldade: clamp10(parsed.dificuldade),
       retorno: clamp10(parsed.retorno),
       complexidade_dev: clamp10(parsed.complexidade_dev),
+      tipo_demanda,
+      sistema_alvo_slug,
       justificativa:
         typeof parsed.justificativa === "string" && parsed.justificativa.trim()
           ? parsed.justificativa.trim().slice(0, 500)
