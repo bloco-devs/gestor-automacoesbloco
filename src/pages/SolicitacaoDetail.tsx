@@ -201,6 +201,8 @@ export default function SolicitacaoDetail() {
     setEditComplexidade(solicitacao.complexidade);
     setEditRetorno(solicitacao.retorno);
     setEditSetor(solicitacao.setor ?? "");
+    setEditTipoDemanda(solicitacao.tipoDemanda ?? "");
+    setEditSistemaAlvo(solicitacao.sistemaAlvoSlug ?? "");
   }, [solicitacao]);
 
   useEffect(() => {
