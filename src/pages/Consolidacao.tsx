@@ -48,16 +48,21 @@ export default function Consolidacao() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <Layers className="size-6" />
-          Consolidação
-        </h1>
-        <p className="text-sm text-muted-foreground max-w-3xl">
-          Para cada demanda aberta, verifique se a funcionalidade já existe em um sistema do
-          ecossistema ou se a demanda é complementar de outra. A resposta ao solicitante é tratada
-          em outra etapa — aqui apenas a decisão fica registrada.
-        </p>
+      <header className="space-y-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold flex items-center gap-2">
+              <Layers className="size-6" />
+              Consolidação
+            </h1>
+            <p className="text-sm text-muted-foreground max-w-3xl">
+              Para cada demanda aberta, verifique se a funcionalidade já existe em um sistema do
+              ecossistema ou se a demanda é complementar de outra. A resposta ao solicitante é tratada
+              em outra etapa — aqui apenas a decisão fica registrada.
+            </p>
+          </div>
+          <ReprocessarPendentesButton onDone={() => setReloadKey((k) => k + 1)} />
+        </div>
       </header>
 
       {pendentes.length === 0 ? (
