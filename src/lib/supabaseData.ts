@@ -166,6 +166,8 @@ export async function createSolicitacao(data: {
   solicitanteId: string;
   solicitanteNome: string;
   email: string;
+  tipoDemanda?: TipoDemanda | null;
+  sistemaAlvoSlug?: string | null;
 }): Promise<Solicitacao> {
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError || !authData.user) {
@@ -191,6 +193,8 @@ export async function createSolicitacao(data: {
       tem_integracao: data.softwares.length > 0,
       integracoes: data.softwares,
       status: "novo",
+      tipo_demanda: data.tipoDemanda ?? null,
+      sistema_alvo_slug: data.sistemaAlvoSlug ?? null,
     })
     .select(SOLICITACAO_COLS)
     .single();
