@@ -61,8 +61,9 @@ export default function Dashboard() {
       })
       .filter((s) => tipoFilter === "all" || String(s.frequencia) === tipoFilter)
       .filter((s) => setorFilter === "all" || String(s.setor ?? "") === setorFilter)
+      .filter((s) => tipoDemandaFilter === "all" || (s.tipoDemanda ?? "") === tipoDemandaFilter)
       .sort((a, b) => b.score - a.score);
-  }, [all, statusFilter, tipoFilter, setorFilter]);
+  }, [all, statusFilter, tipoFilter, setorFilter, tipoDemandaFilter]);
 
   const metrics = useMemo(() => {
     const m = {} as Record<PipelineStatus, number>;
