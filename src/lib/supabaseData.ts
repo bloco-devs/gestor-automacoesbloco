@@ -82,6 +82,8 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     dataFimPrevista: row.data_fim_prevista,
     avaliadoPor: row.avaliado_por,
     avaliadoEm: row.avaliado_em,
+    tipoDemanda: (row.tipo_demanda as TipoDemanda | null) ?? null,
+    sistemaAlvoSlug: row.sistema_alvo_slug ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
