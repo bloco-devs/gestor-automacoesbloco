@@ -63,6 +63,15 @@ Deno.serve(async (req) => {
     const titulo = (body.titulo ?? "").trim();
     const descricao = (body.descricao ?? "").trim();
     const setor = (body.setor ?? "").trim();
+    const sistemasInput = Array.isArray(body.sistemas) ? body.sistemas : [];
+    const sistemas = sistemasInput
+      .map((s) => ({
+        slug: String(s?.slug ?? s?.id ?? "").trim(),
+        nome: String(s?.nome ?? "").trim(),
+      }))
+      .filter((s) => s.slug && s.nome)
+      .slice(0, 60);
+    const slugsValidos = new Set(sistemas.map((s) => s.slug));
 
     if (!descricao || descricao.length < 10) {
       return new Response(
@@ -81,10 +90,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    const sistemasBloco = sistemas.length
+      ? `\nSISTEMAS (use APENAS um destes slugs em sistema_alvo_slug, ou null):\n${sistemas
+          .map((s) => `- ${s.slug} — ${s.nome}`)
+          .join("\n")}`
+      : `\nSISTEMAS: (não fornecidos — devolva tipo_demanda e sistema_alvo_slug como null)`;
+
     const userMsg = `TÍTULO: ${titulo || "(sem título)"}
 SETOR: ${setor || "(não informado)"}
 DESCRIÇÃO:
-${descricao}`;
+${descricao}${sistemasBloco}`;
 
     const data = await callAI(
       {
