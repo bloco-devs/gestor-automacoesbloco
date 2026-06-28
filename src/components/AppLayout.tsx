@@ -159,6 +159,13 @@ export default function AppLayout() {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("app:sidebarHidden") === "1";
   });
+  const isMobile = useIsMobile();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { pathname } = useLocation();
+  // Fecha o drawer ao navegar (somente mobile)
+  useEffect(() => {
+    if (isMobile) setMobileOpen(false);
+  }, [pathname, isMobile]);
   useEffect(() => {
     window.localStorage.setItem("app:sidebarHidden", sidebarHidden ? "1" : "0");
   }, [sidebarHidden]);
