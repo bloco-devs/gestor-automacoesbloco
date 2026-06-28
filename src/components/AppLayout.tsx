@@ -408,14 +408,24 @@ export default function AppLayout() {
           </button>
         )}
         <header className="md:hidden border-b border-border px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Abrir menu"
+              title="Abrir menu"
+              className="shrink-0"
+            >
+              <Menu className="size-5" />
+            </Button>
             <img
               src={blocoLogo}
               alt="Bloco Construções"
-              className="size-7 rounded-md object-cover"
+              className="size-7 rounded-md object-cover shrink-0"
             />
-            <div>
-              <div className="text-sm font-brand font-bold whitespace-nowrap">Gestor de Automações</div>
+            <div className="min-w-0">
+              <div className="text-sm font-brand font-bold truncate">Gestor de Automações</div>
             </div>
           </div>
           <div className="flex items-center gap-1">
