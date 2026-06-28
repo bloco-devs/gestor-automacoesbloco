@@ -24,7 +24,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Solucao } from "@/lib/types";
-import { freqLabel, PIPELINE_ORDER, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus } from "@/lib/types";
+import { freqLabel, PIPELINE_ORDER, STATUS_LABEL, statusToCategory, TIPO_DEMANDA_LABEL, type Frequencia, type PipelineStatus, type TipoDemanda } from "@/lib/types";
+import { useEcossistemaSistemas } from "@/hooks/useEcossistemaSistemas";
 import { useSetoresNomes } from "@/hooks/useSetores";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
