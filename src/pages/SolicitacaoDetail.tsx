@@ -404,6 +404,34 @@ export default function SolicitacaoDetail() {
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-semibold">{solicitacao.titulo}</h1>
             <StatusBadge status={solicitacao.status} />
+            {solicitacao.desfecho === "atendida_existente" && (
+              <span
+                className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                title="Esta demanda foi marcada como já atendida por um sistema existente."
+              >
+                ✓ Atendida por sistema existente
+                {solicitacao.atendidaPorSistemaSlug ? `: ${solicitacao.atendidaPorSistemaSlug}` : ""}
+                {solicitacao.atendidaUrl && (
+                  <a
+                    href={solicitacao.atendidaUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ml-1 underline inline-flex items-center gap-0.5"
+                  >
+                    <ExternalLink className="size-3" />
+                  </a>
+                )}
+              </span>
+            )}
+            {solicitacao.desfecho === "consolidada" && solicitacao.consolidadaEm && (
+              <Link
+                to={`/solicitacao/${solicitacao.consolidadaEm}`}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border border-violet-500/40 bg-violet-500/10 text-violet-700 dark:text-violet-400 hover:underline"
+                title="Esta demanda foi consolidada em outra"
+              >
+                ⇒ Consolidada em outra demanda
+              </Link>
+            )}
             {isDev && (
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-xs text-muted-foreground">Solicitante:</span>
