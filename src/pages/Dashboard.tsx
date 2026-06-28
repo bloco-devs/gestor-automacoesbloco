@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Calendar, CheckCircle2, CheckSquare, Filter, Inbox, KanbanSquare, PlayCircle, Rocket, Search, ThumbsUp, TrendingUp, User } from "lucide-react";
 import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import { listSolicitacoes } from "@/lib/supabaseData";
-import { STATUS_LABEL, type PipelineStatus, FREQUENCIA_LABEL, freqLabel, type Frequencia } from "@/lib/types";
+import { STATUS_LABEL, type PipelineStatus, FREQUENCIA_LABEL, freqLabel, type Frequencia, TIPO_DEMANDA_LABEL, type TipoDemanda } from "@/lib/types";
 import { useSetoresNomes } from "@/hooks/useSetores";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
