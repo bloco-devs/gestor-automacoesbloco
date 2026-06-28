@@ -176,6 +176,46 @@ export default function NovaSolicitacao() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>Tipo de demanda</Label>
+                <Select
+                  value={tipoDemanda || undefined}
+                  onValueChange={(v) => {
+                    setTipoDemanda(v as TipoDemanda);
+                    if (v === "novo_sistema") setSistemaAlvoSlug("");
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione o tipo (opcional)" /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(TIPO_DEMANDA_LABEL) as TipoDemanda[]).map((t) => (
+                      <SelectItem key={t} value={t}>{TIPO_DEMANDA_LABEL[t]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {precisaSistema && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <Label>Sistema do ecossistema</Label>
+                    {fonteSistemas && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {fonteSistemas === "hub" ? "Ao vivo (HUB)" : "Semente"}
+                      </span>
+                    )}
+                  </div>
+                  <Select value={sistemaAlvoSlug || undefined} onValueChange={setSistemaAlvoSlug}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o sistema-alvo" /></SelectTrigger>
+                    <SelectContent>
+                      {sistemasEcossistema.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Recomendado para "ajuste" ou "novo módulo". Pode ficar em branco se não souber.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
