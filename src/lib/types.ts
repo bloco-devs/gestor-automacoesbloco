@@ -61,6 +61,14 @@ export function freqLabel(n: number): string {
   return FREQUENCIA_LABEL[n] ?? `${n}/10`;
 }
 
+export type TipoDemanda = "ajuste_existente" | "novo_modulo" | "novo_sistema";
+
+export const TIPO_DEMANDA_LABEL: Record<TipoDemanda, string> = {
+  ajuste_existente: "Ajuste em sistema existente",
+  novo_modulo: "Novo módulo em sistema existente",
+  novo_sistema: "Novo sistema",
+};
+
 export interface Profile {
   id: string;
   email: string;
