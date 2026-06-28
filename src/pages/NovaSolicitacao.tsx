@@ -43,6 +43,10 @@ export default function NovaSolicitacao() {
   const [frequencia, setFrequencia] = useState<number>(5);
   const [dificuldade, setDificuldade] = useState<number>(5);
   const [retorno, setRetorno] = useState<number>(5);
+  const [tipoDemanda, setTipoDemanda] = useState<TipoDemanda | "">("");
+  const [sistemaAlvoSlug, setSistemaAlvoSlug] = useState<string>("");
+  const precisaSistema = tipoDemanda === "ajuste_existente" || tipoDemanda === "novo_modulo";
+  const { sistemas: sistemasEcossistema, fonte: fonteSistemas } = useEcossistemaSistemas(precisaSistema);
   const [sugerindo, setSugerindo] = useState(false);
   const [sugestaoJustificativa, setSugestaoJustificativa] = useState<string | null>(null);
 
