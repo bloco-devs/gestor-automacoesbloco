@@ -15,6 +15,9 @@ verify_jwt = true
 [functions.mapa-narrativa]
 verify_jwt = true
 
+[functions.match-ecossistema]
+verify_jwt = true
+
 [functions.ecossistema-mapa]
 verify_jwt = true
 
