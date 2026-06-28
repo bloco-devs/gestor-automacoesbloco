@@ -174,6 +174,11 @@ export default function SolicitacaoDetail() {
   const [editComplexidade, setEditComplexidade] = useState(solicitacao?.complexidade ?? 3);
   const [editRetorno, setEditRetorno] = useState(solicitacao?.retorno ?? 3);
   const [editSetor, setEditSetor] = useState<string>(solicitacao?.setor ?? "");
+  const [editTipoDemanda, setEditTipoDemanda] = useState<TipoDemanda | "">(solicitacao?.tipoDemanda ?? "");
+  const [editSistemaAlvo, setEditSistemaAlvo] = useState<string>(solicitacao?.sistemaAlvoSlug ?? "");
+  const [savingTipo, setSavingTipo] = useState(false);
+  const precisaSistemaAlvo = editTipoDemanda === "ajuste_existente" || editTipoDemanda === "novo_modulo";
+  const { sistemas: sistemasEcossistema, fonte: fonteSistemas } = useEcossistemaSistemas(true);
   const setoresDisponiveis = useSetoresNomes();
 
 
