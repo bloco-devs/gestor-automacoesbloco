@@ -590,11 +590,13 @@ export type Database = {
           score_final: number | null
           score_solicitante: number | null
           setor: string | null
+          sistema_alvo_slug: string | null
           solicitante_nome: string
           status: string
           telefone: string | null
           tem_integracao: boolean
           tipo: string | null
+          tipo_demanda: string | null
           titulo: string
           updated_at: string
           user_id: string | null
@@ -620,11 +622,13 @@ export type Database = {
           score_final?: number | null
           score_solicitante?: number | null
           setor?: string | null
+          sistema_alvo_slug?: string | null
           solicitante_nome?: string
           status?: string
           telefone?: string | null
           tem_integracao?: boolean
           tipo?: string | null
+          tipo_demanda?: string | null
           titulo?: string
           updated_at?: string
           user_id?: string | null
@@ -650,11 +654,13 @@ export type Database = {
           score_final?: number | null
           score_solicitante?: number | null
           setor?: string | null
+          sistema_alvo_slug?: string | null
           solicitante_nome?: string
           status?: string
           telefone?: string | null
           tem_integracao?: boolean
           tipo?: string | null
+          tipo_demanda?: string | null
           titulo?: string
           updated_at?: string
           user_id?: string | null
