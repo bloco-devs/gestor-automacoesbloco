@@ -102,6 +102,10 @@ export interface Solicitacao {
   dataInicioPrevista?: string | null;
   /** Data planejada de fim (ISO date YYYY-MM-DD). Usada na visão Gantt. */
   dataFimPrevista?: string | null;
+  /** Onda A1 — Classificação da natureza da demanda. */
+  tipoDemanda?: TipoDemanda | null;
+  /** Onda A1 — Slug do sistema-alvo do ecossistema (quando aplicável). */
+  sistemaAlvoSlug?: string | null;
   /** ID do dev/admin que salvou a última avaliação técnica. NULL se nunca avaliada. */
   avaliadoPor?: string | null;
   /** Timestamp ISO de quando a última avaliação técnica foi salva. NULL se nunca avaliada. */
