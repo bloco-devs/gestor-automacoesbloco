@@ -20,6 +20,8 @@ import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 import { DataSourceBadge } from "@/components/DataSourceBadge";
 import { DemandasSimilares } from "@/components/DemandasSimilares";
 import { FieldHelp } from "@/components/FieldHelp";
+import { useEcossistemaSistemas } from "@/hooks/useEcossistemaSistemas";
+import { TIPO_DEMANDA_LABEL, type TipoDemanda } from "@/lib/types";
 
 const schema = z.object({
   titulo: z.string().trim().min(3, "Título muito curto").max(120),
