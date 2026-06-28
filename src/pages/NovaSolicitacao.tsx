@@ -46,7 +46,7 @@ export default function NovaSolicitacao() {
   const [tipoDemanda, setTipoDemanda] = useState<TipoDemanda | "">("");
   const [sistemaAlvoSlug, setSistemaAlvoSlug] = useState<string>("");
   const precisaSistema = tipoDemanda === "ajuste_existente" || tipoDemanda === "novo_modulo";
-  const { sistemas: sistemasEcossistema, fonte: fonteSistemas } = useEcossistemaSistemas(precisaSistema);
+  const { sistemas: sistemasEcossistema, fonte: fonteSistemas } = useEcossistemaSistemas(true);
   const [sugerindo, setSugerindo] = useState(false);
   const [sugestaoJustificativa, setSugestaoJustificativa] = useState<string | null>(null);
 
