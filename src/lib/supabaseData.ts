@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { calcScore } from "@/lib/score";
 import { computeScoreFinal, computeScoreSolicitante } from "@/lib/scoreV2";
-import type { AssignableUser, AssignableRole, Frequencia, Melhoria, MelhoriaStatus, PipelineStatus, Solicitacao, Solucao } from "@/lib/types";
+import type { AssignableUser, AssignableRole, Frequencia, Melhoria, MelhoriaStatus, PipelineStatus, Solicitacao, Solucao, TipoDemanda } from "@/lib/types";
 
 type SolicitacaoRow = {
   id: string;
@@ -29,9 +29,11 @@ type SolicitacaoRow = {
   data_fim_prevista: string | null;
   avaliado_por: string | null;
   avaliado_em: string | null;
+  tipo_demanda: string | null;
+  sistema_alvo_slug: string | null;
 };
 
-const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,score_solicitante,score_final,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em";
+const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,score_solicitante,score_final,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em,tipo_demanda,sistema_alvo_slug";
 
 
 const SOLUCAO_COLS = "id,solicitacao_id,titulo,descricao,link,created_at,created_by,data_inicio_prevista,data_fim_prevista,responsavel_id";
@@ -80,6 +82,8 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     dataFimPrevista: row.data_fim_prevista,
     avaliadoPor: row.avaliado_por,
     avaliadoEm: row.avaliado_em,
+    tipoDemanda: (row.tipo_demanda as TipoDemanda | null) ?? null,
+    sistemaAlvoSlug: row.sistema_alvo_slug ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -162,6 +166,8 @@ export async function createSolicitacao(data: {
   solicitanteId: string;
   solicitanteNome: string;
   email: string;
+  tipoDemanda?: TipoDemanda | null;
+  sistemaAlvoSlug?: string | null;
 }): Promise<Solicitacao> {
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError || !authData.user) {
@@ -187,6 +193,8 @@ export async function createSolicitacao(data: {
       tem_integracao: data.softwares.length > 0,
       integracoes: data.softwares,
       status: "novo",
+      tipo_demanda: data.tipoDemanda ?? null,
+      sistema_alvo_slug: data.sistemaAlvoSlug ?? null,
     })
     .select(SOLICITACAO_COLS)
     .single();
@@ -257,6 +265,8 @@ export async function updateSolicitacao(
     complexidade_dev: patch.complexidadeDev,
     data_inicio_prevista: patch.dataInicioPrevista,
     data_fim_prevista: patch.dataFimPrevista,
+    tipo_demanda: patch.tipoDemanda,
+    sistema_alvo_slug: patch.sistemaAlvoSlug,
   };
   const payload: Record<string, unknown> = {
     updated_at: new Date().toISOString(),

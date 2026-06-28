@@ -24,7 +24,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Solucao } from "@/lib/types";
-import { freqLabel, PIPELINE_ORDER, STATUS_LABEL, statusToCategory, type Frequencia, type PipelineStatus } from "@/lib/types";
+import { freqLabel, PIPELINE_ORDER, STATUS_LABEL, statusToCategory, TIPO_DEMANDA_LABEL, type Frequencia, type PipelineStatus, type TipoDemanda } from "@/lib/types";
+import { useEcossistemaSistemas } from "@/hooks/useEcossistemaSistemas";
 import { useSetoresNomes } from "@/hooks/useSetores";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -173,6 +174,11 @@ export default function SolicitacaoDetail() {
   const [editComplexidade, setEditComplexidade] = useState(solicitacao?.complexidade ?? 3);
   const [editRetorno, setEditRetorno] = useState(solicitacao?.retorno ?? 3);
   const [editSetor, setEditSetor] = useState<string>(solicitacao?.setor ?? "");
+  const [editTipoDemanda, setEditTipoDemanda] = useState<TipoDemanda | "">(solicitacao?.tipoDemanda ?? "");
+  const [editSistemaAlvo, setEditSistemaAlvo] = useState<string>(solicitacao?.sistemaAlvoSlug ?? "");
+  const [savingTipo, setSavingTipo] = useState(false);
+  const precisaSistemaAlvo = editTipoDemanda === "ajuste_existente" || editTipoDemanda === "novo_modulo";
+  const { sistemas: sistemasEcossistema, fonte: fonteSistemas } = useEcossistemaSistemas(true);
   const setoresDisponiveis = useSetoresNomes();
 
 
@@ -195,6 +201,8 @@ export default function SolicitacaoDetail() {
     setEditComplexidade(solicitacao.complexidade);
     setEditRetorno(solicitacao.retorno);
     setEditSetor(solicitacao.setor ?? "");
+    setEditTipoDemanda(solicitacao.tipoDemanda ?? "");
+    setEditSistemaAlvo(solicitacao.sistemaAlvoSlug ?? "");
   }, [solicitacao]);
 
   useEffect(() => {
@@ -278,6 +286,25 @@ export default function SolicitacaoDetail() {
     setIsEditing(false);
     setSearchParams({});
     toast({ title: "Solicitação atualizada" });
+  }
+
+  async function handleSaveTipoDemanda() {
+    setSavingTipo(true);
+    try {
+      await updateSolicitacao(id, {
+        tipoDemanda: (editTipoDemanda || null) as TipoDemanda | null,
+        sistemaAlvoSlug: precisaSistemaAlvo && editSistemaAlvo ? editSistemaAlvo : null,
+      });
+      toast({ title: "Classificação atualizada" });
+    } catch (e) {
+      toast({
+        title: "Erro ao salvar",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingTipo(false);
+    }
   }
 
   async function handleDelete() {
@@ -498,7 +525,79 @@ export default function SolicitacaoDetail() {
                   <div><dt className="text-xs text-muted-foreground">Retorno financeiro</dt><dd>{solicitacao.retorno}/10</dd></div>
 
                   {solicitacao.setor && <div><dt className="text-xs text-muted-foreground">Setor</dt><dd>{solicitacao.setor}</dd></div>}
+                  {solicitacao.tipoDemanda && (
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Tipo de demanda</dt>
+                      <dd>{TIPO_DEMANDA_LABEL[solicitacao.tipoDemanda]}</dd>
+                    </div>
+                  )}
+                  {solicitacao.sistemaAlvoSlug && (
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Sistema-alvo</dt>
+                      <dd>
+                        {sistemasEcossistema.find((s) => s.id === solicitacao.sistemaAlvoSlug)?.nome ?? solicitacao.sistemaAlvoSlug}
+                      </dd>
+                    </div>
+                  )}
                 </dl>
+                {(isDev || isOwner) && (
+                  <div className="pt-3 border-t border-border space-y-3">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Classificação da demanda
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Tipo de demanda</Label>
+                        <Select
+                          value={editTipoDemanda || undefined}
+                          onValueChange={(v) => {
+                            setEditTipoDemanda(v as TipoDemanda);
+                            if (v === "novo_sistema") setEditSistemaAlvo("");
+                          }}
+                        >
+                          <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
+                          <SelectContent>
+                            {(Object.keys(TIPO_DEMANDA_LABEL) as TipoDemanda[]).map((t) => (
+                              <SelectItem key={t} value={t}>{TIPO_DEMANDA_LABEL[t]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {precisaSistemaAlvo && (
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <Label className="text-xs">Sistema-alvo</Label>
+                            {fonteSistemas && (
+                              <span className="text-[10px] text-muted-foreground">
+                                {fonteSistemas === "hub" ? "Ao vivo (HUB)" : "Semente"}
+                              </span>
+                            )}
+                          </div>
+                          <Select value={editSistemaAlvo || undefined} onValueChange={setEditSistemaAlvo}>
+                            <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                            <SelectContent>
+                              {sistemasEcossistema.map((s) => (
+                                <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSaveTipoDemanda}
+                      disabled={
+                        savingTipo ||
+                        ((editTipoDemanda || "") === (solicitacao.tipoDemanda ?? "") &&
+                          (editSistemaAlvo || "") === (solicitacao.sistemaAlvoSlug ?? ""))
+                      }
+                    >
+                      <Save className="size-4" /> Salvar classificação
+                    </Button>
+                  </div>
+                )}
               </>
             )}
             {!isEditing && solicitacao.temIntegracao && (

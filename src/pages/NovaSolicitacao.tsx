@@ -20,6 +20,8 @@ import { AssistenteDescricao } from "@/components/AssistenteDescricao";
 import { DataSourceBadge } from "@/components/DataSourceBadge";
 import { DemandasSimilares } from "@/components/DemandasSimilares";
 import { FieldHelp } from "@/components/FieldHelp";
+import { useEcossistemaSistemas } from "@/hooks/useEcossistemaSistemas";
+import { TIPO_DEMANDA_LABEL, type TipoDemanda } from "@/lib/types";
 
 const schema = z.object({
   titulo: z.string().trim().min(3, "Título muito curto").max(120),
@@ -41,6 +43,10 @@ export default function NovaSolicitacao() {
   const [frequencia, setFrequencia] = useState<number>(5);
   const [dificuldade, setDificuldade] = useState<number>(5);
   const [retorno, setRetorno] = useState<number>(5);
+  const [tipoDemanda, setTipoDemanda] = useState<TipoDemanda | "">("");
+  const [sistemaAlvoSlug, setSistemaAlvoSlug] = useState<string>("");
+  const precisaSistema = tipoDemanda === "ajuste_existente" || tipoDemanda === "novo_modulo";
+  const { sistemas: sistemasEcossistema, fonte: fonteSistemas } = useEcossistemaSistemas(precisaSistema);
   const [sugerindo, setSugerindo] = useState(false);
   const [sugestaoJustificativa, setSugestaoJustificativa] = useState<string | null>(null);
 
@@ -102,6 +108,8 @@ export default function NovaSolicitacao() {
         solicitanteId: user.id,
         solicitanteNome: user.nome,
         email: user.email,
+        tipoDemanda: tipoDemanda || null,
+        sistemaAlvoSlug: precisaSistema && sistemaAlvoSlug ? sistemaAlvoSlug : null,
       });
       toast({ title: "Solicitação registrada", description: "Você poderá acompanhar o status em tempo real." });
       navigate("/minhas-solicitacoes");
@@ -168,6 +176,46 @@ export default function NovaSolicitacao() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>Tipo de demanda</Label>
+                <Select
+                  value={tipoDemanda || undefined}
+                  onValueChange={(v) => {
+                    setTipoDemanda(v as TipoDemanda);
+                    if (v === "novo_sistema") setSistemaAlvoSlug("");
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione o tipo (opcional)" /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(TIPO_DEMANDA_LABEL) as TipoDemanda[]).map((t) => (
+                      <SelectItem key={t} value={t}>{TIPO_DEMANDA_LABEL[t]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {precisaSistema && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <Label>Sistema do ecossistema</Label>
+                    {fonteSistemas && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {fonteSistemas === "hub" ? "Ao vivo (HUB)" : "Semente"}
+                      </span>
+                    )}
+                  </div>
+                  <Select value={sistemaAlvoSlug || undefined} onValueChange={setSistemaAlvoSlug}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o sistema-alvo" /></SelectTrigger>
+                    <SelectContent>
+                      {sistemasEcossistema.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Recomendado para "ajuste" ou "novo módulo". Pode ficar em branco se não souber.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

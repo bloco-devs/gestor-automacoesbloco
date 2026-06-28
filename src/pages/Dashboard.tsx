@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Calendar, CheckCircle2, CheckSquare, Filter, Inbox, KanbanSquare, PlayCircle, Rocket, Search, ThumbsUp, TrendingUp, User } from "lucide-react";
 import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import { listSolicitacoes } from "@/lib/supabaseData";
-import { STATUS_LABEL, type PipelineStatus, FREQUENCIA_LABEL, freqLabel, type Frequencia } from "@/lib/types";
+import { STATUS_LABEL, type PipelineStatus, FREQUENCIA_LABEL, freqLabel, type Frequencia, TIPO_DEMANDA_LABEL, type TipoDemanda } from "@/lib/types";
 import { useSetoresNomes } from "@/hooks/useSetores";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [tipoFilter, setTipoFilter] = useState<string>("all");
   const [setorFilter, setSetorFilter] = useState<string>("all");
+  const [tipoDemandaFilter, setTipoDemandaFilter] = useState<string>("all");
 
   const setoresCadastrados = useSetoresNomes();
   const setoresDisponiveis = useMemo(() => {
@@ -60,8 +61,9 @@ export default function Dashboard() {
       })
       .filter((s) => tipoFilter === "all" || String(s.frequencia) === tipoFilter)
       .filter((s) => setorFilter === "all" || String(s.setor ?? "") === setorFilter)
+      .filter((s) => tipoDemandaFilter === "all" || (s.tipoDemanda ?? "") === tipoDemandaFilter)
       .sort((a, b) => b.score - a.score);
-  }, [all, statusFilter, tipoFilter, setorFilter]);
+  }, [all, statusFilter, tipoFilter, setorFilter, tipoDemandaFilter]);
 
   const metrics = useMemo(() => {
     const m = {} as Record<PipelineStatus, number>;
@@ -108,7 +110,7 @@ export default function Dashboard() {
             <Filter className="size-4" /> Filtros
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="space-y-1.5">
             <label className="text-xs text-muted-foreground">Status</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -151,6 +153,20 @@ export default function Dashboard() {
                   <SelectItem key={f} value={String(f)}>
                     {FREQUENCIA_LABEL[f]}
                   </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground">Tipo de demanda</label>
+            <Select value={tipoDemandaFilter} onValueChange={setTipoDemandaFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos de demanda</SelectItem>
+                {(Object.keys(TIPO_DEMANDA_LABEL) as TipoDemanda[]).map((t) => (
+                  <SelectItem key={t} value={t}>{TIPO_DEMANDA_LABEL[t]}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
