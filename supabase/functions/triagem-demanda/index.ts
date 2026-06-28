@@ -3,7 +3,8 @@ import { callAI, IAUsageError } from "../_shared/ia-gateway.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
 
-type Body = { titulo?: string; descricao?: string; setor?: string };
+type SistemaItem = { slug?: string; id?: string; nome?: string };
+type Body = { titulo?: string; descricao?: string; setor?: string; sistemas?: SistemaItem[] };
 
 const SYSTEM = `Você é um analista de priorização de demandas de automação interna na escala 0-10 para CADA fator. Devolva APENAS um objeto JSON, sem texto fora do JSON, com EXATAMENTE estes campos:
 {
@@ -11,9 +12,17 @@ const SYSTEM = `Você é um analista de priorização de demandas de automação
   "dificuldade": number,       // 0-10. 0=Trivial, 2=Fácil, 4=Moderada, 6=Difícil, 8=Muito difícil, 10=Crítica
   "retorno": number,           // 0-10. Retorno financeiro mensal. 0=Nenhum, 2=R$0-500, 4=R$500-2,5k, 6=R$2,5k-10k, 8=R$10k-50k, 10=R$50k+
   "complexidade_dev": number,  // 0-10. Estimativa de complexidade TÉCNICA de implementar. 0=trivial automação, 10=projeto longo/integração crítica
-  "justificativa": string      // 1-2 frases curtas em PT-BR explicando a estimativa
+  "tipo_demanda": "ajuste_existente" | "novo_modulo" | "novo_sistema" | null,
+  "sistema_alvo_slug": string | null,   // DEVE ser um slug exato da lista de sistemas fornecida, ou null
+  "justificativa": string      // 1-2 frases curtas em PT-BR explicando a estimativa e a classificação (tipo/sistema)
 }
-Regras: números inteiros entre 0 e 10. Se a descrição for vaga, escolha valores medianos plausíveis e diga isso na justificativa. Nada além do JSON.`;
+Regras de classificação:
+- "ajuste_existente": melhoria/correção em capacidade que provavelmente já existe em um sistema do ecossistema.
+- "novo_modulo": capacidade NOVA dentro de um sistema já existente (escolha o sistema-alvo).
+- "novo_sistema": não cabe em nenhum sistema do ecossistema (sistema_alvo_slug deve ser null).
+- sistema_alvo_slug: SOMENTE um slug presente na lista enviada pelo usuário (campo SISTEMAS). NUNCA invente slug. Se incerto, use null.
+- Se a lista de SISTEMAS não foi fornecida, defina tipo_demanda e sistema_alvo_slug como null.
+Regras gerais: números inteiros entre 0 e 10. Se a descrição for vaga, escolha valores medianos plausíveis e diga isso na justificativa. Nada além do JSON.`;
 
 function getServiceClient() {
   const url = Deno.env.get("SUPABASE_URL") ?? "";
