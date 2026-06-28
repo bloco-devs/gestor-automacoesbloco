@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [tipoFilter, setTipoFilter] = useState<string>("all");
   const [setorFilter, setSetorFilter] = useState<string>("all");
+  const [tipoDemandaFilter, setTipoDemandaFilter] = useState<string>("all");
 
   const setoresCadastrados = useSetoresNomes();
   const setoresDisponiveis = useMemo(() => {
