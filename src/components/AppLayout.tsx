@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, Compass, GanttChartSquare, GitMerge, HelpCircle, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen, Activity } from "lucide-react";
+import { ChevronDown, Compass, GanttChartSquare, GitMerge, HelpCircle, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Menu, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen, Activity, X } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DndContext,
   DragEndEvent,
@@ -158,6 +159,13 @@ export default function AppLayout() {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("app:sidebarHidden") === "1";
   });
+  const isMobile = useIsMobile();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { pathname } = useLocation();
+  // Fecha o drawer ao navegar (somente mobile)
+  useEffect(() => {
+    if (isMobile) setMobileOpen(false);
+  }, [pathname, isMobile]);
   useEffect(() => {
     window.localStorage.setItem("app:sidebarHidden", sidebarHidden ? "1" : "0");
   }, [sidebarHidden]);
@@ -274,10 +282,22 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen flex">
-      {!sidebarHidden && (
+      {isMobile && mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      {(isMobile ? mobileOpen : !sidebarHidden) && (
       <aside
-        className="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar relative shrink-0"
-        style={{ width: sidebarWidth }}
+        className={cn(
+          "flex-col border-sidebar-border bg-sidebar shrink-0",
+          isMobile
+            ? "fixed inset-y-0 left-0 z-50 w-72 flex border-r shadow-xl"
+            : "hidden md:flex relative border-r",
+        )}
+        style={isMobile ? undefined : { width: sidebarWidth }}
       >
         <div className="px-5 py-6 flex items-center gap-3 min-w-0">
           <img
@@ -362,12 +382,15 @@ export default function AppLayout() {
 
         <button
           type="button"
-          onClick={() => setSidebarHidden(true)}
-          title="Esconder barra lateral"
-          aria-label="Esconder barra lateral"
-          className="hidden md:flex absolute top-2 right-1 z-10 items-center justify-center size-5 rounded text-muted-foreground/40 hover:text-foreground hover:bg-muted/60 transition-colors"
+          onClick={() => (isMobile ? setMobileOpen(false) : setSidebarHidden(true))}
+          title={isMobile ? "Fechar menu" : "Esconder barra lateral"}
+          aria-label={isMobile ? "Fechar menu" : "Esconder barra lateral"}
+          className={cn(
+            "absolute z-10 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors flex",
+            isMobile ? "top-3 right-3 size-8" : "top-2 right-1 size-5 text-muted-foreground/40",
+          )}
         >
-          <PanelLeftClose className="size-3.5" />
+          {isMobile ? <X className="size-4" /> : <PanelLeftClose className="size-3.5" />}
         </button>
       </aside>
       )}
@@ -385,14 +408,24 @@ export default function AppLayout() {
           </button>
         )}
         <header className="md:hidden border-b border-border px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Abrir menu"
+              title="Abrir menu"
+              className="shrink-0"
+            >
+              <Menu className="size-5" />
+            </Button>
             <img
               src={blocoLogo}
               alt="Bloco Construções"
-              className="size-7 rounded-md object-cover"
+              className="size-7 rounded-md object-cover shrink-0"
             />
-            <div>
-              <div className="text-sm font-brand font-bold whitespace-nowrap">Gestor de Automações</div>
+            <div className="min-w-0">
+              <div className="text-sm font-brand font-bold truncate">Gestor de Automações</div>
             </div>
           </div>
           <div className="flex items-center gap-1">
