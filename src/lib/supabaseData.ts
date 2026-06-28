@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { calcScore } from "@/lib/score";
 import { computeScoreFinal, computeScoreSolicitante } from "@/lib/scoreV2";
-import type { AssignableUser, AssignableRole, Frequencia, Melhoria, MelhoriaStatus, PipelineStatus, Solicitacao, Solucao } from "@/lib/types";
+import type { AssignableUser, AssignableRole, Frequencia, Melhoria, MelhoriaStatus, PipelineStatus, Solicitacao, Solucao, TipoDemanda } from "@/lib/types";
 
 type SolicitacaoRow = {
   id: string;
