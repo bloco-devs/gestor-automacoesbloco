@@ -592,3 +592,67 @@ export async function countPendingDevEvaluations(): Promise<number> {
   return count ?? 0;
 }
 
+// ===== Onda B3 — Consolidação (desfecho da demanda) =====
+
+export async function salvarMatchEcossistema(id: string, candidatos: MatchCandidato[]): Promise<void> {
+  const { error } = await supabase
+    .from("solicitacoes")
+    .update({
+      match_sugestoes: candidatos as unknown as never,
+      match_atualizado_em: new Date().toISOString(),
+    } as never)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function marcarAtendidaPorSistema(
+  id: string,
+  data: { slug: string; url: string | null; atendidaPor?: string | null },
+): Promise<void> {
+  const { error } = await supabase
+    .from("solicitacoes")
+    .update({
+      desfecho: "atendida_existente",
+      atendida_por_sistema_slug: data.slug,
+      atendida_url: data.url,
+      atendida_em: new Date().toISOString(),
+      atendida_por: data.atendidaPor ?? null,
+      consolidada_em: null,
+    } as never)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function consolidarDemanda(id: string, canonicaId: string): Promise<void> {
+  const { error } = await supabase
+    .from("solicitacoes")
+    .update({
+      desfecho: "consolidada",
+      consolidada_em: canonicaId,
+      atendida_por_sistema_slug: null,
+      atendida_url: null,
+      atendida_em: null,
+      atendida_por: null,
+    } as never)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function limparDesfecho(id: string, opts: { limparCache?: boolean } = {}): Promise<void> {
+  const payload: Record<string, unknown> = {
+    desfecho: null,
+    atendida_por_sistema_slug: null,
+    atendida_url: null,
+    atendida_em: null,
+    atendida_por: null,
+    consolidada_em: null,
+  };
+  if (opts.limparCache) {
+    payload.match_sugestoes = null;
+    payload.match_atualizado_em = null;
+  }
+  const { error } = await supabase.from("solicitacoes").update(payload as never).eq("id", id);
+  if (error) throw error;
+}
+
+
