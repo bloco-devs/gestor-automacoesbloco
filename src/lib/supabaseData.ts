@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { calcScore } from "@/lib/score";
 import { computeScoreFinal, computeScoreSolicitante } from "@/lib/scoreV2";
-import type { AssignableUser, AssignableRole, Frequencia, Melhoria, MelhoriaStatus, PipelineStatus, Solicitacao, Solucao, TipoDemanda } from "@/lib/types";
+import type { AssignableUser, AssignableRole, DesfechoDemanda, Frequencia, MatchCandidato, Melhoria, MelhoriaStatus, PipelineStatus, Solicitacao, Solucao, TipoDemanda } from "@/lib/types";
 
 type SolicitacaoRow = {
   id: string;
@@ -31,9 +31,17 @@ type SolicitacaoRow = {
   avaliado_em: string | null;
   tipo_demanda: string | null;
   sistema_alvo_slug: string | null;
+  match_sugestoes: unknown | null;
+  match_atualizado_em: string | null;
+  desfecho: string | null;
+  atendida_por_sistema_slug: string | null;
+  atendida_url: string | null;
+  atendida_em: string | null;
+  atendida_por: string | null;
+  consolidada_em: string | null;
 };
 
-const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,score_solicitante,score_final,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em,tipo_demanda,sistema_alvo_slug";
+const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,score_solicitante,score_final,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em,tipo_demanda,sistema_alvo_slug,match_sugestoes,match_atualizado_em,desfecho,atendida_por_sistema_slug,atendida_url,atendida_em,atendida_por,consolidada_em";
 
 
 const SOLUCAO_COLS = "id,solicitacao_id,titulo,descricao,link,created_at,created_by,data_inicio_prevista,data_fim_prevista,responsavel_id";
