@@ -108,6 +108,8 @@ export default function NovaSolicitacao() {
         solicitanteId: user.id,
         solicitanteNome: user.nome,
         email: user.email,
+        tipoDemanda: tipoDemanda || null,
+        sistemaAlvoSlug: precisaSistema && sistemaAlvoSlug ? sistemaAlvoSlug : null,
       });
       toast({ title: "Solicitação registrada", description: "Você poderá acompanhar o status em tempo real." });
       navigate("/minhas-solicitacoes");
