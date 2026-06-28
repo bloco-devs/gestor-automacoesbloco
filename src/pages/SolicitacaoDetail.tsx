@@ -288,6 +288,25 @@ export default function SolicitacaoDetail() {
     toast({ title: "Solicitação atualizada" });
   }
 
+  async function handleSaveTipoDemanda() {
+    setSavingTipo(true);
+    try {
+      await updateSolicitacao(id, {
+        tipoDemanda: (editTipoDemanda || null) as TipoDemanda | null,
+        sistemaAlvoSlug: precisaSistemaAlvo && editSistemaAlvo ? editSistemaAlvo : null,
+      });
+      toast({ title: "Classificação atualizada" });
+    } catch (e) {
+      toast({
+        title: "Erro ao salvar",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingTipo(false);
+    }
+  }
+
   async function handleDelete() {
     await deleteSolicitacao(id);
     toast({ title: "Solicitação excluída" });
