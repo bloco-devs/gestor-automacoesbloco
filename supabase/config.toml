@@ -18,6 +18,9 @@ verify_jwt = true
 [functions.match-ecossistema]
 verify_jwt = true
 
+[functions.confirmar-atendimento-existente]
+verify_jwt = true
+
 [functions.ecossistema-mapa]
 verify_jwt = true
 
