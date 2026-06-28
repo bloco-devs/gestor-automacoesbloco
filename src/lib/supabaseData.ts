@@ -265,6 +265,8 @@ export async function updateSolicitacao(
     complexidade_dev: patch.complexidadeDev,
     data_inicio_prevista: patch.dataInicioPrevista,
     data_fim_prevista: patch.dataFimPrevista,
+    tipo_demanda: patch.tipoDemanda,
+    sistema_alvo_slug: patch.sistemaAlvoSlug,
   };
   const payload: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
