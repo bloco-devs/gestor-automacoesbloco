@@ -446,24 +446,6 @@ export default function AppLayout() {
             </Button>
           </div>
         </header>
-        <nav className="md:hidden flex flex-wrap gap-1 overflow-hidden px-3 py-2 border-b border-border">
-          {nav.flatMap((item) => (item.children ? item.children : [item])).map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to!}
-              end={item.to === "/solicitacoes" || item.to === "/solucoes"}
-              className={({ isActive }) =>
-                cn(
-                  "flex min-w-0 flex-1 items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs whitespace-nowrap",
-                  isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted",
-                )
-              }
-            >
-              <item.icon className="size-3.5" />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
         <div className="w-full min-w-0 p-4 md:p-8">
           <OnboardingTour />
           <Outlet />
