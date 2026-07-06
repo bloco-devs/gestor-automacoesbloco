@@ -1,34 +1,61 @@
-## Corrigir finding crítico de storage e publicar
 
-### Problema
-As 4 policies de `storage.objects` para o bucket `plataforma-icones` chamam `is_allowed_user()` sem schema. O scanner exige `public.is_allowed_user()` para evitar manipulação de `search_path`.
+# Evolução do Kanban ao padrão Trello
 
-### Mudança (cirúrgica, sem tocar em auth/SSO)
-Migration que apenas recria as 4 policies do bucket `plataforma-icones` em `storage.objects`, trocando `is_allowed_user()` por `public.is_allowed_user()`. Não altera:
-- a função `public.is_allowed_user()` em si (continua igual, lendo de `allowed_emails` via `auth.uid()`);
-- nenhuma policy de tabelas `public.*`;
-- nada em `auth.*`, edge functions, triggers de SSO, `handle_new_user`, ou `allowed_emails`.
+O quadro `/atividades` já tem: colunas com drag-and-drop entre e dentro da coluna, modal de cartão com título/descrição, responsáveis (com avatares/iniciais), vínculo com Solução, checklist, links, comentários, rascunhos e filtros por Responsável/Solução. Faltam os itens abaixo para chegar ao padrão Trello.
 
-Estrutura da migration:
-```sql
-DROP POLICY IF EXISTS "<nome_select>" ON storage.objects;
-DROP POLICY IF EXISTS "<nome_insert>" ON storage.objects;
-DROP POLICY IF EXISTS "<nome_update>" ON storage.objects;
-DROP POLICY IF EXISTS "<nome_delete>" ON storage.objects;
+## O que vai mudar
 
-CREATE POLICY ... ON storage.objects FOR SELECT
-  USING (bucket_id = 'plataforma-icones' AND public.is_allowed_user());
--- idem INSERT/UPDATE/DELETE com WITH CHECK quando aplicável
-```
-Os nomes exatos das 4 policies serão lidos antes via `supabase--read_query` em `pg_policies` para preservar nomes e cláusulas originais (só schema-qualifying a função).
+### 1. Banco de dados (migração aditiva, não quebra nada)
+- Nova tabela `atividades_labels` (etiquetas por quadro): `nome`, `cor` (token semântico), `ordem`. RLS igual às demais tabelas de atividades (usuário permitido lê/escreve).
+- Nova tabela `atividades_card_labels` (N:N cartão↔etiqueta).
+- Nova tabela `atividades_atividade_log` (histórico do cartão): `card_id`, `user_id`, `tipo` (`criado`, `movido`, `renomeado`, `checklist`, `label`, `prazo`, `responsavel`, `comentario`), `payload jsonb`, `created_at`.
+- Colunas novas em `atividades_cards`: `data_entrega timestamptz`, `data_inicio timestamptz`, `concluido boolean default false`, `cover_cor text` (cor de capa opcional, estilo Trello), `descricao_markdown boolean default true` (a coluna `descricao` existente passa a ser tratada como Markdown; nenhum dado atual perdido).
+- Triggers para popular o log automaticamente em `INSERT/UPDATE/DELETE` de `atividades_cards` (movido, renomeado, prazo, conclusão) e em `atividades_comentarios`.
+- Todas com `GRANT` + `ENABLE RLS` + policies + `updated_at` trigger, seguindo o padrão do projeto.
 
-### Risco para o SSO
-Nenhum. A função, os triggers de criação de usuário (`handle_new_user`), o callback SSO e as edge functions ficam intactos. O ajuste é só em policies do bucket de ícones (upload/leitura de ícones da plataforma). Pior caso isolado: se algo der errado, o efeito é só não conseguir ler/gravar ícones do bucket — login e app continuam funcionando.
+### 2. Detalhes do cartão (modal) — `CardDialog.tsx`
+- Descrição em **Markdown** com preview (renderizar com `react-markdown` + `remark-gfm`; sanitizado). Toggle "Editar / Visualizar".
+- **Data de entrega** com o `DatePickerDemo` do shadcn + hora opcional. Badge de status calculado no cliente: **Atrasada** (vermelho), **Vence hoje** (âmbar), **No prazo** (neutro), **Concluída** (verde, quando `concluido = true`).
+- **Etiquetas coloridas**: seletor tipo popover com criação inline (nome + cor a partir de uma paleta de tokens semânticos). Aparecem como pills no cartão e no modal.
+- **Checklist com barra de progresso** (Progress do shadcn) — hoje mostra apenas `2/5`; passa a mostrar barra + %.
+- **Membros com avatares** já existe — reforçar exibindo empilhados no topo do modal com tooltip.
+- Nova aba/seção **"Atividade"** com timeline lida de `atividades_atividade_log` unindo comentários (agrupamento cronológico estilo Trello).
+- Botão **"Marcar como concluído"** que seta `concluido = true` e move opcionalmente para a última coluna.
 
-### Validação antes de publicar
-1. `vitest run` (deve continuar 34/34 verde — não há cobertura de storage policies, mas garante que nada de frontend regrediu).
-2. `security--run_security_scan` para confirmar que o crítico sumiu.
-3. `preview_ui--publish` com metadados já validados (title/description/OG/Twitter/favicon do `index.html` estão ok).
+### 3. Quadro — `Atividades.tsx`
+- **Barra superior fixa** com:
+  - Campo de **busca rápida** (filtra por título/descrição no cliente, debounce 150ms).
+  - Filtros existentes (Responsável, Solução) + novos: **Etiquetas**, **Prazo** (`Sem prazo`, `Vence esta semana`, `Atrasadas`, `Concluídas`).
+  - Contador "X de Y cartões" quando algum filtro ativo.
+- **Cartão no quadro** ganha, no rodapé: pills de etiquetas, ícone de prazo colorido, barra de progresso do checklist, contador de comentários, avatares empilhados.
+- **Cover** opcional (faixa colorida no topo do cartão) quando `cover_cor` estiver setado.
 
-### Findings de warn (não bloqueantes)
-Permanecem os warns (`has_role` sem schema em 9 policies, leaked password protection, security definer executável). Não estão no escopo desta publicação — posso tratar depois se quiser.
+### 4. Polimento visual (padrão Trello, tokens semânticos — sem cores hardcoded)
+- Cantos mais arredondados (`rounded-xl`), sombras suaves (`shadow-sm` no cartão, `shadow-md` durante drag).
+- Transição fluida no `DragOverlay` (scale/rotate leve).
+- Espaçamento consistente entre colunas; largura fixa de coluna (272px, como Trello) com scroll horizontal.
+- Hover states sutis; foco visível nos cartões.
+
+### 5. Preservado / não muda
+- SSO Bloco ID: **não tocado**.
+- RLS e policies existentes: **não alteradas**, apenas adicionadas para as tabelas novas.
+- Estrutura de rotas, layout, sidebar, tema: **inalterados**.
+- Nenhuma coluna/tabela existente é dropada nem renomeada.
+
+## Detalhes técnicos
+
+- **Dependência nova:** `react-markdown` e `remark-gfm` (leves, ~30KB gzip).
+- **Tokens de cor de etiqueta:** adicionar em `index.css` uma paleta `--label-{red,orange,yellow,green,teal,blue,purple,pink}` em HSL e mapear no `tailwind.config.ts`.
+- **Realtime:** o hook de kanban de atividades continua com fetch inicial; adicionar subscribe em `atividades_cards`, `atividades_card_labels`, `atividades_atividade_log` seguindo o padrão do `useSupabaseData` (cleanup no `useEffect`).
+- **Migração:** um único arquivo idempotente com `create table if not exists`, `alter table add column if not exists`, grants, RLS, policies e triggers.
+- **Testes:** um teste unitário simples para o cálculo de status do prazo em `src/lib/__tests__/`.
+
+## Ordem de execução
+1. Migração do Supabase (aprovar antes do código depender dos tipos gerados).
+2. `src/lib/atividades.ts`: novos tipos/CRUDs (labels, log, prazo).
+3. `CardDialog.tsx`: Markdown, prazo, etiquetas, progresso, aba Atividade.
+4. `Atividades.tsx`: barra de busca, novos filtros, cartão redesenhado.
+5. Polimento visual + tokens.
+6. Testes + build.
+
+Pronto para implementar quando aprovar.
