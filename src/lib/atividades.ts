@@ -197,8 +197,10 @@ export async function setCardLabels(cardId: string, labelIds: string[]): Promise
     .select("label_id")
     .eq("card_id", cardId);
   if (e1) throw e1;
-  const current = new Set((existing ?? []).map((r: { label_id: string }) => r.label_id));
-  const next = new Set(labelIds);
+  const current = new Set<string>(
+    (existing ?? []).map((r: { label_id: string }) => r.label_id),
+  );
+  const next = new Set<string>(labelIds);
   const toAdd = [...next].filter((id) => !current.has(id));
   const toRemove = [...current].filter((id) => !next.has(id));
   if (toAdd.length > 0) {
