@@ -1,133 +1,115 @@
+# Onda T4 — Anexos em cards de Atividades
 
-# Diagnóstico + Evolução do Kanban de Atividades ao padrão Trello
+Escopo isolado ao módulo Atividades, aditivo, sem tocar Kanban/DnD/CardDialog fora dos pontos indicados.
 
-## 1. Como o sistema funciona hoje (diagnóstico)
+## 1. Storage
 
-**Arquitetura geral**
-- **Frontend:** Vite + React 18 + TypeScript + Tailwind + shadcn/ui. Roteamento em `src/App.tsx` com `AuthProvider` (SSO Bloco ID) + `ProtectedRoute` por papel (`requester`/`developer`/`admin`).
-- **Backend:** Supabase EXTERNO (`cgbhpenkytibgiosksrb`). Toda mutação passa por RLS. Autenticação é SSO federado via HUB Bloco ID (`sso-login`, `sso-introspect`). **Não mexer.**
-- **IA:** Edge functions via `_shared/ia-gateway.ts` → HUB. Score é server-authoritative (trigger `compute_scores`).
-- **Realtime:** `useSupabaseData` já assina `postgres_changes` para tabelas do domínio de solicitações (não inclui `atividades_*` ainda).
+- **Bucket**: `atividades-anexos`, **privado** (`public: false`), criado via `supabase--storage_create_bucket`.
+- **Path convention**: `{board_id}/{card_id}/{anexo_id}-{filename-sanitizado}`.
+  - Facilita RLS por prefixo e limpeza em cascata (delete recursivo por `card_id`).
+- **Upload/Download**: sempre via signed URLs (upload signed URL para PUT; download signed URL curto — 60s — sob demanda). Nunca URL pública.
 
-**Módulo Atividades (foco da evolução)**
-- `src/pages/Atividades.tsx` (836 linhas): quadro com colunas horizontais, DnD entre/dentro de colunas (`@dnd-kit`), rascunhos locais, filtros (Responsável, Solução).
-- `src/components/atividades/CardDialog.tsx` (764 linhas): modal com título, descrição (texto simples), responsáveis (users + personas), solução vinculada, checklist, links, comentários (aba embutida).
-- `src/lib/atividades.ts`: CRUD de `atividades_colunas`, `atividades_cards`, `atividades_comentarios`, `atividades_personas`.
-- Tabelas existentes:
-  - `atividades_colunas` (5 col, 1 policy) — colunas fixas.
-  - `atividades_cards` (15 col, 4 policies) — inclui `checklist jsonb`, `links jsonb`, `responsavel_ids uuid[]`, `responsavel_persona_ids uuid[]`, `solucao_id`, `ordem`.
-  - `atividades_comentarios` (6 col, 4 policies).
-  - `atividades_personas` (6 col, 4 policies).
-- RLS: todas escopadas por `is_allowed_user()`/ownership (auditadas em `docs/RLS_AUDIT.md`).
+## 2. Limites e validação
 
-**O que JÁ funciona no padrão Trello**
-DnD fluido, cartões com título/descrição/checklist/links/comentários/responsáveis múltiplos, filtros por responsável e solução, rascunhos locais.
+- **Tamanho máx**: 15 MB por arquivo (validado no client antes de pedir signed URL + reforçado na policy via `owner`/metadata check no trigger de insert da tabela de metadados).
+- **Qtd máx por card**: 20 anexos (validado no insert da tabela via trigger, retornando erro amigável).
+- **MIME permitidos** (allowlist, validada no client E no trigger):
+  - Imagens: `image/png`, `image/jpeg`, `image/webp`, `image/gif`, `image/svg+xml`
+  - Documentos: `application/pdf`, `text/plain`, `text/csv`, `text/markdown`
+  - Office: `application/vnd.openxmlformats-officedocument.*` (docx/xlsx/pptx), `application/msword`, `application/vnd.ms-excel`, `application/vnd.ms-powerpoint`
+  - Arquivos: `application/zip`
+- Extensões perigosas (`.exe`, `.js`, `.html`, `.sh`, `.bat`) rejeitadas independentemente do MIME.
 
-**Gaps vs. Trello**
-1. Sem **etiquetas coloridas** (labels).
-2. Sem **prioridade** explícita.
-3. Sem **data de entrega/prazo** nem badge de status (atrasado/hoje/no prazo/concluído).
-4. Sem **anexos** (arquivos).
-5. Sem **histórico de movimentações** (activity log).
-6. Sem **busca rápida** por texto no topo do quadro.
-7. Sem **filtros por etiqueta/prazo**.
-8. Sem **cover** colorida no cartão.
-9. Sem **barra de progresso** do checklist no cartão do quadro.
-10. Descrição é `Textarea` simples — não há **Markdown**.
-11. Sem **realtime** em `atividades_*` (multi-usuário vê stale até refresh).
-12. Sem **automações** por movimentação (ex.: mover para "Concluído" marca conclusão, dispara notificação).
-13. Colunas hoje não são **personalizáveis** pelo usuário (nome/ordem/nova/remover) — só existem as fixas do seed.
+## 3. Tabela de metadados
 
-## 2. Mapa de dependências e riscos
+Nova tabela `public.atividades_anexos` (migração aditiva):
 
-| Área tocada | Depende de | Risco de regressão |
+| coluna | tipo | notas |
 |---|---|---|
-| `atividades_cards` (novas colunas) | `Atividades.tsx`, `CardDialog.tsx`, `lib/atividades.ts`, tipos do Supabase (autogerados) | **Baixo** se aditivo (novas colunas nullable + defaults). Types regeneram após migration aprovada. |
-| Nova tabela `atividades_labels` + `atividades_card_labels` | RLS padrão do módulo | **Baixo** — segue padrão existente. |
-| Nova tabela `atividades_atividade_log` | Triggers em `atividades_cards`/`atividades_comentarios` | **Médio** — trigger mal escrito pode bloquear updates. Mitigação: `SECURITY DEFINER`, `EXCEPTION WHEN OTHERS`. |
-| Realtime em `atividades_*` | `ALTER PUBLICATION supabase_realtime ADD TABLE` | **Baixo** — RLS continua filtrando. |
-| Colunas personalizáveis | `atividades_colunas` (add `board_id` futuro?) | **Médio** — mudança de modelo. Nesta fase mantemos board único global (como hoje) e só permitimos CRUD de colunas. |
-| Anexos | Novo bucket Storage `atividades-anexos` + policies + coluna `anexos jsonb` no card | **Médio** — quotas/segurança do storage. Restrito a `is_allowed_user()`. |
-| Automações por movimentação | Trigger `AFTER UPDATE` em `atividades_cards` + tabela `atividades_regras` (opcional) | **Alto** se regras arbitrárias. Nesta fase apenas 2 automações fixas: mover para coluna "Concluído" → `concluido=true` + notificação para responsáveis. |
-| SSO / RLS / edge functions IA / Score / Diagrama | — | **Zero mudança.** Escopo isolado a `atividades_*`. |
+| id | uuid PK | |
+| card_id | uuid FK → atividades_cards(id) **ON DELETE CASCADE** | |
+| board_id | uuid FK → atividades_boards(id) | denormalizado p/ RLS por prefixo |
+| storage_path | text NOT NULL | caminho no bucket |
+| filename | text NOT NULL | nome original |
+| mime_type | text NOT NULL | |
+| size_bytes | bigint NOT NULL CHECK (>0 AND <= 15MB) | |
+| uploaded_by | uuid NOT NULL | `auth.uid()` |
+| uploaded_by_email | text | preenchido por trigger |
+| created_at | timestamptz default now() | |
 
-## 3. Plano faseado (7 ondas incrementais, cada uma segura sozinha)
+Índices: `(card_id, created_at desc)`, `(board_id)`.
 
-Cada onda: migração aditiva + código + `vitest run` + verificação manual. **Nada de refactor amplo.** Reutiliza `Atividades.tsx`, `CardDialog.tsx`, `lib/atividades.ts`.
+GRANTs: `SELECT, INSERT, DELETE` para `authenticated`; `ALL` para `service_role`.
 
-### Onda T1 — Base de dados (aditiva)
-- Migration única, idempotente:
-  - `alter table atividades_cards add column if not exists data_entrega timestamptz, data_inicio timestamptz, concluido boolean default false, cover_cor text, prioridade text check (prioridade in ('baixa','media','alta','urgente')) null, descricao_markdown boolean default true`.
-  - `create table atividades_labels (id, nome, cor, ordem)` + GRANT + RLS + policies (leitura `is_allowed_user()`, escrita `is_allowed_user()`).
-  - `create table atividades_card_labels (card_id, label_id, pk composta)` + GRANT + RLS.
-  - `create table atividades_atividade_log (card_id, user_id, user_email, tipo, payload jsonb, created_at)` + GRANT + RLS (leitura `is_allowed_user()`, insert via trigger `SECURITY DEFINER`).
-  - `create table atividades_anexos (id, card_id, nome, url, mime, tamanho, uploaded_by, created_at)` + GRANT + RLS.
-  - Trigger `log_atividade_card_change` (`AFTER INSERT/UPDATE/DELETE on atividades_cards`) — grava movido/renomeado/prazo/conclusão em `atividades_atividade_log`.
-  - Trigger `log_atividade_comentario` — grava comentário.
-  - `ALTER PUBLICATION supabase_realtime ADD TABLE atividades_cards, atividades_comentarios, atividades_labels, atividades_card_labels, atividades_atividade_log`.
-- Bucket Storage `atividades-anexos` (privado) + 4 policies (`is_allowed_user()`).
+## 4. RLS
 
-**Riscos:** mínimo. Nenhuma coluna dropada/renomeada. Types do Supabase regeneram automaticamente.
+### `atividades_anexos`
+- **SELECT**: `is_allowed_user()` (mesmo escopo dos cards).
+- **INSERT**: `is_allowed_user()` E `uploaded_by = auth.uid()` E validação de MIME/size via trigger `BEFORE INSERT`.
+- **DELETE**: `uploaded_by = auth.uid() OR has_role(auth.uid(), 'admin')` (autor ou admin — mesmo padrão de comentários).
+- **UPDATE**: bloqueado (anexos são imutáveis; troca = delete + upload).
 
-### Onda T2 — Etiquetas, prazo, prioridade, cover no cartão
-- `lib/atividades.ts`: novos tipos + CRUD `listLabels`, `upsertLabel`, `deleteLabel`, `setCardLabels`.
-- `CardDialog.tsx`: seções novas (etiquetas com popover + criação inline; date picker prazo; select prioridade; seletor de cover).
-- `Atividades.tsx` (cartão no quadro): pills de etiquetas, badge de prazo colorido, ícone de prioridade, cover no topo, barra de progresso do checklist.
-- Tokens de cor de label em `index.css` (HSL semânticos — sem hardcode).
+### `storage.objects` no bucket `atividades-anexos`
+- **SELECT/INSERT/DELETE**: apenas `authenticated` E `bucket_id = 'atividades-anexos'` E `is_allowed_user()`.
+- INSERT adicional: `owner = auth.uid()`.
+- Sem policies para `anon`.
 
-**Arquivos:** `src/lib/atividades.ts`, `src/components/atividades/CardDialog.tsx`, `src/pages/Atividades.tsx`, `src/index.css`, `tailwind.config.ts`. Sem mexer no restante do app.
+## 5. Exclusão segura no Storage
 
-### Onda T3 — Descrição em Markdown
-- Adicionar `react-markdown` + `remark-gfm` (leves, ~30KB gzip).
-- Toggle "Editar / Visualizar" no `CardDialog`.
-- Sanitização com `rehype-sanitize` (default seguro).
+Trigger `AFTER DELETE` em `atividades_anexos` **não** apaga o objeto (Postgres não fala com Storage nativamente de forma confiável). Estratégia:
 
-### Onda T4 — Anexos
-- Componente `CardAnexos` no `CardDialog`: upload → bucket `atividades-anexos` → grava em `atividades_anexos`.
-- Lista com preview de imagem, download e delete (com confirmação).
-- Ícone + contador no cartão do quadro.
+- **Client**: ao remover anexo, chama edge function `atividades-anexo-delete` que:
+  1. Valida permissão (autor ou admin) via JWT.
+  2. Remove objeto do Storage (`storage.from().remove()` com service role).
+  3. Deleta a linha em `atividades_anexos`.
+- **CASCADE de card**: trigger `BEFORE DELETE` em `atividades_cards` enfileira paths em uma tabela `atividades_anexos_pendentes_delete` (id, storage_path). Edge function `atividades-anexos-gc` (chamada sob demanda no delete de card, ou por cron futuro) drena a fila.
+  - Alternativa mais simples que adoto: a edge function `atividades-anexo-delete` também aceita `card_id` e apaga todos os objetos do prefixo `{board_id}/{card_id}/` antes de deixar o CASCADE remover as linhas. Chamada explicitamente pelo client no fluxo de delete de card. Sem tabela extra.
 
-### Onda T5 — Busca, filtros, ordenação, aba Atividade
-- Barra superior fixa em `Atividades.tsx`: campo de busca (debounce 150ms, filtra título/descrição/labels), filtro por Etiqueta e por Prazo (`Sem prazo`, `Vence esta semana`, `Atrasadas`, `Concluídas`).
-- Contador "X de Y cartões".
-- Nova aba **Atividade** no `CardDialog` unindo `atividades_atividade_log` + comentários em timeline cronológica.
+Decisão: **sem tabela de fila**. Edge function faz o trabalho síncrono; se falhar, log em `activity_log` e o objeto vira órfão (aceitável e recuperável por GC manual futuro).
 
-### Onda T6 — Realtime + Automações fixas
-- Hook `useAtividadesRealtime` em `Atividades.tsx`: `useEffect` que assina `postgres_changes` em `atividades_cards`, `atividades_card_labels`, `atividades_atividade_log` — cleanup obrigatório com `supabase.removeChannel`.
-- Automação 1: mover para coluna com `chave='concluido'` → seta `concluido=true` + `data_conclusao=now()` (trigger no banco).
-- Automação 2: mudança de responsável em card com prazo → cria notificação em `notificacoes` (trigger, best-effort).
+## 6. Logs no histórico
 
-### Onda T7 — Polimento visual Trello
-- `rounded-xl`, `shadow-sm` no cartão, `shadow-md` no drag overlay, transição `scale/rotate` leve.
-- Largura fixa de coluna 272px (padrão Trello) com scroll horizontal.
-- Hover states sutis, foco visível, `focus-visible:ring`.
-- Colunas ganham botão "…" (renomear/excluir/adicionar coluna). CRUD de `atividades_colunas` já existe.
-- Testes de acessibilidade básica (roles ARIA no DnD).
+Trigger `AFTER INSERT/DELETE` em `atividades_anexos` insere em `atividades_atividade_log`:
+- `tipo='anexo_adicionado'`, `entity='anexo'`, `payload={filename, size_bytes, mime_type}`
+- `tipo='anexo_removido'`, `entity='anexo'`, `payload={filename}`
 
-## 4. Como evito regressões
+Reutiliza infraestrutura da timeline atual (`AtividadeTimeline.tsx` só precisa reconhecer os dois novos tipos).
 
-1. **Migrações 100% aditivas** — `if not exists`, defaults nullable, sem drop/rename. Reversíveis com um `alter drop column`.
-2. **Types do Supabase** regeneram após aprovação da migration — só edito código que depende de novas colunas **depois** disso.
-3. **RLS espelha o padrão existente** (`is_allowed_user()`) já auditado em `docs/RLS_AUDIT.md` — sem novas superfícies públicas.
-4. **Escopo cirúrgico** — só toco `atividades_*`. Zero mudança em SSO, edge functions IA, score, diagrama, solicitações, soluções.
-5. **`vitest run` verde** ao fim de cada onda (34 testes atuais + novos para prazo/labels).
-6. **Verificação manual mínima** por onda: criar/mover/editar cartão continua funcionando; filtros existentes continuam; comentários existentes intactos.
-7. **Realtime só na onda T6** — evita interações imprevistas nas ondas anteriores.
-8. **Sem novas dependências pesadas** — apenas `react-markdown` + `remark-gfm` + `rehype-sanitize` na T3.
+## 7. Edge functions
 
-## 5. Perguntas antes de implementar (regras de negócio)
+- `atividades-anexo-upload-url` (verify_jwt=true): recebe `{card_id, filename, mime_type, size_bytes}`, valida allowlist/limite/permissão, gera signed upload URL + pré-registra `anexo_id`. Retorna `{url, storage_path, anexo_id}`.
+- `atividades-anexo-download-url` (verify_jwt=true): recebe `{anexo_id}`, valida `is_allowed_user`, retorna signed URL 60s.
+- `atividades-anexo-delete` (verify_jwt=true): recebe `{anexo_id}` ou `{card_id}`, valida autor/admin, remove objetos + linhas.
 
-Vou esperar a aprovação e responder estas antes de começar a T1:
+Reutilizam `_shared/cors.ts`. Sem IA envolvida.
 
-1. **Board único ou múltiplos boards?** Hoje é board global único (todas as colunas para todos os `is_allowed_user()`). Manter assim ou preparar multi-board?
-2. **Quem pode criar/editar etiquetas?** Qualquer `is_allowed_user()` ou só `admin`/`developer`?
-3. **Anexos: tamanho máximo por arquivo?** Sugiro 10MB. E tipos permitidos (qualquer, ou lista branca)?
-4. **Automação "concluído":** mover para a coluna final marca automaticamente `concluido=true`? Ou o usuário deve marcar explicitamente?
-5. **Comentários: manter modelo atual** (apenas texto)? Ou permitir @menção de responsáveis (dispararia notificação)?
-6. **Colunas personalizáveis:** liberar renomear/excluir/adicionar coluna nesta fase, ou manter as fixas atuais e só permitir reordenar?
+## 8. Frontend
 
-## 6. Ordem de execução proposta
+- Novo `src/lib/atividadesAnexos.ts`: tipos + wrappers das 3 edge functions.
+- Novo `src/hooks/useAnexosMutations.ts`: mutations React Query (upload/delete) com invalidação de `atividadesKeys.anexos(cardId)` e `activity(cardId)`.
+- Novo `src/components/atividades/dialog/AnexosSection.tsx`: lista + botão "Adicionar anexo" com input file, barra de progresso, thumbnail para imagens, ícone genérico para outros tipos. Delete inline.
+- `CardDialog.tsx`: adicionar `<AnexosSection cardId={...} />` numa nova aba "Anexos" ao lado de "Detalhes"/"Atividade". **Nenhuma outra mudança** no dialog.
+- `KanbanCard.tsx`: badge com ícone `Paperclip` + contagem quando `anexosCount > 0` (novo campo derivado numa query leve `select count group by card_id` cacheada por board).
 
-T1 (migração) → aguarda aprovação → T2 → T3 → T4 → T5 → T6 → T7. Publish só ao fim, quando você decidir.
+## 9. Testes
 
-Aprova o plano? Se sim, respondo as 6 perguntas com defaults sugeridos e começo pela T1.
+- Unitários (vitest): validação de MIME/tamanho no lib client.
+- Manual: upload PNG, PDF, arquivo grande (rejeitar), MIME não permitido (rejeitar), delete pelo autor, delete por admin, delete de card cascateia objetos.
+- Regressão: rodar suite existente (34 testes) — não devem quebrar.
+
+## 10. Ordem de execução
+
+1. `supabase--storage_create_bucket` (bucket privado).
+2. Migração: tabela `atividades_anexos` + triggers de log + policies Storage + GRANTs.
+3. Edge functions (3).
+4. Frontend: lib → hook → componente → integração no CardDialog + badge no KanbanCard.
+5. Rodar typecheck + vitest.
+
+## Fora de escopo (T4)
+
+- Preview inline de PDF/Office.
+- Versionamento de anexos.
+- GC agendado de órfãos (feito manualmente se necessário).
+- Compartilhamento externo por link público.
+
+Aprovando este plano, sigo com bucket + migração como primeiro passo.
