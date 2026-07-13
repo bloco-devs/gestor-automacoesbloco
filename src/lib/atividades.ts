@@ -3,11 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
 
+// ---------- Tipos ----------
+
 export interface AtividadeColuna {
   id: string;
   chave: string;
   nome: string;
   ordem: number;
+  boardId: string;
 }
 
 export interface ChecklistItem {
@@ -27,6 +30,7 @@ export type Prioridade = "baixa" | "media" | "alta" | "urgente";
 export interface AtividadeCard {
   id: string;
   colunaId: string;
+  boardId: string;
   titulo: string;
   descricao: string;
   responsavelId: string | null;
@@ -39,14 +43,11 @@ export interface AtividadeCard {
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
-  // Trello-like fields (T1)
   dataEntrega: string | null;
-  dataInicio: string | null;
   concluido: boolean;
   dataConclusao: string | null;
   coverCor: string | null;
   prioridade: Prioridade | null;
-  descricaoMarkdown: boolean;
   labelIds: string[];
 }
 
@@ -62,6 +63,7 @@ export interface AtividadeLabel {
   nome: string;
   cor: string;
   ordem: number;
+  boardId: string;
 }
 
 export interface AtividadeLogEntry {
@@ -70,18 +72,29 @@ export interface AtividadeLogEntry {
   userId: string | null;
   userEmail: string | null;
   tipo: string;
+  entity: string;
   payload: Record<string, unknown>;
   createdAt: string;
 }
 
+export interface AtividadeBoard {
+  id: string;
+  slug: string;
+  nome: string;
+  ordem: number;
+}
+
+// ---------- Mappers ----------
+
 const SELECT_COLS =
-  "id, coluna_id, titulo, descricao, responsavel_id, responsavel_ids, responsavel_persona_ids, solucao_id, ordem, checklist, links, created_by, created_at, updated_at, data_entrega, data_inicio, concluido, data_conclusao, cover_cor, prioridade, descricao_markdown";
+  "id, coluna_id, board_id, titulo, descricao, responsavel_id, responsavel_ids, responsavel_persona_ids, solucao_id, ordem, checklist, links, created_by, created_at, updated_at, data_entrega, concluido, data_conclusao, cover_cor, prioridade";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapCard(r: any, labelIds: string[] = []): AtividadeCard {
   return {
     id: r.id,
     colunaId: r.coluna_id,
+    boardId: r.board_id,
     titulo: r.titulo,
     descricao: r.descricao ?? "",
     responsavelId: r.responsavel_id,
@@ -101,15 +114,44 @@ function mapCard(r: any, labelIds: string[] = []): AtividadeCard {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     dataEntrega: r.data_entrega ?? null,
-    dataInicio: r.data_inicio ?? null,
     concluido: !!r.concluido,
     dataConclusao: r.data_conclusao ?? null,
     coverCor: r.cover_cor ?? null,
     prioridade: (r.prioridade as Prioridade | null) ?? null,
-    descricaoMarkdown: r.descricao_markdown !== false,
     labelIds,
   };
 }
+
+// ---------- Boards ----------
+
+export async function listBoards(): Promise<AtividadeBoard[]> {
+  const { data, error } = await sb
+    .from("atividades_boards")
+    .select("id, slug, nome, ordem")
+    .order("ordem", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(
+    (r: { id: string; slug: string; nome: string; ordem: number }) => ({
+      id: r.id,
+      slug: r.slug,
+      nome: r.nome,
+      ordem: r.ordem,
+    }),
+  );
+}
+
+export async function getDefaultBoardId(): Promise<string> {
+  const { data, error } = await sb
+    .from("atividades_boards")
+    .select("id")
+    .eq("slug", "default")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Board padrão ausente");
+  return data.id as string;
+}
+
+// ---------- Personas / Colunas / Labels / Cards ----------
 
 export async function listPersonas(): Promise<AtividadePersona[]> {
   const { data, error } = await sb
@@ -118,31 +160,39 @@ export async function listPersonas(): Promise<AtividadePersona[]> {
     .eq("ativo", true)
     .order("nome", { ascending: true });
   if (error) throw error;
-  return (data ?? []).map((r: { id: string; user_id: string; nome: string; ativo: boolean }) => ({
-    id: r.id,
-    userId: r.user_id,
-    nome: r.nome,
-    ativo: r.ativo,
-  }));
+  return (data ?? []).map(
+    (r: { id: string; user_id: string; nome: string; ativo: boolean }) => ({
+      id: r.id,
+      userId: r.user_id,
+      nome: r.nome,
+      ativo: r.ativo,
+    }),
+  );
 }
 
-export async function listColunas(): Promise<AtividadeColuna[]> {
-  const { data, error } = await sb
+export async function listColunas(boardId?: string): Promise<AtividadeColuna[]> {
+  let q = sb
     .from("atividades_colunas")
-    .select("id, chave, nome, ordem")
+    .select("id, chave, nome, ordem, board_id")
     .order("ordem", { ascending: true });
+  if (boardId) q = q.eq("board_id", boardId);
+  const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []).map((r: { id: string; chave: string; nome: string; ordem: number }) => ({
-    id: r.id,
-    chave: r.chave,
-    nome: r.nome,
-    ordem: r.ordem,
-  }));
+  return (data ?? []).map(
+    (r: { id: string; chave: string; nome: string; ordem: number; board_id: string }) => ({
+      id: r.id,
+      chave: r.chave,
+      nome: r.nome,
+      ordem: r.ordem,
+      boardId: r.board_id,
+    }),
+  );
 }
 
-export async function listCards(): Promise<AtividadeCard[]> {
+export async function listCards(boardId?: string): Promise<AtividadeCard[]> {
+  const cardsQ = sb.from("atividades_cards").select(SELECT_COLS).order("ordem", { ascending: true });
   const [cardsRes, linksRes] = await Promise.all([
-    sb.from("atividades_cards").select(SELECT_COLS).order("ordem", { ascending: true }),
+    boardId ? cardsQ.eq("board_id", boardId) : cardsQ,
     sb.from("atividades_card_labels").select("card_id, label_id"),
   ]);
   if (cardsRes.error) throw cardsRes.error;
@@ -156,32 +206,62 @@ export async function listCards(): Promise<AtividadeCard[]> {
   return (cardsRes.data ?? []).map((r: { id: string }) => mapCard(r, labelsByCard.get(r.id) ?? []));
 }
 
-export async function listLabels(): Promise<AtividadeLabel[]> {
-  const { data, error } = await sb
+export async function getCardById(id: string): Promise<AtividadeCard | null> {
+  const [cardRes, linksRes] = await Promise.all([
+    sb.from("atividades_cards").select(SELECT_COLS).eq("id", id).maybeSingle(),
+    sb.from("atividades_card_labels").select("label_id").eq("card_id", id),
+  ]);
+  if (cardRes.error) throw cardRes.error;
+  if (linksRes.error) throw linksRes.error;
+  if (!cardRes.data) return null;
+  const labelIds = (linksRes.data ?? []).map((r: { label_id: string }) => r.label_id);
+  return mapCard(cardRes.data, labelIds);
+}
+
+export async function listLabels(boardId?: string): Promise<AtividadeLabel[]> {
+  let q = sb
     .from("atividades_labels")
-    .select("id, nome, cor, ordem")
+    .select("id, nome, cor, ordem, board_id")
     .order("ordem", { ascending: true })
     .order("nome", { ascending: true });
+  if (boardId) q = q.eq("board_id", boardId);
+  const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []).map((r: { id: string; nome: string; cor: string; ordem: number }) => ({
-    id: r.id,
-    nome: r.nome,
-    cor: r.cor,
-    ordem: r.ordem,
-  }));
+  return (data ?? []).map(
+    (r: { id: string; nome: string; cor: string; ordem: number; board_id: string }) => ({
+      id: r.id,
+      nome: r.nome,
+      cor: r.cor,
+      ordem: r.ordem,
+      boardId: r.board_id,
+    }),
+  );
 }
 
-export async function createLabel(input: { nome: string; cor: string }): Promise<AtividadeLabel> {
+export async function createLabel(input: {
+  nome: string;
+  cor: string;
+  boardId: string;
+}): Promise<AtividadeLabel> {
   const { data, error } = await sb
     .from("atividades_labels")
-    .insert({ nome: input.nome, cor: input.cor })
-    .select("id, nome, cor, ordem")
+    .insert({ nome: input.nome, cor: input.cor, board_id: input.boardId })
+    .select("id, nome, cor, ordem, board_id")
     .single();
   if (error) throw error;
-  return { id: data.id, nome: data.nome, cor: data.cor, ordem: data.ordem };
+  return {
+    id: data.id,
+    nome: data.nome,
+    cor: data.cor,
+    ordem: data.ordem,
+    boardId: data.board_id,
+  };
 }
 
-export async function updateLabel(id: string, patch: { nome?: string; cor?: string }): Promise<void> {
+export async function updateLabel(
+  id: string,
+  patch: { nome?: string; cor?: string },
+): Promise<void> {
   const { error } = await sb.from("atividades_labels").update(patch).eq("id", id);
   if (error) throw error;
 }
@@ -197,9 +277,7 @@ export async function setCardLabels(cardId: string, labelIds: string[]): Promise
     .select("label_id")
     .eq("card_id", cardId);
   if (e1) throw e1;
-  const current = new Set<string>(
-    (existing ?? []).map((r: { label_id: string }) => r.label_id),
-  );
+  const current = new Set<string>((existing ?? []).map((r: { label_id: string }) => r.label_id));
   const next = new Set<string>(labelIds);
   const toAdd = [...next].filter((id) => !current.has(id));
   const toRemove = [...current].filter((id) => !next.has(id));
@@ -222,7 +300,7 @@ export async function setCardLabels(cardId: string, labelIds: string[]): Promise
 export async function listActivityLog(cardId: string): Promise<AtividadeLogEntry[]> {
   const { data, error } = await sb
     .from("atividades_atividade_log")
-    .select("id, card_id, user_id, user_email, tipo, payload, created_at")
+    .select("id, card_id, user_id, user_email, tipo, entity, payload, created_at")
     .eq("card_id", cardId)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -234,6 +312,7 @@ export async function listActivityLog(cardId: string): Promise<AtividadeLogEntry
       user_id: string | null;
       user_email: string | null;
       tipo: string;
+      entity: string | null;
       payload: Record<string, unknown>;
       created_at: string;
     }) => ({
@@ -242,13 +321,17 @@ export async function listActivityLog(cardId: string): Promise<AtividadeLogEntry
       userId: r.user_id,
       userEmail: r.user_email,
       tipo: r.tipo,
+      entity: r.entity ?? "card",
       payload: r.payload ?? {},
       createdAt: r.created_at,
     }),
   );
 }
 
-export async function createCard(input: {
+// ---------- Card mutations ----------
+
+export interface CreateCardInput {
+  boardId: string;
   colunaId: string;
   titulo: string;
   descricao?: string;
@@ -263,12 +346,15 @@ export async function createCard(input: {
   prioridade?: Prioridade | null;
   coverCor?: string | null;
   labelIds?: string[];
-}): Promise<AtividadeCard> {
+}
+
+export async function createCard(input: CreateCardInput): Promise<AtividadeCard> {
   const ids = input.responsavelIds ?? [];
   const personaIds = input.responsavelPersonaIds ?? [];
   const { data, error } = await sb
     .from("atividades_cards")
     .insert({
+      board_id: input.boardId,
       coluna_id: input.colunaId,
       titulo: input.titulo,
       descricao: input.descricao ?? "",
@@ -294,27 +380,26 @@ export async function createCard(input: {
   return mapCard(data, labelIds);
 }
 
-export async function updateCard(
-  id: string,
-  patch: {
-    titulo?: string;
-    descricao?: string;
-    responsavelIds?: string[];
-    responsavelPersonaIds?: string[];
-    solucaoId?: string | null;
-    colunaId?: string;
-    ordem?: number;
-    checklist?: ChecklistItem[];
-    links?: CardLink[];
-    dataEntrega?: string | null;
-    prioridade?: Prioridade | null;
-    coverCor?: string | null;
-    concluido?: boolean;
-    labelIds?: string[];
-  },
-): Promise<void> {
+export interface UpdateCardPatch {
+  titulo?: string;
+  descricao?: string;
+  responsavelIds?: string[];
+  responsavelPersonaIds?: string[];
+  solucaoId?: string | null;
+  colunaId?: string;
+  ordem?: number;
+  checklist?: ChecklistItem[];
+  links?: CardLink[];
+  dataEntrega?: string | null;
+  prioridade?: Prioridade | null;
+  coverCor?: string | null;
+  concluido?: boolean;
+  labelIds?: string[];
+}
+
+export async function updateCard(id: string, patch: UpdateCardPatch): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const upd: any = {};
+  const upd: Record<string, any> = {};
   if (patch.titulo !== undefined) upd.titulo = patch.titulo;
   if (patch.descricao !== undefined) upd.descricao = patch.descricao;
   if (patch.responsavelIds !== undefined) {
@@ -346,6 +431,25 @@ export async function deleteCard(id: string): Promise<void> {
   const { error } = await sb.from("atividades_cards").delete().eq("id", id);
   if (error) throw error;
 }
+
+/**
+ * Reordena vários cartões em uma única chamada RPC (transacional,
+ * validação de auth/role/escopo feita no servidor).
+ */
+export async function reorderCardsBulk(
+  updates: { id: string; colunaId: string; ordem: number }[],
+): Promise<void> {
+  if (updates.length === 0) return;
+  const items = updates.map((u) => ({
+    id: u.id,
+    coluna_id: u.colunaId,
+    ordem: u.ordem,
+  }));
+  const { error } = await sb.rpc("atividades_reorder_cards", { items });
+  if (error) throw error;
+}
+
+// ---------- Comentários ----------
 
 export interface CardComentario {
   id: string;
@@ -385,11 +489,7 @@ export async function createComentario(input: {
 }): Promise<CardComentario> {
   const { data, error } = await sb
     .from("atividades_comentarios")
-    .insert({
-      card_id: input.cardId,
-      user_id: input.userId,
-      texto: input.texto,
-    })
+    .insert({ card_id: input.cardId, user_id: input.userId, texto: input.texto })
     .select("id, card_id, user_id, texto, created_at, updated_at")
     .single();
   if (error) throw error;
@@ -397,29 +497,13 @@ export async function createComentario(input: {
 }
 
 export async function updateComentario(id: string, texto: string): Promise<void> {
-  const { error } = await sb
-    .from("atividades_comentarios")
-    .update({ texto })
-    .eq("id", id);
+  const { error } = await sb.from("atividades_comentarios").update({ texto }).eq("id", id);
   if (error) throw error;
 }
 
 export async function deleteComentario(id: string): Promise<void> {
   const { error } = await sb.from("atividades_comentarios").delete().eq("id", id);
   if (error) throw error;
-}
-
-export async function reorderCards(
-  updates: { id: string; colunaId: string; ordem: number }[],
-): Promise<void> {
-  await Promise.all(
-    updates.map((u) =>
-      sb
-        .from("atividades_cards")
-        .update({ coluna_id: u.colunaId, ordem: u.ordem })
-        .eq("id", u.id),
-    ),
-  );
 }
 
 // ============================================================

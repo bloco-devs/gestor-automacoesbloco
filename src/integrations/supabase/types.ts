@@ -78,6 +78,7 @@ export type Database = {
         Row: {
           card_id: string
           created_at: string
+          entity: string
           id: string
           payload: Json
           tipo: string
@@ -87,6 +88,7 @@ export type Database = {
         Insert: {
           card_id: string
           created_at?: string
+          entity?: string
           id?: string
           payload?: Json
           tipo: string
@@ -96,6 +98,7 @@ export type Database = {
         Update: {
           card_id?: string
           created_at?: string
+          entity?: string
           id?: string
           payload?: Json
           tipo?: string
@@ -111,6 +114,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      atividades_boards: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       atividades_card_labels: {
         Row: {
@@ -147,6 +177,7 @@ export type Database = {
       }
       atividades_cards: {
         Row: {
+          board_id: string
           checklist: Json
           coluna_id: string
           concluido: boolean
@@ -155,9 +186,7 @@ export type Database = {
           created_by: string | null
           data_conclusao: string | null
           data_entrega: string | null
-          data_inicio: string | null
           descricao: string
-          descricao_markdown: boolean
           id: string
           links: Json
           ordem: number
@@ -170,6 +199,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          board_id: string
           checklist?: Json
           coluna_id: string
           concluido?: boolean
@@ -178,9 +208,7 @@ export type Database = {
           created_by?: string | null
           data_conclusao?: string | null
           data_entrega?: string | null
-          data_inicio?: string | null
           descricao?: string
-          descricao_markdown?: boolean
           id?: string
           links?: Json
           ordem?: number
@@ -193,6 +221,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          board_id?: string
           checklist?: Json
           coluna_id?: string
           concluido?: boolean
@@ -201,9 +230,7 @@ export type Database = {
           created_by?: string | null
           data_conclusao?: string | null
           data_entrega?: string | null
-          data_inicio?: string | null
           descricao?: string
-          descricao_markdown?: boolean
           id?: string
           links?: Json
           ordem?: number
@@ -216,6 +243,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "atividades_cards_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "atividades_cards_coluna_id_fkey"
             columns: ["coluna_id"]
@@ -234,6 +268,7 @@ export type Database = {
       }
       atividades_colunas: {
         Row: {
+          board_id: string
           chave: string
           created_at: string
           id: string
@@ -241,6 +276,7 @@ export type Database = {
           ordem: number
         }
         Insert: {
+          board_id: string
           chave: string
           created_at?: string
           id?: string
@@ -248,13 +284,22 @@ export type Database = {
           ordem?: number
         }
         Update: {
+          board_id?: string
           chave?: string
           created_at?: string
           id?: string
           nome?: string
           ordem?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "atividades_colunas_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       atividades_comentarios: {
         Row: {
@@ -293,6 +338,7 @@ export type Database = {
       }
       atividades_labels: {
         Row: {
+          board_id: string
           cor: string
           created_at: string
           id: string
@@ -301,6 +347,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          board_id: string
           cor?: string
           created_at?: string
           id?: string
@@ -309,6 +356,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          board_id?: string
           cor?: string
           created_at?: string
           id?: string
@@ -316,7 +364,15 @@ export type Database = {
           ordem?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "atividades_labels_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       atividades_personas: {
         Row: {
@@ -1193,6 +1249,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      atividades_reorder_cards: { Args: { items: Json }; Returns: undefined }
       get_my_role: { Args: never; Returns: string }
       has_role: {
         Args: {
