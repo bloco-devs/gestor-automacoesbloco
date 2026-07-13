@@ -74,13 +74,90 @@ export type Database = {
         }
         Relationships: []
       }
+      atividades_atividade_log: {
+        Row: {
+          card_id: string
+          created_at: string
+          id: string
+          payload: Json
+          tipo: string
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          id?: string
+          payload?: Json
+          tipo: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          id?: string
+          payload?: Json
+          tipo?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_atividade_log_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_card_labels: {
+        Row: {
+          card_id: string
+          created_at: string
+          label_id: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          label_id: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          label_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_card_labels_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_card_labels_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_labels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atividades_cards: {
         Row: {
           checklist: Json
           coluna_id: string
+          concluido: boolean
+          cover_cor: string | null
           created_at: string
           created_by: string | null
+          data_conclusao: string | null
+          data_entrega: string | null
+          data_inicio: string | null
           descricao: string
+          descricao_markdown: boolean
           id: string
           links: Json
           ordem: number
@@ -95,9 +172,15 @@ export type Database = {
         Insert: {
           checklist?: Json
           coluna_id: string
+          concluido?: boolean
+          cover_cor?: string | null
           created_at?: string
           created_by?: string | null
+          data_conclusao?: string | null
+          data_entrega?: string | null
+          data_inicio?: string | null
           descricao?: string
+          descricao_markdown?: boolean
           id?: string
           links?: Json
           ordem?: number
@@ -112,9 +195,15 @@ export type Database = {
         Update: {
           checklist?: Json
           coluna_id?: string
+          concluido?: boolean
+          cover_cor?: string | null
           created_at?: string
           created_by?: string | null
+          data_conclusao?: string | null
+          data_entrega?: string | null
+          data_inicio?: string | null
           descricao?: string
+          descricao_markdown?: boolean
           id?: string
           links?: Json
           ordem?: number
@@ -201,6 +290,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      atividades_labels: {
+        Row: {
+          cor: string
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       atividades_personas: {
         Row: {
