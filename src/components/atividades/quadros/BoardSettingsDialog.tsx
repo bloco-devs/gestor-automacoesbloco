@@ -498,24 +498,63 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="q3-cover" className="flex items-center gap-2">
-            <ImageIcon className="h-3.5 w-3.5" /> Imagem de capa (URL)
+          <Label className="flex items-center gap-2">
+            <ImageIcon className="h-3.5 w-3.5" /> Imagem de capa
           </Label>
-          <Input
-            id="q3-cover"
-            value={coverUrl}
-            onChange={(e) => setCoverUrl(e.target.value)}
-            placeholder="https://..."
-          />
-          <p className="text-xs text-muted-foreground">
-            Cole a URL de uma imagem já hospedada. O upload direto será
-            adicionado numa próxima etapa.
-          </p>
-          {coverUrl.trim() && (
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleUploadCover(f);
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => coverInputRef.current?.click()}
+              disabled={!canAdmin || uploading}
+            >
+              <Upload className="h-4 w-4" />
+              {uploading ? "Enviando..." : coverUrl ? "Trocar imagem" : "Enviar imagem"}
+            </Button>
+            {coverUrl && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-destructive"
+                onClick={handleRemoveCover}
+                disabled={!canAdmin || uploading}
+              >
+                <X className="h-4 w-4" /> Remover
+              </Button>
+            )}
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="q3-cover" className="text-xs text-muted-foreground">
+              …ou cole uma URL pública
+            </Label>
+            <Input
+              id="q3-cover"
+              value={/^https?:\/\//i.test(coverUrl) ? coverUrl : ""}
+              onChange={(e) => setCoverUrl(e.target.value)}
+              placeholder="https://..."
+              disabled={!canAdmin || uploading}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              PNG, JPG, WEBP ou GIF até 5&nbsp;MB. Imagens enviadas ficam privadas ao quadro.
+            </p>
+          </div>
+          {coverPreview && (
             <div className="mt-2 rounded-lg border overflow-hidden max-h-40 bg-muted">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={coverUrl.trim()}
+                src={coverPreview}
                 alt="Prévia da capa"
                 className="w-full h-40 object-cover"
                 onError={(e) => {
@@ -525,6 +564,7 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
             </div>
           )}
         </div>
+
 
         <div className="pt-2 flex flex-wrap items-center gap-2">
           <Button onClick={handleSave} disabled={saving || !canAdmin}>
