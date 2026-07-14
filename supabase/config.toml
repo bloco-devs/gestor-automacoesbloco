@@ -35,3 +35,9 @@ verify_jwt = false
 
 [functions.bloco-connect]
 verify_jwt = false
+
+[functions.importer-upload]
+verify_jwt = true
+
+[functions.importer-run]
+verify_jwt = true
