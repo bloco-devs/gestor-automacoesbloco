@@ -84,7 +84,7 @@ export default function ImportarQuadro() {
     return () => { cancel = true; };
   }, [file]);
 
-  // Realtime do job
+  // Realtime do job (dry-run)
   useEffect(() => {
     if (!jobId) return;
     const un = subscribeJob(jobId, (row) => {
@@ -92,10 +92,20 @@ export default function ImportarQuadro() {
       if (row.report) setReport(row.report);
     });
     unsubRef.current = un;
-    // Fetch inicial
     fetchJob(jobId).then((r) => { if (r) { setJob(r); if (r.report) setReport(r.report); } });
     return () => { un(); unsubRef.current = null; };
   }, [jobId]);
+
+  // Realtime do job real (fase 6)
+  useEffect(() => {
+    if (!realJobId) return;
+    const un = subscribeJob(realJobId, (row) => {
+      setRealJob(row);
+      if (row.report) setRealReport(row.report);
+    });
+    fetchJob(realJobId).then((r) => { if (r) { setRealJob(r); if (r.report) setRealReport(r.report); } });
+    return () => { un(); };
+  }, [realJobId]);
 
   const skipBoardStep = !!detected && detected.boards.length <= 1;
   const skipped = useMemo(() => new Set(skipBoardStep ? ["board"] : []), [skipBoardStep]);
