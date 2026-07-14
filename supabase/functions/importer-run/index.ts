@@ -22,6 +22,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { CoreRunner } from "../_shared/importers/core/runner.ts";
 import { DryRunExecutor } from "../_shared/importers/core/executor.ts";
+import { RealExecutor } from "../_shared/importers/core/real-executor.ts";
 import {
   trelloSnapshotFromJson,
   trelloSnapshotFromZip,
