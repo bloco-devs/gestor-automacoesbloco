@@ -81,8 +81,30 @@ function ColunaImpl(props: ColunaProps) {
       <div className="flex items-center justify-between mb-2 px-2 pt-1">
         <div className="flex items-center gap-2 min-w-0">
           <h3 className="text-sm font-semibold truncate">{coluna.nome}</h3>
-          <span className="text-xs text-muted-foreground tabular-nums">{cards.length}</span>
+          {(() => {
+            const wip = coluna.wipLimit ?? 0;
+            const count = cards.length;
+            const over = wip > 0 && count > wip;
+            const at = wip > 0 && count === wip;
+            return (
+              <span
+                className={cn(
+                  "text-xs tabular-nums rounded px-1.5 py-0.5",
+                  over
+                    ? "bg-destructive/15 text-destructive font-medium"
+                    : at
+                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 font-medium"
+                      : "text-muted-foreground",
+                )}
+                title={wip > 0 ? `Limite de WIP: ${wip}` : undefined}
+              >
+                {count}
+                {wip > 0 ? ` / ${wip}` : ""}
+              </span>
+            );
+          })()}
         </div>
+
         <div className="flex items-center">
           <Button
             variant="ghost"
