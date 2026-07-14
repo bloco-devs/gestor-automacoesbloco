@@ -246,23 +246,38 @@ export async function getCardById(id: string): Promise<AtividadeCard | null> {
 export async function listLabels(boardId?: string): Promise<AtividadeLabel[]> {
   let q = sb
     .from("atividades_labels")
-    .select("id, nome, cor, ordem, board_id, favorita")
-    .order("favorita", { ascending: false })
+    .select("id, nome, cor, ordem, board_id")
     .order("ordem", { ascending: true })
     .order("nome", { ascending: true });
   if (boardId) q = q.eq("board_id", boardId);
   const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []).map(
-    (r: { id: string; nome: string; cor: string; ordem: number; board_id: string; favorita?: boolean }) => ({
-      id: r.id,
-      nome: r.nome,
-      cor: r.cor,
-      ordem: r.ordem,
-      boardId: r.board_id,
-      favorita: !!r.favorita,
-    }),
-  );
+  const rows = (data ?? []) as Array<{ id: string; nome: string; cor: string; ordem: number; board_id: string }>;
+
+  // Favoritas: preferência individual (Q3.6)
+  const { data: userData } = await sb.auth.getUser();
+  const uid = userData?.user?.id as string | undefined;
+  const favSet = new Set<string>();
+  if (uid && rows.length > 0) {
+    const { data: favs } = await sb
+      .from("atividades_label_favoritos")
+      .select("label_id")
+      .eq("user_id", uid)
+      .in("label_id", rows.map((r) => r.id));
+    for (const f of (favs ?? []) as Array<{ label_id: string }>) favSet.add(f.label_id);
+  }
+
+  const mapped = rows.map((r) => ({
+    id: r.id,
+    nome: r.nome,
+    cor: r.cor,
+    ordem: r.ordem,
+    boardId: r.board_id,
+    favorita: favSet.has(r.id),
+  }));
+  // Favoritas primeiro, mantendo ordem original em cada grupo
+  mapped.sort((a, b) => Number(b.favorita) - Number(a.favorita) || a.ordem - b.ordem || a.nome.localeCompare(b.nome));
+  return mapped;
 }
 
 

@@ -581,6 +581,32 @@ export type Database = {
           },
         ]
       }
+      atividades_label_favoritos: {
+        Row: {
+          created_at: string
+          label_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          label_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          label_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_label_favoritos_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_labels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atividades_labels: {
         Row: {
           board_id: string
@@ -1688,6 +1714,10 @@ export type Database = {
       atividades_label_set_favorita: {
         Args: { _fav: boolean; _label_id: string }
         Returns: undefined
+      }
+      atividades_label_toggle_favorita: {
+        Args: { _label_id: string }
+        Returns: boolean
       }
       atividades_label_upsert: {
         Args: { _board_id: string; _cor: string; _id: string; _nome: string }
