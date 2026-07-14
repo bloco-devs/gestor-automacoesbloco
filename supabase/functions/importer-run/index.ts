@@ -310,7 +310,7 @@ Deno.serve(async (req) => {
 
   // Cleanup do arquivo temporário — mantém apenas file_hash e metadados no banco
   const removed = await removeJobObjects(svc, BUCKET, jobPrefix);
-  log.info("finalized", { status: finalStatus, duration_ms: report.duration_ms, storage_removed: removed });
-  return new Response(JSON.stringify({ status: finalStatus, report, request_id }),
+  log.info("finalized", { status: finalStatus, duration_ms: report.duration_ms, storage_removed: removed, dry_run: dryRun, board_id_local: boardLocal });
+  return new Response(JSON.stringify({ status: finalStatus, report, board_id_local: boardLocal, dry_run: dryRun, request_id }),
     { status: 200, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
 });
