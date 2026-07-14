@@ -171,9 +171,9 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
   }
 
-  logger.info("upload_ok", { job_id, source, size: file.size });
+  log.info("upload_ok", { job_id, source, size: file.size, kind });
   return new Response(
-    JSON.stringify({ job_id, storage_path, file_hash, file_size: file.size, source, target_mode: targetMode }),
-    { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
+    JSON.stringify({ job_id, storage_path, file_hash, file_size: file.size, source, target_mode: targetMode, request_id }),
+    { status: 200, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } },
   );
 });
