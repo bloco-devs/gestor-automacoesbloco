@@ -22,6 +22,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { CoreRunner } from "../_shared/importers/core/runner.ts";
 import { DryRunExecutor } from "../_shared/importers/core/executor.ts";
+import { RealExecutor } from "../_shared/importers/core/real-executor.ts";
 import {
   trelloSnapshotFromJson,
   trelloSnapshotFromZip,
@@ -56,6 +57,7 @@ interface RunBody {
   selection: ImportSelection;
   card_conflict?: ImportOptions["card_conflict"];
   resolutions?: ImportResolutions;
+  dry_run?: boolean;
 }
 
 function validateBody(x: unknown): x is RunBody {
@@ -108,6 +110,7 @@ Deno.serve(async (req) => {
       { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
   }
   const { job_id, storage_path, target, selection, card_conflict, resolutions } = body;
+  const dryRun = body.dry_run !== false; // default true (compat com fase 5)
 
   // caminho deve estar dentro da pasta do usuário
   if (!storage_path.startsWith(`${uid}/${job_id}/`)) {
@@ -176,7 +179,7 @@ Deno.serve(async (req) => {
   {
     const { error } = await userClient.rpc("atividades_import_job_update_progress", {
       _job_id: job_id,
-      _progress: { phase: "boot", current: 0, total: 1, percent: 0, message: "Iniciando dry-run" },
+      _progress: { phase: "boot", current: 0, total: 1, percent: 0, message: dryRun ? "Iniciando dry-run" : "Iniciando importação" },
       _status: "running",
     });
     if (error) {
@@ -202,17 +205,19 @@ Deno.serve(async (req) => {
   const options: ImportOptions = {
     selection,
     card_conflict: card_conflict ?? "import_all",
-    dry_run: true,
+    dry_run: dryRun,
   };
 
   const runner = new CoreRunner();
-  const executor = new DryRunExecutor({
-    job_id,
-    client: {
-      rpc: (fn, args) => userClient.rpc(fn, args) as unknown as Promise<{ data: unknown; error: { message: string } | null }>,
-    },
-    isCancelled,
-  });
+  // userClient (@supabase/supabase-js) já expõe rpc() e from(), respeitando RLS do usuário.
+  const clientAny = userClient as unknown as {
+    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+    from: (t: string) => unknown;
+  };
+
+  const executor = dryRun
+    ? new DryRunExecutor({ job_id, client: clientAny, isCancelled })
+    : new RealExecutor({ job_id, client: clientAny as never, user_id: uid, isCancelled });
 
   let report: RunReport;
   let timedOut = false;
@@ -271,11 +276,30 @@ Deno.serve(async (req) => {
   const hasWarnings = (report.warnings?.length ?? 0) > 0 || (report.ignored?.length ?? 0) > 0;
   const finalStatus = hasErrors ? "failed" : hasWarnings ? "partial" : "success";
 
+  // Em execução real: descobre o board local criado (ou reutilizado) para
+  // devolver ao usuário e persistir em atividades_import_jobs.board_id_local.
+  let boardLocal: string | null = null;
+  if (!dryRun) {
+    if (target.mode === "existing_board" && target.board_id_local) {
+      boardLocal = target.board_id_local;
+    } else {
+      const extId = snapshot.boards[0]?.external_id;
+      if (extId) {
+        const { data: mapped } = await userClient.rpc("atividades_import_entity_get", {
+          _job_id: job_id,
+          _entity_type: "board",
+          _external_id: extId,
+        });
+        boardLocal = (mapped as string | null) ?? null;
+      }
+    }
+  }
+
   const { error: finErr } = await userClient.rpc("atividades_import_job_finalize", {
     _job_id: job_id,
     _status: finalStatus,
-    _report: report as unknown as Record<string, unknown>,
-    _board_id_local: null,
+    _report: { ...report, board_id_local: boardLocal, dry_run: dryRun } as unknown as Record<string, unknown>,
+    _board_id_local: boardLocal,
   });
   if (finErr) {
     log.error("finalize_failed", { message: finErr.message });
@@ -286,7 +310,7 @@ Deno.serve(async (req) => {
 
   // Cleanup do arquivo temporário — mantém apenas file_hash e metadados no banco
   const removed = await removeJobObjects(svc, BUCKET, jobPrefix);
-  log.info("finalized", { status: finalStatus, duration_ms: report.duration_ms, storage_removed: removed });
-  return new Response(JSON.stringify({ status: finalStatus, report, request_id }),
+  log.info("finalized", { status: finalStatus, duration_ms: report.duration_ms, storage_removed: removed, dry_run: dryRun, board_id_local: boardLocal });
+  return new Response(JSON.stringify({ status: finalStatus, report, board_id_local: boardLocal, dry_run: dryRun, request_id }),
     { status: 200, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
 });

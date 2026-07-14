@@ -58,6 +58,13 @@ export default function ImportarQuadro() {
   const [report, setReport] = useState<RunReport | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Execução real (fase 6) — job separado, gerado após o dry-run.
+  const [realRunning, setRealRunning] = useState(false);
+  const [realJobId, setRealJobId] = useState<string | null>(null);
+  const [realJob, setRealJob] = useState<JobRow | null>(null);
+  const [realReport, setRealReport] = useState<RunReport | null>(null);
+  const [realBoardId, setRealBoardId] = useState<string | null>(null);
+  const [realError, setRealError] = useState<string | null>(null);
   const unsubRef = useRef<null | (() => void)>(null);
 
   // Detecta boards ao selecionar arquivo
@@ -77,7 +84,7 @@ export default function ImportarQuadro() {
     return () => { cancel = true; };
   }, [file]);
 
-  // Realtime do job
+  // Realtime do job (dry-run)
   useEffect(() => {
     if (!jobId) return;
     const un = subscribeJob(jobId, (row) => {
@@ -85,10 +92,20 @@ export default function ImportarQuadro() {
       if (row.report) setReport(row.report);
     });
     unsubRef.current = un;
-    // Fetch inicial
     fetchJob(jobId).then((r) => { if (r) { setJob(r); if (r.report) setReport(r.report); } });
     return () => { un(); unsubRef.current = null; };
   }, [jobId]);
+
+  // Realtime do job real (fase 6)
+  useEffect(() => {
+    if (!realJobId) return;
+    const un = subscribeJob(realJobId, (row) => {
+      setRealJob(row);
+      if (row.report) setRealReport(row.report);
+    });
+    fetchJob(realJobId).then((r) => { if (r) { setRealJob(r); if (r.report) setRealReport(r.report); } });
+    return () => { un(); };
+  }, [realJobId]);
 
   const skipBoardStep = !!detected && detected.boards.length <= 1;
   const skipped = useMemo(() => new Set(skipBoardStep ? ["board"] : []), [skipBoardStep]);
@@ -173,8 +190,53 @@ export default function ImportarQuadro() {
     }
   };
 
+  // Executa a importação DEFINITIVA. Faz um novo upload (o arquivo do
+  // dry-run já foi limpo pela edge function) e roda com dry_run=false.
+  const handleExecuteReal = async () => {
+    if (!file) return;
+    setRealError(null);
+    setRealReport(null);
+    setRealJob(null);
+    setRealBoardId(null);
+    try {
+      setRealRunning(true);
+      const up = await uploadImportFile({
+        file,
+        source,
+        targetMode: target.mode,
+        options: { source_board_external_id: boardExternalId ?? undefined, dry_run: false },
+      });
+      setRealJobId(up.job_id);
+      const res = await runImportJob({
+        job_id: up.job_id,
+        storage_path: up.storage_path,
+        target,
+        selection,
+        card_conflict: cardConflict,
+        resolutions: { members: [] },
+        dry_run: false,
+      });
+      setRealRunning(false);
+      setRealReport(res.report);
+      setRealBoardId(res.board_id_local ?? null);
+      toast.success(`Importação: ${res.status}`);
+    } catch (e) {
+      setRealRunning(false);
+      const msg = e instanceof Error ? e.message : String(e);
+      setRealError(msg);
+      toast.error(msg);
+    }
+  };
+
+  const handleCancelReal = async () => {
+    if (!realJobId) return;
+    try { await cancelImportJob(realJobId); toast.message("Cancelamento solicitado"); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Falha ao cancelar"); }
+  };
+
   const handleFinish = () => {
-    navigate("/atividades");
+    if (realBoardId) navigate(`/atividades/${realBoardId}`);
+    else navigate("/atividades");
   };
 
   return (
@@ -232,7 +294,20 @@ export default function ImportarQuadro() {
             error={error}
           />
         )}
-        {currentKey === "final" && <StepExecucao job={job} report={report} />}
+        {currentKey === "final" && (
+          <StepExecucao
+            job={realJob ?? job}
+            report={realReport ?? report}
+            dryReport={report}
+            realReport={realReport}
+            realJob={realJob}
+            realRunning={realRunning}
+            realError={realError}
+            realBoardId={realBoardId}
+            onExecuteReal={handleExecuteReal}
+            onCancelReal={handleCancelReal}
+          />
+        )}
       </div>
 
       <div className="flex items-center justify-between">
