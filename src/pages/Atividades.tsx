@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { Plus, Search, Star, Clock, Archive, Grid3x3 } from "lucide-react";
+import { Plus, Search, Star, Clock, Archive, Grid3x3, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -146,10 +146,16 @@ export default function Atividades() {
             Workspace <span className="font-medium text-foreground">Grupo Bloco</span>
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-1.5" />
-          Novo quadro
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate("/atividades/importar")}>
+            <Download className="h-4 w-4 mr-1.5" />
+            Importar quadro
+          </Button>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            Novo quadro
+          </Button>
+        </div>
       </div>
 
       {favoritos.length > 0 && tab === "recentes" && !busca ? (
