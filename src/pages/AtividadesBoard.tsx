@@ -536,7 +536,7 @@ export default function AtividadesBoard() {
                 </span>
                 <span className="inline-flex items-center gap-1" title="Cards ativos">
                   <Layers className="h-3 w-3" />
-                  {colunas.reduce((acc, c) => acc + (cardsByColuna.get(c.id)?.length ?? 0), 0)}
+                  {colunas.reduce((acc, c) => acc + (cardsByColuna[c.id]?.length ?? 0), 0)}
                 </span>
                 <span className="inline-flex items-center gap-1" title="Última atividade">
                   <Clock className="h-3 w-3" />
