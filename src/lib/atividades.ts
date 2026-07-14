@@ -13,7 +13,9 @@ export interface AtividadeColuna {
   boardId: string;
   arquivada?: boolean;
   arquivadaEm?: string | null;
+  wipLimit?: number | null;
 }
+
 
 
 export interface ChecklistItem {
