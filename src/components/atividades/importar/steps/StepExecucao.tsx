@@ -131,30 +131,31 @@ export function StepExecucao({
 
       {realReport ? (
         <div className="space-y-3">
-          {realReport.warnings.length > 0 ? (
+          {(realReport.warnings?.length ?? 0) > 0 ? (
             <div className="border rounded-md p-3 space-y-1">
               <div className="text-xs font-semibold uppercase text-amber-600 flex items-center gap-1">
-                <AlertTriangle className="h-3.5 w-3.5" /> Avisos ({realReport.warnings.length})
+                <AlertTriangle className="h-3.5 w-3.5" /> Avisos ({realReport.warnings!.length})
               </div>
               <ul className="text-xs space-y-0.5 max-h-32 overflow-auto">
-                {realReport.warnings.slice(0, 20).map((w, i) => (
+                {realReport.warnings!.slice(0, 20).map((w, i) => (
                   <li key={i}><code className="text-[10px]">{w.code}</code> {w.message}</li>
                 ))}
               </ul>
             </div>
           ) : null}
-          {realReport.errors.length > 0 ? (
+          {(realReport.errors?.length ?? 0) > 0 ? (
             <div className="border border-destructive/40 rounded-md p-3 space-y-1">
               <div className="text-xs font-semibold uppercase text-destructive flex items-center gap-1">
-                <XCircle className="h-3.5 w-3.5" /> Erros ({realReport.errors.length})
+                <XCircle className="h-3.5 w-3.5" /> Erros ({realReport.errors!.length})
               </div>
               <ul className="text-xs space-y-0.5 max-h-32 overflow-auto">
-                {realReport.errors.slice(0, 20).map((e, i) => (
+                {realReport.errors!.slice(0, 20).map((e, i) => (
                   <li key={i}><code className="text-[10px]">{e.code}</code> {e.message}</li>
                 ))}
               </ul>
             </div>
           ) : null}
+
           {realBoardId ? (
             <Button asChild size="sm">
               <Link to={`/atividades/${realBoardId}`}>
