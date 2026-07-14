@@ -146,19 +146,28 @@ Deno.serve(async (req) => {
   }
   const bytes = new Uint8Array(await dl.data.arrayBuffer());
   const filename = (jobRow.file_name as string | null) ?? storage_path.split("/").pop() ?? "";
-  const isZip = filename.toLowerCase().endsWith(".zip");
+
+  // Sniff real do conteúdo (não confia na extensão)
+  const kind = sniffContentKind(bytes);
+  if (kind === "unknown") {
+    log.error("content_sniff_unknown");
+    await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }).catch(() => {});
+    await removeJobObjects(svc, BUCKET, jobPrefix);
+    return new Response(JSON.stringify({ error: "conteúdo inválido (não é JSON nem ZIP)" }),
+      { status: 415, headers: { ...cors, "Content-Type": "application/json" } });
+  }
 
   // Parse -> Snapshot
   let snapshot;
   try {
-    snapshot = isZip
+    snapshot = kind === "zip"
       ? await trelloSnapshotFromZip(bytes)
       : await trelloSnapshotFromJson(bytes);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    log.error("adapter_parse_failed", { message: msg });
-    // job ainda em queued -> cancel para deixar estado final coerente
+    log.error("adapter_parse_failed", { phase: "parse", message: msg });
     await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }).catch(() => {});
+    await removeJobObjects(svc, BUCKET, jobPrefix);
     return new Response(JSON.stringify({ error: `adapter_parse_failed: ${msg}` }),
       { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
   }
