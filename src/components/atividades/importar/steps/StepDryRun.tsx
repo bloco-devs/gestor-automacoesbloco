@@ -11,8 +11,8 @@ interface Props {
   error: string | null;
 }
 
-function CountsList({ counts, title }: { counts: RunReport["created"]; title: string }) {
-  const entries = Object.entries(counts).filter(([, v]) => (v ?? 0) > 0);
+function CountsList({ counts, title }: { counts: RunReport["created"] | undefined; title: string }) {
+  const entries = Object.entries(counts ?? {}).filter(([, v]) => (v ?? 0) > 0);
   return (
     <div>
       <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-1">{title}</h4>
@@ -70,39 +70,42 @@ export function StepDryRun({ running, onRun, onCancel, job, report, error }: Pro
         </div>
       ) : null}
 
-      {report ? (
+      {report ? (() => {
+        const warnings = report.warnings ?? [];
+        const errors = report.errors ?? [];
+        return (
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-sm">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             <span className="font-medium">Dry-run concluído</span>
-            <span className="text-muted-foreground">em {report.duration_ms} ms</span>
+            <span className="text-muted-foreground">em {report.duration_ms ?? 0} ms</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border rounded-md p-4">
             <CountsList counts={report.created} title="Seriam criados" />
             <CountsList counts={report.reused} title="Reutilizados" />
           </div>
 
-          {report.warnings.length > 0 ? (
+          {warnings.length > 0 ? (
             <div className="border rounded-md p-3 space-y-1">
               <div className="text-xs font-semibold uppercase text-amber-600 flex items-center gap-1">
-                <AlertTriangle className="h-3.5 w-3.5" /> Avisos ({report.warnings.length})
+                <AlertTriangle className="h-3.5 w-3.5" /> Avisos ({warnings.length})
               </div>
               <ul className="text-xs space-y-0.5 max-h-32 overflow-auto">
-                {report.warnings.slice(0, 20).map((w, i) => (
-                  <li key={i}><code className="text-[10px]">{w.code}</code> {w.message}</li>
+                {warnings.slice(0, 20).map((w, i) => (
+                  <li key={i}><code className="text-[10px]">{w?.code}</code> {w?.message}</li>
                 ))}
               </ul>
             </div>
           ) : null}
 
-          {report.errors.length > 0 ? (
+          {errors.length > 0 ? (
             <div className="border border-destructive/40 rounded-md p-3 space-y-1">
               <div className="text-xs font-semibold uppercase text-destructive flex items-center gap-1">
-                <XCircle className="h-3.5 w-3.5" /> Erros ({report.errors.length})
+                <XCircle className="h-3.5 w-3.5" /> Erros ({errors.length})
               </div>
               <ul className="text-xs space-y-0.5 max-h-32 overflow-auto">
-                {report.errors.slice(0, 20).map((e, i) => (
-                  <li key={i}><code className="text-[10px]">{e.code}</code> {e.message}</li>
+                {errors.slice(0, 20).map((e, i) => (
+                  <li key={i}><code className="text-[10px]">{e?.code}</code> {e?.message}</li>
                 ))}
               </ul>
             </div>
@@ -110,7 +113,8 @@ export function StepDryRun({ running, onRun, onCancel, job, report, error }: Pro
 
           <Button variant="outline" size="sm" onClick={onRun}>Refazer dry-run</Button>
         </div>
-      ) : null}
+        );
+      })() : null}
     </div>
   );
 }
