@@ -346,7 +346,64 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
     }
   }
 
+  async function handleUploadCover(file: File) {
+    const err = validateCapa(file);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    setUploading(true);
+    try {
+      const oldPath =
+        coverUrl && !/^https?:\/\//i.test(coverUrl) ? coverUrl : null;
+      const path = await uploadCoverImage(board.id, file);
+      await updateBoard(board.id, { coverUrl: path });
+      setCoverUrl(path);
+      if (oldPath) {
+        try {
+          await removeCoverImage(oldPath);
+        } catch {
+          /* ignore */
+        }
+      }
+      toast.success("Capa atualizada");
+      invalidateBoard();
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao enviar imagem de capa");
+    } finally {
+      setUploading(false);
+      if (coverInputRef.current) coverInputRef.current.value = "";
+    }
+  }
+
+  async function handleRemoveCover() {
+    if (!coverUrl) return;
+    if (!confirm("Remover a imagem de capa?")) return;
+    setUploading(true);
+    try {
+      const path =
+        coverUrl && !/^https?:\/\//i.test(coverUrl) ? coverUrl : null;
+      await updateBoard(board.id, { coverUrl: null });
+      setCoverUrl("");
+      if (path) {
+        try {
+          await removeCoverImage(path);
+        } catch {
+          /* ignore */
+        }
+      }
+      toast.success("Capa removida");
+      invalidateBoard();
+    } catch {
+      toast.error("Não foi possível remover a capa");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleToggleArquivar() {
+
     setArchiving(true);
     try {
       await setBoardArquivado(board.id, !board.arquivado);
