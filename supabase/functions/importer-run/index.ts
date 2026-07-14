@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
   {
     const { error } = await userClient.rpc("atividades_import_job_update_progress", {
       _job_id: job_id,
-      _progress: { phase: "boot", current: 0, total: 1, percent: 0, message: "Iniciando dry-run" },
+      _progress: { phase: "boot", current: 0, total: 1, percent: 0, message: dryRun ? "Iniciando dry-run" : "Iniciando importação" },
       _status: "running",
     });
     if (error) {
@@ -205,17 +205,23 @@ Deno.serve(async (req) => {
   const options: ImportOptions = {
     selection,
     card_conflict: card_conflict ?? "import_all",
-    dry_run: true,
+    dry_run: dryRun,
   };
 
   const runner = new CoreRunner();
-  const executor = new DryRunExecutor({
-    job_id,
-    client: {
-      rpc: (fn, args) => userClient.rpc(fn, args) as unknown as Promise<{ data: unknown; error: { message: string } | null }>,
-    },
-    isCancelled,
-  });
+  // Cliente injetado no executor: userClient já respeita RLS do usuário.
+  const rpcAdapter = {
+    rpc: (fn: string, args: Record<string, unknown>) =>
+      userClient.rpc(fn, args) as unknown as Promise<{ data: unknown; error: { message: string } | null }>,
+    from: (table: string) => userClient.from(table) as unknown as ReturnType<RealExecutor["_never"] extends never ? never : never>,
+  } as unknown as {
+    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+    from: (t: string) => unknown;
+  };
+
+  const executor = dryRun
+    ? new DryRunExecutor({ job_id, client: rpcAdapter, isCancelled })
+    : new RealExecutor({ job_id, client: rpcAdapter as never, user_id: uid, isCancelled });
 
   let report: RunReport;
   let timedOut = false;
