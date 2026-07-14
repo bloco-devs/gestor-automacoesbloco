@@ -370,12 +370,17 @@ export async function setColunaWip(colunaId: string, wip: number | null): Promis
   if (error) throw error;
 }
 
-export async function setLabelFavorita(labelId: string, favorita: boolean): Promise<void> {
-  const { error } = await sb.rpc("atividades_label_set_favorita", {
+/**
+ * Alterna favorito de etiqueta para o usuário atual (Q3.6).
+ * O parâmetro `favorita` é ignorado quando não coincide com o estado atual —
+ * o RPC decide o novo valor baseado na tabela `atividades_label_favoritos`.
+ */
+export async function setLabelFavorita(labelId: string, _favorita?: boolean): Promise<boolean> {
+  const { data, error } = await sb.rpc("atividades_label_toggle_favorita", {
     _label_id: labelId,
-    _fav: favorita,
   });
   if (error) throw error;
+  return !!data;
 }
 
 export async function reorderLabels(

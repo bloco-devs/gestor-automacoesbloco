@@ -187,6 +187,11 @@ export function useAtividadesBoard(boardIdArg?: string | null) {
       )
       .on(
         "postgres_changes",
+        { event: "*", schema: "public", table: "atividades_label_favoritos" },
+        () => qc.invalidateQueries({ queryKey: atividadesKeys.labels(boardId) }),
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "atividades_comentarios" },
         (payload) => {
           const row = (payload.new ?? payload.old) as { card_id?: string } | null;
