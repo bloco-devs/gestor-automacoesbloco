@@ -80,7 +80,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-} from "lucide-react";
+
 import {
   updateBoard,
   deleteBoard,
