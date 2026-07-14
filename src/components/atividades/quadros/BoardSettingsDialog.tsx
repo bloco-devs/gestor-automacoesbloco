@@ -736,8 +736,24 @@ function MembrosTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
               {busy === "add" ? "Adicionando..." : "Adicionar"}
             </Button>
           </div>
+          <div className="pt-2 border-t mt-1 flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-muted-foreground"
+              disabled
+              title="Envio de convites por e-mail chegará em uma próxima onda."
+            >
+              <Mail className="h-4 w-4" /> Convidar por e-mail
+            </Button>
+            <span className="text-[11px] text-muted-foreground">
+              Em breve — hoje o usuário precisa existir na plataforma.
+            </span>
+          </div>
         </div>
       )}
+
 
       <div className="relative">
         <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
