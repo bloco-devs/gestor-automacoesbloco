@@ -12,6 +12,7 @@ import {
   Flag,
   Link as LinkIcon,
   Link2,
+  Paperclip,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
@@ -33,6 +34,7 @@ interface KanbanCardProps {
   solucao?: Solucao;
   labelsMap: Map<string, AtividadeLabel>;
   isMine?: boolean;
+  anexosCount?: number;
   onEdit: () => void;
   isOverlay?: boolean;
 }
@@ -43,6 +45,7 @@ function KanbanCardImpl({
   solucao,
   labelsMap,
   isMine,
+  anexosCount = 0,
   onEdit,
   isOverlay,
 }: KanbanCardProps) {
