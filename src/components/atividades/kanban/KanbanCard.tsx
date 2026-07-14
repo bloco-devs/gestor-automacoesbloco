@@ -192,6 +192,12 @@ function KanbanCardImpl({
               {card.links.length}
             </span>
           )}
+          {anexosCount > 0 && (
+            <span title={`${anexosCount} anexo(s)`} className="flex items-center gap-0.5 tabular-nums">
+              <Paperclip className="size-3" />
+              {anexosCount}
+            </span>
+          )}
           {solucao && (
             <Link
               to={`/solucoes/${solucao.id}`}

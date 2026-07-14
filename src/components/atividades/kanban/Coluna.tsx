@@ -24,6 +24,7 @@ interface ColunaProps {
   personasByUser: Map<string, AtividadePersona[]>;
   solucoesMap: Map<string, Solucao>;
   labelsMap: Map<string, AtividadeLabel>;
+  anexosCounts?: Map<string, number>;
   currentUserId: string | null;
   onNew: () => void;
   onEdit: (c: AtividadeCard) => void;
@@ -41,6 +42,7 @@ function ColunaImpl(props: ColunaProps) {
     personasByUser,
     solucoesMap,
     labelsMap,
+    anexosCounts,
     currentUserId,
     onNew,
     onEdit,
@@ -87,6 +89,7 @@ function ColunaImpl(props: ColunaProps) {
               solucao={card.solucaoId ? solucoesMap.get(card.solucaoId) : undefined}
               labelsMap={labelsMap}
               isMine={!!currentUserId && card.responsavelIds.includes(currentUserId)}
+              anexosCount={anexosCounts?.get(card.id) ?? 0}
               onEdit={() => onEdit(card)}
             />
           ))}
