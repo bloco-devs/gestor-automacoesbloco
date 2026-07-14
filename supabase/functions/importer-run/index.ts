@@ -57,6 +57,7 @@ interface RunBody {
   selection: ImportSelection;
   card_conflict?: ImportOptions["card_conflict"];
   resolutions?: ImportResolutions;
+  dry_run?: boolean;
 }
 
 function validateBody(x: unknown): x is RunBody {
