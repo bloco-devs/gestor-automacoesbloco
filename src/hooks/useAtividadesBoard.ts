@@ -200,6 +200,20 @@ export function useAtividadesBoard() {
             qc.invalidateQueries({ queryKey: atividadesKeys.activity(row.card_id) });
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "atividades_anexos" },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { card_id?: string; board_id?: string } | null;
+          if (row?.card_id) {
+            qc.invalidateQueries({ queryKey: atividadesKeys.anexos(row.card_id) });
+            qc.invalidateQueries({ queryKey: atividadesKeys.activity(row.card_id) });
+          }
+          if (row?.board_id === boardId) {
+            qc.invalidateQueries({ queryKey: atividadesKeys.anexosCounts(boardId) });
+          }
+        },
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);

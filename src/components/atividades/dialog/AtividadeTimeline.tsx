@@ -17,6 +17,8 @@ const LOG_LABELS: Record<string, string> = {
   prazo: "atualizou o prazo",
   concluido: "marcou como concluído",
   reaberto: "reabriu o card",
+  anexo_adicionado: "adicionou um anexo",
+  anexo_removido: "removeu um anexo",
 };
 
 function formatDateTime(iso: string) {
@@ -77,9 +79,11 @@ export function AtividadeTimeline({
     for (const l of logsQ.data ?? []) {
       const who = (l.userId && nomeMap.get(l.userId)) || l.userEmail || "Sistema";
       let text = LOG_LABELS[l.tipo] ?? l.tipo;
-      const payload = l.payload as { de?: string; para?: string };
+      const payload = l.payload as { de?: string; para?: string; filename?: string };
       if (l.tipo === "renomeado" && payload.de && payload.para) {
         text = `renomeou "${payload.de}" → "${payload.para}"`;
+      } else if ((l.tipo === "anexo_adicionado" || l.tipo === "anexo_removido") && payload.filename) {
+        text = `${LOG_LABELS[l.tipo]}: ${payload.filename}`;
       }
       items.push({ key: `l:${l.id}`, when: l.createdAt, who, kind: "log", text });
     }
