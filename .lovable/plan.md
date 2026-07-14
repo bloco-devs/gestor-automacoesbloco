@@ -1,115 +1,126 @@
-# Onda T4 — Anexos em cards de Atividades
+# Onda Q3.6 — Hardening
 
-Escopo isolado ao módulo Atividades, aditivo, sem tocar Kanban/DnD/CardDialog fora dos pontos indicados.
+Consolidação técnica antes de abrir a Q4. Escopo aditivo, sem novas funcionalidades grandes. Divide-se em 6 blocos independentes que podem ser entregues em sequência.
 
-## 1. Storage
+---
 
-- **Bucket**: `atividades-anexos`, **privado** (`public: false`), criado via `supabase--storage_create_bucket`.
-- **Path convention**: `{board_id}/{card_id}/{anexo_id}-{filename-sanitizado}`.
-  - Facilita RLS por prefixo e limpeza em cascata (delete recursivo por `card_id`).
-- **Upload/Download**: sempre via signed URLs (upload signed URL para PUT; download signed URL curto — 60s — sob demanda). Nunca URL pública.
+## 1. Favoritas de etiquetas por usuário (prioridade alta)
 
-## 2. Limites e validação
+**Modelo novo:**
+```text
+atividades_label_favoritos (
+  label_id  uuid  → atividades_labels(id) on delete cascade
+  user_id   uuid  → auth.users(id)        on delete cascade
+  created_at timestamptz default now()
+  PRIMARY KEY (label_id, user_id)
+)
+```
 
-- **Tamanho máx**: 15 MB por arquivo (validado no client antes de pedir signed URL + reforçado na policy via `owner`/metadata check no trigger de insert da tabela de metadados).
-- **Qtd máx por card**: 20 anexos (validado no insert da tabela via trigger, retornando erro amigável).
-- **MIME permitidos** (allowlist, validada no client E no trigger):
-  - Imagens: `image/png`, `image/jpeg`, `image/webp`, `image/gif`, `image/svg+xml`
-  - Documentos: `application/pdf`, `text/plain`, `text/csv`, `text/markdown`
-  - Office: `application/vnd.openxmlformats-officedocument.*` (docx/xlsx/pptx), `application/msword`, `application/vnd.ms-excel`, `application/vnd.ms-powerpoint`
-  - Arquivos: `application/zip`
-- Extensões perigosas (`.exe`, `.js`, `.html`, `.sh`, `.bat`) rejeitadas independentemente do MIME.
+**Backend:**
+- Migração aditiva cria a tabela, GRANTs (`authenticated` full, `service_role` all), RLS `user_id = auth.uid()` para SELECT/INSERT/DELETE.
+- RPC `atividades_label_toggle_favorita(_label_id uuid) returns boolean` substitui `atividades_label_set_favorita`.
+- Backfill: para cada `atividades_labels.favorita = true`, inserir favorito para o `criado_por` do board (best-effort). Após backfill, `atividades_labels.favorita` fica marcado como legado (não removido nesta onda para não quebrar caches).
 
-## 3. Tabela de metadados
+**Frontend:**
+- `listLabels(boardId)` passa a fazer join com favoritos do usuário atual e retorna `favorita: boolean` derivado.
+- `BoardSettingsDialog` (aba Etiquetas) e picker de etiquetas do card usam a nova RPC.
+- Realtime: canal por-usuário em `atividades_label_favoritos`.
 
-Nova tabela `public.atividades_anexos` (migração aditiva):
+---
 
-| coluna | tipo | notas |
-|---|---|---|
-| id | uuid PK | |
-| card_id | uuid FK → atividades_cards(id) **ON DELETE CASCADE** | |
-| board_id | uuid FK → atividades_boards(id) | denormalizado p/ RLS por prefixo |
-| storage_path | text NOT NULL | caminho no bucket |
-| filename | text NOT NULL | nome original |
-| mime_type | text NOT NULL | |
-| size_bytes | bigint NOT NULL CHECK (>0 AND <= 15MB) | |
-| uploaded_by | uuid NOT NULL | `auth.uid()` |
-| uploaded_by_email | text | preenchido por trigger |
-| created_at | timestamptz default now() | |
+## 2. WIP com modo configurável
 
-Índices: `(card_id, created_at desc)`, `(board_id)`.
+**Modelo:**
+- `atividades_boards.wip_mode` enum `('info','warn','block')` default `'info'`.
 
-GRANTs: `SELECT, INSERT, DELETE` para `authenticated`; `ALL` para `service_role`.
+**Backend:**
+- Adiciona coluna + enum via migração.
+- Extende `atividades_board_update` com `_wip_mode`.
+- Novo trigger `enforce_wip_on_cards` em `atividades_cards` (BEFORE INSERT/UPDATE):
+  - Lê `wip_mode` do board da coluna destino.
+  - `info`: no-op.
+  - `warn`: no-op no banco (aviso é do cliente).
+  - `block`: se `count(cards da coluna destino excluindo o próprio) >= wip_limit`, `RAISE EXCEPTION` com `errcode='23514'` e mensagem estruturada.
 
-## 4. RLS
+**Frontend:**
+- Aba Geral do `BoardSettingsDialog`: seletor "Aplicar limite de WIP" (Apenas informar / Avisar / Bloquear).
+- `Coluna.tsx`: badge muda de tom conforme modo; em `warn`/`block` mostra toast ao mover para coluna cheia. Em `block`, mutation captura o erro do trigger e reverte o cache otimista.
 
-### `atividades_anexos`
-- **SELECT**: `is_allowed_user()` (mesmo escopo dos cards).
-- **INSERT**: `is_allowed_user()` E `uploaded_by = auth.uid()` E validação de MIME/size via trigger `BEFORE INSERT`.
-- **DELETE**: `uploaded_by = auth.uid() OR has_role(auth.uid(), 'admin')` (autor ou admin — mesmo padrão de comentários).
-- **UPDATE**: bloqueado (anexos são imutáveis; troca = delete + upload).
+---
 
-### `storage.objects` no bucket `atividades-anexos`
-- **SELECT/INSERT/DELETE**: apenas `authenticated` E `bucket_id = 'atividades-anexos'` E `is_allowed_user()`.
-- INSERT adicional: `owner = auth.uid()`.
-- Sem policies para `anon`.
+## 3. Upload de capa — limpeza e resize
 
-## 5. Exclusão segura no Storage
+**Frontend (`atividadesBoards.ts`):**
+- `validateCapa`: adicionar limite de resolução (máx 4000×4000).
+- Antes do upload, redimensionar via canvas se `width > 1920` ou `height > 1080`, exportar `image/webp` q=0.85. Mantém original se já for menor.
+- `updateBoard` com nova capa passa a chamar `removeCoverImage(oldPath)` sempre.
 
-Trigger `AFTER DELETE` em `atividades_anexos` **não** apaga o objeto (Postgres não fala com Storage nativamente de forma confiável). Estratégia:
+**Backend:**
+- Edge function agendável `atividades-capas-gc` (invocação manual nesta onda, cron opcional depois):
+  - Lista objetos do bucket `atividades-capas`.
+  - Compara com `atividades_boards.cover_url`.
+  - Remove órfãos com `created_at < now() - interval '24 hours'`.
+  - Retorna relatório `{scanned, removed}`.
 
-- **Client**: ao remover anexo, chama edge function `atividades-anexo-delete` que:
-  1. Valida permissão (autor ou admin) via JWT.
-  2. Remove objeto do Storage (`storage.from().remove()` com service role).
-  3. Deleta a linha em `atividades_anexos`.
-- **CASCADE de card**: trigger `BEFORE DELETE` em `atividades_cards` enfileira paths em uma tabela `atividades_anexos_pendentes_delete` (id, storage_path). Edge function `atividades-anexos-gc` (chamada sob demanda no delete de card, ou por cron futuro) drena a fila.
-  - Alternativa mais simples que adoto: a edge function `atividades-anexo-delete` também aceita `card_id` e apaga todos os objetos do prefixo `{board_id}/{card_id}/` antes de deixar o CASCADE remover as linhas. Chamada explicitamente pelo client no fluxo de delete de card. Sem tabela extra.
+---
 
-Decisão: **sem tabela de fila**. Edge function faz o trabalho síncrono; se falhar, log em `activity_log` e o objeto vira órfão (aceitável e recuperável por GC manual futuro).
+## 4. Virtualização do Kanban
 
-## 6. Logs no histórico
+Objetivo: suportar boards com 500–2000 cards sem degradação.
 
-Trigger `AFTER INSERT/DELETE` em `atividades_anexos` insere em `atividades_atividade_log`:
-- `tipo='anexo_adicionado'`, `entity='anexo'`, `payload={filename, size_bytes, mime_type}`
-- `tipo='anexo_removido'`, `entity='anexo'`, `payload={filename}`
+**Implementação:**
+- Adicionar `@tanstack/react-virtual` (já compatível com o stack).
+- `Coluna.tsx`: quando `cards.length > 40`, renderizar via `useVirtualizer` com `estimateSize=120`, `overscan=6`. Abaixo de 40, manter render direto (preserva DnD suave).
+- DnD (`@dnd-kit`): configurar `SortableContext` com `strategy=verticalListSortingStrategy` e recomputar `getScrollElement` para o container virtualizado.
+- Fallback: prop `virtualize?: boolean` no `Coluna` para poder desligar em debug.
 
-Reutiliza infraestrutura da timeline atual (`AtividadeTimeline.tsx` só precisa reconhecer os dois novos tipos).
+**Aceite:** medir tempo de mount do board `default` (42 cards) — não deve regredir. Teste manual com board sintético de 1000 cards deve manter 60fps no scroll.
 
-## 7. Edge functions
+---
 
-- `atividades-anexo-upload-url` (verify_jwt=true): recebe `{card_id, filename, mime_type, size_bytes}`, valida allowlist/limite/permissão, gera signed upload URL + pré-registra `anexo_id`. Retorna `{url, storage_path, anexo_id}`.
-- `atividades-anexo-download-url` (verify_jwt=true): recebe `{anexo_id}`, valida `is_allowed_user`, retorna signed URL 60s.
-- `atividades-anexo-delete` (verify_jwt=true): recebe `{anexo_id}` ou `{card_id}`, valida autor/admin, remove objetos + linhas.
+## 5. Auditoria (histórico) expandida
 
-Reutilizam `_shared/cors.ts`. Sem IA envolvida.
+Complementar `atividades_board_historico` com eventos hoje ausentes.
 
-## 8. Frontend
+**Novos eventos:**
+- `card_movido` (dispara em `log_atividade_card_change` — já existe como `movido` de card; migrar para o board_historico com `card_id` no payload).
+- `card_checklist_editado` (INSERT/UPDATE/DELETE em `atividades_cards.checklist` jsonb).
+- `card_prazo_alterado` (já existe como `prazo` em card log; espelhar em board_historico).
+- `coluna_wip_alterado` (já existe em RPC — validar).
+- `board_visibilidade_alterada` (já emitido por `atividades_board_update`; validar payload).
 
-- Novo `src/lib/atividadesAnexos.ts`: tipos + wrappers das 3 edge functions.
-- Novo `src/hooks/useAnexosMutations.ts`: mutations React Query (upload/delete) com invalidação de `atividadesKeys.anexos(cardId)` e `activity(cardId)`.
-- Novo `src/components/atividades/dialog/AnexosSection.tsx`: lista + botão "Adicionar anexo" com input file, barra de progresso, thumbnail para imagens, ícone genérico para outros tipos. Delete inline.
-- `CardDialog.tsx`: adicionar `<AnexosSection cardId={...} />` numa nova aba "Anexos" ao lado de "Detalhes"/"Atividade". **Nenhuma outra mudança** no dialog.
-- `KanbanCard.tsx`: badge com ícone `Paperclip` + contagem quando `anexosCount > 0` (novo campo derivado numa query leve `select count group by card_id` cacheada por board).
+**Implementação:** um trigger `sync_card_events_to_board_historico` AFTER INSERT em `atividades_atividade_log` copia eventos relevantes para `atividades_board_historico` com `evento` prefixado (`card_movido`, `card_prazo`, `card_checklist`).
 
-## 9. Testes
+**Frontend:** aba Histórico já suporta categorias — apenas adicionar filtro "Cards" e mapear os novos prefixos.
 
-- Unitários (vitest): validação de MIME/tamanho no lib client.
-- Manual: upload PNG, PDF, arquivo grande (rejeitar), MIME não permitido (rejeitar), delete pelo autor, delete por admin, delete de card cascateia objetos.
-- Regressão: rodar suite existente (34 testes) — não devem quebrar.
+---
 
-## 10. Ordem de execução
+## 6. Pente-fino de UX
 
-1. `supabase--storage_create_bucket` (bucket privado).
-2. Migração: tabela `atividades_anexos` + triggers de log + policies Storage + GRANTs.
-3. Edge functions (3).
-4. Frontend: lib → hook → componente → integração no CardDialog + badge no KanbanCard.
-5. Rodar typecheck + vitest.
+Sem mudanças de dados. Checklist a validar página por página:
 
-## Fora de escopo (T4)
+- **Alinhamentos:** cabeçalho `AtividadesBoard`, grid do `Atividades.tsx`, dialog de settings em telas ≥1440px.
+- **Responsividade:** Kanban horizontal com scroll snap em mobile; settings dialog vira sheet em <768px.
+- **Dark mode:** revisar `KanbanCard`, badges de WIP, banner de capa (overlay legível), signed URL de cover em ambos os temas.
+- **Animações:** transições de DnD (fade + translate), skeletons com shimmer consistente.
+- **Loading/Skeletons:** `BoardCard` skeleton, `Coluna` skeleton, `CardDialog` skeleton nas abas pesadas (Anexos, Timeline).
+- **Atalhos globais:** `?` abre cheatsheet; `N` novo card na primeira coluna; `/` foca busca do board; `Esc` fecha dialogs. Registrados via `useHotkeys` hook novo, desabilitados quando input em foco.
 
-- Preview inline de PDF/Office.
-- Versionamento de anexos.
-- GC agendado de órfãos (feito manualmente se necessário).
-- Compartilhamento externo por link público.
+---
 
-Aprovando este plano, sigo com bucket + migração como primeiro passo.
+## Ordem sugerida de execução
+
+1. Bloco 1 (favoritas por usuário) — 1 migração + 1 RPC + 2 componentes.
+2. Bloco 5 (auditoria) — 1 migração + 1 trigger.
+3. Bloco 2 (WIP configurável) — 1 migração + 1 trigger + settings UI.
+4. Bloco 3 (capa: resize + GC) — 1 edge function + resize client.
+5. Bloco 4 (virtualização) — 1 dependência + refactor de `Coluna`.
+6. Bloco 6 (UX pente-fino) — sem migração, revisão visual.
+
+Cada bloco é entregável de forma independente; se algum for cortado, os demais seguem.
+
+## Não incluído nesta onda
+
+- Campos personalizados, subtarefas, dependências, dashboard, automações, templates — reservados para Q4.
+- Importador RFC-001 permanece congelado.
+- Remoção da coluna legada `atividades_labels.favorita` — só após uma release com o novo modelo estável.
