@@ -276,11 +276,30 @@ Deno.serve(async (req) => {
   const hasWarnings = (report.warnings?.length ?? 0) > 0 || (report.ignored?.length ?? 0) > 0;
   const finalStatus = hasErrors ? "failed" : hasWarnings ? "partial" : "success";
 
+  // Em execução real: descobre o board local criado (ou reutilizado) para
+  // devolver ao usuário e persistir em atividades_import_jobs.board_id_local.
+  let boardLocal: string | null = null;
+  if (!dryRun) {
+    if (target.mode === "existing_board" && target.board_id_local) {
+      boardLocal = target.board_id_local;
+    } else {
+      const extId = snapshot.boards[0]?.external_id;
+      if (extId) {
+        const { data: mapped } = await userClient.rpc("atividades_import_entity_get", {
+          _job_id: job_id,
+          _entity_type: "board",
+          _external_id: extId,
+        });
+        boardLocal = (mapped as string | null) ?? null;
+      }
+    }
+  }
+
   const { error: finErr } = await userClient.rpc("atividades_import_job_finalize", {
     _job_id: job_id,
     _status: finalStatus,
-    _report: report as unknown as Record<string, unknown>,
-    _board_id_local: null,
+    _report: { ...report, board_id_local: boardLocal, dry_run: dryRun } as unknown as Record<string, unknown>,
+    _board_id_local: boardLocal,
   });
   if (finErr) {
     log.error("finalize_failed", { message: finErr.message });
