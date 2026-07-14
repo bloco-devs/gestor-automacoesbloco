@@ -236,7 +236,10 @@ export default function Atividades() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         submitting={createMut.isPending}
-        onSubmit={(data) => createMut.mutateAsync(data)}
+        onSubmit={async (data) => {
+          await createMut.mutateAsync(data);
+        }}
+
       />
     </div>
   );
