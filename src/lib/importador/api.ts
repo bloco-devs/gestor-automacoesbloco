@@ -70,7 +70,7 @@ export async function cancelImportJob(jobId: string): Promise<void> {
 export async function fetchJob(jobId: string): Promise<JobRow | null> {
   const { data, error } = await supabase
     .from("atividades_import_jobs")
-    .select("id,status,progresso,report,file_name,source")
+    .select("id,status,progress,report,file_name,source")
     .eq("id", jobId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -78,7 +78,7 @@ export async function fetchJob(jobId: string): Promise<JobRow | null> {
   return {
     id: data.id as string,
     status: data.status as JobStatus,
-    progresso: (data.progresso ?? null) as ProgressUpdate | null,
+    progress: (data.progress ?? null) as ProgressUpdate | null,
     report: (data.report ?? null) as RunReport | null,
     file_name: (data.file_name ?? null) as string | null,
     source: data.source as string,
@@ -103,7 +103,7 @@ export function subscribeJob(
         onChange({
           id: String(n.id),
           status: n.status as JobStatus,
-          progresso: (n.progresso ?? null) as ProgressUpdate | null,
+          progress: (n.progress ?? null) as ProgressUpdate | null,
           report: (n.report ?? null) as RunReport | null,
           file_name: (n.file_name ?? null) as string | null,
           source: String(n.source ?? ""),

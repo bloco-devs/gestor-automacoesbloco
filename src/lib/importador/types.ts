@@ -99,7 +99,7 @@ export type JobStatus =
 export interface JobRow {
   id: string;
   status: JobStatus;
-  progresso: ProgressUpdate | null;
+  progress: ProgressUpdate | null;
   report: RunReport | null;
   file_name: string | null;
   source: string;
