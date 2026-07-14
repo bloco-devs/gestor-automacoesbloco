@@ -509,10 +509,16 @@ export default function AtividadesBoard() {
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-semibold truncate">{boardNome}</h1>
+              {resumo ? (
+                <Badge variant="outline" className="gap-1 font-normal">
+                  <VisIcon className="h-3 w-3" />
+                  {VIS_LABEL[resumo.visibilidade]}
+                </Badge>
+              ) : null}
               {resumo?.arquivado ? (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                  Arquivado
-                </span>
+                <Badge variant="secondary" className="gap-1">
+                  <Archive className="h-3 w-3" /> Arquivado
+                </Badge>
               ) : null}
             </div>
             {resumo?.descricao ? (
@@ -522,7 +528,28 @@ export default function AtividadesBoard() {
                 Arraste os cards entre as colunas.
               </p>
             )}
+            {resumo ? (
+              <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                <span className="inline-flex items-center gap-1" title="Membros">
+                  <Users className="h-3 w-3" />
+                  {membros.length}
+                </span>
+                <span className="inline-flex items-center gap-1" title="Cards ativos">
+                  <Layers className="h-3 w-3" />
+                  {colunas.reduce((acc, c) => acc + (cardsByColuna.get(c.id)?.length ?? 0), 0)}
+                </span>
+                <span className="inline-flex items-center gap-1" title="Última atividade">
+                  <Clock className="h-3 w-3" />
+                  {fmtRel(resumo.updatedAt)}
+                </span>
+                <span className="inline-flex items-center gap-1" title="Criado em">
+                  <Calendar className="h-3 w-3" />
+                  {new Date(resumo.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            ) : null}
           </div>
+
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {membros.length > 0 && (
