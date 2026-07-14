@@ -94,14 +94,37 @@ export abstract class BaseExecutor implements Executor {
   abstract createAnexo(local_card_id: string, local_board_id: string, att: CanonicalAttachment): Promise<string>;
 }
 
-/** Executor no-op para dry-run puro: nunca escreve; gera IDs sintéticos estáveis. */
+/**
+ * Executor no-op para dry-run puro.
+ * - Nunca escreve no banco (nem em atividades_import_entities).
+ * - Idempotência apenas em memória (Map por chave entity_type+external_id).
+ * - Cancelamento consultado por callback fornecido externamente (default: nunca).
+ * - reportProgress ainda usa a RPC pública (progresso é essencial ao dry-run).
+ */
 export class DryRunExecutor extends BaseExecutor {
-  constructor(params: { job_id: string; client: SupabaseLike }) {
-    super({ ...params, dry_run: true });
+  private mem = new Map<string, string>();
+  private cancelFn: () => Promise<boolean>;
+
+  constructor(params: { job_id: string; client: SupabaseLike; isCancelled?: () => Promise<boolean> }) {
+    super({ job_id: params.job_id, client: params.client, dry_run: true });
+    this.cancelFn = params.isCancelled ?? (async () => false);
   }
+
+  private key(t: string, x: string) { return `${t}:${x}`; }
   private synthetic(prefix: string, external_id: string): string {
     return `dry:${prefix}:${external_id}`;
   }
+
+  override async lookupEntity(entity_type: string, external_id: string): Promise<string | null> {
+    return this.mem.get(this.key(entity_type, external_id)) ?? null;
+  }
+  override async registerEntity(entity_type: string, external_id: string, local_id: string): Promise<void> {
+    this.mem.set(this.key(entity_type, external_id), local_id);
+  }
+  override async isCancelled(): Promise<boolean> {
+    try { return await this.cancelFn(); } catch { return false; }
+  }
+
   async createBoard(board: CanonicalBoard) { return this.synthetic('board', board.external_id); }
   async createColuna(_b: string, list: CanonicalList) { return this.synthetic('coluna', list.external_id); }
   async reuseColuna(): Promise<string | null> { return null; }
