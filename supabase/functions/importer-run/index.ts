@@ -110,6 +110,7 @@ Deno.serve(async (req) => {
       { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
   }
   const { job_id, storage_path, target, selection, card_conflict, resolutions } = body;
+  const dryRun = body.dry_run !== false; // default true (compat com fase 5)
 
   // caminho deve estar dentro da pasta do usuário
   if (!storage_path.startsWith(`${uid}/${job_id}/`)) {
