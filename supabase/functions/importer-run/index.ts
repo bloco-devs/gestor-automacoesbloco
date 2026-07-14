@@ -279,11 +279,14 @@ Deno.serve(async (req) => {
   });
   if (finErr) {
     log.error("finalize_failed", { message: finErr.message });
-    return new Response(JSON.stringify({ error: finErr.message, report }),
-      { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    await removeJobObjects(svc, BUCKET, jobPrefix);
+    return new Response(JSON.stringify({ error: finErr.message, report, request_id }),
+      { status: 500, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
   }
 
-  log.info("finalized", { status: finalStatus, duration_ms: report.duration_ms });
-  return new Response(JSON.stringify({ status: finalStatus, report }),
-    { status: 200, headers: { ...cors, "Content-Type": "application/json" } });
+  // Cleanup do arquivo temporário — mantém apenas file_hash e metadados no banco
+  const removed = await removeJobObjects(svc, BUCKET, jobPrefix);
+  log.info("finalized", { status: finalStatus, duration_ms: report.duration_ms, storage_removed: removed });
+  return new Response(JSON.stringify({ status: finalStatus, report, request_id }),
+    { status: 200, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
 });
