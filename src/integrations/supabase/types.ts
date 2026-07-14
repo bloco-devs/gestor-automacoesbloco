@@ -74,6 +74,60 @@ export type Database = {
         }
         Relationships: []
       }
+      atividades_anexos: {
+        Row: {
+          board_id: string
+          card_id: string
+          created_at: string
+          filename: string
+          id: string
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by: string
+          uploaded_by_email: string | null
+        }
+        Insert: {
+          board_id: string
+          card_id: string
+          created_at?: string
+          filename: string
+          id?: string
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by: string
+          uploaded_by_email?: string | null
+        }
+        Update: {
+          board_id?: string
+          card_id?: string
+          created_at?: string
+          filename?: string
+          id?: string
+          mime_type?: string
+          size_bytes?: number
+          storage_path?: string
+          uploaded_by?: string
+          uploaded_by_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_anexos_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_anexos_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atividades_atividade_log: {
         Row: {
           card_id: string
