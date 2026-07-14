@@ -17,6 +17,7 @@ import { sha256Hex } from "../_shared/importers/core/hashing.ts";
 import { RUNNER_VERSION, SNAPSHOT_VERSION } from "../_shared/importers/core/versions.ts";
 import { TRELLO_ADAPTER_VERSION, TRELLO_SOURCE } from "../_shared/importers/trello/version.ts";
 import { logger } from "../_shared/importers/core/logger.ts";
+import { cleanupOldObjects, newRequestId, sniffContentKind } from "../_shared/importers/core/hardening.ts";
 
 const BUCKET = "atividades-import-tmp";
 const MAX_BYTES = 50 * 1024 * 1024; // 50 MB
