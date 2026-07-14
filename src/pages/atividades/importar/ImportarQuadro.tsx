@@ -294,7 +294,20 @@ export default function ImportarQuadro() {
             error={error}
           />
         )}
-        {currentKey === "final" && <StepExecucao job={job} report={report} />}
+        {currentKey === "final" && (
+          <StepExecucao
+            job={realJob ?? job}
+            report={realReport ?? report}
+            dryReport={report}
+            realReport={realReport}
+            realJob={realJob}
+            realRunning={realRunning}
+            realError={realError}
+            realBoardId={realBoardId}
+            onExecuteReal={handleExecuteReal}
+            onCancelReal={handleCancelReal}
+          />
+        )}
       </div>
 
       <div className="flex items-center justify-between">
