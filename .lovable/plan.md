@@ -1,126 +1,154 @@
-# Onda Q3.6 — Hardening
 
-Consolidação técnica antes de abrir a Q4. Escopo aditivo, sem novas funcionalidades grandes. Divide-se em 6 blocos independentes que podem ser entregues em sequência.
+# Importador de Quadros — Trello (Fase 1, revisado v3)
 
----
+Implementação **100% aditiva** conforme RFC-001, incorporando todos os ajustes solicitados. Nada existente é alterado (Kanban, Quadros, Cards, BoardSettings, RLS, Realtime, RPCs, hooks, buckets, políticas).
 
-## 1. Favoritas de etiquetas por usuário (prioridade alta)
+## 1. Banco (migração aditiva)
 
-**Modelo novo:**
-```text
-atividades_label_favoritos (
-  label_id  uuid  → atividades_labels(id) on delete cascade
-  user_id   uuid  → auth.users(id)        on delete cascade
-  created_at timestamptz default now()
-  PRIMARY KEY (label_id, user_id)
-)
+Três tabelas novas + RLS + grants + trigger `updated_at`.
+
+- **`atividades_import_jobs`**
+  `id`, `source`, `adapter_version`, `snapshot_version`, `runner_version` (ajuste #2),
+  `criado_por`, `board_id_local?`, `target_mode`,
+  `options jsonb`, `resolutions jsonb`,
+  `status` ('queued'|'running'|'success'|'partial'|'failed'|'cancelled'),
+  `progress jsonb`, `report jsonb`,
+  `file_hash`, `file_bytes`, `file_name`,
+  `iniciado_em`, `concluido_em`, `created_at`, `updated_at`.
+  RLS: dono do job + admin do board destino. Adicionada ao `supabase_realtime`.
+
+- **`atividades_import_member_map`** — como antes.
+
+- **`atividades_import_entities`** — chave de idempotência (ajuste-forte).
+  `id`, `job_id`, `source`, `entity_type`, `external_id`, `local_id?`, `created_at`.
+  Índice único `(job_id, entity_type, external_id)` para garantir idempotência por job. Runner consulta antes de criar cada recurso.
+
+Padrão neutro em `payload_extra.import = { source, external_id, import_job }`.
+
+RPCs novas:
+- `atividades_import_job_create(source, options, file_hash, file_bytes, file_name, adapter_version, snapshot_version, runner_version)`
+- `atividades_import_job_update_progress(job_id, progress, status?)`
+- `atividades_import_job_cancel(job_id)` — dono ou admin, seta `status='cancelled'` (ajuste #5)
+- `atividades_import_job_finalize(job_id, status, report, board_id_local?)`
+- `atividades_import_member_map_upsert(...)`
+- `atividades_import_entity_register(job_id, entity_type, external_id, local_id?)` — idempotente via `ON CONFLICT DO NOTHING`
+- `atividades_import_entity_lookup(job_id, entity_type, external_id)` — retorna `local_id` se já criado
+
+Grants: `authenticated` + `service_role`.
+
+## 2. Sem bucket temporário (ajuste #1)
+
+Arquivo ZIP/JSON trafega em memória na Edge Function: upload → parse → Runner → descarte. Nenhum bucket novo, nada persistido.
+
+## 3. CanonicalSnapshot neutro (ajuste #3)
+
+Estrutura agnóstica, sem menção a Trello:
+
+```ts
+interface CanonicalSnapshot {
+  snapshot_version: string;   // ex "1.0"
+  source: string;             // "trello" | "jira" | ...
+  workspaces: Workspace[];
+  boards: Board[];            // Board { external_id, nome, descricao, lists[], labels[], members[] }
+  lists: List[];              // { external_id, board_external_id, nome, ordem, arquivada }
+  cards: Card[];              // { external_id, list_external_id, titulo, descricao_md, ... }
+  comments, attachments, labels, members, checklists, checklist_items;
+}
 ```
 
-**Backend:**
-- Migração aditiva cria a tabela, GRANTs (`authenticated` full, `service_role` all), RLS `user_id = auth.uid()` para SELECT/INSERT/DELETE.
-- RPC `atividades_label_toggle_favorita(_label_id uuid) returns boolean` substitui `atividades_label_set_favorita`.
-- Backfill: para cada `atividades_labels.favorita = true`, inserir favorito para o `criado_por` do board (best-effort). Após backfill, `atividades_labels.favorita` fica marcado como legado (não removido nesta onda para não quebrar caches).
+Parser Trello preserva **Markdown original** das descrições (ajuste #9 anterior).
 
-**Frontend:**
-- `listLabels(boardId)` passa a fazer join com favoritos do usuário atual e retorna `favorita: boolean` derivado.
-- `BoardSettingsDialog` (aba Etiquetas) e picker de etiquetas do card usam a nova RPC.
-- Realtime: canal por-usuário em `atividades_label_favoritos`.
+## 4. Arquitetura
 
----
+```text
+supabase/functions/_shared/importers/
+  core/
+    interfaces.ts     # CanonicalSnapshot, DryRunReport, RunReport, ImportAdapter
+    runner.ts         # Runner.execute({ dry_run }) — algoritmo ÚNICO, idempotente, por fases
+    executor.ts       # cria via RPCs existentes
+    normalize.ts, hashing.ts, versions.ts
+  trello/
+    index.ts, parseZip.ts, parseJson.ts, version.ts
+```
 
-## 2. WIP com modo configurável
+**Runner por fases transacionais + commits parciais** (ajuste #4):
+board → colunas → labels → cards → checklists → comentários → anexos.
+Cada fase: atualiza `progress`, verifica cancelamento (ajuste #5), consulta `atividades_import_entities` antes de criar (idempotência), registra no `atividades_import_entities` após criar.
+Se uma fase falhar, job termina como `partial` mantendo o que foi feito.
 
-**Modelo:**
-- `atividades_boards.wip_mode` enum `('info','warn','block')` default `'info'`.
+**Idempotência por `job_id`**: reexecução do runner com o mesmo `job_id` nunca duplica; sempre lê o mapa de entidades antes de criar.
 
-**Backend:**
-- Adiciona coluna + enum via migração.
-- Extende `atividades_board_update` com `_wip_mode`.
-- Novo trigger `enforce_wip_on_cards` em `atividades_cards` (BEFORE INSERT/UPDATE):
-  - Lê `wip_mode` do board da coluna destino.
-  - `info`: no-op.
-  - `warn`: no-op no banco (aviso é do cliente).
-  - `block`: se `count(cards da coluna destino excluindo o próprio) >= wip_limit`, `RAISE EXCEPTION` com `errcode='23514'` e mensagem estruturada.
+**Executor** só usa RPCs existentes do módulo Atividades (ajuste #5 anterior). Zero SQL direto em cards/colunas/comentários/labels/anexos.
 
-**Frontend:**
-- Aba Geral do `BoardSettingsDialog`: seletor "Aplicar limite de WIP" (Apenas informar / Avisar / Bloquear).
-- `Coluna.tsx`: badge muda de tom conforme modo; em `warn`/`block` mostra toast ao mover para coluna cheia. Em `block`, mutation captura o erro do trigger e reverte o cache otimista.
+**Anexos** reutilizam o fluxo atual sem tocar bucket/políticas.
 
----
+**Histórico do quadro** (ajuste #6): ao final com `success`/`partial`, Runner registra evento no histórico do board (`atividades_board_historico`) via RPC existente: "Quadro importado de {source} ({n_cards} cards, {n_colunas} colunas)".
 
-## 3. Upload de capa — limpeza e resize
+## 5. Edge Functions
 
-**Frontend (`atividadesBoards.ts`):**
-- `validateCapa`: adicionar limite de resolução (máx 4000×4000).
-- Antes do upload, redimensionar via canvas se `width > 1920` ou `height > 1080`, exportar `image/webp` q=0.85. Mantém original se já for menor.
-- `updateBoard` com nova capa passa a chamar `removeCoverImage(oldPath)` sempre.
+- **`importer-analisar`** (verify_jwt=true): recebe multipart, faz parse em memória, calcula `file_hash`, retorna lista de boards detectados + estatísticas prévias. Não cria job.
+- **`importer-executar`** (verify_jwt=true): recebe arquivo + `board_selecionado` + `options` + `resolutions` + `target` + `dry_run`. Cria (ou reusa por `file_hash`+usuário) o job, roda Runner. UI observa via Realtime.
 
-**Backend:**
-- Edge function agendável `atividades-capas-gc` (invocação manual nesta onda, cron opcional depois):
-  - Lista objetos do bucket `atividades-capas`.
-  - Compara com `atividades_boards.cover_url`.
-  - Remove órfãos com `created_at < now() - interval '24 hours'`.
-  - Retorna relatório `{scanned, removed}`.
+Dry-run e execução real são o **mesmo Runner** com a flag `dry_run` (ajuste #6 anterior).
 
----
+Relatório final com métricas de auditoria (ajuste #8 anterior): duração, velocidade, reutilizados, criados, ignorados+motivos, warnings, erros, `adapter_version`, `snapshot_version`, `runner_version`, `rfc_version`, `file_hash`.
 
-## 4. Virtualização do Kanban
+## 6. Frontend
 
-Objetivo: suportar boards com 500–2000 cards sem degradação.
+Rota nova **`/atividades/importar`** (registrada em `App.tsx`).
 
-**Implementação:**
-- Adicionar `@tanstack/react-virtual` (já compatível com o stack).
-- `Coluna.tsx`: quando `cards.length > 40`, renderizar via `useVirtualizer` com `estimateSize=120`, `overscan=6`. Abaixo de 40, manter render direto (preserva DnD suave).
-- DnD (`@dnd-kit`): configurar `SortableContext` com `strategy=verticalListSortingStrategy` e recomputar `getScrollElement` para o container virtualizado.
-- Fallback: prop `virtualize?: boolean` no `Coluna` para poder desligar em debug.
+```
+src/pages/atividades/importar/AtividadesImportar.tsx
+src/components/atividades/importar/
+  PassoOrigem, PassoUpload, PassoEscolhaBoard, PassoDestino,
+  PassoSelecao, PassoConflitos, PassoMembros, PassoExecucao, RelatorioFinal
+src/lib/importador/{atividadesImport.ts, types.ts, __tests__/}
+```
 
-**Aceite:** medir tempo de mount do board `default` (42 cards) — não deve regredir. Teste manual com board sintético de 1000 cards deve manter 60fps no scroll.
+- `PassoExecucao` assina `atividades_import_jobs` filtrado por `id=job_id` (Realtime, dentro de `useEffect` com cleanup). Botão "Cancelar" chama `atividades_import_job_cancel`.
+- `PassoDestino` lista quadros com papel ≥ member reusando queries existentes (não altera nenhum hook).
 
----
+Único toque em UI existente: botão **"Importar quadro"** em `src/pages/Atividades.tsx` → `navigate('/atividades/importar')`.
 
-## 5. Auditoria (histórico) expandida
+## 7. Origem visível em BoardSettings (ajuste #7)
 
-Complementar `atividades_board_historico` com eventos hoje ausentes.
+Alteração aditiva em `BoardSettingsDialog.tsx`, aba Geral: bloco somente-leitura exibido apenas quando o board tem `payload_extra.import`. Mostra Origem, Importado em, Job. Nenhuma outra alteração no dialog.
 
-**Novos eventos:**
-- `card_movido` (dispara em `log_atividade_card_change` — já existe como `movido` de card; migrar para o board_historico com `card_id` no payload).
-- `card_checklist_editado` (INSERT/UPDATE/DELETE em `atividades_cards.checklist` jsonb).
-- `card_prazo_alterado` (já existe como `prazo` em card log; espelhar em board_historico).
-- `coluna_wip_alterado` (já existe em RPC — validar).
-- `board_visibilidade_alterada` (já emitido por `atividades_board_update`; validar payload).
+Isso adiciona **um terceiro** arquivo existente à lista de alterados. Toque mínimo, condicional.
 
-**Implementação:** um trigger `sync_card_events_to_board_historico` AFTER INSERT em `atividades_atividade_log` copia eventos relevantes para `atividades_board_historico` com `evento` prefixado (`card_movido`, `card_prazo`, `card_checklist`).
+## 8. Wizard — 7 passos
 
-**Frontend:** aba Histórico já suporta categorias — apenas adicionar filtro "Cards" e mapear os novos prefixos.
+1. Origem (só Trello ativo).
+2. Upload (parse server-side, sem bucket).
+3. Escolha do board (múltiplos boards do ZIP suportados).
+4. Destino (novo | existente ≥ member).
+5. Seleção (Colunas/Cards/Etiquetas/Datas/Comentários/Checklists marcados; Anexos/Arquivados/Membros desmarcados).
+6. Dry-run + conflitos + membros (map/ignore/histórico, sugestões memorizadas).
+7. Execução via Realtime, com cancelamento + relatório final (baixar JSON).
 
----
+## 9. Testes
 
-## 6. Pente-fino de UX
+`src/lib/importador/__tests__/` para normalização/mapeamento. Fixtures pequenos para parser. Cenário real: "Plano de Ajustes — Sistemas Bloco Construções" (4 boards, ~4 colunas, ~38 cards no board principal).
 
-Sem mudanças de dados. Checklist a validar página por página:
+## 10. Fora de escopo
 
-- **Alinhamentos:** cabeçalho `AtividadesBoard`, grid do `Atividades.tsx`, dialog de settings em telas ≥1440px.
-- **Responsividade:** Kanban horizontal com scroll snap em mobile; settings dialog vira sheet em <768px.
-- **Dark mode:** revisar `KanbanCard`, badges de WIP, banner de capa (overlay legível), signed URL de cover em ambos os temas.
-- **Animações:** transições de DnD (fade + translate), skeletons com shimmer consistente.
-- **Loading/Skeletons:** `BoardCard` skeleton, `Coluna` skeleton, `CardDialog` skeleton nas abas pesadas (Anexos, Timeline).
-- **Atalhos globais:** `?` abre cheatsheet; `N` novo card na primeira coluna; `/` foca busca do board; `Esc` fecha dialogs. Registrados via `useHotkeys` hook novo, desabilitados quando input em foco.
+Sem sync contínua, sem write-back, sem criação automática de usuários, sem API do Trello, sem Jira/CSV/etc. nesta fase.
 
----
+## 11. Ordem de execução
 
-## Ordem sugerida de execução
+1. Migração (3 tabelas + RLS + grants + RPCs + publicação Realtime).
+2. `_shared/importers/core` (Runner por fases, idempotente, cancelável).
+3. `_shared/importers/trello` (parser JSON+ZIP, preserva Markdown).
+4. Edge functions `importer-analisar` e `importer-executar`.
+5. `src/lib/importador/` + testes.
+6. Wizard + rota + botão em `Atividades.tsx`.
+7. Bloco condicional de origem em `BoardSettingsDialog.tsx`.
+8. Teste manual com o ZIP real.
+9. Relatório final: arquivos criados, alterados (`App.tsx`, `src/pages/Atividades.tsx`, `BoardSettingsDialog.tsx`), novas tabelas, novas RPCs, nova rota, fluxo, aderência ao RFC-001, compatibilidade JSON+ZIP, confirmação de não-regressão.
 
-1. Bloco 1 (favoritas por usuário) — 1 migração + 1 RPC + 2 componentes.
-2. Bloco 5 (auditoria) — 1 migração + 1 trigger.
-3. Bloco 2 (WIP configurável) — 1 migração + 1 trigger + settings UI.
-4. Bloco 3 (capa: resize + GC) — 1 edge function + resize client.
-5. Bloco 4 (virtualização) — 1 dependência + refactor de `Coluna`.
-6. Bloco 6 (UX pente-fino) — sem migração, revisão visual.
+## 12. Confirmação de não-regressão
 
-Cada bloco é entregável de forma independente; se algum for cortado, os demais seguem.
-
-## Não incluído nesta onda
-
-- Campos personalizados, subtarefas, dependências, dashboard, automações, templates — reservados para Q4.
-- Importador RFC-001 permanece congelado.
-- Remoção da coluna legada `atividades_labels.favorita` — só após uma release com o novo modelo estável.
+- Nenhum arquivo do Kanban/Cards/hooks/libs/queries atuais é modificado.
+- Nenhuma RPC/tabela/bucket/política existente é alterada.
+- RLS/Realtime atuais intocados; novas assinaturas apenas em tabela nova.
+- Único contato com UI existente: botão em Atividades, bloco condicional em BoardSettings, rota em App.tsx.
