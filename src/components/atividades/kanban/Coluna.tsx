@@ -1,8 +1,15 @@
 import { memo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Plus } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Copy, Archive, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type {
   AtividadeCard,
@@ -10,6 +17,7 @@ import type {
   AtividadeLabel,
   AtividadePersona,
 } from "@/lib/atividades";
+
 import type { AssignableUser, Solucao } from "@/lib/types";
 import { KanbanCard } from "./KanbanCard";
 import { DraftCard, type Draft } from "./DraftCard";
@@ -26,11 +34,17 @@ interface ColunaProps {
   labelsMap: Map<string, AtividadeLabel>;
   anexosCounts?: Map<string, number>;
   currentUserId: string | null;
+  canAdmin?: boolean;
   onNew: () => void;
   onEdit: (c: AtividadeCard) => void;
   onOpenDraft: (d: Draft) => void;
   onDeleteDraft: (id: string) => void;
+  onRename?: (coluna: AtividadeColuna) => void;
+  onDuplicate?: (coluna: AtividadeColuna) => void;
+  onArchive?: (coluna: AtividadeColuna) => void;
+  onDelete?: (coluna: AtividadeColuna) => void;
 }
+
 
 function ColunaImpl(props: ColunaProps) {
   const {
@@ -44,12 +58,18 @@ function ColunaImpl(props: ColunaProps) {
     labelsMap,
     anexosCounts,
     currentUserId,
+    canAdmin,
     onNew,
     onEdit,
     onOpenDraft,
     onDeleteDraft,
+    onRename,
+    onDuplicate,
+    onArchive,
+    onDelete,
   } = props;
   const { isOver, setNodeRef } = useDroppable({ id: coluna.id });
+  const showMenu = canAdmin && (onRename || onDuplicate || onArchive || onDelete);
   return (
     <div
       ref={setNodeRef}
@@ -59,20 +79,62 @@ function ColunaImpl(props: ColunaProps) {
       )}
     >
       <div className="flex items-center justify-between mb-2 px-2 pt-1">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold">{coluna.nome}</h3>
+        <div className="flex items-center gap-2 min-w-0">
+          <h3 className="text-sm font-semibold truncate">{coluna.nome}</h3>
           <span className="text-xs text-muted-foreground tabular-nums">{cards.length}</span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          onClick={onNew}
-          title="Adicionar card"
-          aria-label={`Adicionar card em ${coluna.nome}`}
-        >
-          <Plus className="size-4" />
-        </Button>
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={onNew}
+            title="Adicionar card"
+            aria-label={`Adicionar card em ${coluna.nome}`}
+          >
+            <Plus className="size-4" />
+          </Button>
+          {showMenu && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  aria-label={`Ações da coluna ${coluna.nome}`}
+                >
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                {onRename && (
+                  <DropdownMenuItem onSelect={() => onRename(coluna)}>
+                    <Pencil className="size-3.5 mr-2" /> Renomear
+                  </DropdownMenuItem>
+                )}
+                {onDuplicate && (
+                  <DropdownMenuItem onSelect={() => onDuplicate(coluna)}>
+                    <Copy className="size-3.5 mr-2" /> Duplicar
+                  </DropdownMenuItem>
+                )}
+                {onArchive && (
+                  <DropdownMenuItem onSelect={() => onArchive(coluna)}>
+                    <Archive className="size-3.5 mr-2" /> Arquivar
+                  </DropdownMenuItem>
+                )}
+                {onDelete && <DropdownMenuSeparator />}
+                {onDelete && (
+                  <DropdownMenuItem
+                    onSelect={() => onDelete(coluna)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="size-3.5 mr-2" /> Excluir
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
       <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-2 flex-1 overflow-y-auto px-1 pb-1">

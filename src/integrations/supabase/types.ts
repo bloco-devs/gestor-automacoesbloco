@@ -305,6 +305,7 @@ export type Database = {
           arquivado_em: string | null
           background: string | null
           cor: string | null
+          cover_url: string | null
           created_at: string
           criado_por: string | null
           descricao: string | null
@@ -322,6 +323,7 @@ export type Database = {
           arquivado_em?: string | null
           background?: string | null
           cor?: string | null
+          cover_url?: string | null
           created_at?: string
           criado_por?: string | null
           descricao?: string | null
@@ -339,6 +341,7 @@ export type Database = {
           arquivado_em?: string | null
           background?: string | null
           cor?: string | null
+          cover_url?: string | null
           created_at?: string
           criado_por?: string | null
           descricao?: string | null
@@ -494,6 +497,8 @@ export type Database = {
       }
       atividades_colunas: {
         Row: {
+          arquivada: boolean
+          arquivada_em: string | null
           board_id: string
           chave: string
           created_at: string
@@ -502,6 +507,8 @@ export type Database = {
           ordem: number
         }
         Insert: {
+          arquivada?: boolean
+          arquivada_em?: string | null
           board_id: string
           chave: string
           created_at?: string
@@ -510,6 +517,8 @@ export type Database = {
           ordem?: number
         }
         Update: {
+          arquivada?: boolean
+          arquivada_em?: string | null
           board_id?: string
           chave?: string
           created_at?: string
@@ -1569,6 +1578,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      atividades_board_delete: {
+        Args: { _board_id: string }
+        Returns: undefined
+      }
       atividades_board_remove_member: {
         Args: { _board_id: string; _user_id: string }
         Returns: undefined
@@ -1581,9 +1594,30 @@ export type Database = {
         Args: { _arquivado: boolean; _board_id: string }
         Returns: undefined
       }
+      atividades_board_set_member_role: {
+        Args: {
+          _board_id: string
+          _role: Database["public"]["Enums"]["atividades_board_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       atividades_board_toggle_favorito: {
         Args: { _board_id: string }
         Returns: boolean
+      }
+      atividades_board_update: {
+        Args: {
+          _background?: string
+          _board_id: string
+          _cor?: string
+          _cover_url?: string
+          _descricao?: string
+          _icone?: string
+          _nome?: string
+          _visibilidade?: string
+        }
+        Returns: undefined
       }
       atividades_can_admin_board: {
         Args: { _board_id: string; _user_id?: string }
@@ -1597,6 +1631,30 @@ export type Database = {
         Args: { _board_id: string; _user_id?: string }
         Returns: boolean
       }
+      atividades_coluna_create: {
+        Args: { _board_id: string; _chave?: string; _nome: string }
+        Returns: string
+      }
+      atividades_coluna_delete: {
+        Args: { _coluna_id: string }
+        Returns: undefined
+      }
+      atividades_coluna_duplicate: {
+        Args: { _coluna_id: string }
+        Returns: string
+      }
+      atividades_coluna_reorder: {
+        Args: { _board_id: string; _items: Json }
+        Returns: undefined
+      }
+      atividades_coluna_set_arquivada: {
+        Args: { _arquivada: boolean; _coluna_id: string }
+        Returns: undefined
+      }
+      atividades_coluna_update: {
+        Args: { _coluna_id: string; _nome?: string }
+        Returns: undefined
+      }
       atividades_create_board: {
         Args: {
           _background?: string
@@ -1607,6 +1665,14 @@ export type Database = {
           _visibilidade?: string
           _workspace_id?: string
         }
+        Returns: string
+      }
+      atividades_label_delete: {
+        Args: { _label_id: string }
+        Returns: undefined
+      }
+      atividades_label_upsert: {
+        Args: { _board_id: string; _cor: string; _id: string; _nome: string }
         Returns: string
       }
       atividades_reorder_cards: { Args: { items: Json }; Returns: undefined }

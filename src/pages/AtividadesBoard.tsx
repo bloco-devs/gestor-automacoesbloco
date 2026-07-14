@@ -36,13 +36,22 @@ import type { Draft } from "@/components/atividades/kanban/DraftCard";
 
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery as useQueryBoard } from "@tanstack/react-query";
-import { ArrowLeft, Star, Archive } from "lucide-react";
+import { ArrowLeft, Star, Archive, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { BoardSettingsDialog } from "@/components/atividades/quadros/BoardSettingsDialog";
 import {
   getBoardResumo,
   toggleFavoritoBoard,
   setBoardArquivado,
+  listBoardMembros,
+  renomearColuna,
+  duplicarColuna,
+  arquivarColuna,
+  excluirColuna,
 } from "@/lib/atividadesBoards";
+
 
 export default function AtividadesBoard() {
   const { user } = useAuth();
@@ -371,6 +380,68 @@ export default function AtividadesBoard() {
   };
 
   const boardNome = resumo?.nome ?? "Quadro";
+  const canAdmin = resumo?.meuPapel === "owner" || resumo?.meuPapel === "admin";
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const membrosQ = useQueryBoard({
+    queryKey: ["atividades", "board-membros-topo", boardId],
+    queryFn: () => listBoardMembros(boardId!),
+    enabled: !!boardId,
+    staleTime: 60_000,
+  });
+  const membros = membrosQ.data ?? [];
+
+  async function handleColRename(col: typeof colunas[number]) {
+    const nome = window.prompt("Novo nome da coluna:", col.nome)?.trim();
+    if (!nome || nome === col.nome) return;
+    try {
+      await renomearColuna(col.id, nome);
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId!) });
+      toast.success("Coluna renomeada");
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível renomear a coluna");
+    }
+  }
+  async function handleColDuplicate(col: typeof colunas[number]) {
+    try {
+      await duplicarColuna(col.id);
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId!) });
+      qc.invalidateQueries({ queryKey: atividadesKeys.cards(boardId ?? undefined) });
+      toast.success("Coluna duplicada");
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível duplicar a coluna");
+    }
+  }
+  async function handleColArchive(col: typeof colunas[number]) {
+    if (!window.confirm(`Arquivar a coluna "${col.nome}"?`)) return;
+    try {
+      await arquivarColuna(col.id, true);
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId!) });
+      toast.success("Coluna arquivada");
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível arquivar a coluna");
+    }
+  }
+  async function handleColDelete(col: typeof colunas[number]) {
+    const qtd = (cardsByColuna[col.id] ?? []).length;
+    if (qtd > 0) {
+      toast.error("Só é possível excluir colunas vazias");
+      return;
+    }
+    if (!window.confirm(`Excluir a coluna "${col.nome}"?`)) return;
+    try {
+      await excluirColuna(col.id);
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId!) });
+      toast.success("Coluna excluída");
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível excluir a coluna");
+    }
+  }
+
 
   return (
     <div className="space-y-4">
@@ -423,7 +494,41 @@ export default function AtividadesBoard() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {membros.length > 0 && (
+            <TooltipProvider delayDuration={200}>
+              <div className="flex -space-x-2 mr-1">
+                {membros.slice(0, 5).map((m) => {
+                  const initials = (m.nome || m.email || "?")
+                    .split(/\s+/)
+                    .map((p) => p[0])
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase();
+                  return (
+                    <Tooltip key={m.userId}>
+                      <TooltipTrigger asChild>
+                        <Avatar className="h-7 w-7 border-2 border-background">
+                          <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+                        </Avatar>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <span className="text-xs">
+                          {m.nome || m.email} · {m.role}
+                        </span>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+                {membros.length > 5 && (
+                  <Avatar className="h-7 w-7 border-2 border-background">
+                    <AvatarFallback className="text-[10px]">+{membros.length - 5}</AvatarFallback>
+                  </Avatar>
+                )}
+              </div>
+            </TooltipProvider>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -438,7 +543,19 @@ export default function AtividadesBoard() {
             <Archive className="h-4 w-4 mr-1.5" />
             {resumo?.arquivado ? "Restaurar" : "Arquivar"}
           </Button>
+          {canAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSettingsOpen(true)}
+              aria-label="Configurações do quadro"
+            >
+              <Settings className="h-4 w-4 mr-1.5" />
+              Configurações
+            </Button>
+          )}
         </div>
+
       </div>
 
 
@@ -504,10 +621,16 @@ export default function AtividadesBoard() {
                   labelsMap={labelsMap}
                   anexosCounts={anexosCounts}
                   currentUserId={user?.id ?? null}
+                  canAdmin={canAdmin}
                   onNew={() => openNew(col.id)}
                   onEdit={openEdit}
                   onOpenDraft={openDraft}
                   onDeleteDraft={handleDeleteDraft}
+                  onRename={handleColRename}
+                  onDuplicate={handleColDuplicate}
+                  onArchive={handleColArchive}
+                  onDelete={handleColDelete}
+
                 />
               </div>
             ))}
@@ -546,6 +669,14 @@ export default function AtividadesBoard() {
         onSaveDraft={!editing ? handleSaveDraft : undefined}
         onDiscardDraft={!editing ? handleDiscardDraft : undefined}
       />
+
+      <BoardSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        board={resumo ?? null}
+        onDeleted={() => navigate("/atividades")}
+      />
     </div>
   );
 }
+
