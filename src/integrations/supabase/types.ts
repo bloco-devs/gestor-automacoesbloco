@@ -581,6 +581,164 @@ export type Database = {
           },
         ]
       }
+      atividades_import_entities: {
+        Row: {
+          created_at: string
+          entity_type: string
+          external_id: string
+          id: string
+          job_id: string
+          local_id: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          entity_type: string
+          external_id: string
+          id?: string
+          job_id: string
+          local_id?: string | null
+          source: string
+        }
+        Update: {
+          created_at?: string
+          entity_type?: string
+          external_id?: string
+          id?: string
+          job_id?: string
+          local_id?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_import_entities_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_import_jobs: {
+        Row: {
+          adapter_version: string
+          board_id_local: string | null
+          concluido_em: string | null
+          created_at: string
+          criado_por: string
+          file_hash: string | null
+          file_name: string | null
+          file_size: number | null
+          id: string
+          iniciado_em: string | null
+          options: Json
+          progress: Json
+          report: Json
+          resolutions: Json
+          runner_version: string
+          snapshot_version: string
+          source: string
+          status: string
+          target_mode: string
+          updated_at: string
+        }
+        Insert: {
+          adapter_version: string
+          board_id_local?: string | null
+          concluido_em?: string | null
+          created_at?: string
+          criado_por: string
+          file_hash?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          iniciado_em?: string | null
+          options?: Json
+          progress?: Json
+          report?: Json
+          resolutions?: Json
+          runner_version: string
+          snapshot_version: string
+          source: string
+          status?: string
+          target_mode: string
+          updated_at?: string
+        }
+        Update: {
+          adapter_version?: string
+          board_id_local?: string | null
+          concluido_em?: string | null
+          created_at?: string
+          criado_por?: string
+          file_hash?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          iniciado_em?: string | null
+          options?: Json
+          progress?: Json
+          report?: Json
+          resolutions?: Json
+          runner_version?: string
+          snapshot_version?: string
+          source?: string
+          status?: string
+          target_mode?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_import_jobs_board_id_local_fkey"
+            columns: ["board_id_local"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_import_jobs_board_id_local_fkey"
+            columns: ["board_id_local"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_import_member_map: {
+        Row: {
+          created_at: string
+          criado_por: string
+          id: string
+          source: string
+          source_member_id: string
+          source_username: string | null
+          strategy: string
+          target_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criado_por: string
+          id?: string
+          source: string
+          source_member_id: string
+          source_username?: string | null
+          strategy: string
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criado_por?: string
+          id?: string
+          source?: string
+          source_member_id?: string
+          source_username?: string | null
+          strategy?: string
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       atividades_label_favoritos: {
         Row: {
           created_at: string
@@ -1702,6 +1860,71 @@ export type Database = {
           _workspace_id?: string
         }
         Returns: string
+      }
+      atividades_import_entity_get: {
+        Args: { _entity_type: string; _external_id: string; _job_id: string }
+        Returns: string
+      }
+      atividades_import_entity_register: {
+        Args: {
+          _entity_type: string
+          _external_id: string
+          _job_id: string
+          _local_id: string
+        }
+        Returns: string
+      }
+      atividades_import_job_cancel: {
+        Args: { _job_id: string }
+        Returns: undefined
+      }
+      atividades_import_job_create: {
+        Args: {
+          _adapter_version: string
+          _file_hash: string
+          _file_name: string
+          _file_size: number
+          _options: Json
+          _runner_version: string
+          _snapshot_version: string
+          _source: string
+          _target_mode: string
+        }
+        Returns: string
+      }
+      atividades_import_job_finalize: {
+        Args: {
+          _board_id_local?: string
+          _job_id: string
+          _report: Json
+          _status: string
+        }
+        Returns: undefined
+      }
+      atividades_import_job_update_progress: {
+        Args: { _job_id: string; _progress: Json; _status?: string }
+        Returns: undefined
+      }
+      atividades_import_member_map_list: {
+        Args: { _source?: string }
+        Returns: {
+          source: string
+          source_member_id: string
+          source_username: string
+          strategy: string
+          target_user_id: string
+          updated_at: string
+        }[]
+      }
+      atividades_import_member_map_upsert: {
+        Args: {
+          _source: string
+          _source_member_id: string
+          _source_username: string
+          _strategy: string
+          _target_user_id: string
+        }
+        Returns: undefined
       }
       atividades_label_delete: {
         Args: { _label_id: string }
