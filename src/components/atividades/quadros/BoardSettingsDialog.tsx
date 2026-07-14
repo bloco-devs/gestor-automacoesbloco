@@ -810,6 +810,11 @@ function ColunasTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
   const [editing, setEditing] = useState<{ id: string; nome: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["atividades", "colunas-admin", board.id] });
     qc.invalidateQueries({ queryKey: atividadesKeys.colunas(board.id) });
@@ -887,20 +892,35 @@ function ColunasTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
     }
   }
 
-  async function handleMove(idx: number, dir: -1 | 1) {
+  async function handleDragEnd(ev: DragEndEvent) {
+    const { active, over } = ev;
+    if (!over || active.id === over.id) return;
     const list = [...(colunasQ.data ?? [])];
-    const j = idx + dir;
-    if (j < 0 || j >= list.length) return;
-    [list[idx], list[j]] = [list[j], list[idx]];
-    const items = list.map((c, i) => ({ id: c.id, ordem: i }));
-    // otimista
-    qc.setQueryData(["atividades", "colunas-admin", board.id], list);
+    const from = list.findIndex((c) => c.id === active.id);
+    const to = list.findIndex((c) => c.id === over.id);
+    if (from < 0 || to < 0) return;
+    const reordered = arrayMove(list, from, to);
+    const items = reordered.map((c, i) => ({ id: c.id, ordem: i }));
+    qc.setQueryData(["atividades", "colunas-admin", board.id], reordered);
     try {
       await reordenarColunas(board.id, items);
       invalidate();
     } catch {
       toast.error("Não foi possível reordenar");
       invalidate();
+    }
+  }
+
+  async function handleWipChange(colId: string, raw: string) {
+    const n = raw.trim() === "" ? null : Math.max(0, Math.min(999, parseInt(raw, 10) || 0));
+    setBusy(colId);
+    try {
+      await setColunaWip(colId, n);
+      invalidate();
+    } catch {
+      toast.error("Não foi possível atualizar o WIP");
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -930,122 +950,175 @@ function ColunasTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
 
       {colunasQ.isLoading ? (
         <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
         </div>
       ) : colunas.length === 0 ? (
         <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
           Nenhuma coluna. Crie a primeira acima.
         </div>
       ) : (
-        <ul className="divide-y rounded-lg border">
-          {colunas.map((c, idx) => (
-            <li key={c.id} className="flex items-center gap-2 p-3">
-              {editing?.id === c.id ? (
-                <>
-                  <Input
-                    value={editing.nome}
-                    onChange={(e) => setEditing({ ...editing, nome: e.target.value })}
-                    autoFocus
-                    onKeyDown={(e) => e.key === "Enter" && handleRename()}
-                  />
-                  <Button size="sm" onClick={handleRename} disabled={busy === editing.id}>
-                    Salvar
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
-                    Cancelar
-                  </Button>
-                </>
-              ) : (
-                <>
-                  {canAdmin && (
-                    <div className="flex flex-col">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5"
-                        disabled={idx === 0}
-                        onClick={() => handleMove(idx, -1)}
-                        aria-label="Mover para cima"
-                      >
-                        <ArrowUp className="h-3 w-3" />
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={colunas.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            <ul className="divide-y rounded-lg border">
+              {colunas.map((c) => (
+                <SortableColunaRow
+                  key={c.id}
+                  id={c.id}
+                  canAdmin={canAdmin}
+                  busy={busy === c.id}
+                  isEditing={editing?.id === c.id}
+                >
+                  {editing?.id === c.id ? (
+                    <>
+                      <Input
+                        value={editing.nome}
+                        onChange={(e) => setEditing({ ...editing, nome: e.target.value })}
+                        autoFocus
+                        onKeyDown={(e) => e.key === "Enter" && handleRename()}
+                      />
+                      <Button size="sm" onClick={handleRename} disabled={busy === editing.id}>
+                        Salvar
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5"
-                        disabled={idx === colunas.length - 1}
-                        onClick={() => handleMove(idx, 1)}
-                        aria-label="Mover para baixo"
-                      >
-                        <ArrowDown className="h-3 w-3" />
+                      <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+                        Cancelar
                       </Button>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate flex items-center gap-2">
-                      {c.nome}
-                      {c.arquivada && (
-                        <Badge variant="secondary" className="text-[10px]">
-                          Arquivada
-                        </Badge>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate flex items-center gap-2">
+                          {c.nome}
+                          {c.arquivada && (
+                            <Badge variant="secondary" className="text-[10px]">
+                              Arquivada
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1" title="Limite de WIP (0 = sem limite)">
+                        <Label className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                          WIP
+                        </Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={999}
+                          defaultValue={c.wipLimit ?? ""}
+                          onBlur={(e) => {
+                            const v = e.currentTarget.value;
+                            const cur = c.wipLimit ?? null;
+                            const nxt = v.trim() === "" ? null : parseInt(v, 10) || 0;
+                            if ((nxt || null) !== cur) handleWipChange(c.id, v);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+                          }}
+                          className="h-7 w-16 text-xs"
+                          disabled={!canAdmin || busy === c.id}
+                        />
+                      </div>
+                      {canAdmin && (
+                        <div className="flex items-center gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditing({ id: c.id, nome: c.nome })}
+                            title="Renomear"
+                            disabled={busy === c.id}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDuplicate(c.id)}
+                            title="Duplicar"
+                            disabled={busy === c.id}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleArchive(c.id, !c.arquivada)}
+                            title={c.arquivada ? "Restaurar" : "Arquivar"}
+                            disabled={busy === c.id}
+                          >
+                            {c.arquivada ? (
+                              <ArchiveRestore className="h-4 w-4" />
+                            ) : (
+                              <Archive className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(c.id)}
+                            title="Excluir"
+                            disabled={busy === c.id}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       )}
-                    </div>
-                  </div>
-                  {canAdmin && (
-                    <div className="flex items-center gap-0.5">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditing({ id: c.id, nome: c.nome })}
-                        title="Renomear"
-                        disabled={busy === c.id}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDuplicate(c.id)}
-                        title="Duplicar"
-                        disabled={busy === c.id}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleArchive(c.id, !c.arquivada)}
-                        title={c.arquivada ? "Restaurar" : "Arquivar"}
-                        disabled={busy === c.id}
-                      >
-                        {c.arquivada ? (
-                          <ArchiveRestore className="h-4 w-4" />
-                        ) : (
-                          <Archive className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(c.id)}
-                        title="Excluir"
-                        disabled={busy === c.id}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    </>
                   )}
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+                </SortableColunaRow>
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
       )}
+      <p className="text-xs text-muted-foreground">
+        Arraste pelo ícone <GripVertical className="h-3 w-3 inline align-text-bottom" /> para
+        reordenar. WIP limita o número de cards ativos por coluna.
+      </p>
     </div>
   );
 }
+
+function SortableColunaRow({
+  id,
+  canAdmin,
+  busy,
+  isEditing,
+  children,
+}: {
+  id: string;
+  canAdmin: boolean;
+  busy: boolean;
+  isEditing: boolean;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+    disabled: !canAdmin || isEditing || busy,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <li ref={setNodeRef} style={style} className="flex items-center gap-2 p-3 bg-background">
+      {canAdmin && !isEditing && (
+        <button
+          type="button"
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+          aria-label="Arrastar para reordenar"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      )}
+      {children}
+    </li>
+  );
+}
+
 
 // ---------------- Labels ----------------
 function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }) {
