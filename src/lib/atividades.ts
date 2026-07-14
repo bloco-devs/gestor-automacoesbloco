@@ -170,24 +170,39 @@ export async function listPersonas(): Promise<AtividadePersona[]> {
   );
 }
 
-export async function listColunas(boardId?: string): Promise<AtividadeColuna[]> {
+export async function listColunas(
+  boardId?: string,
+  opts: { includeArquivadas?: boolean } = {},
+): Promise<AtividadeColuna[]> {
   let q = sb
     .from("atividades_colunas")
-    .select("id, chave, nome, ordem, board_id")
+    .select("id, chave, nome, ordem, board_id, arquivada, arquivada_em")
     .order("ordem", { ascending: true });
   if (boardId) q = q.eq("board_id", boardId);
+  if (!opts.includeArquivadas) q = q.eq("arquivada", false);
   const { data, error } = await q;
   if (error) throw error;
   return (data ?? []).map(
-    (r: { id: string; chave: string; nome: string; ordem: number; board_id: string }) => ({
+    (r: {
+      id: string;
+      chave: string;
+      nome: string;
+      ordem: number;
+      board_id: string;
+      arquivada?: boolean;
+      arquivada_em?: string | null;
+    }) => ({
       id: r.id,
       chave: r.chave,
       nome: r.nome,
       ordem: r.ordem,
       boardId: r.board_id,
+      arquivada: !!r.arquivada,
+      arquivadaEm: r.arquivada_em ?? null,
     }),
   );
 }
+
 
 export async function listCards(boardId?: string): Promise<AtividadeCard[]> {
   const cardsQ = sb.from("atividades_cards").select(SELECT_COLS).order("ordem", { ascending: true });
