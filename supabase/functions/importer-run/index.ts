@@ -209,19 +209,15 @@ Deno.serve(async (req) => {
   };
 
   const runner = new CoreRunner();
-  // Cliente injetado no executor: userClient já respeita RLS do usuário.
-  const rpcAdapter = {
-    rpc: (fn: string, args: Record<string, unknown>) =>
-      userClient.rpc(fn, args) as unknown as Promise<{ data: unknown; error: { message: string } | null }>,
-    from: (table: string) => userClient.from(table) as unknown as ReturnType<RealExecutor["_never"] extends never ? never : never>,
-  } as unknown as {
+  // userClient (@supabase/supabase-js) já expõe rpc() e from(), respeitando RLS do usuário.
+  const clientAny = userClient as unknown as {
     rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
     from: (t: string) => unknown;
   };
 
   const executor = dryRun
-    ? new DryRunExecutor({ job_id, client: rpcAdapter, isCancelled })
-    : new RealExecutor({ job_id, client: rpcAdapter as never, user_id: uid, isCancelled });
+    ? new DryRunExecutor({ job_id, client: clientAny, isCancelled })
+    : new RealExecutor({ job_id, client: clientAny as never, user_id: uid, isCancelled });
 
   let report: RunReport;
   let timedOut = false;
