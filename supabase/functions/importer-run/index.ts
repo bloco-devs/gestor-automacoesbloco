@@ -115,7 +115,8 @@ Deno.serve(async (req) => {
       { status: 403, headers: { ...cors, "Content-Type": "application/json" } });
   }
 
-  const log = logger.child({ job_id, source: TRELLO_SOURCE });
+  const log = logger.child({ job_id, request_id, source: TRELLO_SOURCE, fn: "importer-run" });
+  const jobPrefix = `${uid}/${job_id}`;
 
   // Carrega job (RLS: dono)
   const { data: jobRow, error: jobErr } = await userClient
