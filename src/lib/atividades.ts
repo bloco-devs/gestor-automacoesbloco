@@ -183,7 +183,7 @@ export async function listColunas(
 ): Promise<AtividadeColuna[]> {
   let q = sb
     .from("atividades_colunas")
-    .select("id, chave, nome, ordem, board_id, arquivada, arquivada_em")
+    .select("id, chave, nome, ordem, board_id, arquivada, arquivada_em, wip_limit")
     .order("ordem", { ascending: true });
   if (boardId) q = q.eq("board_id", boardId);
   if (!opts.includeArquivadas) q = q.eq("arquivada", false);
@@ -198,6 +198,7 @@ export async function listColunas(
       board_id: string;
       arquivada?: boolean;
       arquivada_em?: string | null;
+      wip_limit?: number | null;
     }) => ({
       id: r.id,
       chave: r.chave,
@@ -206,9 +207,11 @@ export async function listColunas(
       boardId: r.board_id,
       arquivada: !!r.arquivada,
       arquivadaEm: r.arquivada_em ?? null,
+      wipLimit: r.wip_limit ?? null,
     }),
   );
 }
+
 
 
 export async function listCards(boardId?: string): Promise<AtividadeCard[]> {
