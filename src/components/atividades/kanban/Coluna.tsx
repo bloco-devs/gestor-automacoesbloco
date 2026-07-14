@@ -34,11 +34,17 @@ interface ColunaProps {
   labelsMap: Map<string, AtividadeLabel>;
   anexosCounts?: Map<string, number>;
   currentUserId: string | null;
+  canAdmin?: boolean;
   onNew: () => void;
   onEdit: (c: AtividadeCard) => void;
   onOpenDraft: (d: Draft) => void;
   onDeleteDraft: (id: string) => void;
+  onRename?: (coluna: AtividadeColuna) => void;
+  onDuplicate?: (coluna: AtividadeColuna) => void;
+  onArchive?: (coluna: AtividadeColuna) => void;
+  onDelete?: (coluna: AtividadeColuna) => void;
 }
+
 
 function ColunaImpl(props: ColunaProps) {
   const {
