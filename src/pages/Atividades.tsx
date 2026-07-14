@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { countAnexosByBoard, purgeAnexosDoCard } from "@/lib/atividadesAnexos";
 import {
   DndContext,
   DragOverlay,
@@ -47,6 +48,15 @@ export default function Atividades() {
     loading,
   } = useAtividadesBoard();
   const { create, update, remove, reorder } = useCardMutations(boardId);
+
+  // Contagem de anexos por card no board (para badge do KanbanCard)
+  const anexosCountsQ = useQuery<Map<string, number>>({
+    queryKey: atividadesKeys.anexosCounts(boardId ?? undefined),
+    queryFn: () => countAnexosByBoard(boardId!),
+    enabled: !!boardId,
+    staleTime: 30_000,
+  });
+  const anexosCounts = anexosCountsQ.data;
 
   // Dialog / drafts
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -288,7 +298,10 @@ export default function Atividades() {
   async function handleDelete() {
     if (!editing) return;
     try {
+      // Purga os objetos do Storage antes do CASCADE apagar as linhas.
+      await purgeAnexosDoCard(editing.id);
       await remove.mutateAsync(editing.id);
+      qc.invalidateQueries({ queryKey: atividadesKeys.anexosCounts(boardId ?? undefined) });
       toast.success("Card excluído");
     } catch (e) {
       console.error(e);
