@@ -39,6 +39,8 @@ const ALL_STEPS: WizardStepDef[] = [
   { key: "final", label: "Relatório" },
 ];
 
+const LAST_REAL_JOB_KEY = "atividades-import:last-real-job";
+
 export default function ImportarQuadro() {
   const navigate = useNavigate();
 
@@ -66,6 +68,21 @@ export default function ImportarQuadro() {
   const [realBoardId, setRealBoardId] = useState<string | null>(null);
   const [realError, setRealError] = useState<string | null>(null);
   const unsubRef = useRef<null | (() => void)>(null);
+
+  useEffect(() => {
+    const savedJobId = window.localStorage.getItem(LAST_REAL_JOB_KEY);
+    if (!savedJobId) return;
+    fetchJob(savedJobId).then((r) => {
+      if (!r) return;
+      setRealJobId(r.id);
+      setRealJob(r);
+      setRealReport(r.report);
+      setRealBoardId(r.board_id_local ?? r.report?.board_id_local ?? null);
+      setStep(ALL_STEPS.length - 1);
+    }).catch(() => {
+      window.localStorage.removeItem(LAST_REAL_JOB_KEY);
+    });
+  }, []);
 
   // Detecta boards ao selecionar arquivo
   useEffect(() => {
@@ -102,8 +119,15 @@ export default function ImportarQuadro() {
     const un = subscribeJob(realJobId, (row) => {
       setRealJob(row);
       if (row.report) setRealReport(row.report);
+      setRealBoardId(row.board_id_local ?? row.report?.board_id_local ?? null);
     });
-    fetchJob(realJobId).then((r) => { if (r) { setRealJob(r); if (r.report) setRealReport(r.report); } });
+    fetchJob(realJobId).then((r) => {
+      if (r) {
+        setRealJob(r);
+        if (r.report) setRealReport(r.report);
+        setRealBoardId(r.board_id_local ?? r.report?.board_id_local ?? null);
+      }
+    });
     return () => { un(); };
   }, [realJobId]);
 
@@ -207,6 +231,7 @@ export default function ImportarQuadro() {
         options: { source_board_external_id: boardExternalId ?? undefined, dry_run: false },
       });
       setRealJobId(up.job_id);
+      window.localStorage.setItem(LAST_REAL_JOB_KEY, up.job_id);
       const res = await runImportJob({
         job_id: up.job_id,
         storage_path: up.storage_path,
@@ -218,7 +243,7 @@ export default function ImportarQuadro() {
       });
       setRealRunning(false);
       setRealReport(res.report);
-      setRealBoardId(res.board_id_local ?? null);
+      setRealBoardId(res.board_id_local ?? res.report.board_id_local ?? null);
       toast.success(`Importação: ${res.status}`);
     } catch (e) {
       setRealRunning(false);

@@ -86,6 +86,8 @@ export interface RunReport {
   snapshot_version: string;
   runner_version: string;
   file_hash: string;
+  board_id_local?: string | null;
+  dry_run?: boolean;
 }
 
 export type JobStatus =
@@ -101,6 +103,7 @@ export interface JobRow {
   status: JobStatus;
   progress: ProgressUpdate | null;
   report: RunReport | null;
+  board_id_local?: string | null;
   file_name: string | null;
   source: string;
 }
