@@ -394,6 +394,33 @@ export default function AtividadesBoard() {
   });
   const membros = membrosQ.data ?? [];
 
+  const coverQ = useQueryBoard({
+    queryKey: ["atividades", "board-cover", boardId, resumo?.coverUrl ?? null],
+    queryFn: () => getCoverDisplayUrl(resumo?.coverUrl ?? null),
+    enabled: !!boardId && !!resumo?.coverUrl,
+    staleTime: 5 * 60_000,
+  });
+  const coverUrl = coverQ.data ?? null;
+
+  function fmtRel(iso?: string | null): string {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    const diff = Date.now() - d.getTime();
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return "agora";
+    if (min < 60) return `há ${min} min`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `há ${h} h`;
+    const days = Math.floor(h / 24);
+    if (days < 30) return `há ${days} d`;
+    return d.toLocaleDateString();
+  }
+
+  const VIS_ICON = { private: Lock, workspace: Building2, public: Globe } as const;
+  const VIS_LABEL = { private: "Privado", workspace: "Workspace", public: "Público" } as const;
+  const VisIcon = resumo ? VIS_ICON[resumo.visibilidade] : Lock;
+
+
   async function handleColRename(col: typeof colunas[number]) {
     const nome = window.prompt("Novo nome da coluna:", col.nome)?.trim();
     if (!nome || nome === col.nome) return;
