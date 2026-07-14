@@ -37,6 +37,7 @@ import Configuracoes from "./pages/Configuracoes";
 import Diagrama from "./pages/Diagrama";
 import Atividades from "./pages/Atividades";
 import AtividadesBoard from "./pages/AtividadesBoard";
+import ImportarQuadro from "./pages/atividades/importar/ImportarQuadro";
 
 import Ajuda from "./pages/Ajuda";
 import ObservabilidadeIA from "./pages/ObservabilidadeIA";
@@ -76,7 +77,9 @@ const AppRoutes = () => {
         <Route path="/configuracoes" element={<ProtectedRoute role="developer"><Configuracoes /></ProtectedRoute>} />
         <Route path="/diagrama" element={<ProtectedRoute role="developer"><Diagrama /></ProtectedRoute>} />
         <Route path="/atividades" element={<ProtectedRoute role="developer"><Atividades /></ProtectedRoute>} />
+        <Route path="/atividades/importar" element={<ProtectedRoute role="developer"><ImportarQuadro /></ProtectedRoute>} />
         <Route path="/atividades/:boardId" element={<ProtectedRoute role="developer"><AtividadesBoard /></ProtectedRoute>} />
+
 
         <Route path="/observabilidade-ia" element={<ProtectedRoute role="developer"><ObservabilidadeIA /></ProtectedRoute>} />
         <Route path="/consolidacao" element={<ProtectedRoute role="developer"><Consolidacao /></ProtectedRoute>} />
