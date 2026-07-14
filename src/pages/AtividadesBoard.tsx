@@ -669,6 +669,14 @@ export default function AtividadesBoard() {
         onSaveDraft={!editing ? handleSaveDraft : undefined}
         onDiscardDraft={!editing ? handleDiscardDraft : undefined}
       />
+
+      <BoardSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        board={resumo ?? null}
+        onDeleted={() => navigate("/atividades")}
+      />
     </div>
   );
 }
+
