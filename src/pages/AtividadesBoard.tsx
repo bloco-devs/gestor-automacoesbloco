@@ -494,7 +494,41 @@ export default function AtividadesBoard() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {membros.length > 0 && (
+            <TooltipProvider delayDuration={200}>
+              <div className="flex -space-x-2 mr-1">
+                {membros.slice(0, 5).map((m) => {
+                  const initials = (m.nome || m.email || "?")
+                    .split(/\s+/)
+                    .map((p) => p[0])
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase();
+                  return (
+                    <Tooltip key={m.userId}>
+                      <TooltipTrigger asChild>
+                        <Avatar className="h-7 w-7 border-2 border-background">
+                          <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+                        </Avatar>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <span className="text-xs">
+                          {m.nome || m.email} · {m.role}
+                        </span>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+                {membros.length > 5 && (
+                  <Avatar className="h-7 w-7 border-2 border-background">
+                    <AvatarFallback className="text-[10px]">+{membros.length - 5}</AvatarFallback>
+                  </Avatar>
+                )}
+              </div>
+            </TooltipProvider>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -509,7 +543,19 @@ export default function AtividadesBoard() {
             <Archive className="h-4 w-4 mr-1.5" />
             {resumo?.arquivado ? "Restaurar" : "Arquivar"}
           </Button>
+          {canAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSettingsOpen(true)}
+              aria-label="Configurações do quadro"
+            >
+              <Settings className="h-4 w-4 mr-1.5" />
+              Configurações
+            </Button>
+          )}
         </div>
+
       </div>
 
 
