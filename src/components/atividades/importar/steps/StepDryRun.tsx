@@ -11,8 +11,8 @@ interface Props {
   error: string | null;
 }
 
-function CountsList({ counts, title }: { counts: RunReport["created"]; title: string }) {
-  const entries = Object.entries(counts).filter(([, v]) => (v ?? 0) > 0);
+function CountsList({ counts, title }: { counts: RunReport["created"] | undefined; title: string }) {
+  const entries = Object.entries(counts ?? {}).filter(([, v]) => (v ?? 0) > 0);
   return (
     <div>
       <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-1">{title}</h4>
