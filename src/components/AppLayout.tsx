@@ -396,6 +396,9 @@ export default function AppLayout() {
       )}
 
       <main className="flex-1 min-w-0 relative">
+        <div className="hidden md:flex fixed top-2 right-3 z-40 items-center gap-1">
+          <ThemeToggle />
+        </div>
         {sidebarHidden && (
           <button
             type="button"
