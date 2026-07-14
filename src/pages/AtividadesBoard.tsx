@@ -380,6 +380,68 @@ export default function AtividadesBoard() {
   };
 
   const boardNome = resumo?.nome ?? "Quadro";
+  const canAdmin = resumo?.meuPapel === "owner" || resumo?.meuPapel === "admin";
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const membrosQ = useQueryBoard({
+    queryKey: ["atividades", "board-membros-topo", boardId],
+    queryFn: () => listBoardMembros(boardId!),
+    enabled: !!boardId,
+    staleTime: 60_000,
+  });
+  const membros = membrosQ.data ?? [];
+
+  async function handleColRename(col: typeof colunas[number]) {
+    const nome = window.prompt("Novo nome da coluna:", col.nome)?.trim();
+    if (!nome || nome === col.nome) return;
+    try {
+      await renomearColuna(col.id, nome);
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId ?? undefined) });
+      toast.success("Coluna renomeada");
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível renomear a coluna");
+    }
+  }
+  async function handleColDuplicate(col: typeof colunas[number]) {
+    try {
+      await duplicarColuna(col.id);
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId ?? undefined) });
+      qc.invalidateQueries({ queryKey: atividadesKeys.cards(boardId ?? undefined) });
+      toast.success("Coluna duplicada");
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível duplicar a coluna");
+    }
+  }
+  async function handleColArchive(col: typeof colunas[number]) {
+    if (!window.confirm(`Arquivar a coluna "${col.nome}"?`)) return;
+    try {
+      await arquivarColuna(col.id, true);
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId ?? undefined) });
+      toast.success("Coluna arquivada");
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível arquivar a coluna");
+    }
+  }
+  async function handleColDelete(col: typeof colunas[number]) {
+    const qtd = (cardsByColuna[col.id] ?? []).length;
+    if (qtd > 0) {
+      toast.error("Só é possível excluir colunas vazias");
+      return;
+    }
+    if (!window.confirm(`Excluir a coluna "${col.nome}"?`)) return;
+    try {
+      await excluirColuna(col.id);
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId ?? undefined) });
+      toast.success("Coluna excluída");
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível excluir a coluna");
+    }
+  }
+
 
   return (
     <div className="space-y-4">
