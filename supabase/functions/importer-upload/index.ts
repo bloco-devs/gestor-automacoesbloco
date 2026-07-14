@@ -17,6 +17,7 @@ import { sha256Hex } from "../_shared/importers/core/hashing.ts";
 import { RUNNER_VERSION, SNAPSHOT_VERSION } from "../_shared/importers/core/versions.ts";
 import { TRELLO_ADAPTER_VERSION, TRELLO_SOURCE } from "../_shared/importers/trello/version.ts";
 import { logger } from "../_shared/importers/core/logger.ts";
+import { cleanupOldObjects, newRequestId, sniffContentKind } from "../_shared/importers/core/hardening.ts";
 
 const BUCKET = "atividades-import-tmp";
 const MAX_BYTES = 50 * 1024 * 1024; // 50 MB
@@ -44,6 +45,8 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "method_not_allowed" }),
       { status: 405, headers: { ...cors, "Content-Type": "application/json" } });
   }
+  const request_id = req.headers.get("x-request-id") ?? newRequestId();
+  const log = logger.child({ request_id, fn: "importer-upload" });
 
   const token = bearer(req);
   if (!token) {
@@ -112,8 +115,28 @@ Deno.serve(async (req) => {
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
+
+  // Sniff de assinatura (não confia em extensão/MIME do cliente)
+  const kind = sniffContentKind(bytes);
+  const filenameLower = (file.name || "").toLowerCase();
+  const looksZip = filenameLower.endsWith(".zip");
+  const looksJson = filenameLower.endsWith(".json");
+  if (kind === "unknown") {
+    return new Response(JSON.stringify({ error: "conteúdo não é JSON nem ZIP válido" }),
+      { status: 415, headers: { ...cors, "Content-Type": "application/json" } });
+  }
+  if ((kind === "zip" && looksJson) || (kind === "json" && looksZip)) {
+    return new Response(JSON.stringify({ error: `conteúdo (${kind}) não bate com a extensão do arquivo` }),
+      { status: 415, headers: { ...cors, "Content-Type": "application/json" } });
+  }
+
   const file_hash = await sha256Hex(bytes);
   const filename = sanitizeFilename(file.name || "upload.bin");
+
+  // Limpeza best-effort de arquivos antigos (>24h) do próprio usuário
+  cleanupOldObjects(svc, BUCKET, uid, 24)
+    .then((r) => log.info("ttl_cleanup", { ...r }))
+    .catch(() => { /* ignore */ });
 
   // 1) cria job via RPC (usa auth.uid do usuário)
   const adapter_version = TRELLO_ADAPTER_VERSION;
@@ -129,7 +152,7 @@ Deno.serve(async (req) => {
     _runner_version: RUNNER_VERSION,
   });
   if (jobErr || !jobIdData) {
-    logger.error("job_create_failed", { message: jobErr?.message });
+    log.error("job_create_failed", { message: jobErr?.message });
     return new Response(JSON.stringify({ error: jobErr?.message ?? "job_create_failed" }),
       { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
   }
@@ -138,21 +161,19 @@ Deno.serve(async (req) => {
 
   // 2) upload no bucket privado (service-role — RLS bypass; caminho escopado por uid)
   const up = await svc.storage.from(BUCKET).upload(storage_path, bytes, {
-    contentType: mime,
+    contentType: kind === "zip" ? "application/zip" : "application/json",
     upsert: false,
   });
   if (up.error) {
-    logger.error("upload_failed", { job_id, message: up.error.message });
-    // marca job como failed (queued -> cancelled não vale; via finalize precisa ser running).
-    // Preferimos cancelar: queued -> cancelled é permitido pela RPC de cancel.
+    log.error("upload_failed", { job_id, message: up.error.message });
     await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }).catch(() => {});
     return new Response(JSON.stringify({ error: `upload_failed: ${up.error.message}` }),
       { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
   }
 
-  logger.info("upload_ok", { job_id, source, size: file.size });
+  log.info("upload_ok", { job_id, source, size: file.size, kind });
   return new Response(
-    JSON.stringify({ job_id, storage_path, file_hash, file_size: file.size, source, target_mode: targetMode }),
-    { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
+    JSON.stringify({ job_id, storage_path, file_hash, file_size: file.size, source, target_mode: targetMode, request_id }),
+    { status: 200, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } },
   );
 });

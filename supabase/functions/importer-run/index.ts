@@ -28,8 +28,9 @@ import {
   TRELLO_ADAPTER_VERSION,
   TRELLO_SOURCE,
 } from "../_shared/importers/trello/index.ts";
-import { RUNNER_VERSION } from "../_shared/importers/core/versions.ts";
+import { RUNNER_VERSION, SNAPSHOT_VERSION } from "../_shared/importers/core/versions.ts";
 import { logger } from "../_shared/importers/core/logger.ts";
+import { newRequestId, removeJobObjects, sniffContentKind } from "../_shared/importers/core/hardening.ts";
 import type {
   ImportOptions,
   ImportResolutions,
@@ -39,6 +40,9 @@ import type {
 } from "../_shared/importers/core/interfaces.ts";
 
 const BUCKET = "atividades-import-tmp";
+// Timeout defensivo — a Edge Function tem seu próprio limite; paramos antes
+// para poder finalizar o job com report coerente.
+const RUN_TIMEOUT_MS = 55_000;
 
 function bearer(req: Request): string | null {
   const h = req.headers.get("Authorization") ?? "";
@@ -70,6 +74,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "method_not_allowed" }),
       { status: 405, headers: { ...cors, "Content-Type": "application/json" } });
   }
+  const request_id = req.headers.get("x-request-id") ?? newRequestId();
 
   const token = bearer(req);
   if (!token) {
@@ -110,7 +115,8 @@ Deno.serve(async (req) => {
       { status: 403, headers: { ...cors, "Content-Type": "application/json" } });
   }
 
-  const log = logger.child({ job_id, source: TRELLO_SOURCE });
+  const log = logger.child({ job_id, request_id, source: TRELLO_SOURCE, fn: "importer-run" });
+  const jobPrefix = `${uid}/${job_id}`;
 
   // Carrega job (RLS: dono)
   const { data: jobRow, error: jobErr } = await userClient
@@ -139,20 +145,29 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
   }
   const bytes = new Uint8Array(await dl.data.arrayBuffer());
-  const filename = (jobRow.file_name as string | null) ?? storage_path.split("/").pop() ?? "";
-  const isZip = filename.toLowerCase().endsWith(".zip");
+  void ((jobRow.file_name as string | null) ?? storage_path.split("/").pop() ?? "");
+
+  // Sniff real do conteúdo (não confia na extensão)
+  const kind = sniffContentKind(bytes);
+  if (kind === "unknown") {
+    log.error("content_sniff_unknown");
+    await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }).catch(() => {});
+    await removeJobObjects(svc, BUCKET, jobPrefix);
+    return new Response(JSON.stringify({ error: "conteúdo inválido (não é JSON nem ZIP)" }),
+      { status: 415, headers: { ...cors, "Content-Type": "application/json" } });
+  }
 
   // Parse -> Snapshot
   let snapshot;
   try {
-    snapshot = isZip
+    snapshot = kind === "zip"
       ? await trelloSnapshotFromZip(bytes)
       : await trelloSnapshotFromJson(bytes);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    log.error("adapter_parse_failed", { message: msg });
-    // job ainda em queued -> cancel para deixar estado final coerente
+    log.error("adapter_parse_failed", { phase: "parse", message: msg });
     await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }).catch(() => {});
+    await removeJobObjects(svc, BUCKET, jobPrefix);
     return new Response(JSON.stringify({ error: `adapter_parse_failed: ${msg}` }),
       { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
   }
@@ -200,8 +215,9 @@ Deno.serve(async (req) => {
   });
 
   let report: RunReport;
+  let timedOut = false;
   try {
-    report = await runner.execute({
+    const runPromise = runner.execute({
       snapshot,
       options,
       target,
@@ -211,17 +227,30 @@ Deno.serve(async (req) => {
       runner_version: RUNNER_VERSION,
       file_hash: (jobRow.file_hash as string | null) ?? "",
     });
+    const timeoutPromise = new Promise<RunReport>((_, reject) => {
+      setTimeout(() => { timedOut = true; reject(new Error("run_timeout")); }, RUN_TIMEOUT_MS);
+    });
+    report = await Promise.race([runPromise, timeoutPromise]);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    log.error("runner_crash", { message: msg });
+    log.error(timedOut ? "runner_timeout" : "runner_crash", { message: msg });
+    const failReport: Record<string, unknown> = {
+      errors: [{ code: timedOut ? "run_timeout" : "runner_crash", message: msg }],
+      adapter_version: TRELLO_ADAPTER_VERSION,
+      snapshot_version: SNAPSHOT_VERSION,
+      runner_version: RUNNER_VERSION,
+      file_hash: (jobRow.file_hash as string | null) ?? "",
+      timed_out: timedOut,
+    };
     await userClient.rpc("atividades_import_job_finalize", {
       _job_id: job_id,
       _status: "failed",
-      _report: { errors: [{ code: "runner_crash", message: msg }] },
+      _report: failReport,
       _board_id_local: null,
     }).catch(() => {});
-    return new Response(JSON.stringify({ error: msg }),
-      { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    await removeJobObjects(svc, BUCKET, jobPrefix);
+    return new Response(JSON.stringify({ error: msg, request_id }),
+      { status: timedOut ? 504 : 500, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
   }
 
   // Verifica se cancelou durante execução
@@ -232,8 +261,9 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (after?.status === "cancelled") {
     log.info("finalized_cancelled");
-    return new Response(JSON.stringify({ status: "cancelled", report }),
-      { status: 200, headers: { ...cors, "Content-Type": "application/json" } });
+    await removeJobObjects(svc, BUCKET, jobPrefix);
+    return new Response(JSON.stringify({ status: "cancelled", report, request_id }),
+      { status: 200, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
   }
 
   // Decide status final: success | partial | failed
@@ -249,11 +279,14 @@ Deno.serve(async (req) => {
   });
   if (finErr) {
     log.error("finalize_failed", { message: finErr.message });
-    return new Response(JSON.stringify({ error: finErr.message, report }),
-      { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    await removeJobObjects(svc, BUCKET, jobPrefix);
+    return new Response(JSON.stringify({ error: finErr.message, report, request_id }),
+      { status: 500, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
   }
 
-  log.info("finalized", { status: finalStatus, duration_ms: report.duration_ms });
-  return new Response(JSON.stringify({ status: finalStatus, report }),
-    { status: 200, headers: { ...cors, "Content-Type": "application/json" } });
+  // Cleanup do arquivo temporário — mantém apenas file_hash e metadados no banco
+  const removed = await removeJobObjects(svc, BUCKET, jobPrefix);
+  log.info("finalized", { status: finalStatus, duration_ms: report.duration_ms, storage_removed: removed });
+  return new Response(JSON.stringify({ status: finalStatus, report, request_id }),
+    { status: 200, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
 });
