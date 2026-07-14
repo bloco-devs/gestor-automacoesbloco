@@ -36,13 +36,22 @@ import type { Draft } from "@/components/atividades/kanban/DraftCard";
 
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery as useQueryBoard } from "@tanstack/react-query";
-import { ArrowLeft, Star, Archive } from "lucide-react";
+import { ArrowLeft, Star, Archive, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { BoardSettingsDialog } from "@/components/atividades/quadros/BoardSettingsDialog";
 import {
   getBoardResumo,
   toggleFavoritoBoard,
   setBoardArquivado,
+  listBoardMembros,
+  renomearColuna,
+  duplicarColuna,
+  arquivarColuna,
+  excluirColuna,
 } from "@/lib/atividadesBoards";
+
 
 export default function AtividadesBoard() {
   const { user } = useAuth();
