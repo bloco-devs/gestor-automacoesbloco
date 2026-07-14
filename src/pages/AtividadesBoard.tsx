@@ -396,7 +396,7 @@ export default function AtividadesBoard() {
     if (!nome || nome === col.nome) return;
     try {
       await renomearColuna(col.id, nome);
-      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId ?? undefined) });
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId!) });
       toast.success("Coluna renomeada");
     } catch (e) {
       console.error(e);
@@ -406,7 +406,7 @@ export default function AtividadesBoard() {
   async function handleColDuplicate(col: typeof colunas[number]) {
     try {
       await duplicarColuna(col.id);
-      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId ?? undefined) });
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId!) });
       qc.invalidateQueries({ queryKey: atividadesKeys.cards(boardId ?? undefined) });
       toast.success("Coluna duplicada");
     } catch (e) {
@@ -418,7 +418,7 @@ export default function AtividadesBoard() {
     if (!window.confirm(`Arquivar a coluna "${col.nome}"?`)) return;
     try {
       await arquivarColuna(col.id, true);
-      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId ?? undefined) });
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId!) });
       toast.success("Coluna arquivada");
     } catch (e) {
       console.error(e);
@@ -434,7 +434,7 @@ export default function AtividadesBoard() {
     if (!window.confirm(`Excluir a coluna "${col.nome}"?`)) return;
     try {
       await excluirColuna(col.id);
-      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId ?? undefined) });
+      qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId!) });
       toast.success("Coluna excluída");
     } catch (e) {
       console.error(e);
