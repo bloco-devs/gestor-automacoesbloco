@@ -287,8 +287,23 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
   const [icone, setIcone] = useState(board.icone ?? ICONS[0]);
   const [background, setBackground] = useState(board.background ?? "");
   const [coverUrl, setCoverUrl] = useState(board.coverUrl ?? "");
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
   const [saving, setSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const url = await getCoverDisplayUrl(coverUrl || null);
+      if (alive) setCoverPreview(url);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [coverUrl]);
+
 
   useEffect(() => {
     setNome(board.nome);
