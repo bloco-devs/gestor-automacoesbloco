@@ -58,6 +58,13 @@ export default function ImportarQuadro() {
   const [report, setReport] = useState<RunReport | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Execução real (fase 6) — job separado, gerado após o dry-run.
+  const [realRunning, setRealRunning] = useState(false);
+  const [realJobId, setRealJobId] = useState<string | null>(null);
+  const [realJob, setRealJob] = useState<JobRow | null>(null);
+  const [realReport, setRealReport] = useState<RunReport | null>(null);
+  const [realBoardId, setRealBoardId] = useState<string | null>(null);
+  const [realError, setRealError] = useState<string | null>(null);
   const unsubRef = useRef<null | (() => void)>(null);
 
   // Detecta boards ao selecionar arquivo
