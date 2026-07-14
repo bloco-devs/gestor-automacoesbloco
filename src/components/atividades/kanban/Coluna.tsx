@@ -1,8 +1,15 @@
 import { memo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Plus } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Copy, Archive, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type {
   AtividadeCard,
@@ -10,6 +17,7 @@ import type {
   AtividadeLabel,
   AtividadePersona,
 } from "@/lib/atividades";
+
 import type { AssignableUser, Solucao } from "@/lib/types";
 import { KanbanCard } from "./KanbanCard";
 import { DraftCard, type Draft } from "./DraftCard";
