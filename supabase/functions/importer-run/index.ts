@@ -74,6 +74,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "method_not_allowed" }),
       { status: 405, headers: { ...cors, "Content-Type": "application/json" } });
   }
+  const request_id = req.headers.get("x-request-id") ?? newRequestId();
 
   const token = bearer(req);
   if (!token) {
