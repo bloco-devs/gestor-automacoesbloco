@@ -48,11 +48,14 @@ export interface RunInput {
   selection: ImportSelection;
   card_conflict?: CardConflictStrategy;
   resolutions?: ImportResolutions;
+  dry_run?: boolean;
 }
 
 export interface RunResult {
   status: JobStatus;
   report: RunReport;
+  board_id_local?: string | null;
+  dry_run?: boolean;
   request_id?: string;
 }
 
