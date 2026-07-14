@@ -14,6 +14,7 @@ export interface BoardResumo {
   cor: string | null;
   icone: string | null;
   background: string | null;
+  coverUrl: string | null;
   visibilidade: BoardVisibilidade;
   arquivado: boolean;
   workspaceId: string;
@@ -39,6 +40,7 @@ function mapResumo(r: any): BoardResumo {
     cor: r.cor ?? null,
     icone: r.icone ?? null,
     background: r.background ?? null,
+    coverUrl: r.cover_url ?? null,
     visibilidade: (r.visibilidade ?? "workspace") as BoardVisibilidade,
     arquivado: !!r.arquivado,
     workspaceId: r.workspace_id,
@@ -113,4 +115,247 @@ export async function setBoardArquivado(
     _arquivado: arquivado,
   });
   if (error) throw error;
+}
+
+// ===== Q3: Board settings =====
+
+export interface UpdateBoardInput {
+  nome?: string;
+  descricao?: string | null;
+  cor?: string | null;
+  icone?: string | null;
+  background?: string | null;
+  coverUrl?: string | null;
+  visibilidade?: BoardVisibilidade;
+}
+
+export async function updateBoard(
+  boardId: string,
+  input: UpdateBoardInput,
+): Promise<void> {
+  const { error } = await sb.rpc("atividades_board_update", {
+    _board_id: boardId,
+    _nome: input.nome ?? null,
+    _descricao: input.descricao ?? null,
+    _cor: input.cor ?? null,
+    _icone: input.icone ?? null,
+    _background: input.background ?? null,
+    _cover_url: input.coverUrl ?? null,
+    _visibilidade: input.visibilidade ?? null,
+  });
+  if (error) throw error;
+}
+
+export async function deleteBoard(boardId: string): Promise<void> {
+  const { error } = await sb.rpc("atividades_board_delete", {
+    _board_id: boardId,
+  });
+  if (error) throw error;
+}
+
+// ===== Q3: Membros =====
+
+export interface BoardMembro {
+  userId: string;
+  boardId: string;
+  role: BoardRole;
+  nome: string;
+  email: string;
+  createdAt: string;
+}
+
+export async function listBoardMembros(boardId: string): Promise<BoardMembro[]> {
+  const { data: mems, error } = await sb
+    .from("atividades_board_membros")
+    .select("board_id, user_id, role, created_at")
+    .eq("board_id", boardId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  const rows = (mems ?? []) as Array<{
+    board_id: string;
+    user_id: string;
+    role: BoardRole;
+    created_at: string;
+  }>;
+  if (rows.length === 0) return [];
+  const ids = rows.map((r) => r.user_id);
+  const { data: profs } = await sb
+    .from("profiles")
+    .select("id, nome, email")
+    .in("id", ids);
+  const map = new Map<string, { nome: string; email: string }>(
+    (profs ?? []).map((p: { id: string; nome?: string; email?: string }) => [
+      p.id,
+      { nome: p.nome ?? "", email: p.email ?? "" },
+    ]),
+  );
+  return rows.map((r) => ({
+    userId: r.user_id,
+    boardId: r.board_id,
+    role: r.role,
+    nome: map.get(r.user_id)?.nome || "Usuário",
+    email: map.get(r.user_id)?.email || "",
+    createdAt: r.created_at,
+  }));
+}
+
+export async function addBoardMembro(
+  boardId: string,
+  userId: string,
+  role: BoardRole = "member",
+): Promise<void> {
+  const { error } = await sb.rpc("atividades_board_add_member", {
+    _board_id: boardId,
+    _user_id: userId,
+    _role: role,
+  });
+  if (error) throw error;
+}
+
+export async function removeBoardMembro(
+  boardId: string,
+  userId: string,
+): Promise<void> {
+  const { error } = await sb.rpc("atividades_board_remove_member", {
+    _board_id: boardId,
+    _user_id: userId,
+  });
+  if (error) throw error;
+}
+
+export async function setBoardMembroRole(
+  boardId: string,
+  userId: string,
+  role: BoardRole,
+): Promise<void> {
+  const { error } = await sb.rpc("atividades_board_set_member_role", {
+    _board_id: boardId,
+    _user_id: userId,
+    _role: role,
+  });
+  if (error) throw error;
+}
+
+// ===== Q3: Colunas (admin) =====
+
+export async function criarColuna(boardId: string, nome: string): Promise<string> {
+  const { data, error } = await sb.rpc("atividades_coluna_create", {
+    _board_id: boardId,
+    _nome: nome,
+    _chave: null,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function renomearColuna(colunaId: string, nome: string): Promise<void> {
+  const { error } = await sb.rpc("atividades_coluna_update", {
+    _coluna_id: colunaId,
+    _nome: nome,
+  });
+  if (error) throw error;
+}
+
+export async function excluirColuna(colunaId: string): Promise<void> {
+  const { error } = await sb.rpc("atividades_coluna_delete", {
+    _coluna_id: colunaId,
+  });
+  if (error) throw error;
+}
+
+export async function arquivarColuna(
+  colunaId: string,
+  arquivada: boolean,
+): Promise<void> {
+  const { error } = await sb.rpc("atividades_coluna_set_arquivada", {
+    _coluna_id: colunaId,
+    _arquivada: arquivada,
+  });
+  if (error) throw error;
+}
+
+export async function duplicarColuna(colunaId: string): Promise<string> {
+  const { data, error } = await sb.rpc("atividades_coluna_duplicate", {
+    _coluna_id: colunaId,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function reordenarColunas(
+  boardId: string,
+  items: Array<{ id: string; ordem: number }>,
+): Promise<void> {
+  const { error } = await sb.rpc("atividades_coluna_reorder", {
+    _board_id: boardId,
+    _items: items,
+  });
+  if (error) throw error;
+}
+
+// ===== Q3: Labels via RPC (com histórico) =====
+
+export async function upsertLabel(
+  boardId: string,
+  input: { id?: string | null; nome: string; cor: string },
+): Promise<string> {
+  const { data, error } = await sb.rpc("atividades_label_upsert", {
+    _board_id: boardId,
+    _id: input.id ?? null,
+    _nome: input.nome,
+    _cor: input.cor,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function excluirLabel(labelId: string): Promise<void> {
+  const { error } = await sb.rpc("atividades_label_delete", {
+    _label_id: labelId,
+  });
+  if (error) throw error;
+}
+
+// ===== Q3: Histórico =====
+
+export interface BoardHistoricoItem {
+  id: string;
+  boardId: string;
+  userId: string | null;
+  userEmail: string | null;
+  evento: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
+}
+
+export async function listBoardHistorico(
+  boardId: string,
+  limit = 100,
+): Promise<BoardHistoricoItem[]> {
+  const { data, error } = await sb
+    .from("atividades_board_historico")
+    .select("id, board_id, user_id, user_email, evento, payload, created_at")
+    .eq("board_id", boardId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(
+    (r: {
+      id: string;
+      board_id: string;
+      user_id: string | null;
+      user_email: string | null;
+      evento: string;
+      payload: Record<string, unknown> | null;
+      created_at: string;
+    }) => ({
+      id: r.id,
+      boardId: r.board_id,
+      userId: r.user_id,
+      userEmail: r.user_email,
+      evento: r.evento,
+      payload: r.payload ?? {},
+      createdAt: r.created_at,
+    }),
+  );
 }
