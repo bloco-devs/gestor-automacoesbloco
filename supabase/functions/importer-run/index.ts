@@ -240,6 +240,10 @@ Deno.serve(async (req) => {
     const msg = e instanceof Error ? e.message : String(e);
     log.error(timedOut ? "runner_timeout" : "runner_crash", { message: msg });
     const failReport: Record<string, unknown> = {
+      created: {},
+      reused: {},
+      ignored: [],
+      warnings: [],
       errors: [{ code: timedOut ? "run_timeout" : "runner_crash", message: msg }],
       adapter_version: TRELLO_ADAPTER_VERSION,
       snapshot_version: SNAPSHOT_VERSION,
@@ -247,6 +251,7 @@ Deno.serve(async (req) => {
       file_hash: (jobRow.file_hash as string | null) ?? "",
       timed_out: timedOut,
     };
+
     await userClient.rpc("atividades_import_job_finalize", {
       _job_id: job_id,
       _status: "failed",
