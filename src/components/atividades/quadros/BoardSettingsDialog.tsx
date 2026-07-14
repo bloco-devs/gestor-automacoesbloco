@@ -1127,12 +1127,20 @@ function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean 
     queryKey: atividadesKeys.labels(board.id),
     queryFn: () => listLabels(board.id),
   });
+  const countsQ = useQuery({
+    queryKey: ["atividades", "labels-counts", board.id],
+    queryFn: () => countCardsByLabel(board.id),
+    staleTime: 60_000,
+  });
   const [busca, setBusca] = useState("");
   const [novo, setNovo] = useState({ nome: "", cor: LABEL_COLORS[0] });
-  const [editing, setEditing] = useState<{ id: string; nome: string; cor: string } | null>(
-    null,
-  );
+  const [editing, setEditing] = useState<{ id: string; nome: string; cor: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const filtered = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -1142,6 +1150,7 @@ function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean 
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: atividadesKeys.labels(board.id) });
+    qc.invalidateQueries({ queryKey: ["atividades", "labels-counts", board.id] });
     qc.invalidateQueries({ queryKey: ["atividades", "board-historico", board.id] });
   }
   async function handleCreate() {
@@ -1187,6 +1196,40 @@ function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean 
       toast.error("Não foi possível excluir");
     } finally {
       setBusy(null);
+    }
+  }
+  async function handleToggleFav(l: AtividadeLabel) {
+    setBusy(l.id);
+    try {
+      await setLabelFavorita(l.id, !l.favorita);
+      invalidate();
+    } catch {
+      toast.error("Não foi possível atualizar favorita");
+    } finally {
+      setBusy(null);
+    }
+  }
+  async function handleDragEnd(ev: DragEndEvent) {
+    const { active, over } = ev;
+    if (!over || active.id === over.id) return;
+    // Só permite reordenar entre labels do mesmo grupo (favorita/não-favorita)
+    const list = [...(labelsQ.data ?? [])];
+    const from = list.findIndex((l) => l.id === active.id);
+    const to = list.findIndex((l) => l.id === over.id);
+    if (from < 0 || to < 0) return;
+    if ((list[from].favorita ?? false) !== (list[to].favorita ?? false)) {
+      toast.info("Não é possível trocar a ordem entre favoritas e comuns.");
+      return;
+    }
+    const reordered = arrayMove(list, from, to);
+    const items = reordered.map((l, i) => ({ id: l.id, ordem: i }));
+    qc.setQueryData(atividadesKeys.labels(board.id), reordered);
+    try {
+      await reorderLabels(board.id, items);
+      invalidate();
+    } catch {
+      toast.error("Não foi possível reordenar");
+      invalidate();
     }
   }
 
@@ -1245,74 +1288,156 @@ function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean 
           {busca ? "Nenhuma etiqueta encontrada." : "Ainda não há etiquetas neste quadro."}
         </div>
       ) : (
-        <ul className="divide-y rounded-lg border">
-          {filtered.map((l) => (
-            <li key={l.id} className="flex items-center gap-2 p-3">
-              {editing?.id === l.id ? (
-                <>
-                  <Input
-                    value={editing.nome}
-                    onChange={(e) => setEditing({ ...editing, nome: e.target.value })}
-                    className="flex-1"
-                  />
-                  <div className="flex gap-1">
-                    {LABEL_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setEditing({ ...editing, cor: c })}
-                        className={`h-6 w-6 rounded border-2 ${editing.cor === c ? "border-foreground" : "border-transparent"}`}
-                        style={{ backgroundColor: c }}
-                      />
-                    ))}
-                  </div>
-                  <Button size="sm" onClick={handleUpdate} disabled={busy === editing.id}>
-                    Salvar
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
-                    Cancelar
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <span
-                    className="inline-block h-5 min-w-[80px] rounded px-2 text-xs font-medium text-white leading-5"
-                    style={{ backgroundColor: l.cor }}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={filtered.map((l) => l.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ul className="divide-y rounded-lg border">
+              {filtered.map((l) => {
+                const count = countsQ.data?.get(l.id) ?? 0;
+                const isEditing = editing?.id === l.id;
+                return (
+                  <SortableLabelRow
+                    key={l.id}
+                    id={l.id}
+                    canAdmin={canAdmin && !busca}
+                    busy={busy === l.id}
+                    isEditing={isEditing}
                   >
-                    {l.nome}
-                  </span>
-                  <span className="flex-1" />
-                  {canAdmin && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          setEditing({ id: l.id, nome: l.nome, cor: l.cor })
-                        }
-                        disabled={busy === l.id}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(l)}
-                        disabled={busy === l.id}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+                    {isEditing ? (
+                      <>
+                        <Input
+                          value={editing.nome}
+                          onChange={(e) => setEditing({ ...editing, nome: e.target.value })}
+                          className="flex-1"
+                        />
+                        <div className="flex gap-1">
+                          {LABEL_COLORS.map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setEditing({ ...editing, cor: c })}
+                              className={`h-6 w-6 rounded border-2 ${editing.cor === c ? "border-foreground" : "border-transparent"}`}
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </div>
+                        <Button size="sm" onClick={handleUpdate} disabled={busy === editing.id}>
+                          Salvar
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+                          Cancelar
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          className="inline-block h-5 min-w-[80px] rounded px-2 text-xs font-medium text-white leading-5"
+                          style={{ backgroundColor: l.cor }}
+                        >
+                          {l.nome}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] tabular-nums"
+                          title="Cards com esta etiqueta"
+                        >
+                          {count}
+                        </Badge>
+                        <span className="flex-1" />
+                        {canAdmin && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleToggleFav(l)}
+                              disabled={busy === l.id}
+                              title={l.favorita ? "Remover dos favoritos" : "Marcar como favorita"}
+                            >
+                              <Star
+                                className={`h-4 w-4 ${l.favorita ? "fill-amber-400 text-amber-400" : ""}`}
+                              />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setEditing({ id: l.id, nome: l.nome, cor: l.cor })
+                              }
+                              disabled={busy === l.id}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(l)}
+                              disabled={busy === l.id}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </SortableLabelRow>
+                );
+              })}
+            </ul>
+          </SortableContext>
+        </DndContext>
+      )}
+      {!busca && canAdmin && (
+        <p className="text-xs text-muted-foreground">
+          Arraste pelo ícone <GripVertical className="h-3 w-3 inline align-text-bottom" /> para
+          reordenar. Favoritas aparecem primeiro nos menus.
+        </p>
       )}
     </div>
   );
 }
+
+function SortableLabelRow({
+  id,
+  canAdmin,
+  busy,
+  isEditing,
+  children,
+}: {
+  id: string;
+  canAdmin: boolean;
+  busy: boolean;
+  isEditing: boolean;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+    disabled: !canAdmin || isEditing || busy,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <li ref={setNodeRef} style={style} className="flex items-center gap-2 p-3 bg-background">
+      {canAdmin && !isEditing && (
+        <button
+          type="button"
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+          aria-label="Arrastar para reordenar"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      )}
+      {children}
+    </li>
+  );
+}
+
 
 // ---------------- Histórico ----------------
 const EVENTO_LABEL: Record<string, string> = {
