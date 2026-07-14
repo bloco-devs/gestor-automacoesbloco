@@ -190,8 +190,53 @@ export default function ImportarQuadro() {
     }
   };
 
+  // Executa a importação DEFINITIVA. Faz um novo upload (o arquivo do
+  // dry-run já foi limpo pela edge function) e roda com dry_run=false.
+  const handleExecuteReal = async () => {
+    if (!file) return;
+    setRealError(null);
+    setRealReport(null);
+    setRealJob(null);
+    setRealBoardId(null);
+    try {
+      setRealRunning(true);
+      const up = await uploadImportFile({
+        file,
+        source,
+        targetMode: target.mode,
+        options: { source_board_external_id: boardExternalId ?? undefined, dry_run: false },
+      });
+      setRealJobId(up.job_id);
+      const res = await runImportJob({
+        job_id: up.job_id,
+        storage_path: up.storage_path,
+        target,
+        selection,
+        card_conflict: cardConflict,
+        resolutions: { members: [] },
+        dry_run: false,
+      });
+      setRealRunning(false);
+      setRealReport(res.report);
+      setRealBoardId(res.board_id_local ?? null);
+      toast.success(`Importação: ${res.status}`);
+    } catch (e) {
+      setRealRunning(false);
+      const msg = e instanceof Error ? e.message : String(e);
+      setRealError(msg);
+      toast.error(msg);
+    }
+  };
+
+  const handleCancelReal = async () => {
+    if (!realJobId) return;
+    try { await cancelImportJob(realJobId); toast.message("Cancelamento solicitado"); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Falha ao cancelar"); }
+  };
+
   const handleFinish = () => {
-    navigate("/atividades");
+    if (realBoardId) navigate(`/atividades/${realBoardId}`);
+    else navigate("/atividades");
   };
 
   return (
