@@ -60,6 +60,9 @@ export function StepExecucao({
   const percent = realJob?.progress?.percent ?? 0;
   const phase = realJob?.progress?.phase ?? "—";
   const message = realJob?.progress?.message ?? "";
+  const warnings = realReport?.warnings ?? [];
+  const errors = realReport?.errors ?? [];
+  const reportHash = report?.file_hash ? `${report.file_hash.slice(0, 12)}…` : "—";
 
   return (
     <div className="space-y-4">
@@ -88,7 +91,7 @@ export function StepExecucao({
       {report ? (
         <div className="text-xs text-muted-foreground">
           adapter <code>{report.adapter_version}</code> · snapshot <code>{report.snapshot_version}</code> ·
-          runner <code>{report.runner_version}</code> · hash <code>{report.file_hash.slice(0, 12)}…</code>
+          runner <code>{report.runner_version}</code> · hash <code>{reportHash}</code>
         </div>
       ) : null}
 
@@ -131,25 +134,25 @@ export function StepExecucao({
 
       {realReport ? (
         <div className="space-y-3">
-          {(realReport.warnings?.length ?? 0) > 0 ? (
+          {warnings.length > 0 ? (
             <div className="border rounded-md p-3 space-y-1">
               <div className="text-xs font-semibold uppercase text-amber-600 flex items-center gap-1">
-                <AlertTriangle className="h-3.5 w-3.5" /> Avisos ({realReport.warnings!.length})
+                <AlertTriangle className="h-3.5 w-3.5" /> Avisos ({warnings.length})
               </div>
               <ul className="text-xs space-y-0.5 max-h-32 overflow-auto">
-                {realReport.warnings!.slice(0, 20).map((w, i) => (
+                {warnings.slice(0, 20).map((w, i) => (
                   <li key={i}><code className="text-[10px]">{w.code}</code> {w.message}</li>
                 ))}
               </ul>
             </div>
           ) : null}
-          {(realReport.errors?.length ?? 0) > 0 ? (
+          {errors.length > 0 ? (
             <div className="border border-destructive/40 rounded-md p-3 space-y-1">
               <div className="text-xs font-semibold uppercase text-destructive flex items-center gap-1">
-                <XCircle className="h-3.5 w-3.5" /> Erros ({realReport.errors!.length})
+                <XCircle className="h-3.5 w-3.5" /> Erros ({errors.length})
               </div>
               <ul className="text-xs space-y-0.5 max-h-32 overflow-auto">
-                {realReport.errors!.slice(0, 20).map((e, i) => (
+                {errors.slice(0, 20).map((e, i) => (
                   <li key={i}><code className="text-[10px]">{e.code}</code> {e.message}</li>
                 ))}
               </ul>

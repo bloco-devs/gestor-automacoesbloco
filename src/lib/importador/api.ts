@@ -59,10 +59,35 @@ export interface RunResult {
   request_id?: string;
 }
 
+function normalizeReport(report: unknown): RunReport {
+  const r = (report && typeof report === "object" ? report : {}) as Partial<RunReport>;
+  return {
+    duration_ms: typeof r.duration_ms === "number" ? r.duration_ms : 0,
+    created: r.created && typeof r.created === "object" ? r.created : {},
+    reused: r.reused && typeof r.reused === "object" ? r.reused : {},
+    ignored: Array.isArray(r.ignored) ? r.ignored : [],
+    warnings: Array.isArray(r.warnings) ? r.warnings : [],
+    errors: Array.isArray(r.errors) ? r.errors : [],
+    adapter_version: typeof r.adapter_version === "string" ? r.adapter_version : "—",
+    snapshot_version: typeof r.snapshot_version === "string" ? r.snapshot_version : "—",
+    runner_version: typeof r.runner_version === "string" ? r.runner_version : "—",
+    file_hash: typeof r.file_hash === "string" ? r.file_hash : "",
+    board_id_local: r.board_id_local ?? null,
+    dry_run: r.dry_run,
+  };
+}
+
 export async function runImportJob(input: RunInput): Promise<RunResult> {
   const { data, error } = await supabase.functions.invoke("importer-run", { body: input });
   if (error) throw new Error(error.message || "Falha ao executar importação");
-  return data as RunResult;
+  const result = data as Partial<RunResult> | null;
+  return {
+    status: (result?.status ?? "failed") as JobStatus,
+    report: normalizeReport(result?.report),
+    board_id_local: result?.board_id_local ?? normalizeReport(result?.report).board_id_local ?? null,
+    dry_run: result?.dry_run,
+    request_id: result?.request_id,
+  };
 }
 
 export async function cancelImportJob(jobId: string): Promise<void> {
@@ -73,7 +98,7 @@ export async function cancelImportJob(jobId: string): Promise<void> {
 export async function fetchJob(jobId: string): Promise<JobRow | null> {
   const { data, error } = await supabase
     .from("atividades_import_jobs")
-    .select("id,status,progress,report,file_name,source")
+    .select("id,status,progress,report,board_id_local,file_name,source")
     .eq("id", jobId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -82,7 +107,8 @@ export async function fetchJob(jobId: string): Promise<JobRow | null> {
     id: data.id as string,
     status: data.status as JobStatus,
     progress: (data.progress ?? null) as unknown as ProgressUpdate | null,
-    report: (data.report ?? null) as unknown as RunReport | null,
+    report: data.report ? normalizeReport(data.report) : null,
+    board_id_local: (data.board_id_local ?? null) as string | null,
     file_name: (data.file_name ?? null) as string | null,
     source: data.source as string,
   };
@@ -107,7 +133,8 @@ export function subscribeJob(
           id: String(n.id),
           status: n.status as JobStatus,
           progress: (n.progress ?? null) as unknown as ProgressUpdate | null,
-          report: (n.report ?? null) as unknown as RunReport | null,
+          report: n.report ? normalizeReport(n.report) : null,
+          board_id_local: (n.board_id_local ?? null) as string | null,
           file_name: (n.file_name ?? null) as string | null,
           source: String(n.source ?? ""),
         });

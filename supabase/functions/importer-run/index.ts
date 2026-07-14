@@ -245,11 +245,14 @@ Deno.serve(async (req) => {
       ignored: [],
       warnings: [],
       errors: [{ code: timedOut ? "run_timeout" : "runner_crash", message: msg }],
+      duration_ms: 0,
       adapter_version: TRELLO_ADAPTER_VERSION,
       snapshot_version: SNAPSHOT_VERSION,
       runner_version: RUNNER_VERSION,
       file_hash: (jobRow.file_hash as string | null) ?? "",
       timed_out: timedOut,
+      board_id_local: null,
+      dry_run: dryRun,
     };
 
     await userClient.rpc("atividades_import_job_finalize", {
