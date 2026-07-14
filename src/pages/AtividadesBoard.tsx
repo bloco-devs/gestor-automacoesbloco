@@ -34,9 +34,23 @@ import {
 } from "@/components/atividades/kanban/helpers";
 import type { Draft } from "@/components/atividades/kanban/DraftCard";
 
-export default function Atividades() {
+import { useNavigate, useParams, Link } from "react-router-dom";
+import { useQuery as useQueryBoard } from "@tanstack/react-query";
+import { ArrowLeft, Star, Archive } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  getBoardResumo,
+  toggleFavoritoBoard,
+  setBoardArquivado,
+} from "@/lib/atividadesBoards";
+
+export default function AtividadesBoard() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const params = useParams<{ boardId: string }>();
+  const routeBoardId = params.boardId ?? null;
+
   const {
     boardId,
     colunas,
@@ -46,8 +60,17 @@ export default function Atividades() {
     responsaveis,
     solucoes,
     loading,
-  } = useAtividadesBoard();
+  } = useAtividadesBoard(routeBoardId);
   const { create, update, remove, reorder } = useCardMutations(boardId);
+
+  const resumoQ = useQueryBoard({
+    queryKey: ["atividades", "board-resumo", boardId],
+    queryFn: () => getBoardResumo(boardId!),
+    enabled: !!boardId,
+    staleTime: 30_000,
+  });
+  const resumo = resumoQ.data;
+
 
   // Contagem de anexos por card no board (para badge do KanbanCard)
   const anexosCountsQ = useQuery<Map<string, number>>({
