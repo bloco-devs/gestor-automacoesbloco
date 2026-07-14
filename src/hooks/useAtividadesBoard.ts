@@ -41,19 +41,22 @@ const STALE = 30_000;
  * Realtime centralizado: refetch por cartão quando possível,
  * fallback para invalidação da lista completa.
  */
-export function useAtividadesBoard() {
+export function useAtividadesBoard(boardIdArg?: string | null) {
   const qc = useQueryClient();
 
   const boardsQ = useQuery({
     queryKey: atividadesKeys.boards(),
     queryFn: listBoards,
     staleTime: 5 * 60_000,
+    enabled: !boardIdArg, // só precisa listar quando não recebemos um id explícito
   });
 
   const boardId = useMemo<string | null>(() => {
+    if (boardIdArg) return boardIdArg;
     const list = boardsQ.data ?? [];
     return list.find((b) => b.slug === "default")?.id ?? list[0]?.id ?? null;
-  }, [boardsQ.data]);
+  }, [boardIdArg, boardsQ.data]);
+
 
   const colunasQ = useQuery<AtividadeColuna[]>({
     queryKey: boardId ? atividadesKeys.colunas(boardId) : ["atividades", "colunas", "_"],
