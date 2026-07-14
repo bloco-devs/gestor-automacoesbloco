@@ -392,6 +392,7 @@ export default function Atividades() {
                   personasByUser={personasByUser}
                   solucoesMap={solucoesMap}
                   labelsMap={labelsMap}
+                  anexosCounts={anexosCounts}
                   currentUserId={user?.id ?? null}
                   onNew={() => openNew(col.id)}
                   onEdit={openEdit}
