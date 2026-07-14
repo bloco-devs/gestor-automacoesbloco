@@ -98,10 +98,19 @@ import {
   upsertLabel,
   excluirLabel,
   listBoardHistorico,
+  setColunaWip,
+  setLabelFavorita,
+  reorderLabels,
+  countCardsByLabel,
+  uploadCoverImage,
+  removeCoverImage,
+  getCoverDisplayUrl,
+  validateCapa,
   type BoardResumo,
   type BoardRole,
   type BoardVisibilidade,
 } from "@/lib/atividadesBoards";
+
 import { listColunas, listLabels, type AtividadeLabel } from "@/lib/atividades";
 import { listAssignableUsers } from "@/lib/supabaseData";
 import { atividadesKeys } from "@/hooks/useAtividadesBoard";
