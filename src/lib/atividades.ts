@@ -69,7 +69,9 @@ export interface AtividadeLabel {
   cor: string;
   ordem: number;
   boardId: string;
+  favorita?: boolean;
 }
+
 
 export interface AtividadeLogEntry {
   id: string;
