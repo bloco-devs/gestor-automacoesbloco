@@ -1460,50 +1460,128 @@ const EVENTO_LABEL: Record<string, string> = {
   membro_papel_alterado: "Papel de membro alterado",
 };
 
+const HIST_CATEGORIAS: Array<{ id: string; label: string; match: (ev: string) => boolean }> = [
+  { id: "board", label: "Quadro", match: (e) => e.startsWith("board_") },
+  { id: "coluna", label: "Colunas", match: (e) => e.startsWith("coluna") },
+  { id: "etiqueta", label: "Etiquetas", match: (e) => e.startsWith("etiqueta_") },
+  { id: "membro", label: "Membros", match: (e) => e.startsWith("membro_") },
+];
+
 function HistoricoTab({ board }: { board: BoardResumo }) {
   const histQ = useQuery({
     queryKey: ["atividades", "board-historico", board.id],
     queryFn: () => listBoardHistorico(board.id, 100),
     refetchOnWindowFocus: true,
   });
-  if (histQ.isLoading) {
-    return (
-      <div className="space-y-2">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
-  }
+  const [busca, setBusca] = useState("");
+  const [cats, setCats] = useState<Set<string>>(new Set());
+
   const items = histQ.data ?? [];
-  if (items.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-        Nenhuma atividade registrada ainda.
-      </div>
-    );
+  const filtered = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return items.filter((h) => {
+      if (cats.size > 0) {
+        const match = HIST_CATEGORIAS.some((c) => cats.has(c.id) && c.match(h.evento));
+        if (!match) return false;
+      }
+      if (!q) return true;
+      const label = (EVENTO_LABEL[h.evento] ?? h.evento).toLowerCase();
+      return (
+        label.includes(q) ||
+        (h.userEmail ?? "").toLowerCase().includes(q) ||
+        JSON.stringify(h.payload ?? {}).toLowerCase().includes(q)
+      );
+    });
+  }, [items, busca, cats]);
+
+  function toggleCat(id: string) {
+    setCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
+
   return (
-    <ol className="relative border-l ml-3 space-y-4">
-      {items.map((h) => (
-        <li key={h.id} className="ml-4 relative">
-          <span className="absolute -left-[22px] top-1.5 h-3 w-3 rounded-full bg-primary ring-4 ring-background" />
-          <div className="text-sm">
-            <span className="font-medium">
-              {EVENTO_LABEL[h.evento] ?? h.evento}
-            </span>
-            {h.userEmail && (
-              <span className="text-muted-foreground"> · {h.userEmail}</span>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {new Date(h.createdAt).toLocaleString()}
-          </div>
-        </li>
-      ))}
-    </ol>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar no histórico..."
+            className="pl-8"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-1 flex-wrap">
+          <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1" />
+          {HIST_CATEGORIAS.map((c) => {
+            const on = cats.has(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => toggleCat(c.id)}
+                className={`text-xs rounded-full border px-2.5 py-0.5 transition ${
+                  on
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {c.label}
+              </button>
+            );
+          })}
+          {cats.size > 0 && (
+            <button
+              type="button"
+              onClick={() => setCats(new Set())}
+              className="text-xs text-muted-foreground underline underline-offset-2 ml-1"
+            >
+              limpar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {histQ.isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+          {items.length === 0
+            ? "Nenhuma atividade registrada ainda."
+            : "Nenhum evento com os filtros atuais."}
+        </div>
+      ) : (
+        <ol className="relative border-l ml-3 space-y-4">
+          {filtered.map((h) => (
+            <li key={h.id} className="ml-4 relative">
+              <span className="absolute -left-[22px] top-1.5 h-3 w-3 rounded-full bg-primary ring-4 ring-background" />
+              <div className="text-sm">
+                <span className="font-medium">
+                  {EVENTO_LABEL[h.evento] ?? h.evento}
+                </span>
+                {h.userEmail && (
+                  <span className="text-muted-foreground"> · {h.userEmail}</span>
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {new Date(h.createdAt).toLocaleString()}
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
   );
 }
+
 
 // ---------------- Perigo ----------------
 function PerigoTab({
