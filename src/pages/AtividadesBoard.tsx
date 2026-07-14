@@ -344,16 +344,103 @@ export default function AtividadesBoard() {
     ? buildResponsaveisDisplay(activeCard, responsaveisMap, personasMap, personasByUser)
     : [];
 
+  const toggleFav = async () => {
+    if (!boardId) return;
+    try {
+      const now = await toggleFavoritoBoard(boardId);
+      qc.invalidateQueries({ queryKey: ["atividades", "board-resumo", boardId] });
+      qc.invalidateQueries({ queryKey: ["atividades", "boards-resumo"] });
+      toast.success(now ? "Adicionado aos favoritos" : "Removido dos favoritos");
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível atualizar favorito");
+    }
+  };
+  const toggleArquivar = async () => {
+    if (!boardId || !resumo) return;
+    try {
+      await setBoardArquivado(boardId, !resumo.arquivado);
+      qc.invalidateQueries({ queryKey: ["atividades", "board-resumo", boardId] });
+      qc.invalidateQueries({ queryKey: ["atividades", "boards-resumo"] });
+      toast.success(resumo.arquivado ? "Quadro restaurado" : "Quadro arquivado");
+      if (!resumo.arquivado) navigate("/atividades");
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível atualizar o quadro");
+    }
+  };
+
+  const boardNome = resumo?.nome ?? "Quadro";
+
   return (
     <div className="space-y-4">
+      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <Link to="/atividades" className="hover:text-foreground transition-colors">
+          Atividades
+        </Link>
+        <span aria-hidden>›</span>
+        <Link to="/atividades" className="hover:text-foreground transition-colors">
+          Quadros
+        </Link>
+        <span aria-hidden>›</span>
+        <span className="text-foreground font-medium truncate max-w-[40ch]">
+          {boardNome}
+        </span>
+      </nav>
+
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold">Atividades</h1>
-          <p className="text-sm text-muted-foreground">
-            Quadro Kanban da equipe. Arraste os cards entre as colunas.
-          </p>
+        <div className="flex items-center gap-3 min-w-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/atividades")}
+            aria-label="Voltar para lista de quadros"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          {resumo?.cor ? (
+            <div
+              className="h-8 w-8 rounded-lg shrink-0"
+              style={{ backgroundColor: resumo.cor }}
+              aria-hidden
+            />
+          ) : null}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-semibold truncate">{boardNome}</h1>
+              {resumo?.arquivado ? (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  Arquivado
+                </span>
+              ) : null}
+            </div>
+            {resumo?.descricao ? (
+              <p className="text-sm text-muted-foreground truncate">{resumo.descricao}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Arraste os cards entre as colunas.
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleFav}
+            aria-label={resumo?.favorito ? "Desfavoritar" : "Favoritar"}
+          >
+            <Star
+              className={`h-4 w-4 ${resumo?.favorito ? "fill-amber-400 text-amber-400" : ""}`}
+            />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={toggleArquivar}>
+            <Archive className="h-4 w-4 mr-1.5" />
+            {resumo?.arquivado ? "Restaurar" : "Arquivar"}
+          </Button>
         </div>
       </div>
+
 
       <BoardFilters
         busca={busca}
