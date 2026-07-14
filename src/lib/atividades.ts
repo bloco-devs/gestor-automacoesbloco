@@ -13,7 +13,9 @@ export interface AtividadeColuna {
   boardId: string;
   arquivada?: boolean;
   arquivadaEm?: string | null;
+  wipLimit?: number | null;
 }
+
 
 
 export interface ChecklistItem {
@@ -67,7 +69,9 @@ export interface AtividadeLabel {
   cor: string;
   ordem: number;
   boardId: string;
+  favorita?: boolean;
 }
+
 
 export interface AtividadeLogEntry {
   id: string;
@@ -179,7 +183,7 @@ export async function listColunas(
 ): Promise<AtividadeColuna[]> {
   let q = sb
     .from("atividades_colunas")
-    .select("id, chave, nome, ordem, board_id, arquivada, arquivada_em")
+    .select("id, chave, nome, ordem, board_id, arquivada, arquivada_em, wip_limit")
     .order("ordem", { ascending: true });
   if (boardId) q = q.eq("board_id", boardId);
   if (!opts.includeArquivadas) q = q.eq("arquivada", false);
@@ -194,6 +198,7 @@ export async function listColunas(
       board_id: string;
       arquivada?: boolean;
       arquivada_em?: string | null;
+      wip_limit?: number | null;
     }) => ({
       id: r.id,
       chave: r.chave,
@@ -202,9 +207,11 @@ export async function listColunas(
       boardId: r.board_id,
       arquivada: !!r.arquivada,
       arquivadaEm: r.arquivada_em ?? null,
+      wipLimit: r.wip_limit ?? null,
     }),
   );
 }
+
 
 
 export async function listCards(boardId?: string): Promise<AtividadeCard[]> {
@@ -239,22 +246,25 @@ export async function getCardById(id: string): Promise<AtividadeCard | null> {
 export async function listLabels(boardId?: string): Promise<AtividadeLabel[]> {
   let q = sb
     .from("atividades_labels")
-    .select("id, nome, cor, ordem, board_id")
+    .select("id, nome, cor, ordem, board_id, favorita")
+    .order("favorita", { ascending: false })
     .order("ordem", { ascending: true })
     .order("nome", { ascending: true });
   if (boardId) q = q.eq("board_id", boardId);
   const { data, error } = await q;
   if (error) throw error;
   return (data ?? []).map(
-    (r: { id: string; nome: string; cor: string; ordem: number; board_id: string }) => ({
+    (r: { id: string; nome: string; cor: string; ordem: number; board_id: string; favorita?: boolean }) => ({
       id: r.id,
       nome: r.nome,
       cor: r.cor,
       ordem: r.ordem,
       boardId: r.board_id,
+      favorita: !!r.favorita,
     }),
   );
 }
+
 
 export async function createLabel(input: {
   nome: string;

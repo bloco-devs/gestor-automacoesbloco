@@ -359,3 +359,88 @@ export async function listBoardHistorico(
     }),
   );
 }
+
+// ===== Q3.5: WIP / Labels favoritas / Reorder labels =====
+
+export async function setColunaWip(colunaId: string, wip: number | null): Promise<void> {
+  const { error } = await sb.rpc("atividades_coluna_set_wip", {
+    _coluna_id: colunaId,
+    _wip: wip == null || wip <= 0 ? null : wip,
+  });
+  if (error) throw error;
+}
+
+export async function setLabelFavorita(labelId: string, favorita: boolean): Promise<void> {
+  const { error } = await sb.rpc("atividades_label_set_favorita", {
+    _label_id: labelId,
+    _fav: favorita,
+  });
+  if (error) throw error;
+}
+
+export async function reorderLabels(
+  boardId: string,
+  items: Array<{ id: string; ordem: number }>,
+): Promise<void> {
+  const { error } = await sb.rpc("atividades_label_reorder", {
+    _board_id: boardId,
+    _items: items,
+  });
+  if (error) throw error;
+}
+
+// Contagem de cards por etiqueta neste board (client-side aggregation)
+export async function countCardsByLabel(boardId: string): Promise<Map<string, number>> {
+  const { data, error } = await sb
+    .from("atividades_card_labels")
+    .select("label_id, atividades_cards!inner(board_id)")
+    .eq("atividades_cards.board_id", boardId);
+  if (error) throw error;
+  const m = new Map<string, number>();
+  for (const r of (data ?? []) as Array<{ label_id: string }>) {
+    m.set(r.label_id, (m.get(r.label_id) ?? 0) + 1);
+  }
+  return m;
+}
+
+// ===== Q3.5: Upload de capa (bucket privado, signed URL) =====
+
+export const CAPAS_BUCKET = "atividades-capas";
+export const CAPA_MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+export const CAPA_ALLOWED = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+
+export function validateCapa(file: File): string | null {
+  if (file.size <= 0) return "Arquivo vazio.";
+  if (file.size > CAPA_MAX_SIZE) return `Imagem excede 5 MB.`;
+  if (!CAPA_ALLOWED.has(file.type)) return "Formato inválido (use PNG, JPG, WEBP ou GIF).";
+  return null;
+}
+
+export async function uploadCoverImage(
+  boardId: string,
+  file: File,
+): Promise<string> {
+  const ext = (file.name.split(".").pop() || "img").toLowerCase().slice(0, 5);
+  const path = `${boardId}/cover-${Date.now()}.${ext}`;
+  const { error } = await sb.storage
+    .from(CAPAS_BUCKET)
+    .upload(path, file, { upsert: false, contentType: file.type, cacheControl: "3600" });
+  if (error) throw error;
+  return path;
+}
+
+export async function removeCoverImage(path: string): Promise<void> {
+  if (!path || /^https?:\/\//i.test(path)) return;
+  const { error } = await sb.storage.from(CAPAS_BUCKET).remove([path]);
+  if (error && !String(error.message || "").includes("Not found")) throw error;
+}
+
+export async function getCoverDisplayUrl(pathOrUrl: string | null): Promise<string | null> {
+  if (!pathOrUrl) return null;
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const { data, error } = await sb.storage
+    .from(CAPAS_BUCKET)
+    .createSignedUrl(pathOrUrl, 60 * 60 * 24 * 7);
+  if (error) return null;
+  return (data?.signedUrl as string) ?? null;
+}

@@ -36,9 +36,10 @@ import type { Draft } from "@/components/atividades/kanban/DraftCard";
 
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery as useQueryBoard } from "@tanstack/react-query";
-import { ArrowLeft, Star, Archive, Settings } from "lucide-react";
+import { ArrowLeft, Star, Archive, Settings, Users, Layers, Clock, Calendar, Lock, Globe, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BoardSettingsDialog } from "@/components/atividades/quadros/BoardSettingsDialog";
 import {
@@ -50,7 +51,9 @@ import {
   duplicarColuna,
   arquivarColuna,
   excluirColuna,
+  getCoverDisplayUrl,
 } from "@/lib/atividadesBoards";
+
 
 
 export default function AtividadesBoard() {
@@ -391,6 +394,33 @@ export default function AtividadesBoard() {
   });
   const membros = membrosQ.data ?? [];
 
+  const coverQ = useQueryBoard({
+    queryKey: ["atividades", "board-cover", boardId, resumo?.coverUrl ?? null],
+    queryFn: () => getCoverDisplayUrl(resumo?.coverUrl ?? null),
+    enabled: !!boardId && !!resumo?.coverUrl,
+    staleTime: 5 * 60_000,
+  });
+  const coverUrl = coverQ.data ?? null;
+
+  function fmtRel(iso?: string | null): string {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    const diff = Date.now() - d.getTime();
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return "agora";
+    if (min < 60) return `há ${min} min`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `há ${h} h`;
+    const days = Math.floor(h / 24);
+    if (days < 30) return `há ${days} d`;
+    return d.toLocaleDateString();
+  }
+
+  const VIS_ICON = { private: Lock, workspace: Building2, public: Globe } as const;
+  const VIS_LABEL = { private: "Privado", workspace: "Workspace", public: "Público" } as const;
+  const VisIcon = resumo ? VIS_ICON[resumo.visibilidade] : Lock;
+
+
   async function handleColRename(col: typeof colunas[number]) {
     const nome = window.prompt("Novo nome da coluna:", col.nome)?.trim();
     if (!nome || nome === col.nome) return;
@@ -445,6 +475,14 @@ export default function AtividadesBoard() {
 
   return (
     <div className="space-y-4">
+      {coverUrl ? (
+        <div
+          className="h-32 w-full rounded-xl bg-center bg-cover border"
+          style={{ backgroundImage: `url(${coverUrl})` }}
+          aria-hidden
+        />
+      ) : null}
+
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <Link to="/atividades" className="hover:text-foreground transition-colors">
           Atividades
@@ -479,10 +517,16 @@ export default function AtividadesBoard() {
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-semibold truncate">{boardNome}</h1>
+              {resumo ? (
+                <Badge variant="outline" className="gap-1 font-normal">
+                  <VisIcon className="h-3 w-3" />
+                  {VIS_LABEL[resumo.visibilidade]}
+                </Badge>
+              ) : null}
               {resumo?.arquivado ? (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                  Arquivado
-                </span>
+                <Badge variant="secondary" className="gap-1">
+                  <Archive className="h-3 w-3" /> Arquivado
+                </Badge>
               ) : null}
             </div>
             {resumo?.descricao ? (
@@ -492,7 +536,28 @@ export default function AtividadesBoard() {
                 Arraste os cards entre as colunas.
               </p>
             )}
+            {resumo ? (
+              <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                <span className="inline-flex items-center gap-1" title="Membros">
+                  <Users className="h-3 w-3" />
+                  {membros.length}
+                </span>
+                <span className="inline-flex items-center gap-1" title="Cards ativos">
+                  <Layers className="h-3 w-3" />
+                  {colunas.reduce((acc, c) => acc + (cardsByColuna[c.id]?.length ?? 0), 0)}
+                </span>
+                <span className="inline-flex items-center gap-1" title="Última atividade">
+                  <Clock className="h-3 w-3" />
+                  {fmtRel(resumo.updatedAt)}
+                </span>
+                <span className="inline-flex items-center gap-1" title="Criado em">
+                  <Calendar className="h-3 w-3" />
+                  {new Date(resumo.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            ) : null}
           </div>
+
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {membros.length > 0 && (
