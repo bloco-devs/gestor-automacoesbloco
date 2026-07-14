@@ -11,7 +11,10 @@ export interface AtividadeColuna {
   nome: string;
   ordem: number;
   boardId: string;
+  arquivada?: boolean;
+  arquivadaEm?: string | null;
 }
+
 
 export interface ChecklistItem {
   id: string;
