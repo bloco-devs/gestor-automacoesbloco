@@ -692,6 +692,12 @@ export function CardDialog({
             </TabsContent>
 
             {initial && (
+              <TabsContent value="anexos" className="mt-4">
+                <AnexosSection cardId={initial.id} boardId={initial.boardId} />
+              </TabsContent>
+            )}
+
+            {initial && (
               <TabsContent value="atividade" className="mt-4">
                 <AtividadeTimeline cardId={initial.id} responsaveis={responsaveis} />
               </TabsContent>
