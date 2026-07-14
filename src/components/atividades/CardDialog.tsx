@@ -65,6 +65,7 @@ import { DatePrazoPopover } from "./dialog/DatePrazoPopover";
 import { CoverPopover } from "./dialog/CoverPopover";
 import { ComentariosSection } from "./dialog/ComentariosSection";
 import { AtividadeTimeline } from "./dialog/AtividadeTimeline";
+import { AnexosSection } from "./dialog/AnexosSection";
 
 export interface CardDraftValues {
   titulo: string;
@@ -336,6 +337,7 @@ export function CardDialog({
           <Tabs defaultValue="detalhes" className="px-6 sm:px-8 pb-6 sm:pb-8">
             <TabsList className="mt-4">
               <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
+              {initial && <TabsTrigger value="anexos">Anexos</TabsTrigger>}
               {initial && <TabsTrigger value="atividade">Atividade</TabsTrigger>}
             </TabsList>
 
