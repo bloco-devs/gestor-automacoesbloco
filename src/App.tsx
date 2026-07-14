@@ -36,6 +36,8 @@ import SolucaoDetail from "./pages/SolucaoDetail";
 import Configuracoes from "./pages/Configuracoes";
 import Diagrama from "./pages/Diagrama";
 import Atividades from "./pages/Atividades";
+import AtividadesBoard from "./pages/AtividadesBoard";
+
 import Ajuda from "./pages/Ajuda";
 import ObservabilidadeIA from "./pages/ObservabilidadeIA";
 import Consolidacao from "./pages/Consolidacao";
