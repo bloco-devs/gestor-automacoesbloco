@@ -29,6 +29,9 @@ export const atividadesKeys = {
   solucoes: () => [...atividadesKeys.all, "solucoes"] as const,
   comentarios: (cardId: string) => [...atividadesKeys.all, "comentarios", cardId] as const,
   activity: (cardId: string) => [...atividadesKeys.all, "activity", cardId] as const,
+  anexos: (cardId: string) => [...atividadesKeys.all, "anexos", cardId] as const,
+  anexosCounts: (boardId?: string) =>
+    [...atividadesKeys.all, "anexosCounts", boardId ?? "_"] as const,
 };
 
 const STALE = 30_000;
