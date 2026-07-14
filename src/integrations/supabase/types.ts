@@ -120,6 +120,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "atividades_anexos_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "atividades_anexos_card_id_fkey"
             columns: ["card_id"]
             isOneToOne: false
@@ -169,32 +176,190 @@ export type Database = {
           },
         ]
       }
+      atividades_board_favoritos: {
+        Row: {
+          board_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          board_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          board_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_board_favoritos_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_board_favoritos_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_board_historico: {
+        Row: {
+          board_id: string
+          created_at: string
+          evento: string
+          id: string
+          payload: Json
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          board_id: string
+          created_at?: string
+          evento: string
+          id?: string
+          payload?: Json
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          board_id?: string
+          created_at?: string
+          evento?: string
+          id?: string
+          payload?: Json
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_board_historico_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_board_historico_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_board_membros: {
+        Row: {
+          board_id: string
+          convidado_por: string | null
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["atividades_board_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          board_id: string
+          convidado_por?: string | null
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["atividades_board_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          board_id?: string
+          convidado_por?: string | null
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["atividades_board_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_board_membros_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_board_membros_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atividades_boards: {
         Row: {
+          arquivado: boolean
+          arquivado_em: string | null
+          background: string | null
+          cor: string | null
           created_at: string
+          criado_por: string | null
+          descricao: string | null
+          icone: string | null
           id: string
           nome: string
           ordem: number
           slug: string
           updated_at: string
+          visibilidade: string
+          workspace_id: string
         }
         Insert: {
+          arquivado?: boolean
+          arquivado_em?: string | null
+          background?: string | null
+          cor?: string | null
           created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          icone?: string | null
           id?: string
           nome: string
           ordem?: number
           slug: string
           updated_at?: string
+          visibilidade?: string
+          workspace_id: string
         }
         Update: {
+          arquivado?: boolean
+          arquivado_em?: string | null
+          background?: string | null
+          cor?: string | null
           created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          icone?: string | null
           id?: string
           nome?: string
           ordem?: number
           slug?: string
           updated_at?: string
+          visibilidade?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "atividades_boards_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       atividades_card_labels: {
         Row: {
@@ -305,6 +470,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "atividades_cards_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "atividades_cards_coluna_id_fkey"
             columns: ["coluna_id"]
             isOneToOne: false
@@ -351,6 +523,13 @@ export type Database = {
             columns: ["board_id"]
             isOneToOne: false
             referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_colunas_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
             referencedColumns: ["id"]
           },
         ]
@@ -426,6 +605,13 @@ export type Database = {
             referencedRelation: "atividades_boards"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "atividades_labels_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
+            referencedColumns: ["id"]
+          },
         ]
       }
       atividades_personas: {
@@ -452,6 +638,45 @@ export type Database = {
           nome?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      atividades_workspaces: {
+        Row: {
+          arquivado: boolean
+          cor: string | null
+          created_at: string
+          criado_por: string | null
+          descricao: string | null
+          icone: string | null
+          id: string
+          nome: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          arquivado?: boolean
+          cor?: string | null
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          arquivado?: boolean
+          cor?: string | null
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome?: string
+          slug?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1272,6 +1497,39 @@ export type Database = {
       }
     }
     Views: {
+      atividades_boards_resumo: {
+        Row: {
+          arquivado: boolean | null
+          background: string | null
+          cards_abertos: number | null
+          cor: string | null
+          created_at: string | null
+          criado_por: string | null
+          descricao: string | null
+          favorito: boolean | null
+          icone: string | null
+          id: string | null
+          meu_papel: Database["public"]["Enums"]["atividades_board_role"] | null
+          nome: string | null
+          slug: string | null
+          total_cards: number | null
+          total_membros: number | null
+          ultima_atividade: string | null
+          updated_at: string | null
+          visibilidade: string | null
+          workspace_id: string | null
+          workspace_nome: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_boards_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       developers: {
         Row: {
           email: string | null
@@ -1303,6 +1561,54 @@ export type Database = {
           user_id: string
         }[]
       }
+      atividades_board_add_member: {
+        Args: {
+          _board_id: string
+          _role?: Database["public"]["Enums"]["atividades_board_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      atividades_board_remove_member: {
+        Args: { _board_id: string; _user_id: string }
+        Returns: undefined
+      }
+      atividades_board_role: {
+        Args: { _board_id: string; _user_id?: string }
+        Returns: Database["public"]["Enums"]["atividades_board_role"]
+      }
+      atividades_board_set_arquivado: {
+        Args: { _arquivado: boolean; _board_id: string }
+        Returns: undefined
+      }
+      atividades_board_toggle_favorito: {
+        Args: { _board_id: string }
+        Returns: boolean
+      }
+      atividades_can_admin_board: {
+        Args: { _board_id: string; _user_id?: string }
+        Returns: boolean
+      }
+      atividades_can_edit_board: {
+        Args: { _board_id: string; _user_id?: string }
+        Returns: boolean
+      }
+      atividades_can_view_board: {
+        Args: { _board_id: string; _user_id?: string }
+        Returns: boolean
+      }
+      atividades_create_board: {
+        Args: {
+          _background?: string
+          _cor?: string
+          _descricao?: string
+          _icone?: string
+          _nome: string
+          _visibilidade?: string
+          _workspace_id?: string
+        }
+        Returns: string
+      }
       atividades_reorder_cards: { Args: { items: Json }; Returns: undefined }
       get_my_role: { Args: never; Returns: string }
       has_role: {
@@ -1325,6 +1631,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      atividades_board_role: "owner" | "admin" | "member" | "observer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1453,6 +1760,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      atividades_board_role: ["owner", "admin", "member", "observer"],
     },
   },
 } as const
