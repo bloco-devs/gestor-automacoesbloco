@@ -215,8 +215,9 @@ Deno.serve(async (req) => {
   });
 
   let report: RunReport;
+  let timedOut = false;
   try {
-    report = await runner.execute({
+    const runPromise = runner.execute({
       snapshot,
       options,
       target,
@@ -226,17 +227,30 @@ Deno.serve(async (req) => {
       runner_version: RUNNER_VERSION,
       file_hash: (jobRow.file_hash as string | null) ?? "",
     });
+    const timeoutPromise = new Promise<RunReport>((_, reject) => {
+      setTimeout(() => { timedOut = true; reject(new Error("run_timeout")); }, RUN_TIMEOUT_MS);
+    });
+    report = await Promise.race([runPromise, timeoutPromise]);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    log.error("runner_crash", { message: msg });
+    log.error(timedOut ? "runner_timeout" : "runner_crash", { message: msg });
+    const failReport: Record<string, unknown> = {
+      errors: [{ code: timedOut ? "run_timeout" : "runner_crash", message: msg }],
+      adapter_version: TRELLO_ADAPTER_VERSION,
+      snapshot_version: SNAPSHOT_VERSION,
+      runner_version: RUNNER_VERSION,
+      file_hash: (jobRow.file_hash as string | null) ?? "",
+      timed_out: timedOut,
+    };
     await userClient.rpc("atividades_import_job_finalize", {
       _job_id: job_id,
       _status: "failed",
-      _report: { errors: [{ code: "runner_crash", message: msg }] },
+      _report: failReport,
       _board_id_local: null,
     }).catch(() => {});
-    return new Response(JSON.stringify({ error: msg }),
-      { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    await removeJobObjects(svc, BUCKET, jobPrefix);
+    return new Response(JSON.stringify({ error: msg, request_id }),
+      { status: timedOut ? 504 : 500, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
   }
 
   // Verifica se cancelou durante execução
@@ -247,8 +261,9 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (after?.status === "cancelled") {
     log.info("finalized_cancelled");
-    return new Response(JSON.stringify({ status: "cancelled", report }),
-      { status: 200, headers: { ...cors, "Content-Type": "application/json" } });
+    await removeJobObjects(svc, BUCKET, jobPrefix);
+    return new Response(JSON.stringify({ status: "cancelled", report, request_id }),
+      { status: 200, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
   }
 
   // Decide status final: success | partial | failed
