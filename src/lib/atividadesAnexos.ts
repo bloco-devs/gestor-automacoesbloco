@@ -82,13 +82,13 @@ export async function listAnexos(cardId: string): Promise<AtividadeAnexo[]> {
   return (data ?? []).map(mapAnexo);
 }
 
-export async function countAnexosByCard(cardIds: string[]): Promise<Map<string, number>> {
+export async function countAnexosByBoard(boardId: string): Promise<Map<string, number>> {
   const map = new Map<string, number>();
-  if (cardIds.length === 0) return map;
+  if (!boardId) return map;
   const { data, error } = await sb
     .from("atividades_anexos")
     .select("card_id")
-    .in("card_id", cardIds);
+    .eq("board_id", boardId);
   if (error) throw error;
   for (const row of data ?? []) {
     map.set(row.card_id, (map.get(row.card_id) ?? 0) + 1);
