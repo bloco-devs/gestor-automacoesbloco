@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
   }
   const bytes = new Uint8Array(await dl.data.arrayBuffer());
-  const filename = (jobRow.file_name as string | null) ?? storage_path.split("/").pop() ?? "";
+  void ((jobRow.file_name as string | null) ?? storage_path.split("/").pop() ?? "");
 
   // Sniff real do conteúdo (não confia na extensão)
   const kind = sniffContentKind(bytes);
