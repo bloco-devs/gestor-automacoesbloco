@@ -41,6 +41,10 @@ const ALL_STEPS: WizardStepDef[] = [
 
 const LAST_REAL_JOB_KEY = "atividades-import:last-real-job";
 
+function isActiveJob(status?: JobRow["status"] | null): boolean {
+  return status === "queued" || status === "running";
+}
+
 export default function ImportarQuadro() {
   const navigate = useNavigate();
 
@@ -78,6 +82,7 @@ export default function ImportarQuadro() {
       setRealJob(r);
       setRealReport(r.report);
       setRealBoardId(r.board_id_local ?? r.report?.board_id_local ?? null);
+      setRealRunning(isActiveJob(r.status));
       setStep(ALL_STEPS.length - 1);
     }).catch(() => {
       window.localStorage.removeItem(LAST_REAL_JOB_KEY);
@@ -120,12 +125,14 @@ export default function ImportarQuadro() {
       setRealJob(row);
       if (row.report) setRealReport(row.report);
       setRealBoardId(row.board_id_local ?? row.report?.board_id_local ?? null);
+      setRealRunning(isActiveJob(row.status));
     });
     fetchJob(realJobId).then((r) => {
       if (r) {
         setRealJob(r);
         if (r.report) setRealReport(r.report);
         setRealBoardId(r.board_id_local ?? r.report?.board_id_local ?? null);
+        setRealRunning(isActiveJob(r.status));
       }
     });
     return () => { un(); };
