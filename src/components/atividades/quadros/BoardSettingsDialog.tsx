@@ -324,10 +324,8 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
       toast.error("O nome é obrigatório");
       return;
     }
-    if (coverUrl.trim() && !/^https?:\/\//i.test(coverUrl.trim())) {
-      toast.error("A URL da capa precisa começar com http(s)://");
-      return;
-    }
+    // A capa pode ser uma URL http(s) OU um path do bucket enviado por upload.
+
     setSaving(true);
     try {
       await updateBoard(board.id, {
