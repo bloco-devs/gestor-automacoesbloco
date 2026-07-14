@@ -621,10 +621,16 @@ export default function AtividadesBoard() {
                   labelsMap={labelsMap}
                   anexosCounts={anexosCounts}
                   currentUserId={user?.id ?? null}
+                  canAdmin={canAdmin}
                   onNew={() => openNew(col.id)}
                   onEdit={openEdit}
                   onOpenDraft={openDraft}
                   onDeleteDraft={handleDeleteDraft}
+                  onRename={handleColRename}
+                  onDuplicate={handleColDuplicate}
+                  onArchive={handleColArchive}
+                  onDelete={handleColDelete}
+
                 />
               </div>
             ))}
