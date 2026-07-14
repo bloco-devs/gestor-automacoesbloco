@@ -78,8 +78,8 @@ export async function fetchJob(jobId: string): Promise<JobRow | null> {
   return {
     id: data.id as string,
     status: data.status as JobStatus,
-    progress: (data.progress ?? null) as ProgressUpdate | null,
-    report: (data.report ?? null) as RunReport | null,
+    progress: (data.progress ?? null) as unknown as ProgressUpdate | null,
+    report: (data.report ?? null) as unknown as RunReport | null,
     file_name: (data.file_name ?? null) as string | null,
     source: data.source as string,
   };
@@ -103,8 +103,8 @@ export function subscribeJob(
         onChange({
           id: String(n.id),
           status: n.status as JobStatus,
-          progress: (n.progress ?? null) as ProgressUpdate | null,
-          report: (n.report ?? null) as RunReport | null,
+          progress: (n.progress ?? null) as unknown as ProgressUpdate | null,
+          report: (n.report ?? null) as unknown as RunReport | null,
           file_name: (n.file_name ?? null) as string | null,
           source: String(n.source ?? ""),
         });
