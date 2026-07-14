@@ -28,8 +28,9 @@ import {
   TRELLO_ADAPTER_VERSION,
   TRELLO_SOURCE,
 } from "../_shared/importers/trello/index.ts";
-import { RUNNER_VERSION } from "../_shared/importers/core/versions.ts";
+import { RUNNER_VERSION, SNAPSHOT_VERSION } from "../_shared/importers/core/versions.ts";
 import { logger } from "../_shared/importers/core/logger.ts";
+import { newRequestId, removeJobObjects, sniffContentKind } from "../_shared/importers/core/hardening.ts";
 import type {
   ImportOptions,
   ImportResolutions,
@@ -39,6 +40,9 @@ import type {
 } from "../_shared/importers/core/interfaces.ts";
 
 const BUCKET = "atividades-import-tmp";
+// Timeout defensivo — a Edge Function tem seu próprio limite; paramos antes
+// para poder finalizar o job com report coerente.
+const RUN_TIMEOUT_MS = 55_000;
 
 function bearer(req: Request): string | null {
   const h = req.headers.get("Authorization") ?? "";
