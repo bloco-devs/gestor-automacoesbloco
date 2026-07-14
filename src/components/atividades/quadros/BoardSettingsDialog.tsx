@@ -49,14 +49,37 @@ import {
   Shield,
   ListTree,
   Eye,
-  ArrowUp,
-  ArrowDown,
   Copy,
   ImageIcon,
   Lock,
   Globe,
   Building2,
   Search,
+  Upload,
+  X,
+  Star,
+  GripVertical,
+  Mail,
+  Filter,
+} from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
 } from "lucide-react";
 import {
   updateBoard,
