@@ -505,6 +505,7 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          wip_limit: number | null
         }
         Insert: {
           arquivada?: boolean
@@ -515,6 +516,7 @@ export type Database = {
           id?: string
           nome: string
           ordem?: number
+          wip_limit?: number | null
         }
         Update: {
           arquivada?: boolean
@@ -525,6 +527,7 @@ export type Database = {
           id?: string
           nome?: string
           ordem?: number
+          wip_limit?: number | null
         }
         Relationships: [
           {
@@ -583,6 +586,7 @@ export type Database = {
           board_id: string
           cor: string
           created_at: string
+          favorita: boolean
           id: string
           nome: string
           ordem: number
@@ -592,6 +596,7 @@ export type Database = {
           board_id: string
           cor?: string
           created_at?: string
+          favorita?: boolean
           id?: string
           nome: string
           ordem?: number
@@ -601,6 +606,7 @@ export type Database = {
           board_id?: string
           cor?: string
           created_at?: string
+          favorita?: boolean
           id?: string
           nome?: string
           ordem?: number
@@ -1651,6 +1657,10 @@ export type Database = {
         Args: { _arquivada: boolean; _coluna_id: string }
         Returns: undefined
       }
+      atividades_coluna_set_wip: {
+        Args: { _coluna_id: string; _wip: number }
+        Returns: undefined
+      }
       atividades_coluna_update: {
         Args: { _coluna_id: string; _nome?: string }
         Returns: undefined
@@ -1669,6 +1679,14 @@ export type Database = {
       }
       atividades_label_delete: {
         Args: { _label_id: string }
+        Returns: undefined
+      }
+      atividades_label_reorder: {
+        Args: { _board_id: string; _items: Json }
+        Returns: undefined
+      }
+      atividades_label_set_favorita: {
+        Args: { _fav: boolean; _label_id: string }
         Returns: undefined
       }
       atividades_label_upsert: {
