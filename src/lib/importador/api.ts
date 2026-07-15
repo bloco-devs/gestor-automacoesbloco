@@ -104,7 +104,7 @@ function normalizeReport(report: unknown): RunReport {
 
 export async function runImportJob(input: RunInput): Promise<RunResult> {
   const { data, error } = await supabase.functions.invoke("importer-run", { body: input });
-  if (error) throw new Error(error.message || "Falha ao executar importação");
+  if (error) throw await extractInvokeError(error, "Falha ao executar importação");
   const result = data as Partial<RunResult> | null;
   return {
     status: (result?.status ?? "failed") as JobStatus,
