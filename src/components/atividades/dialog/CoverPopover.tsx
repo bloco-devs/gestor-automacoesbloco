@@ -1,7 +1,7 @@
 import { Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { LABEL_COLORS, coverColorClass } from "@/lib/atividades";
+import { LABEL_COLORS, coverColorClass, coverColorStyle } from "@/lib/atividades";
 import { cn } from "@/lib/utils";
 
 export function CoverPopover({
