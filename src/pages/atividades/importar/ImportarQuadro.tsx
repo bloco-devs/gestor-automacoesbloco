@@ -306,7 +306,7 @@ export default function ImportarQuadro() {
 
       <div className="border rounded-lg p-5 min-h-[280px]">
         {currentKey === "origem" && <StepOrigem value={source} onChange={() => { /* fixo por ora */ }} />}
-        {currentKey === "upload" && <StepUpload file={file} onFile={setFile} />}
+        {currentKey === "upload" && <StepUpload file={file} onFile={setFile} invalidReason={detected?.invalidReason ?? null} />}
         {currentKey === "board" && (
           <StepBoardOrigem
             detected={detected}
