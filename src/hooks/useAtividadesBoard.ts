@@ -174,6 +174,16 @@ export function useAtividadesBoard(boardIdArg?: string | null) {
       )
       .on(
         "postgres_changes",
+        { event: "*", schema: "public", table: "atividades_colunas" },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { board_id?: string } | null;
+          if (row?.board_id !== boardId) return;
+          qc.invalidateQueries({ queryKey: atividadesKeys.colunas(boardId) });
+          qc.invalidateQueries({ queryKey: atividadesKeys.cards(boardId) });
+        },
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "atividades_card_labels" },
         (payload) => {
           const row = (payload.new ?? payload.old) as { card_id?: string } | null;
