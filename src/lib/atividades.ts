@@ -641,29 +641,8 @@ export function coverColorClass(_cor: string | null | undefined): string {
   return "";
 }
 
-/** Mistura hex com branco (t=0..1). */
-function tint(hex: string, t: number): string {
-  const h = hex.replace("#", "");
-  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
-  const mix = (c: number) => Math.round(c + (255 - c) * t);
-  const to = (n: number) => n.toString(16).padStart(2, "0");
-  return `#${to(mix(r))}${to(mix(g))}${to(mix(b))}`;
-}
 
-/** Escurece hex (t=0..1) — para modo dark. */
-function shade(hex: string, t: number): string {
-  const h = hex.replace("#", "");
-  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
-  const mix = (c: number) => Math.round(c * (1 - t));
-  const to = (n: number) => n.toString(16).padStart(2, "0");
-  return `#${to(mix(r))}${to(mix(g))}${to(mix(b))}`;
-}
+
 
 export interface ColunaAccent {
   header: string;
