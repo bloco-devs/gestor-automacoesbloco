@@ -11,11 +11,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type {
-  AtividadeCard,
-  AtividadeColuna,
-  AtividadeLabel,
-  AtividadePersona,
+import {
+  colunaAccent,
+  type AtividadeCard,
+  type AtividadeColuna,
+  type AtividadeLabel,
+  type AtividadePersona,
 } from "@/lib/atividades";
 
 import type { AssignableUser, Solucao } from "@/lib/types";
@@ -70,15 +71,22 @@ function ColunaImpl(props: ColunaProps) {
   } = props;
   const { isOver, setNodeRef } = useDroppable({ id: coluna.id });
   const showMenu = canAdmin && (onRename || onDuplicate || onArchive || onDelete);
+  const accent = colunaAccent(coluna.nome, coluna.ordem ?? 0);
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "rounded-xl border bg-muted/40 p-2 flex flex-col min-h-[400px] max-h-[calc(100vh-220px)] transition-colors",
+        "rounded-xl border bg-muted/40 p-2 flex flex-col min-h-[400px] max-h-[calc(100vh-220px)] transition-colors overflow-hidden",
         isOver ? "border-accent bg-accent/10" : "border-border/60",
       )}
     >
-      <div className="flex items-center justify-between mb-2 px-2 pt-1">
+      <div className={cn("h-1 -mx-2 -mt-2 mb-2", accent.bar)} />
+      <div
+        className={cn(
+          "flex items-center justify-between mb-2 px-2 py-1.5 rounded-md border",
+          accent.header,
+        )}
+      >
         <div className="flex items-center gap-2 min-w-0">
           <h3 className="text-sm font-semibold truncate">{coluna.nome}</h3>
           {(() => {
