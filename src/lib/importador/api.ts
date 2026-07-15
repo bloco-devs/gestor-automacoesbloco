@@ -59,7 +59,7 @@ export async function uploadImportFile(input: {
   if (input.options) fd.append("options", JSON.stringify(input.options));
 
   const { data, error } = await supabase.functions.invoke("importer-upload", { body: fd });
-  if (error) throw new Error(error.message || "Falha no upload");
+  if (error) throw await extractInvokeError(error, "Falha no upload");
   if (!data || typeof (data as any).job_id !== "string") {
     throw new Error("Resposta inválida do importer-upload");
   }
