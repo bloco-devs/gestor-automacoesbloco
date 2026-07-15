@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import {
   labelColorClass,
+  labelColorStyle,
   type AtividadeLabel,
   type PrazoStatus,
 } from "@/lib/atividades";
