@@ -840,7 +840,23 @@ export default function AtividadesBoard() {
           onDragEnd={handleDragEnd}
           onDragCancel={() => setActiveId(null)}
         >
-          <div className={cn("flex gap-3 overflow-x-auto pb-4 rounded-xl", bgClass, bgClass && "p-3 border")}>
+          <div
+            className={cn(
+              "relative flex gap-3 overflow-x-auto pb-4 rounded-xl",
+              bgClass,
+              (bgClass || bgImageUrl) && "p-3 border",
+            )}
+            style={
+              bgImageUrl
+                ? {
+                    backgroundImage: `linear-gradient(hsl(var(--background) / 0.55), hsl(var(--background) / 0.55)), url("${bgImageUrl}")`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundAttachment: "local",
+                  }
+                : undefined
+            }
+          >
             {colunas.map((col) => (
               <div key={col.id} className="shrink-0 w-[272px]">
                 <Coluna
