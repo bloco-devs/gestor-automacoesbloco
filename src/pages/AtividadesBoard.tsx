@@ -849,7 +849,7 @@ export default function AtividadesBoard() {
             style={
               bgImageUrl
                 ? {
-                    backgroundImage: `linear-gradient(hsl(var(--background) / 0.55), hsl(var(--background) / 0.55)), url("${bgImageUrl}")`,
+                    backgroundImage: `linear-gradient(hsl(var(--background) / 0.15), hsl(var(--background) / 0.15)), url("${bgImageUrl}")`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     backgroundAttachment: "local",
