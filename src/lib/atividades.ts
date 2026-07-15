@@ -1,3 +1,4 @@
+import type React from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
