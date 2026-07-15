@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     log.error("adapter_parse_failed", { phase: "parse", message: msg });
-    await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }).catch(() => {});
+    try { await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }); } catch { /* ignore */ }
     await removeJobObjects(svc, BUCKET, jobPrefix);
     return new Response(JSON.stringify({ error: `adapter_parse_failed: ${msg}` }),
       { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
