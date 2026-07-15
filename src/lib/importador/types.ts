@@ -120,6 +120,8 @@ export interface DetectedFile {
   boards: DetectedBoard[];
   /** quando vazio significa: adapter server-side decidirá (fallback). */
   fallback?: boolean;
+  /** Se preenchido, o arquivo é inválido e o upload deve ser bloqueado. */
+  invalidReason?: string;
 }
 
 export const DEFAULT_SELECTION: ImportSelection = {

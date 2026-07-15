@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 interface Props {
   file: File | null;
   onFile: (f: File | null) => void;
+  invalidReason?: string | null;
 }
 
-export function StepUpload({ file, onFile }: Props) {
+export function StepUpload({ file, onFile, invalidReason }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="space-y-3">
@@ -51,6 +52,12 @@ export function StepUpload({ file, onFile }: Props) {
         <Button variant="ghost" size="sm" onClick={() => onFile(null)}>
           Trocar arquivo
         </Button>
+      ) : null}
+      {invalidReason ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="font-medium mb-1">Arquivo inválido</div>
+          <div>{invalidReason}</div>
+        </div>
       ) : null}
     </div>
   );

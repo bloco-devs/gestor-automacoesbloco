@@ -21,6 +21,31 @@ export interface UploadResult {
   target_mode: string;
 }
 
+/**
+ * `supabase.functions.invoke` retorna um `FunctionsHttpError` genérico quando
+ * o status é non-2xx. A mensagem real do servidor fica em `error.context` (Response),
+ * que precisa ser lido manualmente para exibir algo útil ao usuário.
+ */
+async function extractInvokeError(error: unknown, fallback: string): Promise<Error> {
+  const anyErr = error as { message?: string; context?: Response } | null;
+  const ctx = anyErr?.context;
+  if (ctx && typeof (ctx as Response).text === "function") {
+    try {
+      const text = await (ctx as Response).clone().text();
+      if (text) {
+        try {
+          const parsed = JSON.parse(text) as { error?: string; message?: string };
+          const msg = parsed.error ?? parsed.message;
+          if (msg) return new Error(msg);
+        } catch { /* not json */ }
+        return new Error(text);
+      }
+    } catch { /* ignore */ }
+  }
+  return new Error(anyErr?.message || fallback);
+}
+
+
 export async function uploadImportFile(input: {
   file: File;
   source: "trello";
@@ -34,7 +59,7 @@ export async function uploadImportFile(input: {
   if (input.options) fd.append("options", JSON.stringify(input.options));
 
   const { data, error } = await supabase.functions.invoke("importer-upload", { body: fd });
-  if (error) throw new Error(error.message || "Falha no upload");
+  if (error) throw await extractInvokeError(error, "Falha no upload");
   if (!data || typeof (data as any).job_id !== "string") {
     throw new Error("Resposta inválida do importer-upload");
   }
@@ -79,7 +104,7 @@ function normalizeReport(report: unknown): RunReport {
 
 export async function runImportJob(input: RunInput): Promise<RunResult> {
   const { data, error } = await supabase.functions.invoke("importer-run", { body: input });
-  if (error) throw new Error(error.message || "Falha ao executar importação");
+  if (error) throw await extractInvokeError(error, "Falha ao executar importação");
   const result = data as Partial<RunResult> | null;
   return {
     status: (result?.status ?? "failed") as JobStatus,

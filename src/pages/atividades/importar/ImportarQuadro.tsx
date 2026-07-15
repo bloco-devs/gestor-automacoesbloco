@@ -163,7 +163,7 @@ export default function ImportarQuadro() {
   const canAdvance = (): boolean => {
     switch (currentKey) {
       case "origem": return !!source;
-      case "upload": return !!file;
+      case "upload": return !!file && !detected?.invalidReason;
       case "board": return !!boardExternalId || skipBoardStep;
       case "destino":
         if (target.mode === "existing_board") return !!target.board_id_local;
@@ -306,7 +306,7 @@ export default function ImportarQuadro() {
 
       <div className="border rounded-lg p-5 min-h-[280px]">
         {currentKey === "origem" && <StepOrigem value={source} onChange={() => { /* fixo por ora */ }} />}
-        {currentKey === "upload" && <StepUpload file={file} onFile={setFile} />}
+        {currentKey === "upload" && <StepUpload file={file} onFile={setFile} invalidReason={detected?.invalidReason ?? null} />}
         {currentKey === "board" && (
           <StepBoardOrigem
             detected={detected}

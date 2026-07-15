@@ -3,7 +3,20 @@
 import JSZip from "jszip";
 import type { DetectedBoard, DetectedFile } from "./types";
 
+const HTML_HINT =
+  "Este arquivo parece ser uma página HTML do Trello, não um export JSON. " +
+  "No Trello, abra o quadro → Menu → Mais → Imprimir e exportar → Exportar como JSON, " +
+  "e salve o resultado como .json.";
+
+function looksLikeHtml(text: string): boolean {
+  const head = text.trimStart().slice(0, 200).toLowerCase();
+  return head.startsWith("<!doctype") || head.startsWith("<html") || head.startsWith("<head");
+}
+
 async function detectFromJsonText(text: string): Promise<DetectedFile> {
+  if (looksLikeHtml(text)) {
+    return { kind: "json", boards: [], invalidReason: HTML_HINT };
+  }
   try {
     const obj = JSON.parse(text);
     // Trello single-board export: { id, name, lists, cards, ... }
@@ -18,10 +31,19 @@ async function detectFromJsonText(text: string): Promise<DetectedFile> {
         .map((b: any) => ({ external_id: b.id, nome: b.name }));
       if (boards.length > 0) return { kind: "json", boards };
     }
+    return {
+      kind: "json",
+      boards: [],
+      invalidReason:
+        "JSON não reconhecido como export do Trello (esperado objeto com id/name/lists ou boards[]).",
+    };
   } catch {
-    /* ignore, fallback below */
+    return {
+      kind: "json",
+      boards: [],
+      invalidReason: "Arquivo .json inválido — não foi possível fazer o parse.",
+    };
   }
-  return { kind: "json", boards: [], fallback: true };
 }
 
 async function detectFromZip(file: File): Promise<DetectedFile> {
