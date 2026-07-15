@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
   const kind = sniffContentKind(bytes);
   if (kind === "unknown") {
     log.error("content_sniff_unknown");
-    await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }).catch(() => {});
+    try { await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }); } catch { /* ignore */ }
     await removeJobObjects(svc, BUCKET, jobPrefix);
     return new Response(JSON.stringify({ error: "conteúdo inválido (não é JSON nem ZIP)" }),
       { status: 415, headers: { ...cors, "Content-Type": "application/json" } });
