@@ -89,7 +89,27 @@ export class RealExecutor extends BaseExecutor {
       _workspace_id: null,
     });
     if (error) throw new Error(`createBoard: ${error.message}`);
-    return data as string;
+    const boardId = data as string;
+    await this.removeDefaultEmptyColumns(boardId);
+    return boardId;
+  }
+
+  private async removeDefaultEmptyColumns(local_board_id: string): Promise<void> {
+    const defaultColumnNames = new Set(['Backlog', 'A Fazer', 'Em Andamento', 'Em Revisão', 'Concluído']);
+    const { data, error } = await this.db
+      .from('atividades_colunas')
+      .select('id,nome,ordem')
+      .eq('board_id', local_board_id)
+      .in('nome', Array.from(defaultColumnNames));
+    if (error) throw new Error(`cleanupDefaultColumns.select: ${error.message}`);
+
+    const defaultColumns = ((data ?? []) as Array<{ id: string; nome: string; ordem: number | null }>)
+      .filter((col) => defaultColumnNames.has(col.nome) && (col.ordem ?? 0) >= 0 && (col.ordem ?? 0) <= 4);
+
+    for (const col of defaultColumns) {
+      const { error: delErr } = await this.db.rpc('atividades_coluna_delete', { _coluna_id: col.id });
+      if (delErr) throw new Error(`cleanupDefaultColumns.delete: ${delErr.message}`);
+    }
   }
 
   async createColuna(local_board_id: string, list: CanonicalList): Promise<string> {
