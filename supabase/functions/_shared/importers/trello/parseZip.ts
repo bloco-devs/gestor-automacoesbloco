@@ -77,13 +77,37 @@ export async function parseTrelloZip(
     throw new AdapterParseError('ZIP não contém arquivos .json.');
   }
 
-  // Preferência: nome contém o board id.
-  let chosen = jsonEntries[0];
+  // Preferência 1: nome contém o board id explicitamente informado.
   if (opts.preferBoardId) {
     const hit = jsonEntries.find((f) => f.name.includes(opts.preferBoardId!));
-    if (hit) chosen = hit;
+    if (hit) {
+      const text = await hit.async('string');
+      return parseTrelloJson(text);
+    }
   }
 
-  const text = await chosen.async('string');
+  // Preferência 2: escolher o .json cujo conteúdo parece um board completo
+  // (tem id/name + arrays lists/cards). Isso evita cair no primeiro .json do
+  // ZIP quando ele é um arquivo auxiliar (manifest, membro, etc.) sem cards.
+  let best: { entry: typeof jsonEntries[number]; text: string; score: number } | null = null;
+  for (const entry of jsonEntries) {
+    let text: string;
+    try { text = await entry.async('string'); } catch { continue; }
+    let obj: unknown;
+    try { obj = JSON.parse(text); } catch { continue; }
+    if (!obj || typeof obj !== 'object') continue;
+    const o = obj as Record<string, unknown>;
+    if (typeof o.id !== 'string' || typeof o.name !== 'string') continue;
+    const lists = Array.isArray(o.lists) ? o.lists.length : 0;
+    const cards = Array.isArray(o.cards) ? o.cards.length : 0;
+    // Board completo pontua muito mais alto que metadados soltos.
+    const score = (lists > 0 || cards > 0 ? 1_000_000 : 0) + lists * 1000 + cards;
+    if (!best || score > best.score) best = { entry, text, score };
+  }
+
+  if (best) return parseTrelloJson(best.text);
+
+  // Fallback: primeiro .json (comportamento anterior).
+  const text = await jsonEntries[0].async('string');
   return parseTrelloJson(text);
 }
