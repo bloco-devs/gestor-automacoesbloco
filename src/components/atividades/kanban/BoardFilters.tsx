@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import {
   labelColorClass,
+  labelColorStyle,
   type AtividadeLabel,
   type PrazoStatus,
 } from "@/lib/atividades";
@@ -225,6 +226,7 @@ function LabelsFilterPopover({
                     "flex-1 truncate px-2 py-0.5 rounded text-xs font-medium border",
                     labelColorClass(l.cor),
                   )}
+                  style={labelColorStyle(l.cor)}
                 >
                   {l.nome}
                 </span>

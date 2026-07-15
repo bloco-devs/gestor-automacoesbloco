@@ -19,7 +19,9 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
   coverColorClass,
+  coverColorStyle,
   labelColorClass,
+  labelColorStyle,
   prazoStatus,
   PRIORIDADE_META,
   type AtividadeCard,
@@ -83,7 +85,12 @@ function KanbanCardImpl({
         card.concluido && "opacity-70",
       )}
     >
-      {card.coverCor && <div className={cn("h-2 w-full", coverColorClass(card.coverCor))} />}
+      {card.coverCor && (
+        <div
+          className={cn("h-2 w-full", coverColorClass(card.coverCor))}
+          style={coverColorStyle(card.coverCor)}
+        />
+      )}
       <div className="p-3 space-y-2">
         {cardLabels.length > 0 && (
           <div className="flex flex-wrap gap-1">
@@ -94,6 +101,7 @@ function KanbanCardImpl({
                   "px-1.5 py-0.5 rounded text-[10px] font-medium border",
                   labelColorClass(l.cor),
                 )}
+                style={labelColorStyle(l.cor)}
                 title={l.nome}
               >
                 {l.nome}

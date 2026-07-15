@@ -48,7 +48,9 @@ import {
 } from "lucide-react";
 import {
   coverColorClass,
+  coverColorStyle,
   labelColorClass,
+  labelColorStyle,
   prazoStatus,
   PRIORIDADE_META,
   type AtividadeCard,
@@ -324,7 +326,12 @@ export function CardDialog({
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-4xl w-[95vw] max-h-[92vh] overflow-y-auto sm:p-0 p-0 gap-0">
-          {coverCor && <div className={cn("h-8 rounded-t-lg", coverColorClass(coverCor))} />}
+          {coverCor && (
+            <div
+              className={cn("h-8 rounded-t-lg", coverColorClass(coverCor))}
+              style={coverColorStyle(coverCor)}
+            />
+          )}
           <div className="p-6 sm:p-8 pb-0">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -351,6 +358,7 @@ export function CardDialog({
                         "px-2 py-0.5 rounded text-[11px] font-medium border",
                         labelColorClass(l.cor),
                       )}
+                      style={labelColorStyle(l.cor)}
                     >
                       {l.nome}
                     </span>
