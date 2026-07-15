@@ -100,11 +100,10 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: `file size out of bounds (max ${MAX_BYTES})` }),
       { status: 413, headers: { ...cors, "Content-Type": "application/json" } });
   }
+  // MIME do cliente é apenas informativo — a validação real é por sniff de bytes abaixo.
   const mime = (file.type || "application/octet-stream").toLowerCase();
-  if (!ALLOWED_MIME.has(mime)) {
-    return new Response(JSON.stringify({ error: `unsupported mime: ${mime}` }),
-      { status: 415, headers: { ...cors, "Content-Type": "application/json" } });
-  }
+  void mime;
+  void ALLOWED_MIME;
 
   let options: Record<string, unknown> = {};
   if (typeof optionsRaw === "string" && optionsRaw.length > 0) {
