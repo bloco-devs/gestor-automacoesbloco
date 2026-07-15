@@ -696,19 +696,17 @@ export default function AtividadesBoard() {
                 Fundo
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-64 p-2">
-              <div className="text-xs font-medium text-muted-foreground px-1 py-1">
-                Fundo do quadro
-              </div>
+            <PopoverContent align="end" className="w-72 p-3 space-y-3">
+              <div className="text-xs font-medium text-muted-foreground">Cores &amp; gradientes</div>
               <div className="grid grid-cols-3 gap-1.5">
                 {BG_OPTIONS.map((o) => (
                   <button
                     key={o.key}
                     type="button"
-                    onClick={() => pickBg(o.key)}
+                    onClick={() => { pickBg(o.key); clearBgImage(); }}
                     title={o.label}
                     className={`group rounded-md border-2 p-1 transition-all ${
-                      boardBg === o.key
+                      !bgImageUrl && boardBg === o.key
                         ? "border-foreground ring-2 ring-accent"
                         : "border-transparent hover:border-foreground/40"
                     }`}
@@ -717,6 +715,64 @@ export default function AtividadesBoard() {
                     <div className="mt-1 text-[10px] text-muted-foreground truncate">{o.label}</div>
                   </button>
                 ))}
+              </div>
+
+              <div className="border-t pt-3 space-y-2">
+                <div className="text-xs font-medium text-muted-foreground">Imagem de capa</div>
+                {bgImageUrl && (
+                  <div
+                    className="h-20 w-full rounded-md border bg-center bg-cover"
+                    style={{ backgroundImage: `url("${bgImageUrl}")` }}
+                  />
+                )}
+                <label className="block">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    className="hidden"
+                    disabled={bgUploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleBgImageUpload(f);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                  <span
+                    className={cn(
+                      "inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed px-2 py-1.5 text-xs cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors",
+                      bgUploading && "opacity-50 pointer-events-none",
+                    )}
+                  >
+                    <ImageIcon className="h-3.5 w-3.5" />
+                    {bgUploading ? "Enviando..." : "Enviar imagem"}
+                  </span>
+                </label>
+                <div className="flex gap-1">
+                  <input
+                    type="url"
+                    placeholder="Colar URL da imagem"
+                    className="flex-1 h-8 rounded-md border bg-background px-2 text-xs"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        setBgImageFromUrl((e.target as HTMLInputElement).value);
+                        (e.target as HTMLInputElement).value = "";
+                      }
+                    }}
+                  />
+                </div>
+                {bgImageUrl && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-7 text-xs"
+                    onClick={clearBgImage}
+                  >
+                    Remover imagem
+                  </Button>
+                )}
+                <p className="text-[10px] text-muted-foreground leading-snug">
+                  Máx. 5 MB. Salvo apenas neste navegador (por quadro).
+                </p>
               </div>
             </PopoverContent>
           </Popover>
