@@ -135,16 +135,18 @@ const BG_COLORS = [
   "#0f172a",
 ];
 const ICONS = ["📋", "🚀", "🎯", "💡", "🛠️", "📊", "🧭", "🏗️"];
+// Paleta Trello vívida (mantém consistência com labels/covers/colunas).
 const LABEL_COLORS = [
-  "#ef4444",
-  "#f59e0b",
-  "#eab308",
-  "#22c55e",
-  "#14b8a6",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
-  "#64748b",
+  "#4bce97", // green
+  "#f5cd47", // yellow
+  "#fea362", // orange
+  "#f87168", // red
+  "#9f8fef", // purple
+  "#579dff", // blue
+  "#6cc3e0", // sky
+  "#94c748", // lime
+  "#e774bb", // pink
+  "#8590a2", // slate
 ];
 
 const ROLE_LABELS: Record<BoardRole, string> = {
