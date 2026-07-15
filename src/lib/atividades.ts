@@ -695,25 +695,23 @@ export function colunaAccent(nome: string, ordem: number): ColunaAccent {
   const hex = TRELLO_HEX[key];
   const bold = TRELLO_HEX_BOLD[key];
 
-  // CSS variables consumidas via arbitrary values no Tailwind.
+  // color-mix garante boa aparência em modo claro E dark, porque mistura com o fundo.
   const style: React.CSSProperties = {
-    backgroundColor: tint(hex, 0.55),
-    borderColor: hex,
-    ["--col-accent" as unknown as string]: hex,
-    ["--col-accent-bold" as unknown as string]: bold,
-  } as React.CSSProperties;
+    backgroundColor: `color-mix(in srgb, ${hex} 45%, transparent)`,
+    borderColor: `color-mix(in srgb, ${hex} 70%, transparent)`,
+  };
 
   const barStyle: React.CSSProperties = { backgroundColor: bold };
 
   return {
-    // Classes vazias — cor real vai via inline style para funcionar 100% no dark.
     header: "",
     bar: "",
-    column: "dark:bg-opacity-30",
+    column: "",
     style,
     barStyle,
   };
 }
+
 
 
 export type PrazoStatus = "sem-prazo" | "atrasado" | "hoje" | "em-breve" | "no-prazo" | "concluido";
