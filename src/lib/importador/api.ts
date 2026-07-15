@@ -21,6 +21,31 @@ export interface UploadResult {
   target_mode: string;
 }
 
+/**
+ * `supabase.functions.invoke` retorna um `FunctionsHttpError` genérico quando
+ * o status é non-2xx. A mensagem real do servidor fica em `error.context` (Response),
+ * que precisa ser lido manualmente para exibir algo útil ao usuário.
+ */
+async function extractInvokeError(error: unknown, fallback: string): Promise<Error> {
+  const anyErr = error as { message?: string; context?: Response } | null;
+  const ctx = anyErr?.context;
+  if (ctx && typeof (ctx as Response).text === "function") {
+    try {
+      const text = await (ctx as Response).clone().text();
+      if (text) {
+        try {
+          const parsed = JSON.parse(text) as { error?: string; message?: string };
+          const msg = parsed.error ?? parsed.message;
+          if (msg) return new Error(msg);
+        } catch { /* not json */ }
+        return new Error(text);
+      }
+    } catch { /* ignore */ }
+  }
+  return new Error(anyErr?.message || fallback);
+}
+
+
 export async function uploadImportFile(input: {
   file: File;
   source: "trello";
