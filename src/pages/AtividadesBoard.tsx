@@ -390,19 +390,69 @@ export default function AtividadesBoard() {
 
   // Fundo do quadro (persistido em localStorage por board)
   const BOARD_BG_KEY = boardId ? `atividades:boardBg:${boardId}` : null;
+  const BOARD_BG_IMG_KEY = boardId ? `atividades:boardBgImg:${boardId}` : null;
   const [boardBg, setBoardBg] = useState<string>("none");
+  const [bgImagePath, setBgImagePath] = useState<string | null>(null);
+  const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
+  const [bgUploading, setBgUploading] = useState(false);
+
   useEffect(() => {
-    if (!BOARD_BG_KEY) return;
+    if (!BOARD_BG_KEY || !BOARD_BG_IMG_KEY) return;
     try {
       const v = localStorage.getItem(BOARD_BG_KEY);
-      if (v) setBoardBg(v);
-      else setBoardBg("none");
+      setBoardBg(v || "none");
+      const img = localStorage.getItem(BOARD_BG_IMG_KEY);
+      setBgImagePath(img);
     } catch { /* noop */ }
-  }, [BOARD_BG_KEY]);
+  }, [BOARD_BG_KEY, BOARD_BG_IMG_KEY]);
+
+  // Resolve signed URL sempre que o path muda.
+  useEffect(() => {
+    let alive = true;
+    if (!bgImagePath) { setBgImageUrl(null); return; }
+    if (/^https?:\/\//i.test(bgImagePath) || bgImagePath.startsWith("data:")) {
+      setBgImageUrl(bgImagePath);
+      return;
+    }
+    getCoverDisplayUrl(bgImagePath).then((url) => { if (alive) setBgImageUrl(url); });
+    return () => { alive = false; };
+  }, [bgImagePath]);
+
   function pickBg(v: string) {
     setBoardBg(v);
     try { if (BOARD_BG_KEY) localStorage.setItem(BOARD_BG_KEY, v); } catch { /* noop */ }
   }
+  async function handleBgImageUpload(file: File) {
+    if (!boardId) return;
+    const { uploadCoverImage, validateCapa } = await import("@/lib/atividadesBoards");
+    const err = validateCapa(file);
+    if (err) { toast.error(err); return; }
+    setBgUploading(true);
+    try {
+      const path = await uploadCoverImage(boardId, file);
+      setBgImagePath(path);
+      try { if (BOARD_BG_IMG_KEY) localStorage.setItem(BOARD_BG_IMG_KEY, path); } catch { /* noop */ }
+      toast.success("Fundo atualizado");
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao enviar imagem de fundo");
+    } finally {
+      setBgUploading(false);
+    }
+  }
+  function setBgImageFromUrl(url: string) {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    if (!/^https?:\/\//i.test(trimmed)) { toast.error("Informe uma URL http(s) válida"); return; }
+    setBgImagePath(trimmed);
+    try { if (BOARD_BG_IMG_KEY) localStorage.setItem(BOARD_BG_IMG_KEY, trimmed); } catch { /* noop */ }
+  }
+  function clearBgImage() {
+    setBgImagePath(null);
+    setBgImageUrl(null);
+    try { if (BOARD_BG_IMG_KEY) localStorage.removeItem(BOARD_BG_IMG_KEY); } catch { /* noop */ }
+  }
+
   const BG_OPTIONS: { key: string; label: string; className: string; swatch: string }[] = [
     { key: "none",     label: "Padrão",   className: "",                                                                    swatch: "bg-muted" },
     { key: "slate",    label: "Ardósia",  className: "bg-slate-100 dark:bg-slate-900/40",                                    swatch: "bg-slate-400" },
@@ -414,7 +464,8 @@ export default function AtividadesBoard() {
     { key: "dusk",     label: "Crepúsculo", className: "bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 dark:from-indigo-950/70 dark:via-purple-950/60 dark:to-pink-950/50", swatch: "bg-gradient-to-br from-indigo-400 to-pink-400" },
     { key: "ocean",    label: "Oceano",   className: "bg-gradient-to-br from-cyan-200 via-sky-200 to-blue-300 dark:from-cyan-950/70 dark:via-sky-950/60 dark:to-blue-950/50", swatch: "bg-gradient-to-br from-cyan-400 to-blue-500" },
   ];
-  const bgClass = BG_OPTIONS.find((o) => o.key === boardBg)?.className ?? "";
+  const bgClass = bgImageUrl ? "" : (BG_OPTIONS.find((o) => o.key === boardBg)?.className ?? "");
+
 
   const membrosQ = useQueryBoard({
     queryKey: ["atividades", "board-membros-topo", boardId],
@@ -645,19 +696,17 @@ export default function AtividadesBoard() {
                 Fundo
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-64 p-2">
-              <div className="text-xs font-medium text-muted-foreground px-1 py-1">
-                Fundo do quadro
-              </div>
+            <PopoverContent align="end" className="w-72 p-3 space-y-3">
+              <div className="text-xs font-medium text-muted-foreground">Cores &amp; gradientes</div>
               <div className="grid grid-cols-3 gap-1.5">
                 {BG_OPTIONS.map((o) => (
                   <button
                     key={o.key}
                     type="button"
-                    onClick={() => pickBg(o.key)}
+                    onClick={() => { pickBg(o.key); clearBgImage(); }}
                     title={o.label}
                     className={`group rounded-md border-2 p-1 transition-all ${
-                      boardBg === o.key
+                      !bgImageUrl && boardBg === o.key
                         ? "border-foreground ring-2 ring-accent"
                         : "border-transparent hover:border-foreground/40"
                     }`}
@@ -666,6 +715,64 @@ export default function AtividadesBoard() {
                     <div className="mt-1 text-[10px] text-muted-foreground truncate">{o.label}</div>
                   </button>
                 ))}
+              </div>
+
+              <div className="border-t pt-3 space-y-2">
+                <div className="text-xs font-medium text-muted-foreground">Imagem de capa</div>
+                {bgImageUrl && (
+                  <div
+                    className="h-20 w-full rounded-md border bg-center bg-cover"
+                    style={{ backgroundImage: `url("${bgImageUrl}")` }}
+                  />
+                )}
+                <label className="block">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    className="hidden"
+                    disabled={bgUploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleBgImageUpload(f);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                  <span
+                    className={cn(
+                      "inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed px-2 py-1.5 text-xs cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors",
+                      bgUploading && "opacity-50 pointer-events-none",
+                    )}
+                  >
+                    <ImageIcon className="h-3.5 w-3.5" />
+                    {bgUploading ? "Enviando..." : "Enviar imagem"}
+                  </span>
+                </label>
+                <div className="flex gap-1">
+                  <input
+                    type="url"
+                    placeholder="Colar URL da imagem"
+                    className="flex-1 h-8 rounded-md border bg-background px-2 text-xs"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        setBgImageFromUrl((e.target as HTMLInputElement).value);
+                        (e.target as HTMLInputElement).value = "";
+                      }
+                    }}
+                  />
+                </div>
+                {bgImageUrl && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-7 text-xs"
+                    onClick={clearBgImage}
+                  >
+                    Remover imagem
+                  </Button>
+                )}
+                <p className="text-[10px] text-muted-foreground leading-snug">
+                  Máx. 5 MB. Salvo apenas neste navegador (por quadro).
+                </p>
               </div>
             </PopoverContent>
           </Popover>
@@ -733,7 +840,23 @@ export default function AtividadesBoard() {
           onDragEnd={handleDragEnd}
           onDragCancel={() => setActiveId(null)}
         >
-          <div className={cn("flex gap-3 overflow-x-auto pb-4 rounded-xl", bgClass, bgClass && "p-3 border")}>
+          <div
+            className={cn(
+              "relative flex gap-3 overflow-x-auto pb-4 rounded-xl",
+              bgClass,
+              (bgClass || bgImageUrl) && "p-3 border",
+            )}
+            style={
+              bgImageUrl
+                ? {
+                    backgroundImage: `linear-gradient(hsl(var(--background) / 0.55), hsl(var(--background) / 0.55)), url("${bgImageUrl}")`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundAttachment: "local",
+                  }
+                : undefined
+            }
+          >
             {colunas.map((col) => (
               <div key={col.id} className="shrink-0 w-[272px]">
                 <Coluna
