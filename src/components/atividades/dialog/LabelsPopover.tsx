@@ -106,6 +106,7 @@ export function LabelsPopover({
                     key={c.key}
                     type="button"
                     onClick={() => setCor(c.key)}
+                    style={labelColorStyle(c.key)}
                     className={cn(
                       "px-2 py-0.5 rounded text-[11px] font-medium border transition-all",
                       labelColorClass(c.key),
