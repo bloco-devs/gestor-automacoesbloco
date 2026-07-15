@@ -255,12 +255,14 @@ Deno.serve(async (req) => {
       dry_run: dryRun,
     };
 
-    await userClient.rpc("atividades_import_job_finalize", {
-      _job_id: job_id,
-      _status: "failed",
-      _report: failReport,
-      _board_id_local: null,
-    }).catch(() => {});
+    try {
+      await userClient.rpc("atividades_import_job_finalize", {
+        _job_id: job_id,
+        _status: "failed",
+        _report: failReport,
+        _board_id_local: null,
+      });
+    } catch { /* ignore */ }
     await removeJobObjects(svc, BUCKET, jobPrefix);
     return new Response(JSON.stringify({ error: msg, request_id }),
       { status: timedOut ? 504 : 500, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
