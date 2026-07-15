@@ -554,97 +554,144 @@ export async function deleteComentario(id: string): Promise<void> {
 // Helpers de UI (paleta e status de prazo)
 // ============================================================
 
+// Paleta oficial Trello (cores base) — usada como referência para labels/covers/colunas.
+const TRELLO_HEX: Record<string, string> = {
+  green: "#4bce97",
+  yellow: "#f5cd47",
+  orange: "#fea362",
+  red: "#f87168",
+  purple: "#9f8fef",
+  blue: "#579dff",
+  sky: "#6cc3e0",
+  lime: "#94c748",
+  pink: "#e774bb",
+  black: "#8590a2",
+  slate: "#8590a2",
+};
+
+// Versão "escura/saturada" (para textos e barras em modo claro)
+const TRELLO_HEX_BOLD: Record<string, string> = {
+  green: "#1f845a",
+  yellow: "#946f00",
+  orange: "#b65c02",
+  red: "#c9372c",
+  purple: "#6e5dc6",
+  blue: "#0c66e4",
+  sky: "#227d9b",
+  lime: "#5b7f24",
+  pink: "#ae4787",
+  black: "#44546f",
+  slate: "#44546f",
+};
+
 export const LABEL_COLORS: { key: string; className: string; label: string }[] = [
-  { key: "green", label: "Verde", className: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40" },
-  { key: "yellow", label: "Amarelo", className: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/40" },
-  { key: "orange", label: "Laranja", className: "bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/40" },
-  { key: "red", label: "Vermelho", className: "bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/40" },
-  { key: "purple", label: "Roxo", className: "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/40" },
-  { key: "blue", label: "Azul", className: "bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/40" },
-  { key: "sky", label: "Ciano", className: "bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/40" },
-  { key: "pink", label: "Rosa", className: "bg-pink-500/20 text-pink-700 dark:text-pink-300 border-pink-500/40" },
-  { key: "slate", label: "Cinza", className: "bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-500/40" },
+  { key: "green", label: "Verde", className: "" },
+  { key: "yellow", label: "Amarelo", className: "" },
+  { key: "orange", label: "Laranja", className: "" },
+  { key: "red", label: "Vermelho", className: "" },
+  { key: "purple", label: "Roxo", className: "" },
+  { key: "blue", label: "Azul", className: "" },
+  { key: "sky", label: "Ciano", className: "" },
+  { key: "lime", label: "Lima", className: "" },
+  { key: "pink", label: "Rosa", className: "" },
+  { key: "slate", label: "Cinza", className: "" },
 ];
 
 function isHexColor(cor: string | null | undefined): cor is string {
   return typeof cor === "string" && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(cor.trim());
 }
 
-/** Converte hex → estilo com fundo suave + borda + texto legível. */
+/** Escolhe texto preto/branco de máxima legibilidade sobre `hex`. */
+function readableTextOn(hex: string): string {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  // luminância relativa
+  const L = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return L > 0.6 ? "#172b4d" : "#ffffff";
+}
+
+/** Estilo de label "estilo Trello": preenchimento sólido, texto legível. */
 export function labelColorStyle(cor: string | null | undefined): React.CSSProperties | undefined {
-  if (!isHexColor(cor)) return undefined;
-  const hex = cor.trim();
+  const hex = isHexColor(cor)
+    ? cor.trim()
+    : (cor && TRELLO_HEX[cor]) || undefined;
+  if (!hex) return undefined;
   return {
-    backgroundColor: `${hex}33`,
-    borderColor: `${hex}80`,
-    color: hex,
+    backgroundColor: hex,
+    borderColor: hex,
+    color: readableTextOn(hex),
   };
 }
 
-export function labelColorClass(cor: string | null | undefined): string {
-  if (isHexColor(cor)) return "border";
-  return (
-    LABEL_COLORS.find((c) => c.key === cor)?.className ??
-    "bg-muted text-foreground border-border"
-  );
+export function labelColorClass(_cor: string | null | undefined): string {
+  // Sempre usamos style inline (mais fiel ao Trello). Mantemos borda p/ contorno consistente.
+  return "border font-semibold tracking-wide";
 }
 
 export function coverColorStyle(cor: string | null | undefined): React.CSSProperties | undefined {
-  if (!isHexColor(cor)) return undefined;
-  return { backgroundColor: cor };
+  if (isHexColor(cor)) return { backgroundColor: cor };
+  if (cor && TRELLO_HEX[cor]) return { backgroundColor: TRELLO_HEX[cor] };
+  return undefined;
 }
 
-export function coverColorClass(cor: string | null | undefined): string {
-  if (isHexColor(cor)) return "";
-  const map: Record<string, string> = {
-    green: "bg-emerald-500",
-    yellow: "bg-yellow-500",
-    orange: "bg-orange-500",
-    red: "bg-red-500",
-    purple: "bg-purple-500",
-    blue: "bg-blue-500",
-    sky: "bg-sky-500",
-    pink: "bg-pink-500",
-    slate: "bg-slate-500",
-  };
-  return cor ? map[cor] ?? "" : "";
+export function coverColorClass(_cor: string | null | undefined): string {
+  return "";
 }
 
-/**
- * Cor de destaque para o cabeçalho de coluna do Kanban.
- * Aplica heurística por nome (Trello-like) com fallback rotativo por ordem.
- */
-export function colunaAccent(nome: string, ordem: number): {
+
+
+
+export interface ColunaAccent {
   header: string;
   bar: string;
   column: string;
-} {
+  style: React.CSSProperties;
+  barStyle: React.CSSProperties;
+}
+
+/**
+ * Cor de destaque para a coluna do Kanban — paleta Trello vívida,
+ * boa em modo claro e dark. Heurística por nome com fallback rotativo.
+ */
+export function colunaAccent(nome: string, ordem: number): ColunaAccent {
   const n = (nome ?? "").toLowerCase();
   const match = (keys: string[]) => keys.some((k) => n.includes(k));
 
-  // Classes explícitas (Tailwind JIT-safe).
-  const PALETTES = {
-    emerald: { header: "bg-emerald-500/25 border-emerald-500/40", bar: "bg-emerald-500", column: "bg-emerald-500/20 border-emerald-500/40" },
-    sky:     { header: "bg-sky-500/25 border-sky-500/40",         bar: "bg-sky-500",     column: "bg-sky-500/20 border-sky-500/40" },
-    yellow:  { header: "bg-yellow-500/30 border-yellow-500/50",   bar: "bg-yellow-500",  column: "bg-yellow-500/25 border-yellow-500/50" },
-    rose:    { header: "bg-rose-500/25 border-rose-500/40",       bar: "bg-rose-500",    column: "bg-rose-500/20 border-rose-500/40" },
-    red:     { header: "bg-red-500/25 border-red-500/40",         bar: "bg-red-500",     column: "bg-red-500/20 border-red-500/40" },
-    violet:  { header: "bg-violet-500/25 border-violet-500/40",   bar: "bg-violet-500",  column: "bg-violet-500/20 border-violet-500/40" },
-    teal:    { header: "bg-teal-500/25 border-teal-500/40",       bar: "bg-teal-500",    column: "bg-teal-500/20 border-teal-500/40" },
-    orange:  { header: "bg-orange-500/25 border-orange-500/40",   bar: "bg-orange-500",  column: "bg-orange-500/20 border-orange-500/40" },
-    pink:    { header: "bg-pink-500/25 border-pink-500/40",       bar: "bg-pink-500",    column: "bg-pink-500/20 border-pink-500/40" },
-    indigo:  { header: "bg-indigo-500/25 border-indigo-500/40",   bar: "bg-indigo-500",  column: "bg-indigo-500/20 border-indigo-500/40" },
-  } as const;
+  let key: keyof typeof TRELLO_HEX;
+  if (match(["feito", "concluí", "concluido", "done", "pronto"])) key = "green";
+  else if (match(["aprovação", "aprovacao", "revisão", "revisao", "review", "aprov"])) key = "blue";
+  else if (match(["andamento", "doing", "progress", "execução", "execucao"])) key = "yellow";
+  else if (match(["fazer", "todo", "to-do", "backlog", "planejad"])) key = "sky";
+  else if (match(["bloqueado", "blocked", "impedid"])) key = "red";
+  else {
+    const fallback: Array<keyof typeof TRELLO_HEX> = ["purple", "pink", "orange", "lime", "sky"];
+    key = fallback[Math.abs(ordem) % fallback.length];
+  }
 
-  if (match(["feito", "concluí", "concluido", "done", "pronto"])) return PALETTES.emerald;
-  if (match(["aprovação", "aprovacao", "revisão", "revisao", "review", "aprov"])) return PALETTES.sky;
-  if (match(["andamento", "doing", "progress", "execução", "execucao"])) return PALETTES.yellow;
-  if (match(["fazer", "todo", "to-do", "backlog", "planejad"])) return PALETTES.rose;
-  if (match(["bloqueado", "blocked", "impedid"])) return PALETTES.red;
+  const hex = TRELLO_HEX[key];
+  const bold = TRELLO_HEX_BOLD[key];
 
-  const fallback: Array<keyof typeof PALETTES> = ["violet", "teal", "orange", "pink", "indigo"];
-  return PALETTES[fallback[Math.abs(ordem) % fallback.length]];
+  // color-mix garante boa aparência em modo claro E dark, porque mistura com o fundo.
+  const style: React.CSSProperties = {
+    backgroundColor: `color-mix(in srgb, ${hex} 45%, transparent)`,
+    borderColor: `color-mix(in srgb, ${hex} 70%, transparent)`,
+  };
+
+  const barStyle: React.CSSProperties = { backgroundColor: bold };
+
+  return {
+    header: "",
+    bar: "",
+    column: "",
+    style,
+    barStyle,
+  };
 }
+
+
 
 export type PrazoStatus = "sem-prazo" | "atrasado" | "hoje" | "em-breve" | "no-prazo" | "concluido";
 

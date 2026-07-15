@@ -1,7 +1,7 @@
 import { Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { LABEL_COLORS, coverColorClass } from "@/lib/atividades";
+import { LABEL_COLORS, coverColorClass, coverColorStyle } from "@/lib/atividades";
 import { cn } from "@/lib/utils";
 
 export function CoverPopover({
@@ -37,6 +37,7 @@ export function CoverPopover({
               key={c.key}
               type="button"
               onClick={() => onChange(c.key)}
+              style={coverColorStyle(c.key)}
               className={cn(
                 "aspect-square rounded border-2 transition-all",
                 coverColorClass(c.key),
