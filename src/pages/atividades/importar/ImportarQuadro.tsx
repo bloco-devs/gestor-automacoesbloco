@@ -77,12 +77,18 @@ export default function ImportarQuadro() {
     const savedJobId = window.localStorage.getItem(LAST_REAL_JOB_KEY);
     if (!savedJobId) return;
     fetchJob(savedJobId).then((r) => {
-      if (!r) return;
+      // Só restaura se o job ainda estiver ativo. Jobs finalizados
+      // (success/partial/failed/cancelled) não devem prender o wizard na
+      // etapa final — o usuário quer começar uma nova importação.
+      if (!r || !isActiveJob(r.status)) {
+        window.localStorage.removeItem(LAST_REAL_JOB_KEY);
+        return;
+      }
       setRealJobId(r.id);
       setRealJob(r);
       setRealReport(r.report);
       setRealBoardId(r.board_id_local ?? r.report?.board_id_local ?? null);
-      setRealRunning(isActiveJob(r.status));
+      setRealRunning(true);
       setStep(ALL_STEPS.length - 1);
     }).catch(() => {
       window.localStorage.removeItem(LAST_REAL_JOB_KEY);
