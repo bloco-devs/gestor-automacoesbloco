@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 interface Props {
   file: File | null;
   onFile: (f: File | null) => void;
+  invalidReason?: string | null;
 }
 
-export function StepUpload({ file, onFile }: Props) {
+export function StepUpload({ file, onFile, invalidReason }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="space-y-3">
