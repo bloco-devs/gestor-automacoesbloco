@@ -273,6 +273,7 @@ export default function ImportarQuadro() {
   };
 
   const handleFinish = () => {
+    window.localStorage.removeItem(LAST_REAL_JOB_KEY);
     if (realBoardId) navigate(`/atividades/${realBoardId}`);
     else navigate("/atividades");
   };
