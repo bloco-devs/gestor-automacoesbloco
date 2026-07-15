@@ -617,29 +617,25 @@ export function coverColorClass(cor: string | null | undefined): string {
 export function colunaAccent(nome: string, ordem: number): {
   header: string;
   bar: string;
+  column: string;
 } {
   const n = (nome ?? "").toLowerCase();
   const match = (keys: string[]) => keys.some((k) => n.includes(k));
 
-  if (match(["feito", "concluí", "concluido", "done", "pronto"]))
-    return { header: "bg-emerald-500/10 border-emerald-500/30", bar: "bg-emerald-500" };
-  if (match(["aprovação", "aprovacao", "revisão", "revisao", "review", "aprov"]))
-    return { header: "bg-sky-500/10 border-sky-500/30", bar: "bg-sky-500" };
-  if (match(["andamento", "doing", "progress", "execução", "execucao"]))
-    return { header: "bg-yellow-500/10 border-yellow-500/30", bar: "bg-yellow-500" };
-  if (match(["fazer", "todo", "to-do", "backlog", "planejad"]))
-    return { header: "bg-rose-500/10 border-rose-500/30", bar: "bg-rose-500" };
-  if (match(["bloqueado", "blocked", "impedid"]))
-    return { header: "bg-red-500/10 border-red-500/30", bar: "bg-red-500" };
+  const mk = (base: string) => ({
+    header: `bg-${base}-500/25 border-${base}-500/40`,
+    bar: `bg-${base}-500`,
+    column: `bg-${base}-500/20 border-${base}-500/40`,
+  });
 
-  const palette = [
-    { header: "bg-violet-500/10 border-violet-500/30", bar: "bg-violet-500" },
-    { header: "bg-teal-500/10 border-teal-500/30", bar: "bg-teal-500" },
-    { header: "bg-orange-500/10 border-orange-500/30", bar: "bg-orange-500" },
-    { header: "bg-pink-500/10 border-pink-500/30", bar: "bg-pink-500" },
-    { header: "bg-indigo-500/10 border-indigo-500/30", bar: "bg-indigo-500" },
-  ];
-  return palette[Math.abs(ordem) % palette.length];
+  if (match(["feito", "concluí", "concluido", "done", "pronto"])) return mk("emerald");
+  if (match(["aprovação", "aprovacao", "revisão", "revisao", "review", "aprov"])) return mk("sky");
+  if (match(["andamento", "doing", "progress", "execução", "execucao"])) return mk("yellow");
+  if (match(["fazer", "todo", "to-do", "backlog", "planejad"])) return mk("rose");
+  if (match(["bloqueado", "blocked", "impedid"])) return mk("red");
+
+  const palette = ["violet", "teal", "orange", "pink", "indigo"];
+  return mk(palette[Math.abs(ordem) % palette.length]);
 }
 
 export type PrazoStatus = "sem-prazo" | "atrasado" | "hoje" | "em-breve" | "no-prazo" | "concluido";
