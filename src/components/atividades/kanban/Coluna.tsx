@@ -76,15 +76,15 @@ function ColunaImpl(props: ColunaProps) {
     <div
       ref={setNodeRef}
       className={cn(
-        "rounded-xl border bg-muted/40 p-2 flex flex-col min-h-[400px] max-h-[calc(100vh-220px)] transition-colors overflow-hidden",
-        isOver ? "border-accent bg-accent/10" : "border-border/60",
+        "rounded-xl border p-2 flex flex-col min-h-[400px] max-h-[calc(100vh-220px)] transition-colors overflow-hidden shadow-sm",
+        accent.column,
+        isOver && "ring-2 ring-accent",
       )}
     >
       <div className={cn("h-1 -mx-2 -mt-2 mb-2", accent.bar)} />
       <div
         className={cn(
-          "flex items-center justify-between mb-2 px-2 py-1.5 rounded-md border",
-          accent.header,
+          "flex items-center justify-between mb-2 px-2 py-1.5 rounded-md",
         )}
       >
         <div className="flex items-center gap-2 min-w-0">
