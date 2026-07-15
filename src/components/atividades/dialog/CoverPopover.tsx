@@ -37,6 +37,7 @@ export function CoverPopover({
               key={c.key}
               type="button"
               onClick={() => onChange(c.key)}
+              style={coverColorStyle(c.key)}
               className={cn(
                 "aspect-square rounded border-2 transition-all",
                 coverColorClass(c.key),
