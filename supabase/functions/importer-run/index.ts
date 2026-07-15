@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
   const kind = sniffContentKind(bytes);
   if (kind === "unknown") {
     log.error("content_sniff_unknown");
-    await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }).catch(() => {});
+    try { await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }); } catch { /* ignore */ }
     await removeJobObjects(svc, BUCKET, jobPrefix);
     return new Response(JSON.stringify({ error: "conteúdo inválido (não é JSON nem ZIP)" }),
       { status: 415, headers: { ...cors, "Content-Type": "application/json" } });
@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     log.error("adapter_parse_failed", { phase: "parse", message: msg });
-    await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }).catch(() => {});
+    try { await userClient.rpc("atividades_import_job_cancel", { _job_id: job_id }); } catch { /* ignore */ }
     await removeJobObjects(svc, BUCKET, jobPrefix);
     return new Response(JSON.stringify({ error: `adapter_parse_failed: ${msg}` }),
       { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
@@ -255,12 +255,14 @@ Deno.serve(async (req) => {
       dry_run: dryRun,
     };
 
-    await userClient.rpc("atividades_import_job_finalize", {
-      _job_id: job_id,
-      _status: "failed",
-      _report: failReport,
-      _board_id_local: null,
-    }).catch(() => {});
+    try {
+      await userClient.rpc("atividades_import_job_finalize", {
+        _job_id: job_id,
+        _status: "failed",
+        _report: failReport,
+        _board_id_local: null,
+      });
+    } catch { /* ignore */ }
     await removeJobObjects(svc, BUCKET, jobPrefix);
     return new Response(JSON.stringify({ error: msg, request_id }),
       { status: timedOut ? 504 : 500, headers: { ...cors, "Content-Type": "application/json", "x-request-id": request_id } });
