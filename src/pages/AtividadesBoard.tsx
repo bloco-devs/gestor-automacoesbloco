@@ -637,6 +637,37 @@ export default function AtividadesBoard() {
             <Archive className="h-4 w-4 mr-1.5" />
             {resumo?.arquivado ? "Restaurar" : "Arquivar"}
           </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" aria-label="Alterar fundo do quadro">
+                <ImageIcon className="h-4 w-4 mr-1.5" />
+                Fundo
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 p-2">
+              <div className="text-xs font-medium text-muted-foreground px-1 py-1">
+                Fundo do quadro
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {BG_OPTIONS.map((o) => (
+                  <button
+                    key={o.key}
+                    type="button"
+                    onClick={() => pickBg(o.key)}
+                    title={o.label}
+                    className={`group rounded-md border-2 p-1 transition-all ${
+                      boardBg === o.key
+                        ? "border-foreground ring-2 ring-accent"
+                        : "border-transparent hover:border-foreground/40"
+                    }`}
+                  >
+                    <div className={`h-10 w-full rounded ${o.className || "bg-muted"}`} />
+                    <div className="mt-1 text-[10px] text-muted-foreground truncate">{o.label}</div>
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
           {canAdmin && (
             <Button
               variant="outline"
