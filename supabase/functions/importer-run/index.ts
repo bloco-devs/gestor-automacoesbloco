@@ -43,7 +43,7 @@ import type {
 const BUCKET = "atividades-import-tmp";
 // Timeout defensivo — a Edge Function tem seu próprio limite; paramos antes
 // para poder finalizar o job com report coerente.
-const RUN_TIMEOUT_MS = 55_000;
+const RUN_TIMEOUT_MS = 140_000;
 
 function bearer(req: Request): string | null {
   const h = req.headers.get("Authorization") ?? "";
