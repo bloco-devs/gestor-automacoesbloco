@@ -140,7 +140,7 @@ export class RealExecutor extends BaseExecutor {
       created_by: this.userId,
       ordem: card.ordem ?? 0,
       data_entrega: card.data_entrega ?? null,
-      prioridade: null,
+      prioridade: 'media',
       cover_cor: null,
       concluido: card.concluido ?? false,
     };
