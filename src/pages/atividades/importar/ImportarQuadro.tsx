@@ -163,7 +163,7 @@ export default function ImportarQuadro() {
   const canAdvance = (): boolean => {
     switch (currentKey) {
       case "origem": return !!source;
-      case "upload": return !!file;
+      case "upload": return !!file && !detected?.invalidReason;
       case "board": return !!boardExternalId || skipBoardStep;
       case "destino":
         if (target.mode === "existing_board") return !!target.board_id_local;
