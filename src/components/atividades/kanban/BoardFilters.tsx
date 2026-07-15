@@ -225,6 +225,7 @@ function LabelsFilterPopover({
                     "flex-1 truncate px-2 py-0.5 rounded text-xs font-medium border",
                     labelColorClass(l.cor),
                   )}
+                  style={labelColorStyle(l.cor)}
                 >
                   {l.nome}
                 </span>

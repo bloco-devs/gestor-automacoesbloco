@@ -19,7 +19,9 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
   coverColorClass,
+  coverColorStyle,
   labelColorClass,
+  labelColorStyle,
   prazoStatus,
   PRIORIDADE_META,
   type AtividadeCard,

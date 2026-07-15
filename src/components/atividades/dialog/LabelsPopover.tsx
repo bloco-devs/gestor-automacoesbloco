@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   createLabel,
   labelColorClass,
+  labelColorStyle,
   LABEL_COLORS,
   type AtividadeLabel,
 } from "@/lib/atividades";
@@ -83,6 +84,7 @@ export function LabelsPopover({
                   "flex-1 truncate px-2 py-0.5 rounded text-xs font-medium border",
                   labelColorClass(l.cor),
                 )}
+                style={labelColorStyle(l.cor)}
               >
                 {l.nome}
               </span>
