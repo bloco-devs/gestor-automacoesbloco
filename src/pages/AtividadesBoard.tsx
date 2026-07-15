@@ -564,11 +564,7 @@ export default function AtividadesBoard() {
         />
       ) : null}
 
-      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link to="/atividades" className="hover:text-foreground transition-colors">
-          Atividades
-        </Link>
-        <span aria-hidden>›</span>
+      <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Link to="/atividades" className="hover:text-foreground transition-colors">
           Quadros
         </Link>
@@ -597,28 +593,21 @@ export default function AtividadesBoard() {
           ) : null}
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-semibold truncate">{boardNome}</h1>
+              <h1 className="text-2xl font-semibold truncate leading-tight">{boardNome}</h1>
               {resumo ? (
-                <Badge variant="outline" className="gap-1 font-normal">
+                <Badge variant="outline" className="gap-1 font-normal text-[10px] h-5">
                   <VisIcon className="h-3 w-3" />
                   {VIS_LABEL[resumo.visibilidade]}
                 </Badge>
               ) : null}
               {resumo?.arquivado ? (
-                <Badge variant="secondary" className="gap-1">
+                <Badge variant="secondary" className="gap-1 text-[10px] h-5">
                   <Archive className="h-3 w-3" /> Arquivado
                 </Badge>
               ) : null}
             </div>
-            {resumo?.descricao ? (
-              <p className="text-sm text-muted-foreground truncate">{resumo.descricao}</p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Arraste os cards entre as colunas.
-              </p>
-            )}
             {resumo ? (
-              <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+              <div className="mt-1 flex items-center gap-x-3 gap-y-1 text-xs text-muted-foreground flex-wrap">
                 <span className="inline-flex items-center gap-1" title="Membros">
                   <Users className="h-3 w-3" />
                   {membros.length}
@@ -631,10 +620,14 @@ export default function AtividadesBoard() {
                   <Clock className="h-3 w-3" />
                   {fmtRel(resumo.updatedAt)}
                 </span>
-                <span className="inline-flex items-center gap-1" title="Criado em">
-                  <Calendar className="h-3 w-3" />
-                  {new Date(resumo.createdAt).toLocaleDateString()}
-                </span>
+                {resumo.descricao ? (
+                  <>
+                    <span aria-hidden className="opacity-40">·</span>
+                    <span className="truncate max-w-[48ch]" title={resumo.descricao}>
+                      {resumo.descricao}
+                    </span>
+                  </>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -849,7 +842,7 @@ export default function AtividadesBoard() {
             style={
               bgImageUrl
                 ? {
-                    backgroundImage: `linear-gradient(hsl(var(--background) / 0.55), hsl(var(--background) / 0.55)), url("${bgImageUrl}")`,
+                    backgroundImage: `linear-gradient(hsl(var(--background) / 0.15), hsl(var(--background) / 0.15)), url("${bgImageUrl}")`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     backgroundAttachment: "local",
