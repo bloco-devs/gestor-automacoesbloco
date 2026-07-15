@@ -622,20 +622,28 @@ export function colunaAccent(nome: string, ordem: number): {
   const n = (nome ?? "").toLowerCase();
   const match = (keys: string[]) => keys.some((k) => n.includes(k));
 
-  const mk = (base: string) => ({
-    header: `bg-${base}-500/25 border-${base}-500/40`,
-    bar: `bg-${base}-500`,
-    column: `bg-${base}-500/20 border-${base}-500/40`,
-  });
+  // Classes explícitas (Tailwind JIT-safe).
+  const PALETTES = {
+    emerald: { header: "bg-emerald-500/25 border-emerald-500/40", bar: "bg-emerald-500", column: "bg-emerald-500/20 border-emerald-500/40" },
+    sky:     { header: "bg-sky-500/25 border-sky-500/40",         bar: "bg-sky-500",     column: "bg-sky-500/20 border-sky-500/40" },
+    yellow:  { header: "bg-yellow-500/30 border-yellow-500/50",   bar: "bg-yellow-500",  column: "bg-yellow-500/25 border-yellow-500/50" },
+    rose:    { header: "bg-rose-500/25 border-rose-500/40",       bar: "bg-rose-500",    column: "bg-rose-500/20 border-rose-500/40" },
+    red:     { header: "bg-red-500/25 border-red-500/40",         bar: "bg-red-500",     column: "bg-red-500/20 border-red-500/40" },
+    violet:  { header: "bg-violet-500/25 border-violet-500/40",   bar: "bg-violet-500",  column: "bg-violet-500/20 border-violet-500/40" },
+    teal:    { header: "bg-teal-500/25 border-teal-500/40",       bar: "bg-teal-500",    column: "bg-teal-500/20 border-teal-500/40" },
+    orange:  { header: "bg-orange-500/25 border-orange-500/40",   bar: "bg-orange-500",  column: "bg-orange-500/20 border-orange-500/40" },
+    pink:    { header: "bg-pink-500/25 border-pink-500/40",       bar: "bg-pink-500",    column: "bg-pink-500/20 border-pink-500/40" },
+    indigo:  { header: "bg-indigo-500/25 border-indigo-500/40",   bar: "bg-indigo-500",  column: "bg-indigo-500/20 border-indigo-500/40" },
+  } as const;
 
-  if (match(["feito", "concluí", "concluido", "done", "pronto"])) return mk("emerald");
-  if (match(["aprovação", "aprovacao", "revisão", "revisao", "review", "aprov"])) return mk("sky");
-  if (match(["andamento", "doing", "progress", "execução", "execucao"])) return mk("yellow");
-  if (match(["fazer", "todo", "to-do", "backlog", "planejad"])) return mk("rose");
-  if (match(["bloqueado", "blocked", "impedid"])) return mk("red");
+  if (match(["feito", "concluí", "concluido", "done", "pronto"])) return PALETTES.emerald;
+  if (match(["aprovação", "aprovacao", "revisão", "revisao", "review", "aprov"])) return PALETTES.sky;
+  if (match(["andamento", "doing", "progress", "execução", "execucao"])) return PALETTES.yellow;
+  if (match(["fazer", "todo", "to-do", "backlog", "planejad"])) return PALETTES.rose;
+  if (match(["bloqueado", "blocked", "impedid"])) return PALETTES.red;
 
-  const palette = ["violet", "teal", "orange", "pink", "indigo"];
-  return mk(palette[Math.abs(ordem) % palette.length]);
+  const fallback: Array<keyof typeof PALETTES> = ["violet", "teal", "orange", "pink", "indigo"];
+  return PALETTES[fallback[Math.abs(ordem) % fallback.length]];
 }
 
 export type PrazoStatus = "sem-prazo" | "atrasado" | "hoje" | "em-breve" | "no-prazo" | "concluido";
