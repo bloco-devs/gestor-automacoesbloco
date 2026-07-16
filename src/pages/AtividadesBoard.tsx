@@ -578,7 +578,22 @@ export default function AtividadesBoard() {
 
 
   return (
-    <div className="space-y-4">
+    <div
+      className={cn(
+        "space-y-4 -mx-4 -my-4 px-4 py-4 md:-mx-6 md:-my-6 md:px-6 md:py-6 min-h-[calc(100vh-4rem)] rounded-none transition-colors",
+        bgClass,
+      )}
+      style={
+        bgImageUrl
+          ? {
+              backgroundImage: `linear-gradient(hsl(var(--background) / 0.15), hsl(var(--background) / 0.15)), url("${bgImageUrl}")`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundAttachment: "fixed",
+            }
+          : undefined
+      }
+    >
       {coverUrl ? (
         <div
           className="h-32 w-full rounded-xl bg-center bg-cover border"
@@ -586,6 +601,7 @@ export default function AtividadesBoard() {
           aria-hidden
         />
       ) : null}
+
 
       <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Link to="/atividades" className="hover:text-foreground transition-colors">
