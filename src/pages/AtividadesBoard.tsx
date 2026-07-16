@@ -406,7 +406,7 @@ export default function AtividadesBoard() {
     } catch { /* noop */ }
   }, [BOARD_BG_KEY, BOARD_BG_IMG_KEY]);
 
-  // Resolve signed URL sempre que o path muda.
+  // Resolve signed URL sempre que o path muda (com cache em sessionStorage p/ boot instantâneo).
   useEffect(() => {
     let alive = true;
     if (!bgImagePath) { setBgImageUrl(null); return; }
@@ -414,9 +414,32 @@ export default function AtividadesBoard() {
       setBgImageUrl(bgImagePath);
       return;
     }
-    getCoverDisplayUrl(bgImagePath).then((url) => { if (alive) setBgImageUrl(url); });
+    const cacheKey = `atividades:boardBgUrl:${bgImagePath}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { url, exp } = JSON.parse(cached) as { url: string; exp: number };
+        if (url && exp > Date.now()) {
+          setBgImageUrl(url);
+          // Pré-carrega no cache do browser p/ evitar flash.
+          const img = new Image(); img.src = url;
+          return;
+        }
+      }
+    } catch { /* noop */ }
+    getCoverDisplayUrl(bgImagePath).then((url) => {
+      if (!alive) return;
+      setBgImageUrl(url);
+      if (url) {
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({ url, exp: Date.now() + 6 * 24 * 3600 * 1000 }));
+        } catch { /* noop */ }
+        const img = new Image(); img.src = url;
+      }
+    });
     return () => { alive = false; };
   }, [bgImagePath]);
+
 
   function pickBg(v: string) {
     setBoardBg(v);
