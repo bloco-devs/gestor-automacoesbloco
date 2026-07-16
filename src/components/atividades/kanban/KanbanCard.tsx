@@ -75,15 +75,21 @@ function KanbanCardImpl({
         e.stopPropagation();
         onEdit();
       }}
+      style={{
+        ...(isOverlay ? undefined : style),
+        backgroundColor: "#ffffff",
+        color: "#172b4d",
+      }}
       className={cn(
-        "group rounded-xl border bg-card cursor-grab active:cursor-grabbing transition-all overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5",
+        "group rounded-xl border cursor-grab active:cursor-grabbing transition-all overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5",
         isMine
           ? "border-yellow-400/70 ring-2 ring-yellow-400/40"
-          : "border-border/70 hover:border-accent/50",
+          : "border-black/10 hover:border-black/20",
         isDragging && !isOverlay && "opacity-40",
         isOverlay && "shadow-lg ring-1 ring-accent/40 rotate-2 scale-105",
         card.concluido && "opacity-70",
       )}
+
     >
       {card.coverCor && (
         <div
