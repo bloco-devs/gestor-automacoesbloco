@@ -406,7 +406,7 @@ export default function AtividadesBoard() {
     } catch { /* noop */ }
   }, [BOARD_BG_KEY, BOARD_BG_IMG_KEY]);
 
-  // Resolve signed URL sempre que o path muda.
+  // Resolve signed URL sempre que o path muda (com cache em sessionStorage p/ boot instantâneo).
   useEffect(() => {
     let alive = true;
     if (!bgImagePath) { setBgImageUrl(null); return; }
@@ -414,9 +414,32 @@ export default function AtividadesBoard() {
       setBgImageUrl(bgImagePath);
       return;
     }
-    getCoverDisplayUrl(bgImagePath).then((url) => { if (alive) setBgImageUrl(url); });
+    const cacheKey = `atividades:boardBgUrl:${bgImagePath}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { url, exp } = JSON.parse(cached) as { url: string; exp: number };
+        if (url && exp > Date.now()) {
+          setBgImageUrl(url);
+          // Pré-carrega no cache do browser p/ evitar flash.
+          const img = new Image(); img.src = url;
+          return;
+        }
+      }
+    } catch { /* noop */ }
+    getCoverDisplayUrl(bgImagePath).then((url) => {
+      if (!alive) return;
+      setBgImageUrl(url);
+      if (url) {
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({ url, exp: Date.now() + 6 * 24 * 3600 * 1000 }));
+        } catch { /* noop */ }
+        const img = new Image(); img.src = url;
+      }
+    });
     return () => { alive = false; };
   }, [bgImagePath]);
+
 
   function pickBg(v: string) {
     setBoardBg(v);
@@ -555,7 +578,22 @@ export default function AtividadesBoard() {
 
 
   return (
-    <div className="space-y-4">
+    <div
+      className={cn(
+        "space-y-4 -mx-4 -my-4 px-4 py-4 md:-mx-6 md:-my-6 md:px-6 md:py-6 min-h-[calc(100vh-4rem)] rounded-none transition-colors",
+        bgClass,
+      )}
+      style={
+        bgImageUrl
+          ? {
+              backgroundImage: `linear-gradient(hsl(var(--background) / 0.15), hsl(var(--background) / 0.15)), url("${bgImageUrl}")`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundAttachment: "fixed",
+            }
+          : undefined
+      }
+    >
       {coverUrl ? (
         <div
           className="h-32 w-full rounded-xl bg-center bg-cover border"
@@ -563,6 +601,7 @@ export default function AtividadesBoard() {
           aria-hidden
         />
       ) : null}
+
 
       <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Link to="/atividades" className="hover:text-foreground transition-colors">
@@ -833,23 +872,8 @@ export default function AtividadesBoard() {
           onDragEnd={handleDragEnd}
           onDragCancel={() => setActiveId(null)}
         >
-          <div
-            className={cn(
-              "relative flex gap-3 overflow-x-auto pb-4 rounded-xl",
-              bgClass,
-              (bgClass || bgImageUrl) && "p-3 border",
-            )}
-            style={
-              bgImageUrl
-                ? {
-                    backgroundImage: `linear-gradient(hsl(var(--background) / 0.15), hsl(var(--background) / 0.15)), url("${bgImageUrl}")`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundAttachment: "local",
-                  }
-                : undefined
-            }
-          >
+          <div className="relative flex gap-3 overflow-x-auto pb-4">
+
             {colunas.map((col) => (
               <div key={col.id} className="shrink-0 w-[272px]">
                 <Coluna
