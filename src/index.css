@@ -213,3 +213,43 @@
 .sticky-note-md table { border-collapse: collapse; font-size: 0.7rem; }
 .sticky-note-md th, .sticky-note-md td { border: 1px solid currentColor; padding: 2px 4px; }
 .sticky-note-md input[type="checkbox"] { margin-right: 4px; }
+
+/* ============================================================
+   Scrollbar minimalista (UI/UX)
+   - Fina, arredondada, translúcida
+   - Adapta ao modo claro/dark via tokens semânticos
+   - Firefox: scrollbar-width thin + scrollbar-color
+   - WebKit: track transparente, thumb suave, cresce no hover
+   ============================================================ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--foreground) / 0.22) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--foreground) / 0.18);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 160ms ease;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--foreground) / 0.35);
+}
+*::-webkit-scrollbar-thumb:active {
+  background-color: hsl(var(--foreground) / 0.5);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+/* Some overlays/menus should stay clean */
+[data-radix-scroll-area-viewport]::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
