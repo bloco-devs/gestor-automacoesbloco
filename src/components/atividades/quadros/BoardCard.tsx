@@ -32,16 +32,30 @@ const VISIBILIDADE_LABEL: Record<BoardResumo["visibilidade"], string> = {
 
 export function BoardCard({ board, onToggleFavorito }: Props) {
   const coverColor = board.background || board.cor || "hsl(var(--muted))";
+  const coverUrl = board.coverUrl && /^https?:\/\//i.test(board.coverUrl) ? board.coverUrl : null;
   return (
-    <div className="group relative rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow flex flex-col">
+    <div
+      className="group relative rounded-xl border overflow-hidden hover:shadow-md transition-shadow flex flex-col"
+      style={{
+        backgroundColor: coverUrl ? undefined : `color-mix(in srgb, ${coverColor} 18%, hsl(var(--card)))`,
+        backgroundImage: coverUrl ? `linear-gradient(hsl(var(--card) / 0.85), hsl(var(--card) / 0.95)), url("${coverUrl}")` : undefined,
+        backgroundSize: coverUrl ? "cover" : undefined,
+        backgroundPosition: coverUrl ? "center" : undefined,
+      }}
+    >
       <Link
         to={`/atividades/${board.id}`}
         className="block h-20 relative"
-        style={{ backgroundColor: coverColor }}
+        style={{
+          backgroundColor: coverUrl ? undefined : coverColor,
+          backgroundImage: coverUrl ? `url("${coverUrl}")` : undefined,
+          backgroundSize: coverUrl ? "cover" : undefined,
+          backgroundPosition: coverUrl ? "center" : undefined,
+        }}
         aria-label={`Abrir quadro ${board.nome}`}
       >
         {board.icone ? (
-          <span className="absolute top-2 left-3 text-lg" aria-hidden>
+          <span className="absolute top-2 left-3 text-lg drop-shadow" aria-hidden>
             {board.icone}
           </span>
         ) : null}
@@ -52,6 +66,7 @@ export function BoardCard({ board, onToggleFavorito }: Props) {
           </span>
         ) : null}
       </Link>
+
 
       <div className="p-3 flex-1 flex flex-col gap-2">
         <div className="flex items-start justify-between gap-2">
