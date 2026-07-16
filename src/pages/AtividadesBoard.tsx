@@ -37,6 +37,7 @@ import type { Draft } from "@/components/atividades/kanban/DraftCard";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery as useQueryBoard } from "@tanstack/react-query";
 import { ArrowLeft, Star, Archive, Settings, Users, Layers, Clock, Calendar, Lock, Globe, Building2, Image as ImageIcon } from "lucide-react";
+import { BG_OPTIONS } from "@/lib/atividadesBg";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
