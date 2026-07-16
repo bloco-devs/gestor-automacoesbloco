@@ -674,11 +674,14 @@ export function colunaAccent(nome: string, ordem: number): ColunaAccent {
   const hex = TRELLO_HEX[key];
   const bold = TRELLO_HEX_BOLD[key];
 
-  // Coluna opaca (estilo Trello): tinge a superfície do card com a cor da coluna.
-  // Usar hsl(var(--card)) como base garante boa aparência em modo claro E dark.
+  // Coluna opaca no estilo Trello: pastel consistente em modo claro E dark.
+  // Usamos uma base clara fixa (#f1f2f4, superfície de lista do Trello) para
+  // que a cor não escureça no dark, e forçamos texto escuro para manter contraste.
+  const LIST_BASE = "#f1f2f4";
   const style: React.CSSProperties = {
-    backgroundColor: `color-mix(in srgb, ${hex} 32%, hsl(var(--card)))`,
-    borderColor: `color-mix(in srgb, ${hex} 55%, hsl(var(--card)))`,
+    backgroundColor: `color-mix(in srgb, ${hex} 22%, ${LIST_BASE})`,
+    borderColor: `color-mix(in srgb, ${hex} 45%, ${LIST_BASE})`,
+    color: "#172b4d",
   };
 
   const barStyle: React.CSSProperties = { backgroundColor: bold };
