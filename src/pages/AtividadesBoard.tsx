@@ -37,6 +37,7 @@ import type { Draft } from "@/components/atividades/kanban/DraftCard";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery as useQueryBoard } from "@tanstack/react-query";
 import { ArrowLeft, Star, Archive, Settings, Users, Layers, Clock, Calendar, Lock, Globe, Building2, Image as ImageIcon } from "lucide-react";
+import { BG_OPTIONS } from "@/lib/atividadesBg";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -476,17 +477,6 @@ export default function AtividadesBoard() {
     try { if (BOARD_BG_IMG_KEY) localStorage.removeItem(BOARD_BG_IMG_KEY); } catch { /* noop */ }
   }
 
-  const BG_OPTIONS: { key: string; label: string; className: string; swatch: string }[] = [
-    { key: "none",     label: "Padrão",   className: "",                                                                    swatch: "bg-muted" },
-    { key: "slate",    label: "Ardósia",  className: "bg-slate-100 dark:bg-slate-900/40",                                    swatch: "bg-slate-400" },
-    { key: "sky",      label: "Céu",      className: "bg-gradient-to-br from-sky-100 to-sky-200 dark:from-sky-950/60 dark:to-sky-900/40",             swatch: "bg-sky-400" },
-    { key: "emerald",  label: "Menta",    className: "bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-950/60 dark:to-emerald-900/40", swatch: "bg-emerald-400" },
-    { key: "amber",    label: "Âmbar",    className: "bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-950/60 dark:to-amber-900/40",     swatch: "bg-amber-400" },
-    { key: "rose",     label: "Rosa",     className: "bg-gradient-to-br from-rose-100 to-rose-200 dark:from-rose-950/60 dark:to-rose-900/40",         swatch: "bg-rose-400" },
-    { key: "violet",   label: "Violeta",  className: "bg-gradient-to-br from-violet-100 to-violet-200 dark:from-violet-950/60 dark:to-violet-900/40", swatch: "bg-violet-400" },
-    { key: "dusk",     label: "Crepúsculo", className: "bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 dark:from-indigo-950/70 dark:via-purple-950/60 dark:to-pink-950/50", swatch: "bg-gradient-to-br from-indigo-400 to-pink-400" },
-    { key: "ocean",    label: "Oceano",   className: "bg-gradient-to-br from-cyan-200 via-sky-200 to-blue-300 dark:from-cyan-950/70 dark:via-sky-950/60 dark:to-blue-950/50", swatch: "bg-gradient-to-br from-cyan-400 to-blue-500" },
-  ];
   const bgClass = bgImageUrl ? "" : (BG_OPTIONS.find((o) => o.key === boardBg)?.className ?? "");
 
 

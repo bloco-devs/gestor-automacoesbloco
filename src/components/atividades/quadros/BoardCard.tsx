@@ -1,7 +1,11 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Star, Users, Layers, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BoardResumo } from "@/lib/atividadesBoards";
+import { getCoverDisplayUrl } from "@/lib/atividadesBoards";
+import { BG_OPTIONS, readBoardBg, readCachedBgUrl, boardBgUrlCacheKey } from "@/lib/atividadesBg";
+import { cn } from "@/lib/utils";
 
 function formatRelative(iso: string | null): string {
   if (!iso) return "sem atividade";
@@ -31,26 +35,71 @@ const VISIBILIDADE_LABEL: Record<BoardResumo["visibilidade"], string> = {
 };
 
 export function BoardCard({ board, onToggleFavorito }: Props) {
+  // Fundo escolhido dentro do quadro (localStorage por board) tem prioridade,
+  // com fallback ao background/coverUrl vindo do servidor.
+  const [localBg, setLocalBg] = useState<{ key: string; imgPath: string | null }>(() =>
+    readBoardBg(board.id),
+  );
+  const [localImgUrl, setLocalImgUrl] = useState<string | null>(() =>
+    localBg.imgPath ? readCachedBgUrl(localBg.imgPath) : null,
+  );
+
+  useEffect(() => {
+    setLocalBg(readBoardBg(board.id));
+  }, [board.id]);
+
+  useEffect(() => {
+    let alive = true;
+    const path = localBg.imgPath;
+    if (!path) { setLocalImgUrl(null); return; }
+    const cached = readCachedBgUrl(path);
+    if (cached) { setLocalImgUrl(cached); return; }
+    getCoverDisplayUrl(path).then((url) => {
+      if (!alive) return;
+      setLocalImgUrl(url);
+      if (url) {
+        try {
+          sessionStorage.setItem(
+            boardBgUrlCacheKey(path),
+            JSON.stringify({ url, exp: Date.now() + 6 * 24 * 3600 * 1000 }),
+          );
+        } catch { /* noop */ }
+      }
+    });
+    return () => { alive = false; };
+  }, [localBg.imgPath]);
+
+  const bgOption = BG_OPTIONS.find((o) => o.key === localBg.key);
+  const serverCoverUrl = board.coverUrl && /^https?:\/\//i.test(board.coverUrl) ? board.coverUrl : null;
+  const effectiveImgUrl = localImgUrl || serverCoverUrl;
   const coverColor = board.background || board.cor || "hsl(var(--muted))";
-  const coverUrl = board.coverUrl && /^https?:\/\//i.test(board.coverUrl) ? board.coverUrl : null;
+  const useLocalPreset = !effectiveImgUrl && bgOption && bgOption.key !== "none";
+
   return (
     <div
-      className="group relative rounded-xl border overflow-hidden hover:shadow-md transition-shadow flex flex-col"
+      className={cn(
+        "group relative rounded-xl border overflow-hidden hover:shadow-md transition-shadow flex flex-col",
+        useLocalPreset && bgOption?.className,
+      )}
       style={{
-        backgroundColor: coverUrl ? undefined : `color-mix(in srgb, ${coverColor} 18%, hsl(var(--card)))`,
-        backgroundImage: coverUrl ? `linear-gradient(hsl(var(--card) / 0.85), hsl(var(--card) / 0.95)), url("${coverUrl}")` : undefined,
-        backgroundSize: coverUrl ? "cover" : undefined,
-        backgroundPosition: coverUrl ? "center" : undefined,
+        backgroundColor: effectiveImgUrl || useLocalPreset
+          ? undefined
+          : `color-mix(in srgb, ${coverColor} 18%, hsl(var(--card)))`,
+        backgroundImage: effectiveImgUrl
+          ? `linear-gradient(hsl(var(--card) / 0.85), hsl(var(--card) / 0.95)), url("${effectiveImgUrl}")`
+          : undefined,
+        backgroundSize: effectiveImgUrl ? "cover" : undefined,
+        backgroundPosition: effectiveImgUrl ? "center" : undefined,
       }}
     >
       <Link
         to={`/atividades/${board.id}`}
-        className="block h-20 relative"
+        className={cn("block h-20 relative", useLocalPreset && bgOption?.className)}
         style={{
-          backgroundColor: coverUrl ? undefined : coverColor,
-          backgroundImage: coverUrl ? `url("${coverUrl}")` : undefined,
-          backgroundSize: coverUrl ? "cover" : undefined,
-          backgroundPosition: coverUrl ? "center" : undefined,
+          backgroundColor: effectiveImgUrl || useLocalPreset ? undefined : coverColor,
+          backgroundImage: effectiveImgUrl ? `url("${effectiveImgUrl}")` : undefined,
+          backgroundSize: effectiveImgUrl ? "cover" : undefined,
+          backgroundPosition: effectiveImgUrl ? "center" : undefined,
         }}
         aria-label={`Abrir quadro ${board.nome}`}
       >
@@ -66,6 +115,7 @@ export function BoardCard({ board, onToggleFavorito }: Props) {
           </span>
         ) : null}
       </Link>
+
 
 
       <div className="p-3 flex-1 flex flex-col gap-2">
