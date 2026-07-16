@@ -67,7 +67,7 @@ function KanbanCardImpl({
   return (
     <div
       ref={isOverlay ? undefined : setNodeRef}
-      style={isOverlay ? undefined : style}
+      
       {...(isOverlay ? {} : listeners)}
       {...(isOverlay ? {} : attributes)}
       onClick={(e) => {
