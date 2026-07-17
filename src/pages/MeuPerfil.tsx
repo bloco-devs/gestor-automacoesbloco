@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Upload, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,6 +46,7 @@ async function resizeToDataUrl(file: File, size = 256, quality = 0.85): Promise<
 export default function MeuPerfil() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const qc = useQueryClient();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatarUrl ?? null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -69,6 +71,7 @@ export default function MeuPerfil() {
         .eq("id", user.id);
       if (error) throw error;
       setAvatarUrl(dataUrl);
+      await qc.invalidateQueries();
       toast({ title: "Foto atualizada", description: "Sua nova foto de perfil já está ativa." });
     } catch (e) {
       toast({
@@ -90,6 +93,7 @@ export default function MeuPerfil() {
         .eq("id", user.id);
       if (error) throw error;
       setAvatarUrl(null);
+      await qc.invalidateQueries();
       toast({ title: "Foto removida" });
     } catch (e) {
       toast({
