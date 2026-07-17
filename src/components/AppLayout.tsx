@@ -392,7 +392,6 @@ export default function AppLayout() {
             >
               <LogOut className="size-4" />
             </Button>
-          </div>
         </div>
 
         <div
