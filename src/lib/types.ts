@@ -85,6 +85,8 @@ export interface Profile {
   email: string;
   nome: string;
   role: Role;
+  /** URL/dataURL da foto de perfil (avatar). Null quando não foi definida. */
+  avatarUrl?: string | null;
   /** True quando o usuário foi cadastrado em allowed_emails com papel "administrador". */
   isAdministrador?: boolean;
 }
@@ -167,6 +169,7 @@ export interface AssignableUser {
   nome: string;
   email: string;
   role: AssignableRole;
+  avatarUrl?: string | null;
 }
 
 

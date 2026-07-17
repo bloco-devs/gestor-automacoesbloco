@@ -71,7 +71,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 async function loadProfileOnce(authUser: User): Promise<Profile & { isAdministrador: boolean }> {
   const [{ data: prof }, { data: roleStr, error: roleErr }, { data: allowed, error: allowedErr }] =
     await Promise.all([
-      supabase.from("profiles").select("nome, email").eq("id", authUser.id).maybeSingle(),
+      supabase.from("profiles").select("nome, email, avatar_url").eq("id", authUser.id).maybeSingle(),
       supabase.rpc("get_my_role"),
       supabase.rpc("is_allowed_user"),
     ]);
@@ -104,6 +104,7 @@ async function loadProfileOnce(authUser: User): Promise<Profile & { isAdministra
       (authUser.user_metadata?.nome as string | undefined) ||
       (authUser.email ? authUser.email.split("@")[0] : "Usuário"),
     role: stored ?? dbRole,
+    avatarUrl: (prof as { avatar_url?: string | null } | null)?.avatar_url ?? null,
     isAdministrador,
   };
 }

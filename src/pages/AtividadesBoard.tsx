@@ -41,7 +41,7 @@ import { BG_OPTIONS, splitBoardBackground } from "@/lib/atividadesBg";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BoardSettingsDialog } from "@/components/atividades/quadros/BoardSettingsDialog";
@@ -683,8 +683,11 @@ export default function AtividadesBoard() {
                   return (
                     <Tooltip key={m.userId}>
                       <TooltipTrigger asChild>
-                        <Avatar className="h-7 w-7 border-2 border-background">
-                          <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+                        <Avatar className="h-7 w-7 border-2 border-white ring-0">
+                          {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.nome || m.email} />}
+                          <AvatarFallback className="text-[10px] bg-slate-200 text-slate-800">
+                            {initials}
+                          </AvatarFallback>
                         </Avatar>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -696,8 +699,10 @@ export default function AtividadesBoard() {
                   );
                 })}
                 {membros.length > 5 && (
-                  <Avatar className="h-7 w-7 border-2 border-background">
-                    <AvatarFallback className="text-[10px]">+{membros.length - 5}</AvatarFallback>
+                  <Avatar className="h-7 w-7 border-2 border-white">
+                    <AvatarFallback className="text-[10px] bg-slate-200 text-slate-800">
+                      +{membros.length - 5}
+                    </AvatarFallback>
                   </Avatar>
                 )}
               </div>
