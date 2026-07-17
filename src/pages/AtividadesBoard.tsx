@@ -699,8 +699,8 @@ export default function AtividadesBoard() {
                   );
                 })}
                 {membros.length > 5 && (
-                  <Avatar className="h-7 w-7 border-2 border-white">
-                    <AvatarFallback className="text-[10px] bg-slate-200 text-slate-800">
+                  <Avatar className="h-10 w-10 shadow-sm">
+                    <AvatarFallback className="text-xs bg-slate-200 text-slate-800">
                       +{membros.length - 5}
                     </AvatarFallback>
                   </Avatar>
