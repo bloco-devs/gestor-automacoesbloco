@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Upload, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,7 +17,7 @@ function initials(nome: string) {
     .join("");
 }
 
-async function resizeToDataUrl(file: File, max = 256, quality = 0.85): Promise<string> {
+async function resizeToDataUrl(file: File, size = 256, quality = 0.85): Promise<string> {
   const img = document.createElement("img");
   const url = URL.createObjectURL(file);
   try {
@@ -25,15 +26,17 @@ async function resizeToDataUrl(file: File, max = 256, quality = 0.85): Promise<s
       img.onerror = () => rej(new Error("Falha ao carregar a imagem"));
       img.src = url;
     });
-    const scale = Math.min(1, max / Math.max(img.width, img.height));
-    const w = Math.round(img.width * scale);
-    const h = Math.round(img.height * scale);
+    // Crop centralizado em quadrado — garante que o rosto fique no centro do círculo.
+    const side = Math.min(img.width, img.height);
+    const sx = Math.round((img.width - side) / 2);
+    const sy = Math.round((img.height - side) / 2);
     const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
+    canvas.width = size;
+    canvas.height = size;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas indisponível");
-    ctx.drawImage(img, 0, 0, w, h);
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
     return canvas.toDataURL("image/jpeg", quality);
   } finally {
     URL.revokeObjectURL(url);
@@ -43,6 +46,7 @@ async function resizeToDataUrl(file: File, max = 256, quality = 0.85): Promise<s
 export default function MeuPerfil() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const qc = useQueryClient();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatarUrl ?? null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -67,6 +71,7 @@ export default function MeuPerfil() {
         .eq("id", user.id);
       if (error) throw error;
       setAvatarUrl(dataUrl);
+      await qc.invalidateQueries();
       toast({ title: "Foto atualizada", description: "Sua nova foto de perfil já está ativa." });
     } catch (e) {
       toast({
@@ -88,6 +93,7 @@ export default function MeuPerfil() {
         .eq("id", user.id);
       if (error) throw error;
       setAvatarUrl(null);
+      await qc.invalidateQueries();
       toast({ title: "Foto removida" });
     } catch (e) {
       toast({
