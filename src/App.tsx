@@ -87,6 +87,7 @@ const AppRoutes = () => {
 
         {/* Compartilhado */}
         <Route path="/ajuda" element={<Ajuda />} />
+        <Route path="/perfil" element={<MeuPerfil />} />
         <Route path="/solicitacao/:id" element={<SolicitacaoDetail />} />
       </Route>
 
