@@ -4,7 +4,7 @@ import { Star, Users, Layers, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BoardResumo } from "@/lib/atividadesBoards";
 import { getCoverDisplayUrl } from "@/lib/atividadesBoards";
-import { BG_OPTIONS, readBoardBg, readCachedBgUrl, boardBgUrlCacheKey } from "@/lib/atividadesBg";
+import { BG_OPTIONS, readCachedBgUrl, boardBgUrlCacheKey } from "@/lib/atividadesBg";
 import { cn } from "@/lib/utils";
 
 function formatRelative(iso: string | null): string {
