@@ -467,7 +467,7 @@ export default function AppLayout() {
             >
               <Compass className="size-4" />
             </Button>
-            <ThemeToggle />
+            
             <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/auth"); }}>
               <LogOut className="size-4" />
             </Button>
