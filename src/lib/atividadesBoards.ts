@@ -175,6 +175,7 @@ export interface BoardMembro {
   role: BoardRole;
   nome: string;
   email: string;
+  avatarUrl: string | null;
   createdAt: string;
 }
 
@@ -195,12 +196,12 @@ export async function listBoardMembros(boardId: string): Promise<BoardMembro[]> 
   const ids = rows.map((r) => r.user_id);
   const { data: profs } = await sb
     .from("profiles")
-    .select("id, nome, email")
+    .select("id, nome, email, avatar_url")
     .in("id", ids);
-  const map = new Map<string, { nome: string; email: string }>(
-    (profs ?? []).map((p: { id: string; nome?: string; email?: string }) => [
+  const map = new Map<string, { nome: string; email: string; avatar_url: string | null }>(
+    (profs ?? []).map((p: { id: string; nome?: string; email?: string; avatar_url?: string | null }) => [
       p.id,
-      { nome: p.nome ?? "", email: p.email ?? "" },
+      { nome: p.nome ?? "", email: p.email ?? "", avatar_url: p.avatar_url ?? null },
     ]),
   );
   return rows.map((r) => ({
@@ -209,6 +210,7 @@ export async function listBoardMembros(boardId: string): Promise<BoardMembro[]> 
     role: r.role,
     nome: map.get(r.user_id)?.nome || "Usuário",
     email: map.get(r.user_id)?.email || "",
+    avatarUrl: map.get(r.user_id)?.avatar_url ?? null,
     createdAt: r.created_at,
   }));
 }
