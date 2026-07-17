@@ -4,7 +4,7 @@ import { Star, Users, Layers, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BoardResumo } from "@/lib/atividadesBoards";
 import { getCoverDisplayUrl } from "@/lib/atividadesBoards";
-import { BG_OPTIONS, readCachedBgUrl, boardBgUrlCacheKey } from "@/lib/atividadesBg";
+import { BG_OPTIONS, readCachedBgUrl, boardBgUrlCacheKey, splitBoardBackground } from "@/lib/atividadesBg";
 import { cn } from "@/lib/utils";
 
 function formatRelative(iso: string | null): string {
@@ -37,8 +37,7 @@ const VISIBILIDADE_LABEL: Record<BoardResumo["visibilidade"], string> = {
 export function BoardCard({ board, onToggleFavorito }: Props) {
   // Fundo GLOBAL do quadro: vem do servidor (board.background / board.coverUrl).
   // Todos os membros veem a mesma capa.
-  const bgKey = board.background || "none";
-  const coverPath = board.coverUrl || null;
+  const { bgKey, imageRef: coverPath } = splitBoardBackground(board.background, board.coverUrl);
   const [coverDisplayUrl, setCoverDisplayUrl] = useState<string | null>(() =>
     coverPath ? readCachedBgUrl(coverPath) : null,
   );

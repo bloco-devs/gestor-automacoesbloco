@@ -1,5 +1,5 @@
 // Fundos de quadro compartilhados entre a página do quadro e a listagem.
-// A escolha do usuário é persistida em localStorage por board (por usuário).
+// A escolha global vem do banco; este arquivo só centraliza presets e cache de URL assinada.
 
 export interface BgOption {
   key: string;
@@ -23,6 +23,20 @@ export const BG_OPTIONS: BgOption[] = [
 export const boardBgKey    = (boardId: string) => `atividades:boardBg:${boardId}`;
 export const boardBgImgKey = (boardId: string) => `atividades:boardBgImg:${boardId}`;
 export const boardBgUrlCacheKey = (path: string) => `atividades:boardBgUrl:${path}`;
+
+export function isBoardImageRef(value: string | null | undefined): value is string {
+  if (!value) return false;
+  return /^https?:\/\//i.test(value) || value.startsWith("data:") || value.includes("/");
+}
+
+export function splitBoardBackground(
+  background: string | null | undefined,
+  coverUrl: string | null | undefined,
+): { bgKey: string; imageRef: string | null } {
+  if (coverUrl) return { bgKey: background && !isBoardImageRef(background) ? background : "none", imageRef: coverUrl };
+  if (isBoardImageRef(background)) return { bgKey: "none", imageRef: background };
+  return { bgKey: background || "none", imageRef: null };
+}
 
 export function readBoardBg(boardId: string): { key: string; imgPath: string | null } {
   try {
