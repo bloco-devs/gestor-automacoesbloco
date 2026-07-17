@@ -370,6 +370,7 @@ export default function AppLayout() {
             >
               <Compass className="size-4" />
             </Button>
+            <ThemeToggle />
             {isDual && (
               <Button
                 variant="ghost"
