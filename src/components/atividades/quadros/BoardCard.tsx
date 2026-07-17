@@ -38,11 +38,21 @@ export function BoardCard({ board, onToggleFavorito }: Props) {
   // Fundo GLOBAL do quadro: vem do servidor (board.background / board.coverUrl).
   // Todos os membros veem a mesma capa.
   const { bgKey, imageRef: coverPath } = splitBoardBackground(board.background, board.coverUrl);
+
+  // Fallback: se background for uma URL externa (http/data) e diferente do coverPath,
+  // usamos como plano B caso o signed URL do storage falhe.
+  const externalFallback =
+    board.background && /^(https?:|data:)/i.test(board.background) && board.background !== coverPath
+      ? board.background
+      : null;
+
   const [coverDisplayUrl, setCoverDisplayUrl] = useState<string | null>(() =>
     coverPath ? readCachedBgUrl(coverPath) : null,
   );
+  const [imgFailed, setImgFailed] = useState(false);
 
   useEffect(() => {
+    setImgFailed(false);
     let alive = true;
     if (!coverPath) { setCoverDisplayUrl(null); return; }
     const cached = readCachedBgUrl(coverPath);
@@ -63,7 +73,8 @@ export function BoardCard({ board, onToggleFavorito }: Props) {
   }, [coverPath]);
 
   const bgOption = BG_OPTIONS.find((o) => o.key === bgKey);
-  const effectiveImgUrl = coverDisplayUrl;
+  // Prioridade: signed URL do storage → URL externa (background) → cor sólida/preset.
+  const effectiveImgUrl = !imgFailed && coverDisplayUrl ? coverDisplayUrl : externalFallback;
   const coverColor = board.cor || "hsl(var(--muted))";
   const useLocalPreset = !effectiveImgUrl && bgOption && bgOption.key !== "none";
 
@@ -78,24 +89,31 @@ export function BoardCard({ board, onToggleFavorito }: Props) {
         className={cn("block h-28 relative", useLocalPreset && bgOption?.className)}
         style={{
           backgroundColor: effectiveImgUrl || useLocalPreset ? undefined : coverColor,
-          backgroundImage: effectiveImgUrl ? `url("${effectiveImgUrl}")` : undefined,
-          backgroundSize: effectiveImgUrl ? "cover" : undefined,
-          backgroundPosition: effectiveImgUrl ? "center" : undefined,
         }}
         aria-label={`Abrir quadro ${board.nome}`}
       >
+        {effectiveImgUrl ? (
+          <img
+            src={effectiveImgUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+            onError={() => setImgFailed(true)}
+          />
+        ) : null}
         {board.icone ? (
-          <span className="absolute top-2 left-3 text-lg drop-shadow" aria-hidden>
+          <span className="absolute top-2 left-3 text-lg drop-shadow z-10" aria-hidden>
             {board.icone}
           </span>
         ) : null}
         {board.arquivado ? (
-          <span className="absolute top-2 right-2 text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-background/80 text-muted-foreground flex items-center gap-1">
+          <span className="absolute top-2 right-2 text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-background/80 text-muted-foreground flex items-center gap-1 z-10">
             <Archive className="h-3 w-3" />
             Arquivado
           </span>
         ) : null}
       </Link>
+
 
 
 
