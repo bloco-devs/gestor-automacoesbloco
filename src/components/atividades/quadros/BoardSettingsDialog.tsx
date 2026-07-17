@@ -785,8 +785,8 @@ function MembrosTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
             return (
               <li key={m.userId} className="flex items-center gap-3 p-3">
                 <Avatar className="h-9 w-9">
-                  <AvatarImage alt={m.nome} />
-                  <AvatarFallback className="text-xs">{initials(m)}</AvatarFallback>
+                  {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.nome} />}
+                  <AvatarFallback className="text-xs bg-slate-200 text-slate-800">{initials(m)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate flex items-center gap-2">
