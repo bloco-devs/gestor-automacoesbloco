@@ -599,12 +599,12 @@ export default function AtividadesBoard() {
 
 
 
-      <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Link to="/atividades" className="hover:text-foreground transition-colors">
+      <nav className="inline-flex items-center gap-1.5 text-xs rounded-md bg-background/70 backdrop-blur px-2 py-1 shadow-sm w-fit">
+        <Link to="/atividades" className="text-muted-foreground hover:text-foreground transition-colors">
           Quadros
         </Link>
-        <span aria-hidden>›</span>
-        <span className="text-foreground font-medium truncate max-w-[40ch]">
+        <span aria-hidden className="text-muted-foreground">›</span>
+        <span className="text-foreground font-semibold truncate max-w-[40ch]">
           {boardNome}
         </span>
       </nav>
@@ -616,21 +616,22 @@ export default function AtividadesBoard() {
             size="icon"
             onClick={() => navigate("/atividades")}
             aria-label="Voltar para lista de quadros"
+            className="bg-background/70 backdrop-blur hover:bg-background/90"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           {resumo?.cor ? (
             <div
-              className="h-8 w-8 rounded-lg shrink-0"
+              className="h-8 w-8 rounded-lg shrink-0 shadow-sm ring-1 ring-background/60"
               style={{ backgroundColor: resumo.cor }}
               aria-hidden
             />
           ) : null}
-          <div className="min-w-0">
+          <div className="min-w-0 rounded-lg bg-background/70 backdrop-blur px-3 py-2 shadow-sm">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-semibold truncate leading-tight">{boardNome}</h1>
+              <h1 className="text-2xl font-bold truncate leading-tight tracking-tight text-foreground">{boardNome}</h1>
               {resumo ? (
-                <Badge variant="outline" className="gap-1 font-normal text-[10px] h-5">
+                <Badge variant="outline" className="gap-1 font-medium text-[10px] h-5 bg-background">
                   <VisIcon className="h-3 w-3" />
                   {VIS_LABEL[resumo.visibilidade]}
                 </Badge>
@@ -642,23 +643,23 @@ export default function AtividadesBoard() {
               ) : null}
             </div>
             {resumo ? (
-              <div className="mt-1 flex items-center gap-x-3 gap-y-1 text-xs text-muted-foreground flex-wrap">
-                <span className="inline-flex items-center gap-1" title="Membros">
+              <div className="mt-1 flex items-center gap-x-3 gap-y-1 text-xs text-foreground/80 flex-wrap">
+                <span className="inline-flex items-center gap-1 font-medium" title="Membros">
                   <Users className="h-3 w-3" />
                   {membros.length}
                 </span>
-                <span className="inline-flex items-center gap-1" title="Cards ativos">
+                <span className="inline-flex items-center gap-1 font-medium" title="Cards ativos">
                   <Layers className="h-3 w-3" />
                   {colunas.reduce((acc, c) => acc + (cardsByColuna[c.id]?.length ?? 0), 0)}
                 </span>
-                <span className="inline-flex items-center gap-1" title="Última atividade">
+                <span className="inline-flex items-center gap-1 font-medium" title="Última atividade">
                   <Clock className="h-3 w-3" />
                   {fmtRel(resumo.updatedAt)}
                 </span>
                 {resumo.descricao ? (
                   <>
                     <span aria-hidden className="opacity-40">·</span>
-                    <span className="truncate max-w-[48ch]" title={resumo.descricao}>
+                    <span className="truncate max-w-[48ch] text-foreground/70" title={resumo.descricao}>
                       {resumo.descricao}
                     </span>
                   </>
