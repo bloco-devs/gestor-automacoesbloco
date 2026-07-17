@@ -355,30 +355,10 @@ export default function AppLayout() {
               </span>
             </span>
           </button>
-          <div className="flex items-center gap-1">
-            {isDual && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/escolher-perfil")}
-                title="Trocar perfil"
-              >
-                <Repeat className="size-4" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 justify-start min-w-0"
-              onClick={() => {
-                signOut();
-                navigate("/auth");
-              }}
-            >
-              <LogOut className="size-4 shrink-0" />
-              <span className="truncate">Sair</span>
-            </Button>
-            <span data-tour="nav-notificacoes" className="inline-flex"><NotificacoesBell /></span>
+          <div className="flex items-center justify-between gap-1 rounded-lg bg-sidebar-accent/40 px-1 py-1">
+            <span data-tour="nav-notificacoes" className="inline-flex">
+              <NotificacoesBell />
+            </span>
             <Button
               variant="ghost"
               size="icon"
@@ -389,7 +369,29 @@ export default function AppLayout() {
             >
               <Compass className="size-4" />
             </Button>
-            <ThemeToggle />
+            {isDual && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/escolher-perfil")}
+                title="Trocar perfil"
+                aria-label="Trocar perfil"
+              >
+                <Repeat className="size-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                signOut();
+                navigate("/auth");
+              }}
+              title="Sair"
+              aria-label="Sair"
+            >
+              <LogOut className="size-4" />
+            </Button>
           </div>
         </div>
 
