@@ -232,7 +232,11 @@ export function useAtividadesBoard(boardIdArg?: string | null) {
           }
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          console.warn("[atividades] realtime status:", status, err);
+        }
+      });
     return () => {
       supabase.removeChannel(channel);
     };
