@@ -241,7 +241,7 @@ export function BoardSettingsDialog({ open, onOpenChange, board, onDeleted }: Pr
               </TabsTrigger>
             </TabsList>
 
-            <ScrollArea className="flex-1">
+            <div className="flex-1 overflow-y-auto overscroll-contain">
               <div className="p-4">
                 <TabsContent value="geral" className="m-0">
                   <GeralTab board={board} canAdmin={canAdmin} />
@@ -272,7 +272,7 @@ export function BoardSettingsDialog({ open, onOpenChange, board, onDeleted }: Pr
                   />
                 </TabsContent>
               </div>
-            </ScrollArea>
+            </div>
           </Tabs>
         )}
       </DialogContent>

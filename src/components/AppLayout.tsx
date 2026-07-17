@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 import { NotificacoesBell } from "@/components/NotificacoesBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { countPendingDevEvaluations } from "@/lib/supabaseData";
 import { supabase } from "@/integrations/supabase/client";
@@ -369,6 +370,7 @@ export default function AppLayout() {
             >
               <Compass className="size-4" />
             </Button>
+            <ThemeToggle />
             {isDual && (
               <Button
                 variant="ghost"
@@ -467,7 +469,7 @@ export default function AppLayout() {
             >
               <Compass className="size-4" />
             </Button>
-            
+            <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/auth"); }}>
               <LogOut className="size-4" />
             </Button>
