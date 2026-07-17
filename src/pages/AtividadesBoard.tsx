@@ -721,6 +721,7 @@ export default function AtividadesBoard() {
             <Archive className="h-4 w-4 mr-1.5" />
             {resumo?.arquivado ? "Restaurar" : "Arquivar"}
           </Button>
+          {canAdmin && (
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm" aria-label="Alterar fundo do quadro">
@@ -803,11 +804,12 @@ export default function AtividadesBoard() {
                   </Button>
                 )}
                 <p className="text-[10px] text-muted-foreground leading-snug">
-                  Máx. 5 MB. Salvo apenas neste navegador (por quadro).
+                  Máx. 5 MB. Visível para todos os membros do quadro.
                 </p>
               </div>
             </PopoverContent>
           </Popover>
+          )}
           {canAdmin && (
             <Button
               variant="outline"
