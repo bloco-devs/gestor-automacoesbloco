@@ -324,12 +324,37 @@ export default function AppLayout() {
           </DndContext>
         </nav>
         <div className="p-3 border-t border-sidebar-border">
-          <div className="px-2 py-1.5 mb-2 min-w-0">
-            <div className="text-sm font-medium truncate">{user?.nome}</div>
-            <div className="text-xs text-muted-foreground truncate">
-              {roleLabel}
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/perfil")}
+            className="w-full flex items-center gap-2 px-2 py-1.5 mb-2 min-w-0 rounded-md hover:bg-sidebar-accent/60 transition-colors text-left"
+            title="Editar meu perfil"
+          >
+            <span className="relative shrink-0">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.nome}
+                  className="h-8 w-8 rounded-full object-cover ring-1 ring-white"
+                />
+              ) : (
+                <span className="h-8 w-8 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center text-xs font-semibold">
+                  {(user?.nome || "?")
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((p) => p[0]?.toUpperCase())
+                    .join("")}
+                </span>
+              )}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium truncate">{user?.nome}</span>
+              <span className="block text-xs text-muted-foreground truncate">
+                {roleLabel}
+              </span>
+            </span>
+          </button>
           <div className="flex items-center gap-1">
             {isDual && (
               <Button
