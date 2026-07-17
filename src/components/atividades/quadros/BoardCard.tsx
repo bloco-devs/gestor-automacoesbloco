@@ -35,44 +35,37 @@ const VISIBILIDADE_LABEL: Record<BoardResumo["visibilidade"], string> = {
 };
 
 export function BoardCard({ board, onToggleFavorito }: Props) {
-  // Fundo escolhido dentro do quadro (localStorage por board) tem prioridade,
-  // com fallback ao background/coverUrl vindo do servidor.
-  const [localBg, setLocalBg] = useState<{ key: string; imgPath: string | null }>(() =>
-    readBoardBg(board.id),
+  // Fundo GLOBAL do quadro: vem do servidor (board.background / board.coverUrl).
+  // Todos os membros veem a mesma capa.
+  const bgKey = board.background || "none";
+  const coverPath = board.coverUrl || null;
+  const [coverDisplayUrl, setCoverDisplayUrl] = useState<string | null>(() =>
+    coverPath ? readCachedBgUrl(coverPath) : null,
   );
-  const [localImgUrl, setLocalImgUrl] = useState<string | null>(() =>
-    localBg.imgPath ? readCachedBgUrl(localBg.imgPath) : null,
-  );
-
-  useEffect(() => {
-    setLocalBg(readBoardBg(board.id));
-  }, [board.id]);
 
   useEffect(() => {
     let alive = true;
-    const path = localBg.imgPath;
-    if (!path) { setLocalImgUrl(null); return; }
-    const cached = readCachedBgUrl(path);
-    if (cached) { setLocalImgUrl(cached); return; }
-    getCoverDisplayUrl(path).then((url) => {
+    if (!coverPath) { setCoverDisplayUrl(null); return; }
+    const cached = readCachedBgUrl(coverPath);
+    if (cached) { setCoverDisplayUrl(cached); return; }
+    getCoverDisplayUrl(coverPath).then((url) => {
       if (!alive) return;
-      setLocalImgUrl(url);
+      setCoverDisplayUrl(url);
       if (url) {
         try {
           sessionStorage.setItem(
-            boardBgUrlCacheKey(path),
+            boardBgUrlCacheKey(coverPath),
             JSON.stringify({ url, exp: Date.now() + 6 * 24 * 3600 * 1000 }),
           );
         } catch { /* noop */ }
       }
     });
     return () => { alive = false; };
-  }, [localBg.imgPath]);
+  }, [coverPath]);
 
-  const bgOption = BG_OPTIONS.find((o) => o.key === localBg.key);
-  const serverCoverUrl = board.coverUrl && /^https?:\/\//i.test(board.coverUrl) ? board.coverUrl : null;
-  const effectiveImgUrl = localImgUrl || serverCoverUrl;
-  const coverColor = board.background || board.cor || "hsl(var(--muted))";
+  const bgOption = BG_OPTIONS.find((o) => o.key === bgKey);
+  const effectiveImgUrl = coverDisplayUrl;
+  const coverColor = board.cor || "hsl(var(--muted))";
   const useLocalPreset = !effectiveImgUrl && bgOption && bgOption.key !== "none";
 
   return (
