@@ -37,7 +37,7 @@ import type { Draft } from "@/components/atividades/kanban/DraftCard";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery as useQueryBoard } from "@tanstack/react-query";
 import { ArrowLeft, Star, Archive, Settings, Users, Layers, Clock, Calendar, Lock, Globe, Building2, Image as ImageIcon } from "lucide-react";
-import { BG_OPTIONS } from "@/lib/atividadesBg";
+import { BG_OPTIONS, splitBoardBackground } from "@/lib/atividadesBg";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -399,8 +399,9 @@ export default function AtividadesBoard() {
   // Sincroniza estado local com o que veio do servidor sempre que o resumo carrega/muda.
   useEffect(() => {
     if (!resumo) return;
-    setBoardBg(resumo.background || "none");
-    setBgImagePath(resumo.coverUrl ?? null);
+    const { bgKey, imageRef } = splitBoardBackground(resumo.background, resumo.coverUrl);
+    setBoardBg(bgKey);
+    setBgImagePath(imageRef);
   }, [resumo?.background, resumo?.coverUrl, resumo]);
 
   // Resolve signed URL sempre que o path muda (com cache em sessionStorage p/ boot instantâneo).

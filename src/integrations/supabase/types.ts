@@ -1702,6 +1702,7 @@ export type Database = {
           background: string | null
           cards_abertos: number | null
           cor: string | null
+          cover_url: string | null
           created_at: string | null
           criado_por: string | null
           descricao: string | null
