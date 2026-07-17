@@ -1,12 +1,13 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, Upload, Trash2 } from "lucide-react";
+import { Loader2, Upload, Trash2, Crop } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import AvatarEditorDialog from "@/components/perfil/AvatarEditorDialog";
 
 function initials(nome: string) {
   return nome
@@ -17,30 +18,10 @@ function initials(nome: string) {
     .join("");
 }
 
-async function resizeToDataUrl(file: File, size = 256, quality = 0.85): Promise<string> {
-  const img = document.createElement("img");
-  const url = URL.createObjectURL(file);
-  try {
-    await new Promise<void>((res, rej) => {
-      img.onload = () => res();
-      img.onerror = () => rej(new Error("Falha ao carregar a imagem"));
-      img.src = url;
-    });
-    // Crop centralizado em quadrado — garante que o rosto fique no centro do círculo.
-    const side = Math.min(img.width, img.height);
-    const sx = Math.round((img.width - side) / 2);
-    const sy = Math.round((img.height - side) / 2);
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas indisponível");
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
-    return canvas.toDataURL("image/jpeg", quality);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+async function dataUrlToFile(dataUrl: string, name = "avatar.jpg"): Promise<File> {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  return new File([blob], name, { type: blob.type });
 }
 
 export default function MeuPerfil() {
@@ -49,11 +30,13 @@ export default function MeuPerfil() {
   const qc = useQueryClient();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatarUrl ?? null);
   const [busy, setBusy] = useState(false);
+  const [editorFile, setEditorFile] = useState<File | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (!user) return null;
 
-  const handleFile = async (file: File) => {
+  const openEditorWithFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast({ title: "Formato inválido", description: "Selecione uma imagem.", variant: "destructive" });
       return;
@@ -62,9 +45,23 @@ export default function MeuPerfil() {
       toast({ title: "Arquivo muito grande", description: "Máximo 5 MB.", variant: "destructive" });
       return;
     }
+    setEditorFile(file);
+    setEditorOpen(true);
+  };
+
+  const handleAdjustCurrent = async () => {
+    if (!avatarUrl) return;
+    try {
+      const file = await dataUrlToFile(avatarUrl);
+      openEditorWithFile(file);
+    } catch {
+      toast({ title: "Não foi possível abrir a foto atual", variant: "destructive" });
+    }
+  };
+
+  const saveAvatar = async (dataUrl: string) => {
     setBusy(true);
     try {
-      const dataUrl = await resizeToDataUrl(file, 256, 0.85);
       const { error } = await supabase
         .from("profiles")
         .update({ avatar_url: dataUrl })
@@ -72,6 +69,8 @@ export default function MeuPerfil() {
       if (error) throw error;
       setAvatarUrl(dataUrl);
       await qc.invalidateQueries();
+      setEditorOpen(false);
+      setEditorFile(null);
       toast({ title: "Foto atualizada", description: "Sua nova foto de perfil já está ativa." });
     } catch (e) {
       toast({
@@ -137,7 +136,7 @@ export default function MeuPerfil() {
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                if (f) void handleFile(f);
+                if (f) openEditorWithFile(f);
                 e.target.value = "";
               }}
             />
@@ -150,17 +149,35 @@ export default function MeuPerfil() {
               <span className="ml-2">Enviar nova foto</span>
             </Button>
             {avatarUrl && (
-              <Button variant="outline" onClick={handleRemove} disabled={busy}>
-                <Trash2 className="size-4" />
-                <span className="ml-2">Remover</span>
-              </Button>
+              <>
+                <Button variant="secondary" onClick={handleAdjustCurrent} disabled={busy}>
+                  <Crop className="size-4" />
+                  <span className="ml-2">Ajustar enquadramento</span>
+                </Button>
+                <Button variant="outline" onClick={handleRemove} disabled={busy}>
+                  <Trash2 className="size-4" />
+                  <span className="ml-2">Remover</span>
+                </Button>
+              </>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            A imagem será redimensionada automaticamente para 256×256 px.
+            Após selecionar a imagem, você pode arrastar e dar zoom para centralizar o rosto, no
+            estilo LinkedIn. A foto final é salva em 256×256 px.
           </p>
         </CardContent>
       </Card>
+
+      <AvatarEditorDialog
+        open={editorOpen}
+        file={editorFile}
+        onCancel={() => {
+          if (busy) return;
+          setEditorOpen(false);
+          setEditorFile(null);
+        }}
+        onConfirm={saveAvatar}
+      />
     </div>
   );
 }
