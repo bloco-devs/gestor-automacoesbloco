@@ -487,11 +487,12 @@ export async function listDevelopers(): Promise<Developer[]> {
 export async function listAssignableUsers(): Promise<AssignableUser[]> {
   const { data, error } = await supabase.rpc("list_assignable_users" as never);
   if (error) throw error;
-  return ((data ?? []) as Array<{ id: string; nome: string; email: string; role: string }>).map((r) => ({
+  return ((data ?? []) as Array<{ id: string; nome: string; email: string; role: string; avatar_url?: string | null }>).map((r) => ({
     id: r.id,
     nome: r.nome,
     email: r.email,
     role: r.role as AssignableRole,
+    avatarUrl: r.avatar_url ?? null,
   }));
 }
 
