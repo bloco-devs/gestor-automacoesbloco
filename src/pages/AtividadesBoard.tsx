@@ -683,9 +683,9 @@ export default function AtividadesBoard() {
                   return (
                     <Tooltip key={m.userId}>
                       <TooltipTrigger asChild>
-                        <Avatar className="h-7 w-7 border-2 border-white ring-0">
+                        <Avatar className="h-10 w-10 shadow-sm">
                           {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.nome || m.email} />}
-                          <AvatarFallback className="text-[10px] bg-slate-200 text-slate-800">
+                          <AvatarFallback className="text-xs bg-slate-200 text-slate-800">
                             {initials}
                           </AvatarFallback>
                         </Avatar>
@@ -699,8 +699,8 @@ export default function AtividadesBoard() {
                   );
                 })}
                 {membros.length > 5 && (
-                  <Avatar className="h-7 w-7 border-2 border-white">
-                    <AvatarFallback className="text-[10px] bg-slate-200 text-slate-800">
+                  <Avatar className="h-10 w-10 shadow-sm">
+                    <AvatarFallback className="text-xs bg-slate-200 text-slate-800">
                       +{membros.length - 5}
                     </AvatarFallback>
                   </Avatar>
