@@ -22,7 +22,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { NotificacoesBell } from "@/components/NotificacoesBell";
 import { cn } from "@/lib/utils";
 import { countPendingDevEvaluations } from "@/lib/supabaseData";
