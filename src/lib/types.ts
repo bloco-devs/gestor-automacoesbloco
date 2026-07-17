@@ -169,6 +169,7 @@ export interface AssignableUser {
   nome: string;
   email: string;
   role: AssignableRole;
+  avatarUrl?: string | null;
 }
 
 
