@@ -1784,6 +1784,10 @@ export type Database = {
         Args: { _arquivado: boolean; _board_id: string }
         Returns: undefined
       }
+      atividades_board_set_background: {
+        Args: { _background: string; _board_id: string; _cover_url: string }
+        Returns: undefined
+      }
       atividades_board_set_member_role: {
         Args: {
           _board_id: string

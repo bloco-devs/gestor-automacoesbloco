@@ -389,23 +389,19 @@ export default function AtividadesBoard() {
   const canAdmin = resumo?.meuPapel === "owner" || resumo?.meuPapel === "admin";
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Fundo do quadro (persistido em localStorage por board)
-  const BOARD_BG_KEY = boardId ? `atividades:boardBg:${boardId}` : null;
-  const BOARD_BG_IMG_KEY = boardId ? `atividades:boardBgImg:${boardId}` : null;
+  // Fundo do quadro — GLOBAL, persistido no banco (atividades_boards.background/cover_url).
+  // Todos os membros veem o mesmo fundo. Só owner/admin do quadro podem alterar.
   const [boardBg, setBoardBg] = useState<string>("none");
   const [bgImagePath, setBgImagePath] = useState<string | null>(null);
   const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
   const [bgUploading, setBgUploading] = useState(false);
 
+  // Sincroniza estado local com o que veio do servidor sempre que o resumo carrega/muda.
   useEffect(() => {
-    if (!BOARD_BG_KEY || !BOARD_BG_IMG_KEY) return;
-    try {
-      const v = localStorage.getItem(BOARD_BG_KEY);
-      setBoardBg(v || "none");
-      const img = localStorage.getItem(BOARD_BG_IMG_KEY);
-      setBgImagePath(img);
-    } catch { /* noop */ }
-  }, [BOARD_BG_KEY, BOARD_BG_IMG_KEY]);
+    if (!resumo) return;
+    setBoardBg(resumo.background || "none");
+    setBgImagePath(resumo.coverUrl ?? null);
+  }, [resumo?.background, resumo?.coverUrl, resumo]);
 
   // Resolve signed URL sempre que o path muda (com cache em sessionStorage p/ boot instantâneo).
   useEffect(() => {
@@ -422,7 +418,6 @@ export default function AtividadesBoard() {
         const { url, exp } = JSON.parse(cached) as { url: string; exp: number };
         if (url && exp > Date.now()) {
           setBgImageUrl(url);
-          // Pré-carrega no cache do browser p/ evitar flash.
           const img = new Image(); img.src = url;
           return;
         }
@@ -441,21 +436,39 @@ export default function AtividadesBoard() {
     return () => { alive = false; };
   }, [bgImagePath]);
 
+  async function persistBackground(nextBg: string, nextCover: string | null) {
+    if (!boardId) return;
+    if (!canAdmin) { toast.error("Só owner/admin do quadro pode alterar o fundo"); return; }
+    const prevBg = boardBg;
+    const prevCover = bgImagePath;
+    setBoardBg(nextBg);
+    setBgImagePath(nextCover);
+    try {
+      const { setBoardBackground } = await import("@/lib/atividadesBoards");
+      await setBoardBackground(boardId, nextBg === "none" ? null : nextBg, nextCover);
+      qc.invalidateQueries({ queryKey: ["atividades", "board-resumo", boardId] });
+      qc.invalidateQueries({ queryKey: ["atividades", "boards-resumo"] });
+    } catch (e) {
+      console.error(e);
+      setBoardBg(prevBg);
+      setBgImagePath(prevCover);
+      toast.error("Não foi possível salvar o fundo");
+    }
+  }
 
   function pickBg(v: string) {
-    setBoardBg(v);
-    try { if (BOARD_BG_KEY) localStorage.setItem(BOARD_BG_KEY, v); } catch { /* noop */ }
+    void persistBackground(v, bgImagePath);
   }
   async function handleBgImageUpload(file: File) {
     if (!boardId) return;
+    if (!canAdmin) { toast.error("Só owner/admin do quadro pode alterar o fundo"); return; }
     const { uploadCoverImage, validateCapa } = await import("@/lib/atividadesBoards");
     const err = validateCapa(file);
     if (err) { toast.error(err); return; }
     setBgUploading(true);
     try {
       const path = await uploadCoverImage(boardId, file);
-      setBgImagePath(path);
-      try { if (BOARD_BG_IMG_KEY) localStorage.setItem(BOARD_BG_IMG_KEY, path); } catch { /* noop */ }
+      await persistBackground(boardBg, path);
       toast.success("Fundo atualizado");
     } catch (e) {
       console.error(e);
@@ -468,13 +481,10 @@ export default function AtividadesBoard() {
     const trimmed = url.trim();
     if (!trimmed) return;
     if (!/^https?:\/\//i.test(trimmed)) { toast.error("Informe uma URL http(s) válida"); return; }
-    setBgImagePath(trimmed);
-    try { if (BOARD_BG_IMG_KEY) localStorage.setItem(BOARD_BG_IMG_KEY, trimmed); } catch { /* noop */ }
+    void persistBackground(boardBg, trimmed);
   }
   function clearBgImage() {
-    setBgImagePath(null);
-    setBgImageUrl(null);
-    try { if (BOARD_BG_IMG_KEY) localStorage.removeItem(BOARD_BG_IMG_KEY); } catch { /* noop */ }
+    void persistBackground(boardBg, null);
   }
 
   const bgClass = bgImageUrl ? "" : (BG_OPTIONS.find((o) => o.key === boardBg)?.className ?? "");
@@ -711,6 +721,7 @@ export default function AtividadesBoard() {
             <Archive className="h-4 w-4 mr-1.5" />
             {resumo?.arquivado ? "Restaurar" : "Arquivar"}
           </Button>
+          {canAdmin && (
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm" aria-label="Alterar fundo do quadro">
@@ -793,11 +804,12 @@ export default function AtividadesBoard() {
                   </Button>
                 )}
                 <p className="text-[10px] text-muted-foreground leading-snug">
-                  Máx. 5 MB. Salvo apenas neste navegador (por quadro).
+                  Máx. 5 MB. Visível para todos os membros do quadro.
                 </p>
               </div>
             </PopoverContent>
           </Popover>
+          )}
           {canAdmin && (
             <Button
               variant="outline"
