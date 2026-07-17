@@ -22,7 +22,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { NotificacoesBell } from "@/components/NotificacoesBell";
 import { cn } from "@/lib/utils";
 import { countPendingDevEvaluations } from "@/lib/supabaseData";
@@ -355,30 +355,10 @@ export default function AppLayout() {
               </span>
             </span>
           </button>
-          <div className="flex items-center gap-1">
-            {isDual && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/escolher-perfil")}
-                title="Trocar perfil"
-              >
-                <Repeat className="size-4" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 justify-start min-w-0"
-              onClick={() => {
-                signOut();
-                navigate("/auth");
-              }}
-            >
-              <LogOut className="size-4 shrink-0" />
-              <span className="truncate">Sair</span>
-            </Button>
-            <span data-tour="nav-notificacoes" className="inline-flex"><NotificacoesBell /></span>
+          <div className="flex items-center justify-between gap-1 rounded-lg bg-sidebar-accent/40 px-1 py-1">
+            <span data-tour="nav-notificacoes" className="inline-flex">
+              <NotificacoesBell />
+            </span>
             <Button
               variant="ghost"
               size="icon"
@@ -389,7 +369,29 @@ export default function AppLayout() {
             >
               <Compass className="size-4" />
             </Button>
-            <ThemeToggle />
+            {isDual && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/escolher-perfil")}
+                title="Trocar perfil"
+                aria-label="Trocar perfil"
+              >
+                <Repeat className="size-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                signOut();
+                navigate("/auth");
+              }}
+              title="Sair"
+              aria-label="Sair"
+            >
+              <LogOut className="size-4" />
+            </Button>
           </div>
         </div>
 
@@ -421,9 +423,6 @@ export default function AppLayout() {
       )}
 
       <main className="flex-1 min-w-0 relative">
-        <div className="hidden md:flex fixed top-2 right-3 z-40 items-center gap-1">
-          <ThemeToggle />
-        </div>
         {sidebarHidden && (
           <button
             type="button"
@@ -468,7 +467,7 @@ export default function AppLayout() {
             >
               <Compass className="size-4" />
             </Button>
-            <ThemeToggle />
+            
             <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/auth"); }}>
               <LogOut className="size-4" />
             </Button>
