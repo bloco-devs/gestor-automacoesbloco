@@ -13,6 +13,7 @@ export function initials(nome: string) {
 export interface ResponsavelDisplay {
   id: string;
   nome: string;
+  avatarUrl?: string | null;
 }
 
 export function buildResponsaveisDisplay(
@@ -26,7 +27,8 @@ export function buildResponsaveisDisplay(
   for (const pid of card.responsavelPersonaIds) {
     const p = personasMap.get(pid);
     if (!p) continue;
-    result.push({ id: `p:${p.id}`, nome: p.nome });
+    const u = responsaveisMap.get(p.userId);
+    result.push({ id: `p:${p.id}`, nome: p.nome, avatarUrl: u?.avatarUrl ?? null });
     usersCoveredByPersona.add(p.userId);
   }
   for (const uid of card.responsavelIds) {
@@ -35,7 +37,7 @@ export function buildResponsaveisDisplay(
     if (!u) continue;
     const userPersonas = personasByUser.get(uid) ?? [];
     void userPersonas;
-    result.push({ id: `u:${uid}`, nome: u.nome });
+    result.push({ id: `u:${uid}`, nome: u.nome, avatarUrl: u.avatarUrl ?? null });
   }
   return result;
 }
