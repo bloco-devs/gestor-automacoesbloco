@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 import { NotificacoesBell } from "@/components/NotificacoesBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { countPendingDevEvaluations } from "@/lib/supabaseData";
 import { supabase } from "@/integrations/supabase/client";
