@@ -146,6 +146,20 @@ export async function updateBoard(
   if (error) throw error;
 }
 
+/** Define/limpa o fundo global do quadro (cor/gradiente e imagem de capa). Só owner/admin do quadro. */
+export async function setBoardBackground(
+  boardId: string,
+  background: string | null,
+  coverUrl: string | null,
+): Promise<void> {
+  const { error } = await sb.rpc("atividades_board_set_background" as never, {
+    _board_id: boardId,
+    _background: background,
+    _cover_url: coverUrl,
+  } as never);
+  if (error) throw error;
+}
+
 export async function deleteBoard(boardId: string): Promise<void> {
   const { error } = await sb.rpc("atividades_board_delete", {
     _board_id: boardId,
