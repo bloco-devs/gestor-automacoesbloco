@@ -70,23 +70,12 @@ export function BoardCard({ board, onToggleFavorito }: Props) {
   return (
     <div
       className={cn(
-        "group relative rounded-xl border overflow-hidden hover:shadow-md transition-shadow flex flex-col",
-        useLocalPreset && bgOption?.className,
+        "group relative rounded-xl border overflow-hidden hover:shadow-md transition-shadow flex flex-col bg-card",
       )}
-      style={{
-        backgroundColor: effectiveImgUrl || useLocalPreset
-          ? undefined
-          : `color-mix(in srgb, ${coverColor} 18%, hsl(var(--card)))`,
-        backgroundImage: effectiveImgUrl
-          ? `linear-gradient(hsl(var(--card) / 0.85), hsl(var(--card) / 0.95)), url("${effectiveImgUrl}")`
-          : undefined,
-        backgroundSize: effectiveImgUrl ? "cover" : undefined,
-        backgroundPosition: effectiveImgUrl ? "center" : undefined,
-      }}
     >
       <Link
         to={`/atividades/${board.id}`}
-        className={cn("block h-20 relative", useLocalPreset && bgOption?.className)}
+        className={cn("block h-28 relative", useLocalPreset && bgOption?.className)}
         style={{
           backgroundColor: effectiveImgUrl || useLocalPreset ? undefined : coverColor,
           backgroundImage: effectiveImgUrl ? `url("${effectiveImgUrl}")` : undefined,
