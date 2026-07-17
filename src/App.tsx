@@ -40,6 +40,7 @@ import AtividadesBoard from "./pages/AtividadesBoard";
 import ImportarQuadro from "./pages/atividades/importar/ImportarQuadro";
 
 import Ajuda from "./pages/Ajuda";
+import MeuPerfil from "./pages/MeuPerfil";
 import ObservabilidadeIA from "./pages/ObservabilidadeIA";
 import Consolidacao from "./pages/Consolidacao";
 import NotFound from "./pages/NotFound";
