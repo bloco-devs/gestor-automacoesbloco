@@ -131,13 +131,16 @@ function KanbanCardImpl({
           {responsaveis.length > 0 && (
             <div className="flex -space-x-1.5 shrink-0">
               {responsaveis.slice(0, 3).map((r) => (
-                <Avatar key={r.id} className="size-5 ring-1 ring-background" title={r.nome}>
-                  <AvatarFallback className="text-[9px]">{initials(r.nome)}</AvatarFallback>
+                <Avatar key={r.id} className="size-5 ring-1 ring-white" title={r.nome}>
+                  {r.avatarUrl && <AvatarImage src={r.avatarUrl} alt={r.nome} />}
+                  <AvatarFallback className="text-[9px] bg-slate-200 text-slate-800">
+                    {initials(r.nome)}
+                  </AvatarFallback>
                 </Avatar>
               ))}
               {responsaveis.length > 3 && (
                 <div
-                  className="size-5 rounded-full bg-muted ring-1 ring-background flex items-center justify-center text-[9px] text-muted-foreground"
+                  className="size-5 rounded-full bg-slate-200 text-slate-800 ring-1 ring-white flex items-center justify-center text-[9px]"
                   title={responsaveis.slice(3).map((r) => r.nome).join(", ")}
                 >
                   +{responsaveis.length - 3}
