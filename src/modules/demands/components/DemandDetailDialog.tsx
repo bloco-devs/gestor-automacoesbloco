@@ -56,7 +56,8 @@ import {
 } from "../types";
 import { cn } from "@/lib/utils";
 import { SLAIndicator } from "./SLAIndicator";
-import { Wand2 } from "lucide-react";
+import { DemandTimeline } from "./DemandTimeline";
+import { MessageSquare, Wand2 } from "lucide-react";
 
 interface Props {
   demand: Demand | null;
@@ -208,6 +209,9 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
                 </TabsTrigger>
                 <TabsTrigger value="anexos">
                   Anexos {attachments.length > 0 && `(${attachments.length})`}
+                </TabsTrigger>
+                <TabsTrigger value="historico" className="gap-1">
+                  <MessageSquare className="size-3.5" /> Histórico
                 </TabsTrigger>
                 <TabsTrigger value="ia" className="gap-1">
                   <Sparkles className="size-3.5" /> IA
@@ -386,6 +390,10 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
                         </li>
                       ))}
                     </ul>
+                  </TabsContent>
+
+                  <TabsContent value="historico" className="mt-0">
+                    <DemandTimeline demandId={demand.id} />
                   </TabsContent>
 
                   <TabsContent value="ia" className="mt-0 space-y-4">
