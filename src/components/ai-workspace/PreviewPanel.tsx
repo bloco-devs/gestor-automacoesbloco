@@ -19,13 +19,13 @@ import { ScorePill } from "@/components/ScorePill";
 import { TIPO_DEMANDA_LABEL, type TipoDemanda } from "@/lib/types";
 import type { AiPreview } from "@/hooks/useAIWorkspace";
 import { complexidadeLabel, impactoFor, prioridadeLabel } from "@/hooks/useAIWorkspace";
-import type { EcossistemaSistema } from "@/hooks/useEcossistemaSistemas";
+import type { SistemaAlvoOption } from "@/hooks/useEcossistemaSistemas";
 
 interface Props {
   preview: AiPreview;
   score: number;
   setores: string[];
-  sistemas: EcossistemaSistema[];
+  sistemas: SistemaAlvoOption[];
   onChange: (patch: Partial<AiPreview>) => void;
   onConfirm: () => void;
   onCancel: () => void;
