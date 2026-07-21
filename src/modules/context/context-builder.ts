@@ -125,6 +125,10 @@ export function buildFromRoute(pathname: string): Pick<
     case "perfil":
       module = "perfil";
       break;
+    case "trabalho":
+      module = parts[1] === "inbox" ? "inbox" : "unknown";
+      workspace = "engineering";
+      break;
     default:
       module = "unknown";
   }

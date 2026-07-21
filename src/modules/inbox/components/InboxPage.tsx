@@ -18,7 +18,7 @@ export default function InboxPage() {
 
   // Context Engine: workspace=engineering, module=inbox, page=home.
   useEffect(() => {
-    contextEngine.update({
+    contextEngine.patch({
       workspace: "engineering",
       module: "inbox",
       page: "home",
