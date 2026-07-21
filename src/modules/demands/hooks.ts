@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   addAttachment,
   assignDemand,
+  autoRespondDemand,
   createDemand,
   createTask,
   deleteTask,
@@ -13,6 +14,7 @@ import {
   listAttachments,
   listDemands,
   listTasks,
+  recordDeflection,
   softDeleteDemand,
   toggleTask,
   triageDemand,
@@ -198,3 +200,24 @@ export function useTriageDemand() {
     mutationFn: (input: { title: string; description: string }) => triageDemand(input),
   });
 }
+
+// ---------- Agente Autônomo Nível 1 ----------
+export function useAutoRespondDemand() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (demandId: string) => autoRespondDemand(demandId),
+    onSuccess: (_, demandId) => {
+      qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ["demand-comments", demandId] });
+    },
+  });
+}
+
+// ---------- Deflexão ----------
+export function useRecordDeflection() {
+  return useMutation({
+    mutationFn: (input: { articleId?: string | null; queryText: string; origin?: string }) =>
+      recordDeflection(input),
+  });
+}
+
