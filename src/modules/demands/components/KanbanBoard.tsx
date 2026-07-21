@@ -69,6 +69,26 @@ export function KanbanBoard() {
 
   return (
     <>
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <Button
+          size="sm"
+          variant={onlyAtRisk ? "default" : "outline"}
+          onClick={() => setOnlyAtRisk((v) => !v)}
+          className="gap-1.5"
+        >
+          <AlertTriangle className="size-3.5" />
+          Em Risco de SLA
+        </Button>
+        <Button
+          size="sm"
+          variant={sortByUrgency ? "default" : "outline"}
+          onClick={() => setSortByUrgency((v) => !v)}
+          className="gap-1.5"
+        >
+          <ArrowDownWideNarrow className="size-3.5" />
+          Ordenar por Urgência
+        </Button>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {STATUS_COLUMNS.map((col) => {
           const items = grouped.get(col.id) ?? [];
