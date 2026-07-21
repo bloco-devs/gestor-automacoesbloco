@@ -1,0 +1,11 @@
+export { knowledgeAdminService } from "./services/admin-service";
+export { useAdminArticles, useAdminArticleMutations } from "./hooks/useAdminArticles";
+export { useArticleVersions, useRestoreVersion } from "./hooks/useArticleVersions";
+export { ArticlesTable } from "./components/ArticlesTable";
+export { ArticleFormDialog } from "./components/ArticleFormDialog";
+export { MetricsStrip } from "./components/MetricsStrip";
+export { MarkdownEditor } from "./components/MarkdownEditor";
+export { AISuggestPanel } from "./components/AISuggestPanel";
+export { VersionHistoryPanel } from "./components/VersionHistoryPanel";
+export { StatusPill } from "./components/StatusPill";
+export * from "./types";

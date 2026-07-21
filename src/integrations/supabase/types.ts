@@ -1101,6 +1101,47 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_article_versions: {
+        Row: {
+          article_id: string
+          changed_by: string | null
+          changed_by_email: string | null
+          created_at: string
+          id: string
+          resumo_alteracao: string | null
+          snapshot: Json
+          versao: number
+        }
+        Insert: {
+          article_id: string
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          id?: string
+          resumo_alteracao?: string | null
+          snapshot: Json
+          versao: number
+        }
+        Update: {
+          article_id?: string
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          id?: string
+          resumo_alteracao?: string | null
+          snapshot?: Json
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_article_versions_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_articles: {
         Row: {
           autor_email: string | null
@@ -1108,6 +1149,7 @@ export type Database = {
           categoria: string | null
           conteudo: string | null
           created_at: string
+          deleted_at: string | null
           id: string
           palavras_chave: string[]
           resumo: string | null
@@ -1127,6 +1169,7 @@ export type Database = {
           categoria?: string | null
           conteudo?: string | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
           palavras_chave?: string[]
           resumo?: string | null
@@ -1146,6 +1189,7 @@ export type Database = {
           categoria?: string | null
           conteudo?: string | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
           palavras_chave?: string[]
           resumo?: string | null
