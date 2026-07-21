@@ -61,6 +61,7 @@ export function useAIWorkspace() {
   const { toast } = useToast();
   const setoresDisponiveis = useSetoresNomes();
   const { sistemas } = useEcossistemaSistemas(true);
+  const workspaceContext = useAIWorkspaceSnapshot();
 
   const [phase, setPhase] = useState<Phase>("welcome");
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -94,6 +95,7 @@ export function useAIWorkspace() {
         const result = await aiOrchestrator.finalize({
           conversation: history,
           sistemas: sistemas.map((s) => ({ slug: s.id, nome: s.nome })),
+          workspaceContext,
         });
         if (cancelled.current) return;
 
