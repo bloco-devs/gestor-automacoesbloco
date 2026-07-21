@@ -13,6 +13,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RecoveryGuard } from "@/components/RecoveryGuard";
 import AuthErrorScreen from "@/components/AuthErrorScreen";
 import AppLayout from "@/components/AppLayout";
+import { ContextProvider } from "@/modules/context";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SsoCallback from "./pages/SsoCallback";
