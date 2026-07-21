@@ -34,7 +34,7 @@ describe("computeMetrics", () => {
       mk({ status: "publicado", views: 5, autor_id: "b" }),
       mk({ status: "rascunho", autor_id: "a" }),
       mk({ status: "em_revisao", autor_id: "c" }),
-      mk({ status: "arquivado" }),
+      mk({ status: "arquivado", autor_id: "d" }),
       mk({ status: "publicado", deleted_at: new Date().toISOString() }),
     ];
     const m = knowledgeAdminService.computeMetrics(rows);
