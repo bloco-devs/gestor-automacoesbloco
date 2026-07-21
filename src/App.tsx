@@ -50,6 +50,7 @@ import Consolidacao from "./pages/Consolidacao";
 import Inbox from "./pages/Inbox";
 import Portal from "./pages/Portal";
 import BaseConhecimentoAdmin from "./pages/admin/BaseConhecimento";
+import Demandas from "./pages/admin/Demandas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -94,6 +95,7 @@ const AppRoutes = () => {
         <Route path="/observabilidade-ia" element={<ProtectedRoute role="developer"><ObservabilidadeIA /></ProtectedRoute>} />
         <Route path="/consolidacao" element={<ProtectedRoute role="developer"><Consolidacao /></ProtectedRoute>} />
         <Route path="/admin/base-conhecimento" element={<ProtectedRoute role="developer"><BaseConhecimentoAdmin /></ProtectedRoute>} />
+        <Route path="/admin/demandas" element={<ProtectedRoute role="developer"><Demandas /></ProtectedRoute>} />
 
         {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
         <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
