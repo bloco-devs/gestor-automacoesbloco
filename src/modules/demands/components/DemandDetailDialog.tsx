@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { getAttachmentSignedUrl } from "../service";
 import {
+  useAssignDemand,
   useCreateDemandTask,
   useDeleteDemandTask,
   useDemandAttachments,
@@ -43,6 +44,7 @@ import {
   useGenerateAIPlan,
   useToggleDemandTask,
   useUpdateDemandStatus,
+  useUserWorkloads,
 } from "../hooks";
 import {
   COMPLEXITY_META,
@@ -54,6 +56,7 @@ import {
 } from "../types";
 import { cn } from "@/lib/utils";
 import { SLAIndicator } from "./SLAIndicator";
+import { Wand2 } from "lucide-react";
 
 interface Props {
   demand: Demand | null;
