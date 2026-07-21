@@ -49,6 +49,7 @@ import ObservabilidadeIA from "./pages/ObservabilidadeIA";
 import Consolidacao from "./pages/Consolidacao";
 import Inbox from "./pages/Inbox";
 import Portal from "./pages/Portal";
+import BaseConhecimentoAdmin from "./pages/admin/BaseConhecimento";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
