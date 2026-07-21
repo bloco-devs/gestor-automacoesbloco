@@ -953,6 +953,44 @@ export type Database = {
           },
         ]
       }
+      demand_attachments: {
+        Row: {
+          created_at: string
+          demand_id: string
+          file_name: string | null
+          file_type: string | null
+          file_url: string
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          demand_id: string
+          file_name?: string | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          demand_id?: string
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_attachments_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demanda_melhorias: {
         Row: {
           data: string
@@ -1064,6 +1102,54 @@ export type Database = {
           ordem?: number
           solicitacao_id?: string
           titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      demands: {
+        Row: {
+          assigned_to: string | null
+          complexity: Database["public"]["Enums"]["demand_complexity"]
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          description: string | null
+          id: string
+          priority: Database["public"]["Enums"]["demand_priority"]
+          status: Database["public"]["Enums"]["demand_status"]
+          system_id: string | null
+          title: string
+          type: Database["public"]["Enums"]["demand_type"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          complexity?: Database["public"]["Enums"]["demand_complexity"]
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["demand_priority"]
+          status?: Database["public"]["Enums"]["demand_status"]
+          system_id?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["demand_type"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          complexity?: Database["public"]["Enums"]["demand_complexity"]
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["demand_priority"]
+          status?: Database["public"]["Enums"]["demand_status"]
+          system_id?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["demand_type"]
           updated_at?: string
         }
         Relationships: []
@@ -2140,6 +2226,22 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       atividades_board_role: "owner" | "admin" | "member" | "observer"
+      demand_complexity: "facil" | "media" | "dificil"
+      demand_priority: "baixa" | "media" | "alta" | "critica"
+      demand_status:
+        | "backlog"
+        | "a_fazer"
+        | "em_desenvolvimento"
+        | "em_testes"
+        | "homologacao"
+        | "concluido"
+      demand_type:
+        | "bug"
+        | "melhoria"
+        | "nova_funcionalidade"
+        | "refatoracao"
+        | "infraestrutura"
+        | "automacao"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2269,6 +2371,24 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       atividades_board_role: ["owner", "admin", "member", "observer"],
+      demand_complexity: ["facil", "media", "dificil"],
+      demand_priority: ["baixa", "media", "alta", "critica"],
+      demand_status: [
+        "backlog",
+        "a_fazer",
+        "em_desenvolvimento",
+        "em_testes",
+        "homologacao",
+        "concluido",
+      ],
+      demand_type: [
+        "bug",
+        "melhoria",
+        "nova_funcionalidade",
+        "refatoracao",
+        "infraestrutura",
+        "automacao",
+      ],
     },
   },
 } as const
