@@ -13,6 +13,15 @@ export interface DemandMetrics {
   porStatus: Record<DemandStatus, number>;
   porPrioridade: Record<DemandPriority, number>;
   porTipo: Record<DemandType, number>;
+  // Deflexão / IA
+  respondidasPorIA: number;
+  defletidasKB: number;
+  economiaPct: number;
+}
+
+export interface DeflectionStats {
+  respondidasPorIA: number;
+  defletidasKB: number;
 }
 
 export interface SlaPolicy {
