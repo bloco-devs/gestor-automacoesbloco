@@ -106,6 +106,7 @@ export function DemandCard({ demand, onStatusChange, onDelete, onOpen, canDelete
             </span>
           )}
         </div>
+        <div onClick={(e) => e.stopPropagation()}>
         <Select value={demand.status} onValueChange={(v) => onStatusChange(v as DemandStatus)}>
           <SelectTrigger className="h-6 w-32 text-[11px] border-border/60">
             <SelectValue />
@@ -118,6 +119,7 @@ export function DemandCard({ demand, onStatusChange, onDelete, onOpen, canDelete
             ))}
           </SelectContent>
         </Select>
+        </div>
       </div>
     </Card>
   );
