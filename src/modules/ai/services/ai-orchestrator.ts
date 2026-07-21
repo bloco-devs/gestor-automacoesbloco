@@ -9,6 +9,28 @@ import {
   type TriageResult,
 } from "./ai-workspace-service";
 
+/**
+ * Snapshot mínimo do WorkspaceContext consumido pelo Orchestrator.
+ * Duplicado como interface local para manter o Orchestrator desacoplado
+ * do módulo `context` (injeção de dependência por estrutura).
+ */
+export interface OrchestratorContext {
+  workspace?: string;
+  module?: string;
+  page?: string;
+  route?: string;
+  entityType?: string;
+  entityId?: string | null;
+  userRole?: string | null;
+  breadcrumbs?: string[];
+  filters?: Record<string, unknown>;
+}
+
+export interface OrchestratorOptions {
+  suggestedSystem?: string | null;
+  workspaceContext?: OrchestratorContext;
+}
+
 export interface OrchestratorDecision {
   classification: IntentClassification;
   pipeline: PipelineResult;
