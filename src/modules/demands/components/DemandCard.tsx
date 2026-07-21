@@ -25,6 +25,7 @@ import {
   type Demand,
   type DemandStatus,
 } from "../types";
+import { SLAIndicator } from "./SLAIndicator";
 
 interface Props {
   demand: Demand;
