@@ -65,6 +65,7 @@ export const INTENT_REGISTRY: Record<IntentId, IntentDefinition> = {
       "melhorar", "aprimorar", "otimizar", "refinar", "ajustar",
       "deixar mais", "ficaria melhor", "sugiro melhorar",
     ],
+    patterns: [/melhor(ar|ia)/i, /aprimor(ar|amento)/i],
     pipeline: "improvement",
     shouldCreateTicket: true,
     shouldAskQuestion: true,
