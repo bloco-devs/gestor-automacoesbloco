@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAddAttachment, useCreateDemand, useTriageDemand, useUserWorkloads } from "../hooks";
+import { useAddAttachment, useAutoRespondDemand, useCreateDemand, useTriageDemand, useUserWorkloads } from "../hooks";
 import {
   COMPLEXITY_META,
   PRIORITY_META,
@@ -46,6 +46,7 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
   const create = useCreateDemand();
   const addAtt = useAddAttachment();
   const triage = useTriageDemand();
+  const autoRespond = useAutoRespondDemand();
   const { data: workloads = [] } = useUserWorkloads(open);
   const [plataformas, setPlataformas] = useState<Array<{ id: string; nome: string }>>([]);
   useEffect(() => {
@@ -147,6 +148,20 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
       }
 
       toast({ title: "Demanda criada com sucesso" });
+
+      // Agente Autônomo Nível 1: se ficou sem responsável, tenta responder
+      // via Base de Conhecimento (fire-and-forget; falhas não bloqueiam).
+      if (!assigned_to) {
+        void autoRespond.mutateAsync(demand.id).then((res) => {
+          if (res?.ok && res.articleTitle) {
+            toast({
+              title: "Agente IA respondeu",
+              description: `Sugestão publicada: ${res.articleTitle}`,
+            });
+          }
+        });
+      }
+
       reset();
       onOpenChange(false);
     } catch (err) {
