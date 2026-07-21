@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 export interface DemandComment {
   id: string;
   demand_id: string;
-  user_id: string;
+  user_id: string | null;
   content: string;
   is_internal: boolean;
+  is_ai?: boolean;
   created_at: string;
   updated_at: string;
 }

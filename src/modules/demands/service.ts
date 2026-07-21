@@ -265,3 +265,61 @@ export async function triageDemand(input: { title: string; description: string }
   if (error) throw error;
   return data as DemandTriageResult;
 }
+
+// ---------- Agente Autônomo Nível 1 ----------
+export interface AutoResponderResult {
+  ok?: boolean;
+  skipped?: string;
+  commentId?: string;
+  articleId?: string;
+  articleTitle?: string;
+  confidence?: number;
+}
+
+/**
+ * Aciona a Edge Function `demand-auto-responder`. Tolerante a falha —
+ * nunca deve interromper o fluxo do usuário. Só faz sentido chamar após
+ * criar uma demanda que ficou SEM responsável atribuído.
+ */
+export async function autoRespondDemand(demandId: string): Promise<AutoResponderResult | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke("demand-auto-responder", {
+      body: { demandId },
+    });
+    if (error) {
+      console.warn("[demand-auto-responder] falhou:", error.message);
+      return null;
+    }
+    return (data ?? null) as AutoResponderResult | null;
+  } catch (err) {
+    console.warn("[demand-auto-responder] exceção:", err);
+    return null;
+  }
+}
+
+// ---------- Deflexão de chamados (Base de Conhecimento) ----------
+export interface RecordDeflectionInput {
+  articleId?: string | null;
+  queryText: string;
+  origin?: string;
+}
+
+export async function recordDeflection(input: RecordDeflectionInput): Promise<void> {
+  try {
+    const { data: userRes } = await supabase.auth.getUser();
+    const uid = userRes.user?.id;
+    if (!uid) return;
+    await supabase
+      .from("ticket_deflections" as never)
+      .insert({
+        user_id: uid,
+        article_id: input.articleId ?? null,
+        query_text: input.queryText.slice(0, 1000),
+        resolved_without_ticket: true,
+        origin: input.origin ?? "portal",
+      } as never);
+  } catch (err) {
+    console.warn("[ticket_deflections] falha:", err);
+  }
+}
+
