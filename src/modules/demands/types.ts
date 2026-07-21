@@ -42,6 +42,10 @@ export interface Demand {
   sla_due_at: string | null;
   sla_first_response_at: string | null;
   sla_status: DemandSlaStatus;
+  ai_auto_responded?: boolean;
+  ai_confidence_score?: number | null;
+  ai_response_article_id?: string | null;
+  ai_response_comment_id?: string | null;
   attachments_count?: number;
 }
 

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, CheckCircle2, Clock, ListChecks } from "lucide-react";
+import { AlertTriangle, Bot, CheckCircle2, Clock, ListChecks, Sparkles } from "lucide-react";
 import type { DemandMetrics } from "../service";
 
 function fmtHoras(h: number | null): string {
@@ -40,10 +40,27 @@ export function MetricsOverview({ metrics, loading }: { metrics: DemandMetrics |
       icon: AlertTriangle,
       accent: "text-destructive",
     },
+    {
+      label: "Chamados Defletidos por IA",
+      value: metrics ? `${metrics.respondidasPorIA + metrics.defletidasKB}` : "—",
+      hint: metrics
+        ? `${metrics.respondidasPorIA} respondidos · ${metrics.defletidasKB} resolvidos na KB`
+        : "",
+      icon: Bot,
+      accent: "text-primary",
+    },
+    {
+      label: "Economia Operacional",
+      value: metrics ? `${metrics.economiaPct.toFixed(1)}%` : "—",
+      hint: "Casos resolvidos sem intervenção humana",
+      icon: Sparkles,
+      accent: "text-info",
+    },
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+
       {cards.map((c) => (
         <Card key={c.label}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

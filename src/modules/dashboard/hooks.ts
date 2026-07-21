@@ -1,10 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { computeMetrics, fetchDemandsForMetrics, listSlaPolicies, updateSlaPolicy } from "./service";
+import {
+  computeMetrics,
+  fetchDeflectionStats,
+  fetchDemandsForMetrics,
+  listSlaPolicies,
+  updateSlaPolicy,
+} from "./service";
 
 export function useDemandMetrics() {
   const q = useQuery({ queryKey: ["demand-metrics"], queryFn: fetchDemandsForMetrics });
-  const metrics = useMemo(() => (q.data ? computeMetrics(q.data) : null), [q.data]);
+  const defl = useQuery({
+    queryKey: ["deflection-stats"],
+    queryFn: fetchDeflectionStats,
+    staleTime: 60_000,
+  });
+  const metrics = useMemo(
+    () => (q.data ? computeMetrics(q.data, defl.data) : null),
+    [q.data, defl.data],
+  );
   return { ...q, metrics };
 }
 

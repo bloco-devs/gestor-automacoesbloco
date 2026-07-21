@@ -129,7 +129,7 @@ export function DemandTimeline({ demandId }: Props) {
   // Profiles (comment authors + audit users + audit assigned_to values)
   const userIds = useMemo(() => {
     const s = new Set<string>();
-    for (const c of commentsQ.data ?? []) s.add(c.user_id);
+    for (const c of commentsQ.data ?? []) if (c.user_id) s.add(c.user_id);
     for (const l of logsQ.data ?? []) {
       if (l.user_id) s.add(l.user_id);
       if (l.field_name === "assigned_to") {
@@ -214,28 +214,51 @@ export function DemandTimeline({ demandId }: Props) {
         {items.map((item) => {
           if (item.kind === "comment") {
             const c = item.data;
-            const p = profilesQ.data?.get(c.user_id);
+            const isAi = c.is_ai === true;
+            const p = c.user_id ? profilesQ.data?.get(c.user_id) : undefined;
             return (
               <li key={`c-${c.id}`} className="flex gap-2.5">
                 <Avatar className="size-8 shrink-0">
-                  {p?.avatar_url && <AvatarImage src={p.avatar_url} alt={p.nome || p.email || ""} />}
-                  <AvatarFallback className="text-xs">
-                    {initialsFrom(p?.nome, p?.email, c.user_id)}
-                  </AvatarFallback>
+                  {isAi ? (
+                    <AvatarFallback className="text-xs bg-primary/15 text-primary">
+                      IA
+                    </AvatarFallback>
+                  ) : (
+                    <>
+                      {p?.avatar_url && (
+                        <AvatarImage src={p.avatar_url} alt={p.nome || p.email || ""} />
+                      )}
+                      <AvatarFallback className="text-xs">
+                        {initialsFrom(p?.nome, p?.email, c.user_id ?? undefined)}
+                      </AvatarFallback>
+                    </>
+                  )}
                 </Avatar>
                 <div
                   className={cn(
                     "flex-1 rounded-md border px-3 py-2",
-                    c.is_internal
-                      ? "bg-warning/5 border-warning/30"
-                      : "bg-muted/30 border-border/60",
+                    isAi
+                      ? "bg-primary/5 border-primary/30"
+                      : c.is_internal
+                        ? "bg-warning/5 border-warning/30"
+                        : "bg-muted/30 border-border/60",
                   )}
                 >
                   <div className="flex items-center gap-2 text-xs mb-1">
-                    <span className="font-medium">{displayName(c.user_id)}</span>
+                    <span className="font-medium">
+                      {isAi ? "Agente IA · Nível 1" : displayName(c.user_id)}
+                    </span>
                     <span className="text-muted-foreground">·</span>
                     <span className="text-muted-foreground">{relative(c.created_at)}</span>
-                    {c.is_internal && (
+                    {isAi && (
+                      <Badge
+                        variant="outline"
+                        className="ml-auto h-5 gap-1 text-[10px] bg-primary/10 text-primary border-primary/40"
+                      >
+                        Resposta automática
+                      </Badge>
+                    )}
+                    {!isAi && c.is_internal && (
                       <Badge
                         variant="outline"
                         className="ml-auto h-5 gap-1 text-[10px] bg-warning/10 text-warning border-warning/40"
