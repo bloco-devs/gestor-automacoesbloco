@@ -111,8 +111,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <RecoveryGuard />
-          <AppRoutes />
+          <ContextProvider>
+            <RecoveryGuard />
+            <AppRoutes />
+          </ContextProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
