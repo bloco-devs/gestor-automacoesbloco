@@ -34,6 +34,7 @@ graph TD
 - **State**: `TanStack Query` para dados remotos; contextos leves (`AuthProvider`, `ThemeProvider`) para sessão/tema.
 - **UI**: shadcn/ui + Tailwind; tokens semânticos HSL em `src/index.css`.
 - **Realtime**: hooks (`useAtividadesBoard`) abrem canais `postgres_changes` com cleanup no `useEffect`.
+- **Camadas transversais**: `src/modules/context` (Context Engine), `src/modules/ai` (Intent Engine + Orchestrator), `src/modules/inbox` (Intelligent Inbox) e `src/modules/platform` (Navigation/Search/Command Registries, Command Palette, Hotkeys — ver `docs/25-Platform-Productivity.md`).
 
 ## Backend Supabase
 - Projeto externo `cgbhpenkytibgiosksrb`.

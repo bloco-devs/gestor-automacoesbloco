@@ -7,6 +7,7 @@
 
 ## Fase atual — Estabilização (Q3 2026)
 - **Task 006 — Intelligent Inbox** entregue: nova rota `/trabalho/inbox`, priority engine local, insights heurísticos e integração com Context Engine (Dashboard preservado). Detalhes em `docs/24-Intelligent-Inbox.md`.
+- **Task 007 — Platform Productivity Layer** entregue: `src/modules/platform` com Navigation/Search/Command registries, Command Palette global (⌘K), hotkeys, ranking heurístico. Detalhes em `docs/25-Platform-Productivity.md`.
 - Módulo Atividades RC1 em produção.
 - 11 ondas de IA em produção (`Onda 0` guardrails → `Onda 10` testes).
 - Importador Trello (RFC-001) em produção.
