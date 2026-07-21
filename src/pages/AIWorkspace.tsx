@@ -12,6 +12,7 @@ import { ConversationHeader } from "@/components/ai-workspace/ConversationHeader
 import { ConversationFooter } from "@/components/ai-workspace/ConversationFooter";
 import { PreviewPanel } from "@/components/ai-workspace/PreviewPanel";
 import { ConfirmDialog } from "@/components/ai-workspace/ConfirmDialog";
+import { KnowledgeSuggestions } from "@/modules/knowledge";
 import { Loader2 } from "lucide-react";
 
 export default function AIWorkspace() {
@@ -84,6 +85,15 @@ export default function AIWorkspace() {
         <div className="space-y-3">
           <ConversationHeader onReset={handleReset} showReset={messages.length > 0} />
           <ChatContainer messages={messages} thinking={thinking || processing} />
+          <KnowledgeSuggestions
+            query={messages.filter((m) => m.role === "user").map((m) => m.content).join("\n")}
+            origin="ai_workspace"
+            enabled={!processing}
+            onResolved={() => {
+              reset();
+              navigate("/portal");
+            }}
+          />
           {processing ? (
             <div
               className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground"
