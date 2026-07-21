@@ -9,6 +9,7 @@ import { computeScoreSolicitante } from "@/lib/scoreV2";
 import type { TipoDemanda } from "@/lib/types";
 import { TIPO_DEMANDA_LABEL } from "@/lib/types";
 import { aiOrchestrator, type OrchestratorDecision } from "@/modules/ai";
+import { useAIWorkspaceSnapshot } from "@/modules/context";
 
 export type ChatRole = "user" | "assistant";
 export type ChatMsg = { role: ChatRole; content: string };
