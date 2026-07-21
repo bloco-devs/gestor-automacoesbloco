@@ -9,6 +9,28 @@ import {
   type TriageResult,
 } from "./ai-workspace-service";
 
+/**
+ * Snapshot mínimo do WorkspaceContext consumido pelo Orchestrator.
+ * Duplicado como interface local para manter o Orchestrator desacoplado
+ * do módulo `context` (injeção de dependência por estrutura).
+ */
+export interface OrchestratorContext {
+  workspace?: string;
+  module?: string;
+  page?: string;
+  route?: string;
+  entityType?: string;
+  entityId?: string | null;
+  userRole?: string | null;
+  breadcrumbs?: string[];
+  filters?: Record<string, unknown>;
+}
+
+export interface OrchestratorOptions {
+  suggestedSystem?: string | null;
+  workspaceContext?: OrchestratorContext;
+}
+
 export interface OrchestratorDecision {
   classification: IntentClassification;
   pipeline: PipelineResult;
@@ -25,6 +47,7 @@ export interface OrchestratorTurn {
 export interface OrchestratorFinalizeInput {
   conversation: Conversation;
   sistemas: Array<{ slug: string; nome: string }>;
+  workspaceContext?: OrchestratorContext;
 }
 
 export interface OrchestratorFinalizeResult {
@@ -51,10 +74,14 @@ function deriveTitulo(descricao: string): string {
 export const aiOrchestrator = {
   decide(
     conversation: Conversation,
-    opts?: { suggestedSystem?: string | null },
+    opts?: OrchestratorOptions,
   ): OrchestratorDecision {
-    const classification = classifyConversation(conversation, opts);
+    const classification = classifyConversation(conversation, {
+      suggestedSystem: opts?.suggestedSystem ?? null,
+    });
     const pipeline = runPipeline({ conversation, classification });
+    // workspaceContext fica disponível para futuros pipelines sem quebrar contrato.
+    void opts?.workspaceContext;
     return { classification, pipeline };
   },
 
@@ -64,9 +91,11 @@ export const aiOrchestrator = {
    */
   async runTurn(
     conversation: Conversation,
-    opts?: { maxUserTurns?: number },
+    opts?: { maxUserTurns?: number; workspaceContext?: OrchestratorContext },
   ): Promise<OrchestratorTurn> {
-    const decision = this.decide(conversation);
+    const decision = this.decide(conversation, {
+      workspaceContext: opts?.workspaceContext,
+    });
     const userTurns = conversation.filter((m) => m.role === "user").length;
     const maxTurns = opts?.maxUserTurns ?? 2;
 
@@ -94,6 +123,7 @@ export const aiOrchestrator = {
     ]);
     const decision = this.decide(input.conversation, {
       suggestedSystem: triagem.sistema_alvo_slug,
+      workspaceContext: input.workspaceContext,
     });
     return { titulo, descricao, triagem, similares, decision };
   },

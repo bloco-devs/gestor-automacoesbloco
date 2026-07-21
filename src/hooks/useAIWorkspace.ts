@@ -9,6 +9,7 @@ import { computeScoreSolicitante } from "@/lib/scoreV2";
 import type { TipoDemanda } from "@/lib/types";
 import { TIPO_DEMANDA_LABEL } from "@/lib/types";
 import { aiOrchestrator, type OrchestratorDecision } from "@/modules/ai";
+import { useAIWorkspaceSnapshot } from "@/modules/context";
 
 export type ChatRole = "user" | "assistant";
 export type ChatMsg = { role: ChatRole; content: string };
@@ -60,6 +61,7 @@ export function useAIWorkspace() {
   const { toast } = useToast();
   const setoresDisponiveis = useSetoresNomes();
   const { sistemas } = useEcossistemaSistemas(true);
+  const workspaceContext = useAIWorkspaceSnapshot();
 
   const [phase, setPhase] = useState<Phase>("welcome");
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -93,6 +95,7 @@ export function useAIWorkspace() {
         const result = await aiOrchestrator.finalize({
           conversation: history,
           sistemas: sistemas.map((s) => ({ slug: s.id, nome: s.nome })),
+          workspaceContext,
         });
         if (cancelled.current) return;
 
@@ -132,7 +135,7 @@ export function useAIWorkspace() {
         setPhase("chatting");
       }
     },
-    [setoresDisponiveis, sistemas, toast],
+    [setoresDisponiveis, sistemas, toast, workspaceContext],
   );
 
   const sendMessage = useCallback(
@@ -144,7 +147,7 @@ export function useAIWorkspace() {
       if (phase === "welcome") setPhase("chatting");
       setThinking(true);
       try {
-        const turn = await aiOrchestrator.runTurn(nextHistory, { maxUserTurns: MAX_USER_TURNS });
+        const turn = await aiOrchestrator.runTurn(nextHistory, { maxUserTurns: MAX_USER_TURNS, workspaceContext });
         if (turn.shouldFinalize) {
           setThinking(false);
           await finalize(nextHistory);
@@ -163,7 +166,7 @@ export function useAIWorkspace() {
         setThinking(false);
       }
     },
-    [finalize, messages, phase, thinking, toast],
+    [finalize, messages, phase, thinking, toast, workspaceContext],
   );
 
   const updatePreview = useCallback((patch: Partial<AiPreview>) => {
