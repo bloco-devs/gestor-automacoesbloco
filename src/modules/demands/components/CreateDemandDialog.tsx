@@ -41,7 +41,14 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
   const { toast } = useToast();
   const create = useCreateDemand();
   const addAtt = useAddAttachment();
-  const plataformas = usePlataformas();
+  const [plataformas, setPlataformas] = useState<Array<{ id: string; nome: string }>>([]);
+  useEffect(() => {
+    supabase
+      .from("plataformas")
+      .select("id, nome")
+      .order("nome")
+      .then(({ data }) => setPlataformas(data ?? []));
+  }, []);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
