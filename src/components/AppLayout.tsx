@@ -370,6 +370,7 @@ export default function AppLayout() {
             <span data-tour="nav-notificacoes" className="inline-flex">
               <NotificacoesBell />
             </span>
+            <NotificationsDrawer />
             <Button
               variant="ghost"
               size="icon"
@@ -469,6 +470,7 @@ export default function AppLayout() {
           </div>
           <div className="flex items-center gap-1">
             <span data-tour="nav-notificacoes" className="inline-flex"><NotificacoesBell /></span>
+            <NotificationsDrawer />
             <Button
               variant="ghost"
               size="icon"
