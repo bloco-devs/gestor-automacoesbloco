@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { AlertTriangle, ArrowDownWideNarrow } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -6,6 +8,7 @@ import { useDeleteDemand, useDemands, useUpdateDemandStatus } from "../hooks";
 import { STATUS_COLUMNS, type Demand, type DemandStatus } from "../types";
 import { DemandCard } from "./DemandCard";
 import { DemandDetailDialog } from "./DemandDetailDialog";
+import { computeSlaView } from "./SLAIndicator";
 
 export function KanbanBoard() {
   const { data: demands = [], isLoading } = useDemands();
@@ -14,13 +17,32 @@ export function KanbanBoard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [openId, setOpenId] = useState<string | null>(null);
+  const [onlyAtRisk, setOnlyAtRisk] = useState(false);
+  const [sortByUrgency, setSortByUrgency] = useState(false);
 
   const grouped = useMemo(() => {
+    const now = Date.now();
     const m = new Map<DemandStatus, Demand[]>();
     STATUS_COLUMNS.forEach((c) => m.set(c.id, []));
-    for (const d of demands) m.get(d.status)?.push(d);
+    const filtered = onlyAtRisk
+      ? demands.filter((d) => {
+          const v = computeSlaView(d.sla_due_at, d.sla_status, d.status, d.created_at, now);
+          return v.kind === "warning" || v.kind === "overdue";
+        })
+      : demands;
+    for (const d of filtered) m.get(d.status)?.push(d);
+    if (sortByUrgency) {
+      for (const [k, list] of m) {
+        list.sort((a, b) => {
+          const va = computeSlaView(a.sla_due_at, a.sla_status, a.status, a.created_at, now).ms;
+          const vb = computeSlaView(b.sla_due_at, b.sla_status, b.status, b.created_at, now).ms;
+          return va - vb;
+        });
+        m.set(k, list);
+      }
+    }
     return m;
-  }, [demands]);
+  }, [demands, onlyAtRisk, sortByUrgency]);
 
   const activeDemand = useMemo(
     () => demands.find((d) => d.id === openId) ?? null,
