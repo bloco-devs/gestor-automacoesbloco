@@ -20,6 +20,7 @@ import RedefinirSenha from "./pages/RedefinirSenha";
 import EscolherPerfil from "./pages/EscolherPerfil";
 import SolicitarSolucao from "./pages/SolicitarSolucao";
 import NovaSolicitacao from "./pages/NovaSolicitacao";
+import AIWorkspace from "./pages/AIWorkspace";
 import MinhasSolicitacoes from "./pages/MinhasSolicitacoes";
 import RequesterDashboard from "./pages/RequesterDashboard";
 import Dashboard from "./pages/Dashboard";
@@ -63,7 +64,8 @@ const AppRoutes = () => {
         {/* Solicitante */}
         <Route path="/dashboard-solicitante" element={<ProtectedRoute role="requester"><RequesterDashboard /></ProtectedRoute>} />
         <Route path="/minhas-solicitacoes" element={<ProtectedRoute role="requester"><MinhasSolicitacoes /></ProtectedRoute>} />
-        <Route path="/nova-solicitacao" element={<ProtectedRoute role="requester"><NovaSolicitacao /></ProtectedRoute>} />
+        <Route path="/nova-solicitacao" element={<ProtectedRoute role="requester"><AIWorkspace /></ProtectedRoute>} />
+        <Route path="/nova-solicitacao/classico" element={<ProtectedRoute role="requester"><NovaSolicitacao /></ProtectedRoute>} />
 
         {/* Desenvolvedor */}
         <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
