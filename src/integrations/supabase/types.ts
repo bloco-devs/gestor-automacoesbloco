@@ -1157,6 +1157,9 @@ export type Database = {
           description: string | null
           id: string
           priority: Database["public"]["Enums"]["demand_priority"]
+          sla_due_at: string | null
+          sla_first_response_at: string | null
+          sla_status: Database["public"]["Enums"]["demand_sla_status"]
           status: Database["public"]["Enums"]["demand_status"]
           system_id: string | null
           title: string
@@ -1172,6 +1175,9 @@ export type Database = {
           description?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["demand_priority"]
+          sla_due_at?: string | null
+          sla_first_response_at?: string | null
+          sla_status?: Database["public"]["Enums"]["demand_sla_status"]
           status?: Database["public"]["Enums"]["demand_status"]
           system_id?: string | null
           title: string
@@ -1187,6 +1193,9 @@ export type Database = {
           description?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["demand_priority"]
+          sla_due_at?: string | null
+          sla_first_response_at?: string | null
+          sla_status?: Database["public"]["Enums"]["demand_sla_status"]
           status?: Database["public"]["Enums"]["demand_status"]
           system_id?: string | null
           title?: string
@@ -1492,6 +1501,30 @@ export type Database = {
           descricao?: string
           id?: string
           nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sla_policies: {
+        Row: {
+          created_at: string
+          id: string
+          priority: Database["public"]["Enums"]["demand_priority"]
+          resolution_time_hours: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          priority: Database["public"]["Enums"]["demand_priority"]
+          resolution_time_hours: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          priority?: Database["public"]["Enums"]["demand_priority"]
+          resolution_time_hours?: number
           updated_at?: string
         }
         Relationships: []
@@ -2269,6 +2302,12 @@ export type Database = {
       atividades_board_role: "owner" | "admin" | "member" | "observer"
       demand_complexity: "facil" | "media" | "dificil"
       demand_priority: "baixa" | "media" | "alta" | "critica"
+      demand_sla_status:
+        | "no_prazo"
+        | "atencao"
+        | "estourado"
+        | "pausado"
+        | "cumprido"
       demand_status:
         | "backlog"
         | "a_fazer"
@@ -2414,6 +2453,13 @@ export const Constants = {
       atividades_board_role: ["owner", "admin", "member", "observer"],
       demand_complexity: ["facil", "media", "dificil"],
       demand_priority: ["baixa", "media", "alta", "critica"],
+      demand_sla_status: [
+        "no_prazo",
+        "atencao",
+        "estourado",
+        "pausado",
+        "cumprido",
+      ],
       demand_status: [
         "backlog",
         "a_fazer",
