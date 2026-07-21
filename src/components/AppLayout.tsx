@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 import { NotificacoesBell } from "@/components/NotificacoesBell";
+import { NotificationsDrawer } from "@/components/NotificationsDrawer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { countPendingDevEvaluations } from "@/lib/supabaseData";
@@ -72,6 +73,7 @@ const devNav: NavItem[] = [
   { to: "/admin/demandas", label: "Board de Demandas", icon: KanbanSquare },
   { to: "/admin/dashboard", label: "Dashboard (Operação)", icon: Gauge },
   { to: "/admin/configuracoes/sla", label: "Configuração de SLA", icon: Clock },
+  { to: "/admin/configuracoes/webhooks", label: "Webhooks & Integrações", icon: Repeat },
   { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
@@ -368,6 +370,7 @@ export default function AppLayout() {
             <span data-tour="nav-notificacoes" className="inline-flex">
               <NotificacoesBell />
             </span>
+            <NotificationsDrawer />
             <Button
               variant="ghost"
               size="icon"
@@ -467,6 +470,7 @@ export default function AppLayout() {
           </div>
           <div className="flex items-center gap-1">
             <span data-tour="nav-notificacoes" className="inline-flex"><NotificacoesBell /></span>
+            <NotificationsDrawer />
             <Button
               variant="ghost"
               size="icon"

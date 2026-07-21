@@ -53,6 +53,7 @@ import BaseConhecimentoAdmin from "./pages/admin/BaseConhecimento";
 import Demandas from "./pages/admin/Demandas";
 import AdminDashboard from "./pages/admin/Dashboard";
 import SLAPolicies from "./pages/admin/SLAPolicies";
+import WebhooksAdmin from "./pages/admin/Webhooks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -100,6 +101,7 @@ const AppRoutes = () => {
         <Route path="/admin/demandas" element={<ProtectedRoute role="developer"><Demandas /></ProtectedRoute>} />
         <Route path="/admin/dashboard" element={<ProtectedRoute role="developer"><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/configuracoes/sla" element={<ProtectedRoute role="developer"><SLAPolicies /></ProtectedRoute>} />
+        <Route path="/admin/configuracoes/webhooks" element={<ProtectedRoute role="developer"><WebhooksAdmin /></ProtectedRoute>} />
 
         {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
         <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
