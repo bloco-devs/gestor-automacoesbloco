@@ -11,7 +11,6 @@ import { ConversationInput } from "@/components/ai-workspace/ConversationInput";
 import { ConversationFooter } from "@/components/ai-workspace/ConversationFooter";
 import { PreviewPanel } from "@/components/ai-workspace/PreviewPanel";
 import { KnowledgeSuggestions } from "@/modules/knowledge";
-import { useNavigate } from "react-router-dom";
 
 // Web Speech API — não é padrão em todos os navegadores, fallback silencioso.
 type SpeechRecognitionCtor = new () => {
