@@ -17,6 +17,7 @@ import { DataSourceBadge } from "@/components/DataSourceBadge";
 import { EmptyState } from "@/components/EmptyState";
 import { ListState } from "@/components/ListState";
 import { ResumoPipeline } from "@/components/ResumoPipeline";
+import { KnowledgeMetricsCards } from "@/modules/knowledge";
 
 const DASHBOARD_STATUSES: PipelineStatus[] = [
   "novo",
@@ -103,6 +104,8 @@ export default function Dashboard() {
       </div>
 
       <ResumoPipeline />
+
+      <KnowledgeMetricsCards />
 
       <Card className="surface-1">
         <CardHeader className="pb-3">
