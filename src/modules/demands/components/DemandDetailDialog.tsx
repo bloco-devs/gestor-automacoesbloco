@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import {
+  Bot,
   ExternalLink,
   Loader2,
   Paperclip,
@@ -159,6 +160,24 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
             <DialogHeader className="p-6 pb-3 border-b border-border/60">
               <DialogTitle className="text-xl leading-tight pr-6">{demand.title}</DialogTitle>
               <div className="flex flex-wrap items-center gap-2 pt-2">
+                {demand.ai_auto_responded && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs gap-1 bg-primary/10 text-primary border-primary/30"
+                    title={
+                      demand.ai_confidence_score != null
+                        ? `Confiança da IA: ${Math.round(Number(demand.ai_confidence_score) * 100)}%`
+                        : "Resposta automática publicada pelo Agente IA"
+                    }
+                  >
+                    <Bot className="size-3" /> Respondido por IA Nível 1
+                    {demand.ai_confidence_score != null && (
+                      <span className="text-primary/70">
+                        · {Math.round(Number(demand.ai_confidence_score) * 100)}%
+                      </span>
+                    )}
+                  </Badge>
+                )}
                 {priority && (
                   <Badge variant="outline" className={cn("text-xs", priority.className)}>
                     {priority.label}
@@ -199,6 +218,28 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
                   </SelectContent>
                 </Select>
               </div>
+              {demand.ai_auto_responded && !demand.assigned_to && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-xs">
+                  <Bot className="size-3.5 text-primary shrink-0" />
+                  <span className="text-muted-foreground flex-1">
+                    O <strong>Agente IA</strong> já publicou uma sugestão inicial. Aprove-a
+                    aguardando o retorno do solicitante ou assuma o chamado.
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={async () => {
+                      const { data } = await supabase.auth.getUser();
+                      if (data.user?.id)
+                        assign.mutate({ id: demand.id, assigned_to: data.user.id });
+                    }}
+                  >
+                    <UserIcon className="mr-1 size-3" /> Assumir chamado
+                  </Button>
+                </div>
+              )}
             </DialogHeader>
 
             <Tabs defaultValue="detalhes" className="flex-1 flex flex-col overflow-hidden">
