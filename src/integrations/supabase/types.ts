@@ -2333,6 +2333,16 @@ export type Database = {
       }
       atividades_reorder_cards: { Args: { items: Json }; Returns: undefined }
       get_my_role: { Args: never; Returns: string }
+      get_user_workloads: {
+        Args: never
+        Returns: {
+          active_count: number
+          avatar_url: string
+          email: string
+          nome: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

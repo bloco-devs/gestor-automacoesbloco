@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Upload, X } from "lucide-react";
+import { Loader2, Sparkles, Upload, Wand2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,8 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// platforms fetched inline via supabase
-import { useAddAttachment, useCreateDemand } from "../hooks";
+import { useAddAttachment, useCreateDemand, useTriageDemand, useUserWorkloads } from "../hooks";
 import {
   COMPLEXITY_META,
   PRIORITY_META,
@@ -37,10 +38,15 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+const AUTO = "__auto__";
+const UNASSIGNED = "__none__";
+
 export function CreateDemandDialog({ open, onOpenChange }: Props) {
   const { toast } = useToast();
   const create = useCreateDemand();
   const addAtt = useAddAttachment();
+  const triage = useTriageDemand();
+  const { data: workloads = [] } = useUserWorkloads(open);
   const [plataformas, setPlataformas] = useState<Array<{ id: string; nome: string }>>([]);
   useEffect(() => {
     supabase
@@ -56,8 +62,10 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
   const [type, setType] = useState<DemandType>("melhoria");
   const [priority, setPriority] = useState<DemandPriority>("media");
   const [complexity, setComplexity] = useState<DemandComplexity>("media");
+  const [assignee, setAssignee] = useState<string>(UNASSIGNED);
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [aiJustify, setAiJustify] = useState<string>("");
 
   const reset = () => {
     setTitle("");
@@ -66,7 +74,43 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
     setType("melhoria");
     setPriority("media");
     setComplexity("media");
+    setAssignee(UNASSIGNED);
     setFiles([]);
+    setAiJustify("");
+  };
+
+  const handleAITriage = async () => {
+    if (!title.trim() && description.trim().length < 10) {
+      toast({
+        title: "Descreva a demanda",
+        description: "Informe pelo menos um título ou uma descrição de 10+ caracteres para a IA analisar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const res = await triage.mutateAsync({ title: title.trim(), description: description.trim() });
+      setPriority(res.priority);
+      setType(res.type);
+      setComplexity(res.complexity);
+      setAiJustify(res.justificativa || "");
+      toast({ title: "Sugestão aplicada", description: res.justificativa || "IA preencheu tipo, prioridade e complexidade." });
+    } catch (err) {
+      toast({
+        title: "IA indisponível",
+        description: err instanceof Error ? err.message : "Não foi possível obter sugestão agora.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resolveAssignee = (): string | null => {
+    if (assignee === UNASSIGNED) return null;
+    if (assignee === AUTO) {
+      const sorted = [...workloads].sort((a, b) => a.active_count - b.active_count);
+      return sorted[0]?.user_id ?? null;
+    }
+    return assignee;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,6 +121,7 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
     }
     setSubmitting(true);
     try {
+      const assigned_to = resolveAssignee();
       const demand = await create.mutateAsync({
         title: title.trim(),
         description: description.trim() || null,
@@ -84,6 +129,7 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
         type,
         priority,
         complexity,
+        assigned_to,
       });
 
       for (const file of files) {
@@ -132,6 +178,41 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
               placeholder="Ex.: Corrigir erro de exportação no relatório X"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Descrição</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={4000}
+              rows={5}
+              placeholder="Descreva o contexto, comportamento esperado e passos para reproduzir…"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-2 rounded-md border border-dashed border-border/60 px-3 py-2">
+            <div className="text-xs text-muted-foreground">
+              {aiJustify ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Sparkles className="size-3.5 text-primary" /> {aiJustify}
+                </span>
+              ) : (
+                "A IA pode sugerir tipo, prioridade e complexidade a partir da descrição."
+              )}
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleAITriage}
+              disabled={triage.isPending}
+              className="gap-1.5 shrink-0"
+            >
+              {triage.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+              Sugerir com IA
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -186,15 +267,34 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={4000}
-              rows={5}
-              placeholder="Descreva o contexto, comportamento esperado e passos para reproduzir…"
-            />
+            <Label>Responsável</Label>
+            <Select value={assignee} onValueChange={setAssignee}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UNASSIGNED}>Não atribuir</SelectItem>
+                <SelectItem value={AUTO}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Wand2 className="size-3.5" /> Atribuir automaticamente (menor carga)
+                  </span>
+                </SelectItem>
+                {workloads.map((w) => (
+                  <SelectItem key={w.user_id} value={w.user_id}>
+                    <span className="flex items-center gap-2">
+                      <Avatar className="size-5">
+                        {w.avatar_url && <AvatarImage src={w.avatar_url} />}
+                        <AvatarFallback className="text-[10px]">
+                          {(w.nome || w.email || "?").slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate">{w.nome || w.email}</span>
+                      <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">
+                        {w.active_count} {w.active_count === 1 ? "ativa" : "ativas"}
+                      </Badge>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

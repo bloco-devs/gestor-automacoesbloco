@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { getAttachmentSignedUrl } from "../service";
 import {
+  useAssignDemand,
   useCreateDemandTask,
   useDeleteDemandTask,
   useDemandAttachments,
@@ -43,6 +44,7 @@ import {
   useGenerateAIPlan,
   useToggleDemandTask,
   useUpdateDemandStatus,
+  useUserWorkloads,
 } from "../hooks";
 import {
   COMPLEXITY_META,
@@ -54,6 +56,7 @@ import {
 } from "../types";
 import { cn } from "@/lib/utils";
 import { SLAIndicator } from "./SLAIndicator";
+import { Wand2 } from "lucide-react";
 
 interface Props {
   demand: Demand | null;
@@ -78,6 +81,8 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
   const toggleTask = useToggleDemandTask(demandId);
   const removeTask = useDeleteDemandTask(demandId);
   const updateStatus = useUpdateDemandStatus();
+  const assign = useAssignDemand();
+  const { data: workloads = [] } = useUserWorkloads(open);
   const aiPlan = useGenerateAIPlan(demandId);
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -232,20 +237,56 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
                         avatar={createdByProfile?.avatar_url ?? null}
                         initials={initialsFrom(createdByProfile, demand.created_by)}
                       />
-                      <ProfileBlock
-                        label="Responsável"
-                        name={
-                          assignedProfile?.nome ||
-                          assignedProfile?.email ||
-                          demand.assigned_to ||
-                          "Não atribuído"
-                        }
-                        avatar={assignedProfile?.avatar_url ?? null}
-                        initials={
-                          demand.assigned_to ? initialsFrom(assignedProfile, demand.assigned_to) : "—"
-                        }
-                        muted={!demand.assigned_to}
-                      />
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+                          Responsável
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={demand.assigned_to ?? "__none__"}
+                            onValueChange={(v) =>
+                              assign.mutate({ id: demand.id, assigned_to: v === "__none__" ? null : v })
+                            }
+                          >
+                            <SelectTrigger className="h-8 text-xs flex-1">
+                              <SelectValue placeholder="Não atribuído" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__" className="text-xs">Não atribuído</SelectItem>
+                              {workloads.map((w) => (
+                                <SelectItem key={w.user_id} value={w.user_id} className="text-xs">
+                                  <span className="flex items-center gap-2">
+                                    <span className="truncate">{w.nome || w.email}</span>
+                                    <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+                                      {w.active_count} {w.active_count === 1 ? "ativa" : "ativas"}
+                                    </Badge>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1.5 shrink-0"
+                            disabled={workloads.length === 0 || assign.isPending}
+                            onClick={() => {
+                              const sorted = [...workloads].sort((a, b) => a.active_count - b.active_count);
+                              const pick = sorted[0]?.user_id;
+                              if (pick) assign.mutate({ id: demand.id, assigned_to: pick });
+                            }}
+                            title="Atribuir ao membro com menos demandas ativas"
+                          >
+                            <Wand2 className="size-3.5" /> Auto
+                          </Button>
+                        </div>
+                        {assignedProfile && (
+                          <p className="text-xs text-muted-foreground mt-1.5 truncate">
+                            {assignedProfile.nome || assignedProfile.email}
+                          </p>
+                        )}
+                      </div>
                     </section>
                   </TabsContent>
 

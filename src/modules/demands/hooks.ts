@@ -3,16 +3,19 @@ import { useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   addAttachment,
+  assignDemand,
   createDemand,
   createTask,
   deleteTask,
   generateAIPlan,
   getProfilesByIds,
+  getUserWorkloads,
   listAttachments,
   listDemands,
   listTasks,
   softDeleteDemand,
   toggleTask,
+  triageDemand,
   updateDemandStatus,
 } from "./service";
 import type { CreateDemandInput, Demand, DemandStatus } from "./types";
@@ -43,8 +46,11 @@ export function useDemands() {
 export function useCreateDemand() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: CreateDemandInput) => createDemand(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    mutationFn: (input: CreateDemandInput & { assigned_to?: string | null }) => createDemand(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ["user-workloads"] });
+    },
   });
 }
 
@@ -64,7 +70,22 @@ export function useUpdateDemandStatus() {
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(KEY, ctx.prev);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ["user-workloads"] });
+    },
+  });
+}
+
+export function useAssignDemand() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, assigned_to }: { id: string; assigned_to: string | null }) =>
+      assignDemand(id, assigned_to),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ["user-workloads"] });
+    },
   });
 }
 
@@ -153,11 +174,27 @@ export function useDemandProfiles(demands: Demand[] | undefined) {
   });
 }
 
+// ---------- Workloads ----------
+export function useUserWorkloads(enabled = true) {
+  return useQuery({
+    queryKey: ["user-workloads"],
+    queryFn: getUserWorkloads,
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
 // ---------- AI ----------
 export function useGenerateAIPlan(demandId: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (demand: Demand) => generateAIPlan(demand),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["demand-tasks", demandId] }),
+  });
+}
+
+export function useTriageDemand() {
+  return useMutation({
+    mutationFn: (input: { title: string; description: string }) => triageDemand(input),
   });
 }
