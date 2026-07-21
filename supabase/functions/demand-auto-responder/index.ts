@@ -1,13 +1,9 @@
 // Agente Autônomo Nível 1 — busca artigos na Base de Conhecimento e, se houver
 // correspondência forte, posta um comentário público na demanda em nome da IA.
-//
-// Chamada pelo frontend logo após createDemand() quando `assigned_to` é nulo.
-// Segurança: exige JWT do solicitante; usa service_role para gravar comentário
-// com `user_id = NULL` + `is_ai = true` (nova RLS bloqueia isso para clientes).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
-type Body = { demandId?: string; title?: string; description?: string };
+type Body = { demandId?: string };
 
 interface ArticleRow {
   id: string;
@@ -18,7 +14,7 @@ interface ArticleRow {
   relevancia: number | null;
 }
 
-const MIN_CONFIDENCE = 0.35; // 0-1 (ts_rank_cd normalizado)
+const MIN_CONFIDENCE = 0.35;
 
 function serviceClient() {
   return createClient(
@@ -30,42 +26,31 @@ function serviceClient() {
 
 async function getUserId(req: Request): Promise<string | null> {
   const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "";
+  const token = auth.replace(/^Bearer\s+/i, "").trim();
   if (!token) return null;
-  try {
-    const c = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-        auth: { persistSession: false, autoRefreshToken: false },
-      },
-    );
-    const { data } = await c.auth.getUser();
-    return data.user?.id ?? null;
-  } catch {
-    return null;
-  }
+  const anon = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+  const { data } = await anon.auth.getUser(token);
+  return data.user?.id ?? null;
 }
 
 function buildMessage(article: ArticleRow, confidencePct: number): string {
-  const linhas: string[] = [];
-  linhas.push(`👋 Olá! Sou o **Agente IA Nível 1** do time de Automações.`);
-  linhas.push("");
-  linhas.push(
-    `Enquanto um analista humano assume seu chamado, encontrei este material na nossa Base de Conhecimento que **pode resolver seu problema agora mesmo** (confiança: ${confidencePct}%):`,
+  const parts: string[] = [];
+  parts.push(
+    `👋 Olá! Sou o **Agente IA** e enquanto o time humano analisa seu chamado, encontrei uma orientação que pode resolver seu caso.`,
   );
-  linhas.push("");
-  linhas.push(`**${article.titulo}**`);
-  if (article.resumo) linhas.push(article.resumo.trim());
-  linhas.push("");
-  if (article.url_externa) linhas.push(`🔗 ${article.url_externa}`);
-  else linhas.push(`🔗 Abra em: /ajuda?artigo=${article.id}`);
-  linhas.push("");
-  linhas.push(
-    "Se isto resolveu, é só nos avisar por aqui e fecharemos o chamado. Caso não resolva, um analista humano dará continuidade.",
+  parts.push("");
+  parts.push(`**📚 ${article.titulo}**`);
+  if (article.resumo) parts.push(article.resumo);
+  if (article.url_externa) parts.push(`\n🔗 ${article.url_externa}`);
+  parts.push("");
+  parts.push(
+    `_Confiança da sugestão: ${confidencePct}%. Se resolveu seu problema, avise a equipe; caso contrário, um atendente humano assumirá o chamado._`,
   );
-  return linhas.join("\n");
+  return parts.join("\n");
 }
 
 Deno.serve(async (req) => {
@@ -84,24 +69,23 @@ Deno.serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as Body;
     const demandId = (body.demandId ?? "").trim();
     if (!demandId) {
-      return new Response(JSON.stringify({ error: "demandId obrigatório" }), {
+      return new Response(JSON.stringify({ error: "demandId required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const svc = serviceClient();
-
-    // Carrega dados atuais da demanda (tolerante ao chamador enviar título/descrição direto).
-    const { data: demand } = await svc
+    const { data: demand, error: dErr } = await svc
       .from("demands")
-      .select("id, title, description, ai_auto_responded")
+      .select("id, title, description, assigned_to, ai_auto_responded")
       .eq("id", demandId)
       .maybeSingle();
 
+    if (dErr) throw dErr;
     if (!demand) {
-      return new Response(JSON.stringify({ error: "demand not found" }), {
-        status: 404,
+      return new Response(JSON.stringify({ skipped: "not_found" }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -112,50 +96,32 @@ Deno.serve(async (req) => {
       });
     }
 
-    const query = [demand.title, demand.description ?? ""].filter(Boolean).join(" — ").trim();
-    if (query.length < 8) {
-      return new Response(JSON.stringify({ skipped: "short_query" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Busca artigos via RPC de full-text search já existente.
-    const { data: rows, error: searchErr } = await svc.rpc("knowledge_search", {
+    const query = [demand.title, demand.description].filter(Boolean).join(" — ");
+    const { data: rows, error: sErr } = await svc.rpc("knowledge_search", {
       _q: query,
       _limit: 3,
     });
-    if (searchErr) {
-      return new Response(JSON.stringify({ skipped: "search_failed", detail: searchErr.message }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (sErr) console.warn("[knowledge_search] error:", sErr.message);
 
-    const list = (Array.isArray(rows) ? rows : []) as ArticleRow[];
+    const list = (rows ?? []) as ArticleRow[];
     const best = list[0];
-    if (!best) {
-      return new Response(JSON.stringify({ skipped: "no_match" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const rawRel = Number(best?.relevancia ?? 0);
+    const confidence = Math.max(0, Math.min(1, rawRel * 2));
 
-    // ts_rank_cd é ilimitado; usamos limiar direto (empírico). Confiança ~ min(1, rel*2).
-    const raw = Number(best.relevancia ?? 0);
-    const confidence = Math.max(0, Math.min(1, raw * 2));
-    if (confidence < MIN_CONFIDENCE) {
+    if (!best || confidence < MIN_CONFIDENCE) {
+      // marca como avaliado (não responde) para não reprocessar em loop
+      await svc
+        .from("demands")
+        .update({ ai_confidence_score: confidence })
+        .eq("id", demand.id);
       return new Response(
-        JSON.stringify({ skipped: "low_confidence", confidence }),
+        JSON.stringify({ ok: false, skipped: "low_confidence", confidence }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const confidencePct = Math.round(confidence * 100);
-    const message = buildMessage(best, confidencePct);
-
-    // Publica o comentário público como AGENTE IA (user_id NULL, is_ai TRUE).
-    const { data: inserted, error: insErr } = await svc
+    const message = buildMessage(best, Math.round(confidence * 100));
+    const { data: inserted, error: cErr } = await svc
       .from("demand_comments")
       .insert({
         demand_id: demand.id,
@@ -166,23 +132,18 @@ Deno.serve(async (req) => {
       })
       .select("id")
       .single();
-    if (insErr) {
-      return new Response(JSON.stringify({ error: "insert_failed", detail: insErr.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (cErr) throw cErr;
 
-    // Marca a demanda como respondida pela IA.
-    await svc
+    const { error: uErr } = await svc
       .from("demands")
       .update({
         ai_auto_responded: true,
-        ai_confidence_score: Number(confidence.toFixed(3)),
+        ai_confidence_score: confidence,
         ai_response_article_id: best.id,
         ai_response_comment_id: inserted.id,
       })
       .eq("id", demand.id);
+    if (uErr) throw uErr;
 
     return new Response(
       JSON.stringify({
@@ -195,6 +156,7 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
+    console.error("[demand-auto-responder]", err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "internal_error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
