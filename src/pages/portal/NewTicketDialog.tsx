@@ -16,7 +16,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { KnowledgeSuggestions } from "@/modules/knowledge";
-import { useAddAttachment, useCreateDemand } from "@/modules/demands/hooks";
+import type { KnowledgeItem } from "@/modules/knowledge";
+import {
+  useAddAttachment,
+  useAutoRespondDemand,
+  useCreateDemand,
+  useRecordDeflection,
+} from "@/modules/demands/hooks";
 import { useEffect } from "react";
 
 interface Props {
@@ -36,6 +42,8 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
   const { toast } = useToast();
   const create = useCreateDemand();
   const addAtt = useAddAttachment();
+  const autoRespond = useAutoRespondDemand();
+  const recordDeflect = useRecordDeflection();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -60,7 +68,13 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
     setFiles([]);
   };
 
-  const handleResolvedByKB = () => {
+  const handleResolvedByKB = (item: KnowledgeItem | null) => {
+    // Registra a deflexão para o dashboard (métricas de economia operacional).
+    void recordDeflect.mutateAsync({
+      articleId: item?.source === "article" ? item.id : null,
+      queryText: deflectionQuery,
+      origin: "portal",
+    });
     toast({
       title: "Ótimo! 🎉",
       description: "Ficamos felizes em ajudar. Nenhum chamado precisou ser aberto.",
