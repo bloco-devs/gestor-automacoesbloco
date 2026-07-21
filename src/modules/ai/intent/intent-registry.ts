@@ -116,6 +116,7 @@ export const INTENT_REGISTRY: Record<IntentId, IntentDefinition> = {
       "documentação", "documentacao", "manual", "tutorial", "política",
       "politica", "procedimento", "wiki", "artigo", "faq",
     ],
+    patterns: [/documenta[çc][ãa]o/i, /\bmanual\b/i],
     pipeline: "knowledge",
     shouldCreateTicket: false,
     shouldAskQuestion: false,
