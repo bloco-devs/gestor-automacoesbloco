@@ -47,6 +47,7 @@ export interface OrchestratorTurn {
 export interface OrchestratorFinalizeInput {
   conversation: Conversation;
   sistemas: Array<{ slug: string; nome: string }>;
+  workspaceContext?: OrchestratorContext;
 }
 
 export interface OrchestratorFinalizeResult {
@@ -73,10 +74,14 @@ function deriveTitulo(descricao: string): string {
 export const aiOrchestrator = {
   decide(
     conversation: Conversation,
-    opts?: { suggestedSystem?: string | null },
+    opts?: OrchestratorOptions,
   ): OrchestratorDecision {
-    const classification = classifyConversation(conversation, opts);
+    const classification = classifyConversation(conversation, {
+      suggestedSystem: opts?.suggestedSystem ?? null,
+    });
     const pipeline = runPipeline({ conversation, classification });
+    // workspaceContext fica disponível para futuros pipelines sem quebrar contrato.
+    void opts?.workspaceContext;
     return { classification, pipeline };
   },
 
@@ -86,9 +91,11 @@ export const aiOrchestrator = {
    */
   async runTurn(
     conversation: Conversation,
-    opts?: { maxUserTurns?: number },
+    opts?: { maxUserTurns?: number; workspaceContext?: OrchestratorContext },
   ): Promise<OrchestratorTurn> {
-    const decision = this.decide(conversation);
+    const decision = this.decide(conversation, {
+      workspaceContext: opts?.workspaceContext,
+    });
     const userTurns = conversation.filter((m) => m.role === "user").length;
     const maxTurns = opts?.maxUserTurns ?? 2;
 
