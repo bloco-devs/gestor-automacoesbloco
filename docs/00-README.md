@@ -25,6 +25,7 @@ Este diretório é a **Single Source of Truth** do produto **Gestor de Automaç�
 19. [ADR](19-ADR/)
 20. [Changelog](20-Changelog.md)
 21. [AI Workspace](21-AI-Workspace.md)
+22. [AI Intent Engine](22-AI-Intent-Engine.md)
 
 ## Objetivo do projeto
 
