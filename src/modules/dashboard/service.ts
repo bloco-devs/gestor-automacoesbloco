@@ -13,7 +13,6 @@ export interface DemandMetrics {
   porStatus: Record<DemandStatus, number>;
   porPrioridade: Record<DemandPriority, number>;
   porTipo: Record<DemandType, number>;
-  // Deflexão / IA
   respondidasPorIA: number;
   defletidasKB: number;
   economiaPct: number;
@@ -40,7 +39,7 @@ export async function fetchDemandsForMetrics(): Promise<Demand[]> {
   return (data ?? []) as unknown as Demand[];
 }
 
-export function computeMetrics(demands: Demand[]): DemandMetrics {
+export function computeMetrics(demands: Demand[], deflection?: DeflectionStats): DemandMetrics {
   const porStatus = {
     backlog: 0, a_fazer: 0, em_desenvolvimento: 0, em_testes: 0, homologacao: 0, concluido: 0,
   } as Record<DemandStatus, number>;
@@ -56,11 +55,13 @@ export function computeMetrics(demands: Demand[]): DemandMetrics {
   let estouradas = 0;
   let somaHoras = 0;
   let contResolvidas = 0;
+  let respondidasPorIA = 0;
 
   for (const d of demands) {
     porStatus[d.status] = (porStatus[d.status] ?? 0) + 1;
     porPrioridade[d.priority] = (porPrioridade[d.priority] ?? 0) + 1;
     porTipo[d.type] = (porTipo[d.type] ?? 0) + 1;
+    if (d.ai_auto_responded) respondidasPorIA++;
 
     if (d.status === "concluido") {
       concluidas++;
@@ -82,6 +83,34 @@ export function computeMetrics(demands: Demand[]): DemandMetrics {
   const slaCumprimentoPct = concluidas > 0 ? (cumpridas / concluidas) * 100 : null;
   const tempoMedioResolucaoHoras = contResolvidas > 0 ? somaHoras / contResolvidas : null;
 
+  const defletidasKB = deflection?.defletidasKB ?? 0;
+  const denom = total + defletidasKB;
+  const economiaPct = denom > 0 ? ((respondidasPorIA + defletidasKB) / denom) * 100 : 0;
+
+  return {
+    total, ativas, concluidas,
+    slaCumprimentoPct, tempoMedioResolucaoHoras,
+    emAlerta, estouradas, noPrazo,
+    porStatus, porPrioridade, porTipo,
+    respondidasPorIA,
+    defletidasKB,
+    economiaPct,
+  };
+}
+
+export async function fetchDeflectionStats(): Promise<DeflectionStats> {
+  try {
+    const { count, error } = await supabase
+      .from("ticket_deflections" as never)
+      .select("id", { count: "exact", head: true })
+      .eq("resolved_without_ticket", true);
+    if (error) throw error;
+    return { respondidasPorIA: 0, defletidasKB: count ?? 0 };
+  } catch (err) {
+    console.warn("[fetchDeflectionStats]", err);
+    return { respondidasPorIA: 0, defletidasKB: 0 };
+  }
+}
 
 export async function listSlaPolicies(): Promise<SlaPolicy[]> {
   const { data, error } = await supabase
