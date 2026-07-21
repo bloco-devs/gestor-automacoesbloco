@@ -4,10 +4,23 @@ import type {
   Demand,
   DemandAIPlan,
   DemandAttachment,
+  DemandComplexity,
+  DemandPriority,
   DemandStatus,
   DemandTask,
+  DemandType,
   UserProfileLite,
 } from "./types";
+
+// ---------- Webhook dispatch (fire-and-forget, tolerante a falhas) ----------
+async function dispatchWebhookEvent(event: string, payload: Record<string, unknown>): Promise<void> {
+  try {
+    await supabase.functions.invoke("webhook-dispatch", { body: { event, payload } });
+  } catch (err) {
+    // Silencioso: falha de webhook nunca deve quebrar a operação do usuário.
+    console.warn(`[webhooks] falha ao disparar ${event}:`, err);
+  }
+}
 
 export async function listDemands(): Promise<Demand[]> {
   const { data, error } = await supabase
@@ -24,7 +37,7 @@ export async function listDemands(): Promise<Demand[]> {
   }));
 }
 
-export async function createDemand(input: CreateDemandInput): Promise<Demand> {
+export async function createDemand(input: CreateDemandInput & { assigned_to?: string | null }): Promise<Demand> {
   const { data: userRes } = await supabase.auth.getUser();
   const uid = userRes.user?.id;
   if (!uid) throw new Error("Usuário não autenticado");
@@ -37,20 +50,56 @@ export async function createDemand(input: CreateDemandInput): Promise<Demand> {
       type: input.type,
       priority: input.priority ?? "media",
       complexity: input.complexity ?? "media",
+      assigned_to: input.assigned_to ?? null,
       created_by: uid,
     } as never)
     .select("*")
     .single();
   if (error) throw error;
-  return data as unknown as Demand;
+  const demand = data as unknown as Demand;
+  void dispatchWebhookEvent("demand.created", {
+    id: demand.id,
+    title: demand.title,
+    priority: demand.priority,
+    type: demand.type,
+    complexity: demand.complexity,
+    status: demand.status,
+    assigned_to: demand.assigned_to,
+    created_by: demand.created_by,
+    created_at: demand.created_at,
+  });
+  return demand;
 }
 
 export async function updateDemandStatus(id: string, status: DemandStatus): Promise<void> {
+  // Ler status anterior para incluir no payload
+  const { data: prev } = await supabase
+    .from("demands" as never)
+    .select("status")
+    .eq("id", id)
+    .maybeSingle();
+  const from_status = (prev as { status?: DemandStatus } | null)?.status ?? null;
+
   const { error } = await supabase
     .from("demands" as never)
     .update({ status } as never)
     .eq("id", id);
   if (error) throw error;
+  void dispatchWebhookEvent("demand.status_changed", {
+    id,
+    from_status,
+    to_status: status,
+    changed_at: new Date().toISOString(),
+  });
+}
+
+export async function assignDemand(id: string, assigned_to: string | null): Promise<void> {
+  const { error } = await supabase
+    .from("demands" as never)
+    .update({ assigned_to } as never)
+    .eq("id", id);
+  if (error) throw error;
+  void dispatchWebhookEvent("demand.assigned", { id, assigned_to });
 }
 
 export async function softDeleteDemand(id: string): Promise<void> {
@@ -165,7 +214,28 @@ export async function getProfilesByIds(ids: string[]): Promise<Map<string, UserP
   return map;
 }
 
-// ---------- AI plan ----------
+// ---------- Workloads (Auto-Assign / balanceamento) ----------
+export interface UserWorkload {
+  user_id: string;
+  nome: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  active_count: number;
+}
+
+export async function getUserWorkloads(): Promise<UserWorkload[]> {
+  const { data, error } = await supabase.rpc("get_user_workloads" as never);
+  if (error) throw error;
+  return ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({
+    user_id: String(r.user_id),
+    nome: (r.nome as string) ?? null,
+    email: (r.email as string) ?? null,
+    avatar_url: (r.avatar_url as string) ?? null,
+    active_count: Number(r.active_count ?? 0),
+  }));
+}
+
+// ---------- AI ----------
 export async function generateAIPlan(demand: Demand): Promise<DemandAIPlan> {
   const { data, error } = await supabase.functions.invoke("demand-ai-plan", {
     body: {
@@ -179,4 +249,19 @@ export async function generateAIPlan(demand: Demand): Promise<DemandAIPlan> {
   });
   if (error) throw error;
   return data as DemandAIPlan;
+}
+
+export interface DemandTriageResult {
+  priority: DemandPriority;
+  type: DemandType;
+  complexity: DemandComplexity;
+  justificativa: string;
+}
+
+export async function triageDemand(input: { title: string; description: string }): Promise<DemandTriageResult> {
+  const { data, error } = await supabase.functions.invoke("demand-triage", {
+    body: { title: input.title, description: input.description },
+  });
+  if (error) throw error;
+  return data as DemandTriageResult;
 }
