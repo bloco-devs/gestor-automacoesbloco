@@ -49,6 +49,7 @@ import ObservabilidadeIA from "./pages/ObservabilidadeIA";
 import Consolidacao from "./pages/Consolidacao";
 import Inbox from "./pages/Inbox";
 import Portal from "./pages/Portal";
+import PortalIndex from "./pages/portal/PortalIndex";
 import BaseConhecimentoAdmin from "./pages/admin/BaseConhecimento";
 import Demandas from "./pages/admin/Demandas";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -73,6 +74,7 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         {/* Solicitante */}
         <Route path="/portal" element={<ProtectedRoute><Portal /></ProtectedRoute>} />
+        <Route path="/portal/central" element={<ProtectedRoute><PortalIndex /></ProtectedRoute>} />
         <Route path="/dashboard-solicitante" element={<ProtectedRoute role="requester"><RequesterDashboard /></ProtectedRoute>} />
         <Route path="/minhas-solicitacoes" element={<ProtectedRoute role="requester"><MinhasSolicitacoes /></ProtectedRoute>} />
         <Route path="/nova-solicitacao" element={<ProtectedRoute role="requester"><AIWorkspace /></ProtectedRoute>} />
