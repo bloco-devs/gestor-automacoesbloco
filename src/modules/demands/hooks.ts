@@ -1,11 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   addAttachment,
   createDemand,
+  createTask,
+  deleteTask,
+  generateAIPlan,
+  getProfilesByIds,
+  listAttachments,
   listDemands,
+  listTasks,
   softDeleteDemand,
+  toggleTask,
   updateDemandStatus,
 } from "./service";
 import type { CreateDemandInput, Demand, DemandStatus } from "./types";
@@ -84,5 +91,73 @@ export function useAddAttachment() {
         file_name: v.file_name,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+// ---------- Tasks ----------
+export function useDemandTasks(demandId: string | null) {
+  return useQuery({
+    queryKey: ["demand-tasks", demandId],
+    queryFn: () => listTasks(demandId!),
+    enabled: !!demandId,
+  });
+}
+
+export function useCreateDemandTask(demandId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (title: string) => createTask(demandId!, title),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["demand-tasks", demandId] }),
+  });
+}
+
+export function useToggleDemandTask(demandId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { id: string; completed: boolean }) => toggleTask(v.id, v.completed),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["demand-tasks", demandId] }),
+  });
+}
+
+export function useDeleteDemandTask(demandId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteTask(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["demand-tasks", demandId] }),
+  });
+}
+
+// ---------- Attachments ----------
+export function useDemandAttachments(demandId: string | null) {
+  return useQuery({
+    queryKey: ["demand-attachments", demandId],
+    queryFn: () => listAttachments(demandId!),
+    enabled: !!demandId,
+  });
+}
+
+// ---------- Profiles ----------
+export function useDemandProfiles(demands: Demand[] | undefined) {
+  const ids = useMemo(() => {
+    const s = new Set<string>();
+    for (const d of demands ?? []) {
+      if (d.created_by) s.add(d.created_by);
+      if (d.assigned_to) s.add(d.assigned_to);
+    }
+    return Array.from(s);
+  }, [demands]);
+  return useQuery({
+    queryKey: ["demand-profiles", ids.join(",")],
+    queryFn: () => getProfilesByIds(ids),
+    enabled: ids.length > 0,
+  });
+}
+
+// ---------- AI ----------
+export function useGenerateAIPlan(demandId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (demand: Demand) => generateAIPlan(demand),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["demand-tasks", demandId] }),
   });
 }

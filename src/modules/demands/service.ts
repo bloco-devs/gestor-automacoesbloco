@@ -2,8 +2,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type {
   CreateDemandInput,
   Demand,
+  DemandAIPlan,
   DemandAttachment,
   DemandStatus,
+  DemandTask,
+  UserProfileLite,
 } from "./types";
 
 export async function listDemands(): Promise<Demand[]> {
@@ -58,6 +61,16 @@ export async function softDeleteDemand(id: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function listAttachments(demandId: string): Promise<DemandAttachment[]> {
+  const { data, error } = await supabase
+    .from("demand_attachments" as never)
+    .select("*")
+    .eq("demand_id", demandId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as DemandAttachment[];
+}
+
 export async function addAttachment(
   demandId: string,
   attachment: { file_url: string; file_type: string | null; file_name: string | null },
@@ -77,4 +90,93 @@ export async function addAttachment(
     .single();
   if (error) throw error;
   return data as unknown as DemandAttachment;
+}
+
+export async function getAttachmentSignedUrl(
+  path: string,
+  expiresInSec = 60 * 30,
+): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from("demand-attachments")
+    .createSignedUrl(path, expiresInSec);
+  if (error) return null;
+  return data?.signedUrl ?? null;
+}
+
+// ---------- Tasks (subtarefas) ----------
+export async function listTasks(demandId: string): Promise<DemandTask[]> {
+  const { data, error } = await supabase
+    .from("demand_tasks" as never)
+    .select("*")
+    .eq("demand_id", demandId)
+    .order("order_index", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as unknown as DemandTask[];
+}
+
+export async function createTask(demandId: string, title: string): Promise<DemandTask> {
+  const { data: existing } = await supabase
+    .from("demand_tasks" as never)
+    .select("order_index")
+    .eq("demand_id", demandId)
+    .order("order_index", { ascending: false })
+    .limit(1);
+  const baseOrder =
+    Number((existing as Array<{ order_index: number }> | null)?.[0]?.order_index ?? -1) + 1;
+  const { data: userRes } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("demand_tasks" as never)
+    .insert({
+      demand_id: demandId,
+      title,
+      order_index: baseOrder,
+      created_by: userRes.user?.id ?? null,
+    } as never)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as unknown as DemandTask;
+}
+
+export async function toggleTask(id: string, completed: boolean): Promise<void> {
+  const { error } = await supabase
+    .from("demand_tasks" as never)
+    .update({ completed } as never)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteTask(id: string): Promise<void> {
+  const { error } = await supabase.from("demand_tasks" as never).delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ---------- Profiles ----------
+export async function getProfilesByIds(ids: string[]): Promise<Map<string, UserProfileLite>> {
+  const clean = Array.from(new Set(ids.filter(Boolean)));
+  const map = new Map<string, UserProfileLite>();
+  if (clean.length === 0) return map;
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, nome, email, avatar_url")
+    .in("id", clean);
+  if (error) return map;
+  for (const p of (data ?? []) as UserProfileLite[]) map.set(p.id, p);
+  return map;
+}
+
+// ---------- AI plan ----------
+export async function generateAIPlan(demand: Demand): Promise<DemandAIPlan> {
+  const { data, error } = await supabase.functions.invoke("demand-ai-plan", {
+    body: {
+      demandId: demand.id,
+      title: demand.title,
+      description: demand.description ?? "",
+      type: demand.type,
+      priority: demand.priority,
+      complexity: demand.complexity,
+    },
+  });
+  if (error) throw error;
+  return data as DemandAIPlan;
 }

@@ -45,6 +45,30 @@ export interface DemandAttachment {
   created_at: string;
 }
 
+export interface DemandTask {
+  id: string;
+  demand_id: string;
+  title: string;
+  completed: boolean;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserProfileLite {
+  id: string;
+  nome: string | null;
+  email: string | null;
+  avatar_url: string | null;
+}
+
+export interface DemandAIPlan {
+  diagnostico: string;
+  sugestao: string;
+  subtarefas: string[];
+  inserted_count: number;
+}
+
 export interface CreateDemandInput {
   title: string;
   description?: string | null;
