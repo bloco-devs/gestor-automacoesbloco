@@ -123,6 +123,7 @@ export const aiOrchestrator = {
     ]);
     const decision = this.decide(input.conversation, {
       suggestedSystem: triagem.sistema_alvo_slug,
+      workspaceContext: input.workspaceContext,
     });
     return { titulo, descricao, triagem, similares, decision };
   },
