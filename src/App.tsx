@@ -14,6 +14,7 @@ import { RecoveryGuard } from "@/components/RecoveryGuard";
 import AuthErrorScreen from "@/components/AuthErrorScreen";
 import AppLayout from "@/components/AppLayout";
 import { ContextProvider } from "@/modules/context";
+import { PlatformProvider } from "@/modules/platform";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SsoCallback from "./pages/SsoCallback";
@@ -116,8 +117,10 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <ContextProvider>
-            <RecoveryGuard />
-            <AppRoutes />
+            <PlatformProvider>
+              <RecoveryGuard />
+              <AppRoutes />
+            </PlatformProvider>
           </ContextProvider>
         </AuthProvider>
       </BrowserRouter>
