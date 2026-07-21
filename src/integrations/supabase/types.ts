@@ -1038,27 +1038,30 @@ export type Database = {
           created_at: string
           demand_id: string
           id: string
+          is_ai: boolean
           is_internal: boolean
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           content: string
           created_at?: string
           demand_id: string
           id?: string
+          is_ai?: boolean
           is_internal?: boolean
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           content?: string
           created_at?: string
           demand_id?: string
           id?: string
+          is_ai?: boolean
           is_internal?: boolean
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1228,6 +1231,10 @@ export type Database = {
       }
       demands: {
         Row: {
+          ai_auto_responded: boolean
+          ai_confidence_score: number | null
+          ai_response_article_id: string | null
+          ai_response_comment_id: string | null
           assigned_to: string | null
           complexity: Database["public"]["Enums"]["demand_complexity"]
           created_at: string
@@ -1246,6 +1253,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_auto_responded?: boolean
+          ai_confidence_score?: number | null
+          ai_response_article_id?: string | null
+          ai_response_comment_id?: string | null
           assigned_to?: string | null
           complexity?: Database["public"]["Enums"]["demand_complexity"]
           created_at?: string
@@ -1264,6 +1275,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_auto_responded?: boolean
+          ai_confidence_score?: number | null
+          ai_response_article_id?: string | null
+          ai_response_comment_id?: string | null
           assigned_to?: string | null
           complexity?: Database["public"]["Enums"]["demand_complexity"]
           created_at?: string
@@ -1281,7 +1296,15 @@ export type Database = {
           type?: Database["public"]["Enums"]["demand_type"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "demands_ai_response_article_id_fkey"
+            columns: ["ai_response_article_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_articles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ia_uso_log: {
         Row: {
@@ -2065,6 +2088,44 @@ export type Database = {
             columns: ["setor_id"]
             isOneToOne: false
             referencedRelation: "setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_deflections: {
+        Row: {
+          article_id: string | null
+          created_at: string
+          id: string
+          origin: string
+          query_text: string
+          resolved_without_ticket: boolean
+          user_id: string | null
+        }
+        Insert: {
+          article_id?: string | null
+          created_at?: string
+          id?: string
+          origin?: string
+          query_text: string
+          resolved_without_ticket?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          article_id?: string | null
+          created_at?: string
+          id?: string
+          origin?: string
+          query_text?: string
+          resolved_without_ticket?: boolean
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_deflections_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_articles"
             referencedColumns: ["id"]
           },
         ]
