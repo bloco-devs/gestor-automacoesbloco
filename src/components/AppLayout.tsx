@@ -70,6 +70,8 @@ const devNav: NavItem[] = [
   { to: "/observabilidade-ia", label: "Observabilidade IA", icon: Activity },
   { to: "/admin/base-conhecimento", label: "Base de Conhecimento", icon: BookOpen },
   { to: "/admin/demandas", label: "Board de Demandas", icon: KanbanSquare },
+  { to: "/admin/dashboard", label: "Dashboard (Operação)", icon: Gauge },
+  { to: "/admin/configuracoes/sla", label: "Configuração de SLA", icon: Clock },
   { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
