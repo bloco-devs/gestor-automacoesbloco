@@ -1,154 +1,77 @@
+# Feature 003 — Centro Administrativo da Base de Conhecimento
 
-# Importador de Quadros — Trello (Fase 1, revisado v3)
+Camada de administração para `knowledge_articles` sem alterar a arquitetura existente. Apenas admins acessam.
 
-Implementação **100% aditiva** conforme RFC-001, incorporando todos os ajustes solicitados. Nada existente é alterado (Kanban, Quadros, Cards, BoardSettings, RLS, Realtime, RPCs, hooks, buckets, políticas).
+## Escopo
 
-## 1. Banco (migração aditiva)
+- Rota `/admin/base-conhecimento` (guarda `isAdministrador`).
+- Módulo `src/modules/knowledge-admin/` isolado, consumindo tabelas e RPCs já existentes.
+- CRUD + workflow (rascunho → em revisão → publicado → arquivado) + versionamento + auditoria + IA sugestiva.
 
-Três tabelas novas + RLS + grants + trigger `updated_at`.
+## Reutilização (nada duplicado)
 
-- **`atividades_import_jobs`**
-  `id`, `source`, `adapter_version`, `snapshot_version`, `runner_version` (ajuste #2),
-  `criado_por`, `board_id_local?`, `target_mode`,
-  `options jsonb`, `resolutions jsonb`,
-  `status` ('queued'|'running'|'success'|'partial'|'failed'|'cancelled'),
-  `progress jsonb`, `report jsonb`,
-  `file_hash`, `file_bytes`, `file_name`,
-  `iniciado_em`, `concluido_em`, `created_at`, `updated_at`.
-  RLS: dono do job + admin do board destino. Adicionada ao `supabase_realtime`.
+- **Tabelas**: `knowledge_articles`, `knowledge_feedback`, `activity_log`, `user_roles`.
+- **RPCs**: `has_role`, `knowledge_search`, `admin_list_accounts` (para autores).
+- **Serviços/hooks**: `knowledgeService`, `useKnowledgeMetrics`, `useAuth`, `useT` (UX Layer), `aiOrchestrator` (Intent Engine), `contextEngine`.
+- **UI**: shadcn (Table, Dialog, Tabs, Badge, Select, Input, Textarea, Sheet, DropdownMenu), `EmptyState`, `ListState`, `DataSourceBadge`, `StatusBadge`.
+- **Registries**: `navigation-registry` e `command-registry` da Platform Layer (adicionar entrada admin-only).
 
-- **`atividades_import_member_map`** — como antes.
+## Recursos novos (mínimos)
 
-- **`atividades_import_entities`** — chave de idempotência (ajuste-forte).
-  `id`, `job_id`, `source`, `entity_type`, `external_id`, `local_id?`, `created_at`.
-  Índice único `(job_id, entity_type, external_id)` para garantir idempotência por job. Runner consulta antes de criar cada recurso.
+Frontend (`src/modules/knowledge-admin/`):
+- `services/admin-service.ts` — CRUD, publish/archive/duplicate, list versions, restore.
+- `hooks/useAdminArticles.ts`, `useArticleVersions.ts`, `useAdminMetrics.ts`.
+- `components/`: `AdminHeader`, `MetricsStrip`, `ArticlesTable` (search/filter/sort/paginate client-side), `ArticleFormDialog`, `MarkdownEditor` (textarea + preview react-markdown com sanitização), `VersionHistoryPanel`, `AISuggestPanel` (usa `aiOrchestrator`), `StatusPill`, `DeleteConfirm`.
+- `providers/AdminKnowledgeProvider.tsx` — cache local (React Query).
+- `utils/markdown.ts` (render seguro), `utils/diff.ts` (comparar versões).
+- `types/index.ts`.
+- `__tests__/`: service CRUD, workflow transitions, version diff, permissões.
+- Página: `src/pages/admin/BaseConhecimento.tsx`.
 
-Padrão neutro em `payload_extra.import = { source, external_id, import_job }`.
+Backend (migração aditiva):
+- `knowledge_article_versions` (id, article_id fk, versao int, snapshot jsonb, changed_by uuid, changed_by_email text, resumo_alteracao text, created_at). GRANTs + RLS: leitura/escrita apenas para admin via `has_role`.
+- Trigger `knowledge_articles_version_snapshot` — em INSERT/UPDATE grava snapshot com nº sequencial por artigo.
+- Coluna nova opcional: `knowledge_articles.deleted_at timestamptz` (exclusão lógica). Ajustar `knowledge_search` para filtrar `deleted_at IS NULL`.
+- Coluna nova: `workflow_status` só se `status` atual não cobrir "em_revisao" — verificar; se `status` já é livre (text), reutilizar valores `rascunho|em_revisao|publicado|arquivado`.
+- Política RLS extra: admins podem `SELECT/INSERT/UPDATE/DELETE` em `knowledge_articles`.
 
-RPCs novas:
-- `atividades_import_job_create(source, options, file_hash, file_bytes, file_name, adapter_version, snapshot_version, runner_version)`
-- `atividades_import_job_update_progress(job_id, progress, status?)`
-- `atividades_import_job_cancel(job_id)` — dono ou admin, seta `status='cancelled'` (ajuste #5)
-- `atividades_import_job_finalize(job_id, status, report, board_id_local?)`
-- `atividades_import_member_map_upsert(...)`
-- `atividades_import_entity_register(job_id, entity_type, external_id, local_id?)` — idempotente via `ON CONFLICT DO NOTHING`
-- `atividades_import_entity_lookup(job_id, entity_type, external_id)` — retorna `local_id` se já criado
+IA:
+- Sem nova edge function. `AISuggestPanel` chama `aiOrchestrator.run({ text, intentHint: "KNOWLEDGE" })` para melhorar/resumir/expandir/gerar FAQ/tags/título. Resultado sempre volta ao formulário para o admin aplicar manualmente.
 
-Grants: `authenticated` + `service_role`.
-
-## 2. Sem bucket temporário (ajuste #1)
-
-Arquivo ZIP/JSON trafega em memória na Edge Function: upload → parse → Runner → descarte. Nenhum bucket novo, nada persistido.
-
-## 3. CanonicalSnapshot neutro (ajuste #3)
-
-Estrutura agnóstica, sem menção a Trello:
-
-```ts
-interface CanonicalSnapshot {
-  snapshot_version: string;   // ex "1.0"
-  source: string;             // "trello" | "jira" | ...
-  workspaces: Workspace[];
-  boards: Board[];            // Board { external_id, nome, descricao, lists[], labels[], members[] }
-  lists: List[];              // { external_id, board_external_id, nome, ordem, arquivada }
-  cards: Card[];              // { external_id, list_external_id, titulo, descricao_md, ... }
-  comments, attachments, labels, members, checklists, checklist_items;
-}
-```
-
-Parser Trello preserva **Markdown original** das descrições (ajuste #9 anterior).
-
-## 4. Arquitetura
+## Workflow
 
 ```text
-supabase/functions/_shared/importers/
-  core/
-    interfaces.ts     # CanonicalSnapshot, DryRunReport, RunReport, ImportAdapter
-    runner.ts         # Runner.execute({ dry_run }) — algoritmo ÚNICO, idempotente, por fases
-    executor.ts       # cria via RPCs existentes
-    normalize.ts, hashing.ts, versions.ts
-  trello/
-    index.ts, parseZip.ts, parseJson.ts, version.ts
+rascunho ──▶ em_revisao ──▶ publicado ──▶ arquivado
+   ▲             │              │             │
+   └─────────────┴──────────────┴─────────────┘
+        admin pode mover livremente
 ```
 
-**Runner por fases transacionais + commits parciais** (ajuste #4):
-board → colunas → labels → cards → checklists → comentários → anexos.
-Cada fase: atualiza `progress`, verifica cancelamento (ajuste #5), consulta `atividades_import_entities` antes de criar (idempotência), registra no `atividades_import_entities` após criar.
-Se uma fase falhar, job termina como `partial` mantendo o que foi feito.
+Preparado para aprovação por gestores (campo `revisor_id` reservado no snapshot; não implementado agora).
 
-**Idempotência por `job_id`**: reexecução do runner com o mesmo `job_id` nunca duplica; sempre lê o mapa de entidades antes de criar.
+## Segurança
 
-**Executor** só usa RPCs existentes do módulo Atividades (ajuste #5 anterior). Zero SQL direto em cards/colunas/comentários/labels/anexos.
+- Rota protegida por `ProtectedRoute` + check `user.isAdministrador`.
+- RLS: novas policies com `public.has_role(auth.uid(), 'admin')`.
+- Sanitização: markdown → HTML via `react-markdown` com `rehype-sanitize` (adicionar dep).
+- Auditoria: cada mutation grava linha em `activity_log` (reuso do trigger existente) e em `knowledge_article_versions`.
 
-**Anexos** reutilizam o fluxo atual sem tocar bucket/políticas.
+## Navegação
 
-**Histórico do quadro** (ajuste #6): ao final com `success`/`partial`, Runner registra evento no histórico do board (`atividades_board_historico`) via RPC existente: "Quadro importado de {source} ({n_cards} cards, {n_colunas} colunas)".
+Item "Base de Conhecimento" na sidebar admin (dentro de AppLayout, gate `isAdministrador`). Comando na Command Palette: "Gerenciar base de conhecimento".
 
-## 5. Edge Functions
+## Testes
 
-- **`importer-analisar`** (verify_jwt=true): recebe multipart, faz parse em memória, calcula `file_hash`, retorna lista de boards detectados + estatísticas prévias. Não cria job.
-- **`importer-executar`** (verify_jwt=true): recebe arquivo + `board_selecionado` + `options` + `resolutions` + `target` + `dry_run`. Cria (ou reusa por `file_hash`+usuário) o job, roda Runner. UI observa via Realtime.
+Vitest para: service CRUD, transitions de workflow, restauração de versão, diff, guardas de permissão, hook de métricas.
 
-Dry-run e execução real são o **mesmo Runner** com a flag `dry_run` (ajuste #6 anterior).
+## Documentação
 
-Relatório final com métricas de auditoria (ajuste #8 anterior): duração, velocidade, reutilizados, criados, ignorados+motivos, warnings, erros, `adapter_version`, `snapshot_version`, `runner_version`, `rfc_version`, `file_hash`.
+`docs/29-Knowledge-Admin.md` com arquitetura, fluxos, diagrama Mermaid do workflow e do versionamento, roadmap (aprovação por gestores, embeddings, editor rich).
 
-## 6. Frontend
+## Módulos preservados
 
-Rota nova **`/atividades/importar`** (registrada em `App.tsx`).
+AI Workspace, Intent Engine, Context Engine, Platform Layer, UX Layer, Portal, Central Inteligente — nenhum arquivo desses módulos é alterado. Apenas adições em `navigation-registry` e `command-registry` (extensões previstas pela própria Platform Layer).
 
-```
-src/pages/atividades/importar/AtividadesImportar.tsx
-src/components/atividades/importar/
-  PassoOrigem, PassoUpload, PassoEscolhaBoard, PassoDestino,
-  PassoSelecao, PassoConflitos, PassoMembros, PassoExecucao, RelatorioFinal
-src/lib/importador/{atividadesImport.ts, types.ts, __tests__/}
-```
+## Dependências novas
 
-- `PassoExecucao` assina `atividades_import_jobs` filtrado por `id=job_id` (Realtime, dentro de `useEffect` com cleanup). Botão "Cancelar" chama `atividades_import_job_cancel`.
-- `PassoDestino` lista quadros com papel ≥ member reusando queries existentes (não altera nenhum hook).
-
-Único toque em UI existente: botão **"Importar quadro"** em `src/pages/Atividades.tsx` → `navigate('/atividades/importar')`.
-
-## 7. Origem visível em BoardSettings (ajuste #7)
-
-Alteração aditiva em `BoardSettingsDialog.tsx`, aba Geral: bloco somente-leitura exibido apenas quando o board tem `payload_extra.import`. Mostra Origem, Importado em, Job. Nenhuma outra alteração no dialog.
-
-Isso adiciona **um terceiro** arquivo existente à lista de alterados. Toque mínimo, condicional.
-
-## 8. Wizard — 7 passos
-
-1. Origem (só Trello ativo).
-2. Upload (parse server-side, sem bucket).
-3. Escolha do board (múltiplos boards do ZIP suportados).
-4. Destino (novo | existente ≥ member).
-5. Seleção (Colunas/Cards/Etiquetas/Datas/Comentários/Checklists marcados; Anexos/Arquivados/Membros desmarcados).
-6. Dry-run + conflitos + membros (map/ignore/histórico, sugestões memorizadas).
-7. Execução via Realtime, com cancelamento + relatório final (baixar JSON).
-
-## 9. Testes
-
-`src/lib/importador/__tests__/` para normalização/mapeamento. Fixtures pequenos para parser. Cenário real: "Plano de Ajustes — Sistemas Bloco Construções" (4 boards, ~4 colunas, ~38 cards no board principal).
-
-## 10. Fora de escopo
-
-Sem sync contínua, sem write-back, sem criação automática de usuários, sem API do Trello, sem Jira/CSV/etc. nesta fase.
-
-## 11. Ordem de execução
-
-1. Migração (3 tabelas + RLS + grants + RPCs + publicação Realtime).
-2. `_shared/importers/core` (Runner por fases, idempotente, cancelável).
-3. `_shared/importers/trello` (parser JSON+ZIP, preserva Markdown).
-4. Edge functions `importer-analisar` e `importer-executar`.
-5. `src/lib/importador/` + testes.
-6. Wizard + rota + botão em `Atividades.tsx`.
-7. Bloco condicional de origem em `BoardSettingsDialog.tsx`.
-8. Teste manual com o ZIP real.
-9. Relatório final: arquivos criados, alterados (`App.tsx`, `src/pages/Atividades.tsx`, `BoardSettingsDialog.tsx`), novas tabelas, novas RPCs, nova rota, fluxo, aderência ao RFC-001, compatibilidade JSON+ZIP, confirmação de não-regressão.
-
-## 12. Confirmação de não-regressão
-
-- Nenhum arquivo do Kanban/Cards/hooks/libs/queries atuais é modificado.
-- Nenhuma RPC/tabela/bucket/política existente é alterada.
-- RLS/Realtime atuais intocados; novas assinaturas apenas em tabela nova.
-- Único contato com UI existente: botão em Atividades, bloco condicional em BoardSettings, rota em App.tsx.
+- `react-markdown`, `remark-gfm`, `rehype-sanitize` (renderização segura).
