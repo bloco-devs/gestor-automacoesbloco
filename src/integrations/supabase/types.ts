@@ -1101,6 +1101,110 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_articles: {
+        Row: {
+          autor_email: string | null
+          autor_id: string | null
+          categoria: string | null
+          conteudo: string | null
+          created_at: string
+          id: string
+          palavras_chave: string[]
+          resumo: string | null
+          search_tsv: unknown
+          sistema_slug: string | null
+          status: string
+          tags: string[]
+          tipo: string
+          titulo: string
+          updated_at: string
+          url_externa: string | null
+          views: number
+        }
+        Insert: {
+          autor_email?: string | null
+          autor_id?: string | null
+          categoria?: string | null
+          conteudo?: string | null
+          created_at?: string
+          id?: string
+          palavras_chave?: string[]
+          resumo?: string | null
+          search_tsv?: unknown
+          sistema_slug?: string | null
+          status?: string
+          tags?: string[]
+          tipo: string
+          titulo: string
+          updated_at?: string
+          url_externa?: string | null
+          views?: number
+        }
+        Update: {
+          autor_email?: string | null
+          autor_id?: string | null
+          categoria?: string | null
+          conteudo?: string | null
+          created_at?: string
+          id?: string
+          palavras_chave?: string[]
+          resumo?: string | null
+          search_tsv?: unknown
+          sistema_slug?: string | null
+          status?: string
+          tags?: string[]
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+          url_externa?: string | null
+          views?: number
+        }
+        Relationships: []
+      }
+      knowledge_feedback: {
+        Row: {
+          article_id: string | null
+          created_at: string
+          demanda_similar_id: string | null
+          id: string
+          metadata: Json
+          origem: string
+          query_text: string | null
+          resolved: boolean
+          user_id: string | null
+        }
+        Insert: {
+          article_id?: string | null
+          created_at?: string
+          demanda_similar_id?: string | null
+          id?: string
+          metadata?: Json
+          origem?: string
+          query_text?: string | null
+          resolved: boolean
+          user_id?: string | null
+        }
+        Update: {
+          article_id?: string | null
+          created_at?: string
+          demanda_similar_id?: string | null
+          id?: string
+          metadata?: Json
+          origem?: string
+          query_text?: string | null
+          resolved?: boolean
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_feedback_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notificacoes: {
         Row: {
           created_at: string
@@ -1964,6 +2068,20 @@ export type Database = {
         Returns: boolean
       }
       is_allowed_user: { Args: never; Returns: boolean }
+      knowledge_search: {
+        Args: { _limit?: number; _q: string }
+        Returns: {
+          categoria: string
+          id: string
+          relevancia: number
+          resumo: string
+          sistema_slug: string
+          tipo: string
+          titulo: string
+          updated_at: string
+          url_externa: string
+        }[]
+      }
       list_assignable_users: {
         Args: never
         Returns: {
