@@ -126,7 +126,7 @@ export function useAIWorkspace() {
         body: {
           titulo,
           descricao,
-          setor: user?.setor ?? "",
+          setor: "",
           sistemas: sistemas.map((s) => ({ slug: s.id, nome: s.nome })),
         },
       });
@@ -142,7 +142,7 @@ export function useAIWorkspace() {
         justificativa: string | null;
       };
     },
-    [sistemas, user?.setor],
+    [sistemas],
   );
 
   const runSimilares = useCallback(async (titulo: string, descricao: string) => {
@@ -171,10 +171,7 @@ export function useAIWorkspace() {
         ]);
         if (cancelled.current) return;
 
-        const setorInicial =
-          (typeof user?.setor === "string" && undefined as string | undefined.trim()) ||
-          setoresDisponiveis[0] ||
-          "";
+        const setorInicial = setoresDisponiveis[0] || "";
         const sistemaNome =
           triagem.sistema_alvo_slug
             ? sistemas.find((s) => s.id === triagem.sistema_alvo_slug)?.nome ?? null
@@ -209,7 +206,7 @@ export function useAIWorkspace() {
         setPhase("chatting");
       }
     },
-    [generateDescription, runSimilares, runTriagem, setoresDisponiveis, sistemas, toast, user?.setor],
+    [generateDescription, runSimilares, runTriagem, setoresDisponiveis, sistemas, toast],
   );
 
   const sendMessage = useCallback(
