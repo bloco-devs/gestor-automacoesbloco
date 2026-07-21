@@ -166,7 +166,7 @@ export function useAIWorkspace() {
         setThinking(false);
       }
     },
-    [finalize, messages, phase, thinking, toast],
+    [finalize, messages, phase, thinking, toast, workspaceContext],
   );
 
   const updatePreview = useCallback((patch: Partial<AiPreview>) => {
