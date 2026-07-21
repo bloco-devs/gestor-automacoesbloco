@@ -35,7 +35,6 @@ describe("computeMetrics", () => {
       mk({ status: "rascunho", autor_id: "a" }),
       mk({ status: "em_revisao", autor_id: "c" }),
       mk({ status: "arquivado" }),
-      // @ts-expect-error runtime col
       mk({ status: "publicado", deleted_at: new Date().toISOString() }),
     ];
     const m = knowledgeAdminService.computeMetrics(rows);
