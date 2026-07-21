@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, Compass, GanttChartSquare, GitMerge, HelpCircle, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Menu, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen, Activity, X } from "lucide-react";
+import { ChevronDown, Compass, GanttChartSquare, GitMerge, HelpCircle, Inbox, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Menu, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen, Activity, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DndContext,
@@ -42,6 +42,7 @@ type NavItem = {
 };
 
 const devNav: NavItem[] = [
+  { to: "/trabalho/inbox", label: "Inbox", icon: Inbox },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   {
     label: "Solicitações",
@@ -71,6 +72,7 @@ const devNav: NavItem[] = [
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 const requesterNav: NavItem[] = [
+  { to: "/trabalho/inbox", label: "Inbox", icon: Inbox },
   { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
   { to: "/minhas-solicitacoes", label: "Minhas Solicitações", icon: ListTodo },
   { to: "/nova-solicitacao", label: "Nova Solicitação", icon: Plus },
@@ -90,6 +92,7 @@ const requesterNav: NavItem[] = [
 // Builder: pode cadastrar soluções nas próprias solicitações; precisa ver
 // Soluções e Diagrama além do menu base do solicitante.
 const builderNav: NavItem[] = [
+  { to: "/trabalho/inbox", label: "Inbox", icon: Inbox },
   { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
   { to: "/minhas-solicitacoes", label: "Minhas Solicitações", icon: ListTodo },
   { to: "/nova-solicitacao", label: "Nova Solicitação", icon: Plus },

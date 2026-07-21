@@ -45,6 +45,7 @@ import Ajuda from "./pages/Ajuda";
 import MeuPerfil from "./pages/MeuPerfil";
 import ObservabilidadeIA from "./pages/ObservabilidadeIA";
 import Consolidacao from "./pages/Consolidacao";
+import Inbox from "./pages/Inbox";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,9 @@ const AppRoutes = () => {
 
         <Route path="/observabilidade-ia" element={<ProtectedRoute role="developer"><ObservabilidadeIA /></ProtectedRoute>} />
         <Route path="/consolidacao" element={<ProtectedRoute role="developer"><Consolidacao /></ProtectedRoute>} />
+
+        {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
+        <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
 
         {/* Compartilhado */}
         <Route path="/ajuda" element={<Ajuda />} />

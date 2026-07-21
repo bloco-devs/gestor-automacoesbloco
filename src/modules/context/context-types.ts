@@ -24,6 +24,7 @@ export type ModuleKey =
   | "ajuda"
   | "perfil"
   | "ai-workspace"
+  | "inbox"
   | "auth"
   | "unknown";
 
