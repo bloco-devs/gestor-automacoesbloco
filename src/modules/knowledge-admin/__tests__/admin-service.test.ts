@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { knowledgeAdminService } from "../services/admin-service";
 import type { ArticleRow } from "../types";
 
-function mk(partial: Partial<ArticleRow>): ArticleRow {
-  return {
+function mk(partial: Partial<ArticleRow> & { deleted_at?: string | null }): ArticleRow {
+  const base: Record<string, unknown> = {
     id: partial.id ?? crypto.randomUUID(),
     tipo: "artigo",
     titulo: "t",
@@ -20,11 +20,11 @@ function mk(partial: Partial<ArticleRow>): ArticleRow {
     views: partial.views ?? 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    search_tsv: null as unknown as ArticleRow["search_tsv"],
-    // @ts-expect-error runtime col
+    search_tsv: null,
     deleted_at: partial.deleted_at ?? null,
     ...partial,
-  } as ArticleRow;
+  };
+  return base as unknown as ArticleRow;
 }
 
 describe("computeMetrics", () => {
