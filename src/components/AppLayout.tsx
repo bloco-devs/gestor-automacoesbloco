@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, Compass, GanttChartSquare, GitMerge, HelpCircle, Inbox, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Menu, MessageCircleQuestion, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen, Activity, X } from "lucide-react";
+import { ChevronDown, Compass, GanttChartSquare, GitMerge, HelpCircle, Inbox, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Menu, MessageCircleQuestion, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen, Activity, BookOpen, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DndContext,
