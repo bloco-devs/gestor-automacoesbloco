@@ -1,0 +1,11 @@
+export * from "./types/conversation";
+export * from "./types/classification";
+export * from "./intent/intent-types";
+export { INTENT_REGISTRY, getIntentDefinition, listIntents } from "./intent/intent-registry";
+export { classifyConversation } from "./intent/intent-engine";
+export { resolveIntent, scoreToConfidence, flattenUserText } from "./intent/intent-resolver";
+export * from "./pipelines/pipeline-types";
+export { PIPELINE_REGISTRY, getPipelineDefinition } from "./pipelines/pipeline-registry";
+export { runPipeline } from "./pipelines/pipeline-runner";
+export { aiOrchestrator } from "./services/ai-orchestrator";
+export type { OrchestratorDecision } from "./services/ai-orchestrator";
