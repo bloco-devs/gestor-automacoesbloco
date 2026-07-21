@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { usePlataformas } from "@/hooks/useSupabaseData";
+// platforms fetched inline via supabase
 import { useAddAttachment, useCreateDemand } from "../hooks";
 import {
   COMPLEXITY_META,
