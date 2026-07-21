@@ -113,6 +113,10 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
       }
 
       toast({ title: "Chamado registrado!", description: "Você poderá acompanhá-lo no portal." });
+
+      // Aciona Agente Autônomo IA Nível 1 (portal sempre cria sem responsável).
+      void autoRespond.mutateAsync(demand.id);
+
       reset();
       onOpenChange(false);
     } catch (err) {
