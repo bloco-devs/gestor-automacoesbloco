@@ -81,6 +81,8 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
   const toggleTask = useToggleDemandTask(demandId);
   const removeTask = useDeleteDemandTask(demandId);
   const updateStatus = useUpdateDemandStatus();
+  const assign = useAssignDemand();
+  const { data: workloads = [] } = useUserWorkloads(open);
   const aiPlan = useGenerateAIPlan(demandId);
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
