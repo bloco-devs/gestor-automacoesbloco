@@ -53,6 +53,7 @@ import {
   type DemandStatus,
 } from "../types";
 import { cn } from "@/lib/utils";
+import { SLAIndicator } from "./SLAIndicator";
 
 interface Props {
   demand: Demand | null;
