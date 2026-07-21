@@ -18,6 +18,13 @@ export type DemandType =
 
 export type DemandComplexity = "facil" | "media" | "dificil";
 
+export type DemandSlaStatus =
+  | "no_prazo"
+  | "atencao"
+  | "estourado"
+  | "pausado"
+  | "cumprido";
+
 export interface Demand {
   id: string;
   title: string;
@@ -32,6 +39,9 @@ export interface Demand {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  sla_due_at: string | null;
+  sla_first_response_at: string | null;
+  sla_status: DemandSlaStatus;
   attachments_count?: number;
 }
 

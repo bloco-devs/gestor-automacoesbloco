@@ -25,6 +25,7 @@ import {
   type Demand,
   type DemandStatus,
 } from "../types";
+import { SLAIndicator } from "./SLAIndicator";
 
 interface Props {
   demand: Demand;
@@ -89,6 +90,12 @@ export function DemandCard({ demand, onStatusChange, onDelete, onOpen, canDelete
         <Badge variant="outline" className={cn("text-[10px] font-medium", type.className)}>
           {type.label}
         </Badge>
+        <SLAIndicator
+          slaDueAt={demand.sla_due_at}
+          slaStatus={demand.sla_status}
+          demandStatus={demand.status}
+          createdAt={demand.created_at}
+        />
       </div>
 
       <div className="flex items-center justify-between pt-1 text-xs text-muted-foreground">

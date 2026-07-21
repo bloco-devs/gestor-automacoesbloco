@@ -53,6 +53,7 @@ import {
   type DemandStatus,
 } from "../types";
 import { cn } from "@/lib/utils";
+import { SLAIndicator } from "./SLAIndicator";
 
 interface Props {
   demand: Demand | null;
@@ -167,6 +168,13 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
                     Complexidade: {complexity.label}
                   </Badge>
                 )}
+                <SLAIndicator
+                  slaDueAt={demand.sla_due_at}
+                  slaStatus={demand.sla_status}
+                  demandStatus={demand.status}
+                  createdAt={demand.created_at}
+                  size="md"
+                />
                 <Select
                   value={demand.status}
                   onValueChange={(v) =>
