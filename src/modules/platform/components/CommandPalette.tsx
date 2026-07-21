@@ -8,7 +8,6 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { Search } from "lucide-react";
 import { usePlatformContext } from "../providers/PlatformProvider";
 import { useGlobalSearch } from "../hooks";
 import { formatHotkey } from "../utils/hotkeys";
@@ -85,17 +84,13 @@ export function CommandPalette() {
       open={paletteOpen}
       onOpenChange={(o) => (o ? undefined : closePalette())}
     >
-      <div className="flex items-center border-b px-3">
-        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" aria-hidden />
-        <CommandInput
-          ref={inputRef}
-          value={query}
-          onValueChange={setQuery}
-          placeholder="Buscar comandos, páginas e ações…"
-          aria-label="Pesquisa global"
-          className="border-0 focus:ring-0"
-        />
-      </div>
+      <CommandInput
+        ref={inputRef}
+        value={query}
+        onValueChange={setQuery}
+        placeholder="Buscar comandos, páginas e ações…"
+        aria-label="Pesquisa global"
+      />
       <CommandList aria-label="Resultados da command palette">
         <CommandEmpty>Nenhum resultado.</CommandEmpty>
 
