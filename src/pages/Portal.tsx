@@ -10,7 +10,8 @@ import { ChatContainer } from "@/components/ai-workspace/ChatContainer";
 import { ConversationInput } from "@/components/ai-workspace/ConversationInput";
 import { ConversationFooter } from "@/components/ai-workspace/ConversationFooter";
 import { PreviewPanel } from "@/components/ai-workspace/PreviewPanel";
-import { LiveSuggestions } from "@/components/portal/LiveSuggestions";
+import { KnowledgeSuggestions } from "@/modules/knowledge";
+import { useNavigate } from "react-router-dom";
 
 // Web Speech API — não é padrão em todos os navegadores, fallback silencioso.
 type SpeechRecognitionCtor = new () => {
@@ -202,7 +203,17 @@ export default function Portal() {
           </div>
         </div>
 
-        <LiveSuggestions text={draft} />
+        <KnowledgeSuggestions
+          query={draft}
+          origin="portal"
+          onResolved={() => {
+            setDraft("");
+            toast({
+              title: "Perfeito!",
+              description: "Sem necessidade de abrir solicitação. Estamos por aqui se precisar.",
+            });
+          }}
+        />
 
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
           <span>Quer ver suas solicitações?</span>
