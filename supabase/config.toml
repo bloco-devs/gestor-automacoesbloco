@@ -1,5 +1,9 @@
 project_id = "cgbhpenkytibgiosksrb"
 
+[functions.demand-auto-responder]
+verify_jwt = true
+
+
 [functions.assistente-demanda]
 verify_jwt = true
 
