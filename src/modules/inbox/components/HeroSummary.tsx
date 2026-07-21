@@ -29,7 +29,7 @@ function HeroSummary({ name, counts }: Props) {
         <h1 className="text-2xl font-semibold tracking-tight">
           {greeting()}, {name} <span aria-hidden>👋</span>
         </h1>
-        <p className="text-sm text-muted-foreground">Estas são as prioridades da sua Inbox agora.</p>
+        <p className="text-sm text-muted-foreground">Seu trabalho de hoje, em ordem de prioridade.</p>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {chips.map((c) => {
