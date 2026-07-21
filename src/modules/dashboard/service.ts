@@ -82,13 +82,6 @@ export function computeMetrics(demands: Demand[]): DemandMetrics {
   const slaCumprimentoPct = concluidas > 0 ? (cumpridas / concluidas) * 100 : null;
   const tempoMedioResolucaoHoras = contResolvidas > 0 ? somaHoras / contResolvidas : null;
 
-  return {
-    total, ativas, concluidas,
-    slaCumprimentoPct, tempoMedioResolucaoHoras,
-    emAlerta, estouradas, noPrazo,
-    porStatus, porPrioridade, porTipo,
-  };
-}
 
 export async function listSlaPolicies(): Promise<SlaPolicy[]> {
   const { data, error } = await supabase
