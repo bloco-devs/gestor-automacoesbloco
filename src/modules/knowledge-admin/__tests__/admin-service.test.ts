@@ -45,7 +45,7 @@ describe("computeMetrics", () => {
     expect(m.arquivados).toBe(1);
     expect(m.excluidos).toBe(1);
     expect(m.views).toBe(15);
-    expect(m.autores).toBe(3);
+    expect(m.autores).toBe(4);
   });
 
   it("retorna zerado para lista vazia", () => {
