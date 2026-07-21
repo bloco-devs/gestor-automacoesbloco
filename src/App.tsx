@@ -48,6 +48,7 @@ import MeuPerfil from "./pages/MeuPerfil";
 import ObservabilidadeIA from "./pages/ObservabilidadeIA";
 import Consolidacao from "./pages/Consolidacao";
 import Inbox from "./pages/Inbox";
+import Portal from "./pages/Portal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const AppRoutes = () => {
 
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         {/* Solicitante */}
+        <Route path="/portal" element={<ProtectedRoute><Portal /></ProtectedRoute>} />
         <Route path="/dashboard-solicitante" element={<ProtectedRoute role="requester"><RequesterDashboard /></ProtectedRoute>} />
         <Route path="/minhas-solicitacoes" element={<ProtectedRoute role="requester"><MinhasSolicitacoes /></ProtectedRoute>} />
         <Route path="/nova-solicitacao" element={<ProtectedRoute role="requester"><AIWorkspace /></ProtectedRoute>} />
