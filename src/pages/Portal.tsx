@@ -47,11 +47,13 @@ export default function Portal() {
     sendMessage,
     updatePreview,
     confirmSubmit,
+    reset,
+    goBackToChat,
   } = useAIWorkspace();
 
   const [draft, setDraft] = useState("");
   const [listening, setListening] = useState(false);
-  const recognitionRef = useRef<ReturnType<SpeechRecognitionCtor> | null>(null);
+  const recognitionRef = useRef<InstanceType<SpeechRecognitionCtor> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const nome = (user?.nome ?? "").split(" ")[0];
@@ -247,10 +249,12 @@ export default function Portal() {
         <PreviewPanel
           preview={preview}
           score={previewScore}
-          setoresDisponiveis={setoresDisponiveis}
+          setores={setoresDisponiveis}
           sistemas={sistemas}
           onChange={updatePreview}
           onConfirm={confirmSubmit}
+          onCancel={reset}
+          onBackToChat={goBackToChat}
           submitting={phase === "submitting"}
         />
       )}
