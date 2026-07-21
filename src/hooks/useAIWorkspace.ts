@@ -172,7 +172,7 @@ export function useAIWorkspace() {
         if (cancelled.current) return;
 
         const setorInicial =
-          (typeof user?.setor === "string" && user.setor.trim()) ||
+          (typeof user?.setor === "string" && undefined as string | undefined.trim()) ||
           setoresDisponiveis[0] ||
           "";
         const sistemaNome =
