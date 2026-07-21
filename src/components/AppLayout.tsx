@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, Compass, GanttChartSquare, GitMerge, HelpCircle, Inbox, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Menu, MessageCircleQuestion, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen, Activity, BookOpen, X } from "lucide-react";
+import { ChevronDown, Clock, Compass, GanttChartSquare, GitMerge, HelpCircle, Inbox, KanbanSquare, LayoutDashboard, List, ListChecks, ListTodo, LogOut, Menu, MessageCircleQuestion, Network, Plus, Repeat, Settings, Sparkles, Gauge, PanelLeftClose, PanelLeftOpen, Activity, BookOpen, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DndContext,
@@ -70,6 +70,8 @@ const devNav: NavItem[] = [
   { to: "/observabilidade-ia", label: "Observabilidade IA", icon: Activity },
   { to: "/admin/base-conhecimento", label: "Base de Conhecimento", icon: BookOpen },
   { to: "/admin/demandas", label: "Board de Demandas", icon: KanbanSquare },
+  { to: "/admin/dashboard", label: "Dashboard (Operação)", icon: Gauge },
+  { to: "/admin/configuracoes/sla", label: "Configuração de SLA", icon: Clock },
   { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];

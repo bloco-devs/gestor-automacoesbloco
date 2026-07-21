@@ -51,6 +51,8 @@ import Inbox from "./pages/Inbox";
 import Portal from "./pages/Portal";
 import BaseConhecimentoAdmin from "./pages/admin/BaseConhecimento";
 import Demandas from "./pages/admin/Demandas";
+import AdminDashboard from "./pages/admin/Dashboard";
+import SLAPolicies from "./pages/admin/SLAPolicies";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -96,6 +98,8 @@ const AppRoutes = () => {
         <Route path="/consolidacao" element={<ProtectedRoute role="developer"><Consolidacao /></ProtectedRoute>} />
         <Route path="/admin/base-conhecimento" element={<ProtectedRoute role="developer"><BaseConhecimentoAdmin /></ProtectedRoute>} />
         <Route path="/admin/demandas" element={<ProtectedRoute role="developer"><Demandas /></ProtectedRoute>} />
+        <Route path="/admin/dashboard" element={<ProtectedRoute role="developer"><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/configuracoes/sla" element={<ProtectedRoute role="developer"><SLAPolicies /></ProtectedRoute>} />
 
         {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
         <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
