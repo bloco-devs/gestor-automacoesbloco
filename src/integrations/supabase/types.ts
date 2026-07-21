@@ -991,6 +991,85 @@ export type Database = {
           },
         ]
       }
+      demand_audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          demand_id: string
+          field_name: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          demand_id: string
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          demand_id?: string
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_audit_logs_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demand_comments: {
+        Row: {
+          content: string
+          created_at: string
+          demand_id: string
+          id: string
+          is_internal: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          demand_id: string
+          id?: string
+          is_internal?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          demand_id?: string
+          id?: string
+          is_internal?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_comments_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demand_tasks: {
         Row: {
           completed: boolean
