@@ -991,6 +991,47 @@ export type Database = {
           },
         ]
       }
+      demand_tasks: {
+        Row: {
+          completed: boolean
+          created_at: string
+          created_by: string | null
+          demand_id: string
+          id: string
+          order_index: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          created_by?: string | null
+          demand_id: string
+          id?: string
+          order_index?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          created_by?: string | null
+          demand_id?: string
+          id?: string
+          order_index?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_tasks_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demanda_melhorias: {
         Row: {
           data: string

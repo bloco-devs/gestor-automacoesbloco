@@ -30,10 +30,11 @@ interface Props {
   demand: Demand;
   onStatusChange: (status: DemandStatus) => void;
   onDelete: () => void;
+  onOpen: () => void;
   canDelete: boolean;
 }
 
-export function DemandCard({ demand, onStatusChange, onDelete, canDelete }: Props) {
+export function DemandCard({ demand, onStatusChange, onDelete, onOpen, canDelete }: Props) {
   const priority = PRIORITY_META[demand.priority];
   const type = TYPE_META[demand.type];
   const initial = useMemo(
@@ -42,7 +43,10 @@ export function DemandCard({ demand, onStatusChange, onDelete, canDelete }: Prop
   );
 
   return (
-    <Card className="p-3 space-y-2 hover:shadow-md transition-shadow group">
+    <Card
+      className="p-3 space-y-2 hover:shadow-md transition-shadow group cursor-pointer"
+      onClick={onOpen}
+    >
       <div className="flex items-start justify-between gap-2">
         <h4 className="text-sm font-medium leading-snug line-clamp-3 flex-1">
           {demand.title}
@@ -54,6 +58,7 @@ export function DemandCard({ demand, onStatusChange, onDelete, canDelete }: Prop
               size="icon"
               className="size-6 opacity-0 group-hover:opacity-100"
               aria-label="Ações"
+              onClick={(e) => e.stopPropagation()}
             >
               <MoreHorizontal className="size-3.5" />
             </Button>
@@ -101,6 +106,7 @@ export function DemandCard({ demand, onStatusChange, onDelete, canDelete }: Prop
             </span>
           )}
         </div>
+        <div onClick={(e) => e.stopPropagation()}>
         <Select value={demand.status} onValueChange={(v) => onStatusChange(v as DemandStatus)}>
           <SelectTrigger className="h-6 w-32 text-[11px] border-border/60">
             <SelectValue />
@@ -113,6 +119,7 @@ export function DemandCard({ demand, onStatusChange, onDelete, canDelete }: Prop
             ))}
           </SelectContent>
         </Select>
+        </div>
       </div>
     </Card>
   );
