@@ -21,6 +21,7 @@ import {
   updateDemandStatus,
 } from "./service";
 import type { CreateDemandInput, Demand, DemandStatus } from "./types";
+import { workflowRuntime } from "@/modules/workflow-runtime";
 
 const KEY = ["demands"] as const;
 
