@@ -88,6 +88,16 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
   const assign = useAssignDemand();
   const { data: workloads = [] } = useUserWorkloads(open);
   const aiPlan = useGenerateAIPlan(demandId);
+  const routing = useRoutingSuggestions(
+    demand && open && !demand.assigned_to
+      ? {
+          type: demand.type,
+          priority: demand.priority,
+          complexity: demand.complexity,
+          sla_status: demand.sla_status,
+        }
+      : null,
+  );
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [aiResult, setAiResult] = useState<{
