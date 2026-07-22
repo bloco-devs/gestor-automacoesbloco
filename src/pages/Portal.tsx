@@ -187,8 +187,18 @@ export default function Portal() {
 
   const myRequests = useMemo<Demand[]>(() => {
     if (!user?.id) return [];
-    return demands.filter((d) => d.created_by === user.id).slice(0, 3);
-  }, [demands, user?.id]);
+    const mine = demands.filter((d) => d.created_by === user.id);
+    const q = historySearch.trim().toLowerCase();
+    const base = showFavorites ? mine.filter((d) => favorites.includes(d.id)) : mine;
+    const searched = q
+      ? base.filter(
+          (d) =>
+            d.title.toLowerCase().includes(q) ||
+            (d.description ?? "").toLowerCase().includes(q),
+        )
+      : base;
+    return searched.slice(0, historySearch || showFavorites ? 10 : 4);
+  }, [demands, user?.id, historySearch, showFavorites, favorites]);
 
   const filteredArticles = useMemo(() => {
     const q = kbQuery.trim().toLowerCase();
