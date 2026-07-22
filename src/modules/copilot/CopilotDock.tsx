@@ -65,9 +65,9 @@ export function CopilotDock() {
     setInput("");
     setLoading(true);
     try {
-      const snapshot = ctx?.getSnapshot?.();
+      const snapshot = ctx?.get?.();
       const contexto = snapshot
-        ? `\n[contexto: rota=${location.pathname}; módulo=${snapshot.module ?? "—"}; papel=${snapshot.profile ?? "—"}]`
+        ? `\n[contexto: rota=${location.pathname}; módulo=${snapshot.module ?? "—"}; entidade=${snapshot.entityType ?? "—"}]`
         : `\n[contexto: rota=${location.pathname}]`;
       const { data, error } = await supabase.functions.invoke("assistente-demanda", {
         body: {
