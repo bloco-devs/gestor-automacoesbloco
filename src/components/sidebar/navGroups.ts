@@ -59,6 +59,7 @@ export const devGroups: NavGroup[] = [
     label: "Trabalho",
     icon: Briefcase,
     items: [
+      { to: "/workspace", label: "Workspace", icon: Layers },
       { to: "/trabalho/inbox", label: "Inbox", icon: Inbox },
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { label: "Solicitações", icon: ListChecks, matchPrefix: "/solicitacoes", children: solicitacoesChildren },
