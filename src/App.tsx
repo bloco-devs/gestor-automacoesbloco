@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 
@@ -17,124 +18,158 @@ import { ContextProvider } from "@/modules/context";
 import { PlatformProvider } from "@/modules/platform";
 import { LanguageProvider } from "@/modules/ux";
 import { WorkflowRuntimeProvider } from "@/modules/workflow-runtime";
+import { Loader2 } from "lucide-react";
+
+// Rotas críticas — carregamento imediato (auth/entrada)
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SsoCallback from "./pages/SsoCallback";
 import RedefinirSenha from "./pages/RedefinirSenha";
 import EscolherPerfil from "./pages/EscolherPerfil";
-import SolicitarSolucao from "./pages/SolicitarSolucao";
-import NovaSolicitacao from "./pages/NovaSolicitacao";
-import AIWorkspace from "./pages/AIWorkspace";
-import MinhasSolicitacoes from "./pages/MinhasSolicitacoes";
-import RequesterDashboard from "./pages/RequesterDashboard";
-import Dashboard from "./pages/Dashboard";
-import Kanban from "./pages/Kanban";
-import Solucoes from "./pages/Solucoes";
-import Solicitacoes from "./pages/Solicitacoes";
-import SolucoesKanban from "./pages/SolucoesKanban";
-import SolicitacoesGantt from "./pages/SolicitacoesGantt";
-import SolucoesGantt from "./pages/SolucoesGantt";
-
-
-import SolicitacaoDetail from "./pages/SolicitacaoDetail";
-import SolucaoDetail from "./pages/SolucaoDetail";
-import Configuracoes from "./pages/Configuracoes";
-import Diagrama from "./pages/Diagrama";
-import Atividades from "./pages/Atividades";
-import AtividadesBoard from "./pages/AtividadesBoard";
-import ImportarQuadro from "./pages/atividades/importar/ImportarQuadro";
-
-import Ajuda from "./pages/Ajuda";
-import MeuPerfil from "./pages/MeuPerfil";
-import ObservabilidadeIA from "./pages/ObservabilidadeIA";
-import Consolidacao from "./pages/Consolidacao";
-import Inbox from "./pages/Inbox";
-import Operacoes from "./pages/Operacoes";
-import DeveloperWorkspace from "./pages/DeveloperWorkspace";
-import CommandCenter from "./pages/CommandCenter";
-import Portal from "./pages/Portal";
-import PortalIndex from "./pages/portal/PortalIndex";
-import BaseConhecimentoAdmin from "./pages/admin/BaseConhecimento";
-import Demandas from "./pages/admin/Demandas";
-import AdminDashboard from "./pages/admin/Dashboard";
-import SLAPolicies from "./pages/admin/SLAPolicies";
-import WebhooksAdmin from "./pages/admin/Webhooks";
-import WorkflowsPage from "./pages/admin/Workflows";
-import WorkflowEditorPage from "./pages/admin/WorkflowEditor";
-import WorkflowExecutionsPage from "./pages/admin/WorkflowExecutions";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Lazy — reduz o bundle inicial. Chunks nomeados por área.
+const SolicitarSolucao = lazy(() => import("./pages/SolicitarSolucao"));
+const NovaSolicitacao = lazy(() => import("./pages/NovaSolicitacao"));
+const AIWorkspace = lazy(() => import(/* webpackChunkName: "ai" */ "./pages/AIWorkspace"));
+const MinhasSolicitacoes = lazy(() => import("./pages/MinhasSolicitacoes"));
+const RequesterDashboard = lazy(() => import("./pages/RequesterDashboard"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Kanban = lazy(() => import("./pages/Kanban"));
+const Solucoes = lazy(() => import("./pages/Solucoes"));
+const Solicitacoes = lazy(() => import("./pages/Solicitacoes"));
+const SolucoesKanban = lazy(() => import("./pages/SolucoesKanban"));
+const SolicitacoesGantt = lazy(() => import("./pages/SolicitacoesGantt"));
+const SolucoesGantt = lazy(() => import("./pages/SolucoesGantt"));
+const SolicitacaoDetail = lazy(() => import("./pages/SolicitacaoDetail"));
+const SolucaoDetail = lazy(() => import("./pages/SolucaoDetail"));
+const Configuracoes = lazy(() => import("./pages/Configuracoes"));
+const Diagrama = lazy(() => import("./pages/Diagrama"));
+const Atividades = lazy(() => import(/* webpackChunkName: "atividades" */ "./pages/Atividades"));
+const AtividadesBoard = lazy(() => import(/* webpackChunkName: "atividades" */ "./pages/AtividadesBoard"));
+const ImportarQuadro = lazy(() => import(/* webpackChunkName: "atividades" */ "./pages/atividades/importar/ImportarQuadro"));
+const Ajuda = lazy(() => import("./pages/Ajuda"));
+const MeuPerfil = lazy(() => import("./pages/MeuPerfil"));
+const ObservabilidadeIA = lazy(() => import(/* webpackChunkName: "ai" */ "./pages/ObservabilidadeIA"));
+const Consolidacao = lazy(() => import("./pages/Consolidacao"));
+const Inbox = lazy(() => import(/* webpackChunkName: "workspace" */ "./pages/Inbox"));
+const Operacoes = lazy(() => import(/* webpackChunkName: "operations" */ "./pages/Operacoes"));
+const DeveloperWorkspace = lazy(() => import(/* webpackChunkName: "workspace" */ "./pages/DeveloperWorkspace"));
+const CommandCenter = lazy(() => import(/* webpackChunkName: "operations" */ "./pages/CommandCenter"));
+const Portal = lazy(() => import("./pages/Portal"));
+const PortalIndex = lazy(() => import("./pages/portal/PortalIndex"));
+const BaseConhecimentoAdmin = lazy(() => import(/* webpackChunkName: "knowledge" */ "./pages/admin/BaseConhecimento"));
+const Demandas = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Demandas"));
+const AdminDashboard = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Dashboard"));
+const SLAPolicies = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SLAPolicies"));
+const WebhooksAdmin = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Webhooks"));
+const WorkflowsPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/Workflows"));
+const WorkflowEditorPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/WorkflowEditor"));
+const WorkflowExecutionsPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/WorkflowExecutions"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      retry: (failureCount, error) => {
+        const msg = error instanceof Error ? error.message : String(error ?? "");
+        if (/permission|denied|rls|401|403|404/i.test(msg)) return false;
+        return failureCount < 2;
+      },
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
+
+function RouteFallback() {
+  return (
+    <div
+      className="flex items-center justify-center min-h-[40dvh] text-sm text-muted-foreground"
+      role="status"
+      aria-live="polite"
+    >
+      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+      Carregando…
+    </div>
+  );
+}
 
 const AppRoutes = () => {
   const { authError, loading } = useAuth();
   if (authError && !loading) return <AuthErrorScreen />;
   return (
-    <Routes>
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/sso/callback" element={<SsoCallback />} />
-      <Route path="/redefinir-senha" element={<RedefinirSenha />} />
-      <Route path="/escolher-perfil" element={<ProtectedRoute><EscolherPerfil /></ProtectedRoute>} />
-      <Route path="/solicitar" element={<SolicitarSolucao />} />
-      <Route path="/" element={<Index />} />
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/sso/callback" element={<SsoCallback />} />
+        <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+        <Route path="/escolher-perfil" element={<ProtectedRoute><EscolherPerfil /></ProtectedRoute>} />
+        <Route path="/solicitar" element={<SolicitarSolucao />} />
+        <Route path="/" element={<Index />} />
 
-      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-        {/* Solicitante */}
-        <Route path="/portal" element={<ProtectedRoute><Portal /></ProtectedRoute>} />
-        <Route path="/portal/central" element={<ProtectedRoute><PortalIndex /></ProtectedRoute>} />
-        <Route path="/dashboard-solicitante" element={<ProtectedRoute role="requester"><RequesterDashboard /></ProtectedRoute>} />
-        <Route path="/minhas-solicitacoes" element={<ProtectedRoute role="requester"><MinhasSolicitacoes /></ProtectedRoute>} />
-        <Route path="/nova-solicitacao" element={<ProtectedRoute role="requester"><AIWorkspace /></ProtectedRoute>} />
-        <Route path="/nova-solicitacao/classico" element={<ProtectedRoute role="requester"><NovaSolicitacao /></ProtectedRoute>} />
+        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          {/* Solicitante */}
+          <Route path="/portal" element={<ProtectedRoute><Portal /></ProtectedRoute>} />
+          <Route path="/portal/central" element={<ProtectedRoute><PortalIndex /></ProtectedRoute>} />
+          <Route path="/dashboard-solicitante" element={<ProtectedRoute role="requester"><RequesterDashboard /></ProtectedRoute>} />
+          <Route path="/minhas-solicitacoes" element={<ProtectedRoute role="requester"><MinhasSolicitacoes /></ProtectedRoute>} />
+          <Route path="/nova-solicitacao" element={<ProtectedRoute role="requester"><AIWorkspace /></ProtectedRoute>} />
+          <Route path="/nova-solicitacao/classico" element={<ProtectedRoute role="requester"><NovaSolicitacao /></ProtectedRoute>} />
 
-        {/* Desenvolvedor */}
-        <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
-        <Route path="/solicitacoes" element={<ProtectedRoute><Solicitacoes /></ProtectedRoute>} />
-        <Route path="/solicitacoes/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
-        <Route path="/solicitacoes/gantt" element={<ProtectedRoute><SolicitacoesGantt /></ProtectedRoute>} />
-        <Route path="/kanban" element={<Navigate to="/solicitacoes/kanban" replace />} />
-        <Route path="/solucoes" element={<ProtectedRoute role="developer"><Solucoes /></ProtectedRoute>} />
-        <Route path="/solucoes/kanban" element={<ProtectedRoute role="developer"><SolucoesKanban /></ProtectedRoute>} />
-        <Route path="/solucoes/gantt" element={<ProtectedRoute role="developer"><SolucoesGantt /></ProtectedRoute>} />
-        <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
-        <Route path="/configuracoes" element={<ProtectedRoute role="developer"><Configuracoes /></ProtectedRoute>} />
-        <Route path="/diagrama" element={<ProtectedRoute role="developer"><Diagrama /></ProtectedRoute>} />
-        <Route path="/atividades" element={<ProtectedRoute role="developer"><Atividades /></ProtectedRoute>} />
-        <Route path="/atividades/importar" element={<ProtectedRoute role="developer"><ImportarQuadro /></ProtectedRoute>} />
-        <Route path="/atividades/:boardId" element={<ProtectedRoute role="developer"><AtividadesBoard /></ProtectedRoute>} />
+          {/* Desenvolvedor */}
+          <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
+          <Route path="/solicitacoes" element={<ProtectedRoute><Solicitacoes /></ProtectedRoute>} />
+          <Route path="/solicitacoes/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
+          <Route path="/solicitacoes/gantt" element={<ProtectedRoute><SolicitacoesGantt /></ProtectedRoute>} />
+          <Route path="/kanban" element={<Navigate to="/solicitacoes/kanban" replace />} />
+          <Route path="/solucoes" element={<ProtectedRoute role="developer"><Solucoes /></ProtectedRoute>} />
+          <Route path="/solucoes/kanban" element={<ProtectedRoute role="developer"><SolucoesKanban /></ProtectedRoute>} />
+          <Route path="/solucoes/gantt" element={<ProtectedRoute role="developer"><SolucoesGantt /></ProtectedRoute>} />
+          <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
+          <Route path="/configuracoes" element={<ProtectedRoute role="developer"><Configuracoes /></ProtectedRoute>} />
+          <Route path="/diagrama" element={<ProtectedRoute role="developer"><Diagrama /></ProtectedRoute>} />
+          <Route path="/atividades" element={<ProtectedRoute role="developer"><Atividades /></ProtectedRoute>} />
+          <Route path="/atividades/importar" element={<ProtectedRoute role="developer"><ImportarQuadro /></ProtectedRoute>} />
+          <Route path="/atividades/:boardId" element={<ProtectedRoute role="developer"><AtividadesBoard /></ProtectedRoute>} />
 
 
-        <Route path="/observabilidade-ia" element={<ProtectedRoute role="developer"><ObservabilidadeIA /></ProtectedRoute>} />
-        <Route path="/consolidacao" element={<ProtectedRoute role="developer"><Consolidacao /></ProtectedRoute>} />
-        <Route path="/admin/base-conhecimento" element={<ProtectedRoute role="developer"><BaseConhecimentoAdmin /></ProtectedRoute>} />
-        <Route path="/admin/demandas" element={<ProtectedRoute role="developer"><Demandas /></ProtectedRoute>} />
-        <Route path="/admin/dashboard" element={<ProtectedRoute role="developer"><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/admin/configuracoes/sla" element={<ProtectedRoute role="developer"><SLAPolicies /></ProtectedRoute>} />
-        <Route path="/admin/configuracoes/webhooks" element={<ProtectedRoute role="developer"><WebhooksAdmin /></ProtectedRoute>} />
-        <Route path="/admin/workflows" element={<ProtectedRoute role="developer"><WorkflowsPage /></ProtectedRoute>} />
-        <Route path="/admin/workflows/novo" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
-        <Route path="/admin/workflows/execucoes" element={<ProtectedRoute role="developer"><WorkflowExecutionsPage /></ProtectedRoute>} />
-        <Route path="/admin/workflows/:id" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
+          <Route path="/observabilidade-ia" element={<ProtectedRoute role="developer"><ObservabilidadeIA /></ProtectedRoute>} />
+          <Route path="/consolidacao" element={<ProtectedRoute role="developer"><Consolidacao /></ProtectedRoute>} />
+          <Route path="/admin/base-conhecimento" element={<ProtectedRoute role="developer"><BaseConhecimentoAdmin /></ProtectedRoute>} />
+          <Route path="/admin/demandas" element={<ProtectedRoute role="developer"><Demandas /></ProtectedRoute>} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute role="developer"><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/configuracoes/sla" element={<ProtectedRoute role="developer"><SLAPolicies /></ProtectedRoute>} />
+          <Route path="/admin/configuracoes/webhooks" element={<ProtectedRoute role="developer"><WebhooksAdmin /></ProtectedRoute>} />
+          <Route path="/admin/workflows" element={<ProtectedRoute role="developer"><WorkflowsPage /></ProtectedRoute>} />
+          <Route path="/admin/workflows/novo" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
+          <Route path="/admin/workflows/execucoes" element={<ProtectedRoute role="developer"><WorkflowExecutionsPage /></ProtectedRoute>} />
+          <Route path="/admin/workflows/:id" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
 
-        {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
-        <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
-        <Route path="/operacoes" element={<ProtectedRoute role="developer"><Operacoes /></ProtectedRoute>} />
-        <Route path="/workspace" element={<ProtectedRoute role="developer"><DeveloperWorkspace /></ProtectedRoute>} />
-        <Route path="/command-center" element={<ProtectedRoute role="developer"><CommandCenter /></ProtectedRoute>} />
+          {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
+          <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+          <Route path="/operacoes" element={<ProtectedRoute role="developer"><Operacoes /></ProtectedRoute>} />
+          <Route path="/workspace" element={<ProtectedRoute role="developer"><DeveloperWorkspace /></ProtectedRoute>} />
+          <Route path="/command-center" element={<ProtectedRoute role="developer"><CommandCenter /></ProtectedRoute>} />
 
-        {/* Compartilhado */}
-        <Route path="/ajuda" element={<Ajuda />} />
-        <Route path="/perfil" element={<MeuPerfil />} />
-        <Route path="/solicitacao/:id" element={<SolicitacaoDetail />} />
-      </Route>
+          {/* Compartilhado */}
+          <Route path="/ajuda" element={<Ajuda />} />
+          <Route path="/perfil" element={<MeuPerfil />} />
+          <Route path="/solicitacao/:id" element={<SolicitacaoDetail />} />
+        </Route>
 
-      {/* Redirecionamentos de rotas antigas (compatibilidade) */}
-      <Route path="/minhas-demandas" element={<Navigate to="/minhas-solicitacoes" replace />} />
-      <Route path="/nova-demanda" element={<Navigate to="/nova-solicitacao" replace />} />
-      <Route path="/demanda/:id" element={<RedirectLegacySolicitacao />} />
+        {/* Redirecionamentos de rotas antigas (compatibilidade) */}
+        <Route path="/minhas-demandas" element={<Navigate to="/minhas-solicitacoes" replace />} />
+        <Route path="/nova-demanda" element={<Navigate to="/nova-solicitacao" replace />} />
+        <Route path="/demanda/:id" element={<RedirectLegacySolicitacao />} />
 
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 };
 
