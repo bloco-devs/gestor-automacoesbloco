@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export interface SectionProps extends HTMLAttributes<HTMLElement> {
+export interface SectionProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   title?: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
