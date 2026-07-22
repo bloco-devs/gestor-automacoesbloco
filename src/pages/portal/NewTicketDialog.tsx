@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { KnowledgeSuggestions } from "@/modules/knowledge";
 import type { KnowledgeItem } from "@/modules/knowledge";
+import { DuplicatePreventionPanel } from "@/components/portal/DuplicatePreventionPanel";
+import { markDemandIgnoredSuggestion } from "@/modules/ecossistema";
 import {
   useAddAttachment,
   useAutoRespondDemand,
