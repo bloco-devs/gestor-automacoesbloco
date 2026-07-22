@@ -318,35 +318,13 @@ export default function Portal() {
           />
         )}
 
-        {/* 7 · Pós envio — tela "Perfeito" enquanto grava/redireciona */}
-        {submitting && (
-          <div className="rounded-3xl border border-border bg-card p-8 text-center shadow-elev-1">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="size-8" />
-            </div>
-            <h2 className="mt-4 text-2xl font-semibold tracking-tight">Perfeito.</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Já entendemos seu problema. Agora iremos:
-            </p>
-            <ul className="mx-auto mt-5 max-w-sm space-y-2 text-left text-sm">
-              {[
-                "classificar",
-                "procurar soluções",
-                "encontrar o responsável",
-                "iniciar o atendimento",
-              ].map((s) => (
-                <li key={s} className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-emerald-500" /> {s}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-5 text-xs text-muted-foreground">
-              Você poderá acompanhar tudo em tempo real.
-            </p>
-            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" /> Abrindo suas solicitações…
-            </div>
-          </div>
+        {/* 7 · Pós envio — Confirmação Rica */}
+        {submitting && preview && (
+          <RichConfirmation
+            preview={preview}
+            score={previewScore}
+            onTrack={() => navigate("/minhas-solicitacoes")}
+          />
         )}
       </div>
     );
