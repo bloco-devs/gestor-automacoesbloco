@@ -16,6 +16,7 @@ import AppLayout from "@/components/AppLayout";
 import { ContextProvider } from "@/modules/context";
 import { PlatformProvider } from "@/modules/platform";
 import { LanguageProvider } from "@/modules/ux";
+import { WorkflowRuntimeProvider } from "@/modules/workflow-runtime";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SsoCallback from "./pages/SsoCallback";
