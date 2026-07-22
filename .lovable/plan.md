@@ -1,77 +1,122 @@
-# Feature 003 — Centro Administrativo da Base de Conhecimento
 
-Camada de administração para `knowledge_articles` sem alterar a arquitetura existente. Apenas admins acessam.
+# Feature 005 — Smart Routing (Motor de Sugestão de Responsáveis)
 
 ## Escopo
+Motor 100% local e determinístico que rankeia candidatos para cada demanda. Apenas **sugere**; a atribuição continua manual (reusa `useAssignDemand`). Zero backend novo.
 
-- Rota `/admin/base-conhecimento` (guarda `isAdministrador`).
-- Módulo `src/modules/knowledge-admin/` isolado, consumindo tabelas e RPCs já existentes.
-- CRUD + workflow (rascunho → em revisão → publicado → arquivado) + versionamento + auditoria + IA sugestiva.
+## Auditoria — o que já existe e será reutilizado
 
-## Reutilização (nada duplicado)
+**Dados / Backend (nenhuma migration nova)**
+- `demands` (assigned_to, type, priority, complexity, sla_*, ai_*)
+- `profiles` (nome, email, avatar_url)
+- `user_roles` (papel `developer`) — fonte da equipe elegível
+- RPC `get_user_workloads` — carga ativa por atendente
+- `demand_audit_logs` — histórico para cálculo de tempo médio e afinidade por tipo
 
-- **Tabelas**: `knowledge_articles`, `knowledge_feedback`, `activity_log`, `user_roles`.
-- **RPCs**: `has_role`, `knowledge_search`, `admin_list_accounts` (para autores).
-- **Serviços/hooks**: `knowledgeService`, `useKnowledgeMetrics`, `useAuth`, `useT` (UX Layer), `aiOrchestrator` (Intent Engine), `contextEngine`.
-- **UI**: shadcn (Table, Dialog, Tabs, Badge, Select, Input, Textarea, Sheet, DropdownMenu), `EmptyState`, `ListState`, `DataSourceBadge`, `StatusBadge`.
-- **Registries**: `navigation-registry` e `command-registry` da Platform Layer (adicionar entrada admin-only).
+**Módulos**
+- `modules/demands/service.ts` — `getUserWorkloads`, `assignDemand`, `listDemands`
+- `modules/demands/hooks.ts` — `useAssignDemand`, `useDemands`
+- `modules/operations/*` — `useOperationsData` (snapshot já traz demandas+workloads); `insights-engine` receberá insumos do motor
+- `modules/inbox/*` — `PriorityCard`, hook de dados; ganha seção "Sugestões para mim"
+- `modules/context/*` — `contextStore` fornece `user.id` e módulo atual
+- `modules/platform/*` — sem alteração
+- `modules/ai/*` — não é chamado (motor local)
 
-## Recursos novos (mínimos)
-
-Frontend (`src/modules/knowledge-admin/`):
-- `services/admin-service.ts` — CRUD, publish/archive/duplicate, list versions, restore.
-- `hooks/useAdminArticles.ts`, `useArticleVersions.ts`, `useAdminMetrics.ts`.
-- `components/`: `AdminHeader`, `MetricsStrip`, `ArticlesTable` (search/filter/sort/paginate client-side), `ArticleFormDialog`, `MarkdownEditor` (textarea + preview react-markdown com sanitização), `VersionHistoryPanel`, `AISuggestPanel` (usa `aiOrchestrator`), `StatusPill`, `DeleteConfirm`.
-- `providers/AdminKnowledgeProvider.tsx` — cache local (React Query).
-- `utils/markdown.ts` (render seguro), `utils/diff.ts` (comparar versões).
-- `types/index.ts`.
-- `__tests__/`: service CRUD, workflow transitions, version diff, permissões.
-- Página: `src/pages/admin/BaseConhecimento.tsx`.
-
-Backend (migração aditiva):
-- `knowledge_article_versions` (id, article_id fk, versao int, snapshot jsonb, changed_by uuid, changed_by_email text, resumo_alteracao text, created_at). GRANTs + RLS: leitura/escrita apenas para admin via `has_role`.
-- Trigger `knowledge_articles_version_snapshot` — em INSERT/UPDATE grava snapshot com nº sequencial por artigo.
-- Coluna nova opcional: `knowledge_articles.deleted_at timestamptz` (exclusão lógica). Ajustar `knowledge_search` para filtrar `deleted_at IS NULL`.
-- Coluna nova: `workflow_status` só se `status` atual não cobrir "em_revisao" — verificar; se `status` já é livre (text), reutilizar valores `rascunho|em_revisao|publicado|arquivado`.
-- Política RLS extra: admins podem `SELECT/INSERT/UPDATE/DELETE` em `knowledge_articles`.
-
-IA:
-- Sem nova edge function. `AISuggestPanel` chama `aiOrchestrator.run({ text, intentHint: "KNOWLEDGE" })` para melhorar/resumir/expandir/gerar FAQ/tags/título. Resultado sempre volta ao formulário para o admin aplicar manualmente.
-
-## Workflow
+## Novo módulo: `src/modules/routing/`
 
 ```text
-rascunho ──▶ em_revisao ──▶ publicado ──▶ arquivado
-   ▲             │              │             │
-   └─────────────┴──────────────┴─────────────┘
-        admin pode mover livremente
+routing/
+  engine/
+    scoring.ts        # cálculo puro de score por candidato
+    ranker.ts         # aplica pesos, desempates, corte de confiança
+    weights.ts        # pesos default + tipo Weights
+    affinity.ts       # deriva afinidade por tipo a partir do histórico
+  services/
+    routing-service.ts # monta CandidatePool (equipe + workloads + histórico) via Supabase
+  hooks/
+    useRoutingSuggestions.ts  # React Query: (demand) => Ranking
+    useTeamPool.ts            # cache do pool de candidatos
+  components/
+    RoutingSuggestionCard.tsx # UI "Sugestão da IA" no DemandDetailDialog
+    SuggestionReasons.tsx     # chips de motivos + score
+    AlternativesList.tsx
+  types/index.ts
+  utils/format.ts
+  __tests__/
+    scoring.test.ts
+    ranker.test.ts
+    affinity.test.ts
+    fallback.test.ts
+  index.ts
 ```
 
-Preparado para aprovação por gestores (campo `revisor_id` reservado no snapshot; não implementado agora).
+### Motor (`engine/`) — puro, sem React/Supabase
+Assinatura:
+```ts
+rankCandidates(demand: DemandInput, pool: Candidate[], weights?: Weights): Ranking
+```
+- `Candidate`: `{ user_id, nome, avatar_url, active_count, avg_resolution_h, type_affinity: Record<type, number>, priority_affinity, complexity_affinity }`
+- Score 0–100 = soma ponderada normalizada de:
+  - Especialidade (afinidade por `type`) — peso 25
+  - Carga atual (invertida, normalizada pela mediana) — peso 20
+  - Tempo médio de resolução (invertido) — peso 15
+  - Histórico (nº atendidos no mesmo tipo) — peso 10
+  - Complexidade compatível — peso 10
+  - Prioridade compatível — peso 10
+  - SLA/urgência (favorece quem tem folga) — peso 10
+- Desempate: menor `active_count` → maior `type_affinity` → menor `avg_resolution_h`
+- Confiança: `high >= 80`, `medium >= 60`, `low` caso contrário
+- Motivos: strings i18n curtas (ex.: "Especialista em Backend RH", "Carga 45%")
+- Fallback: sem candidatos → `Ranking.empty`; ninguém elegível → sugere quem tem menor carga apenas com aviso `low`
 
-## Segurança
+### Serviço (`services/routing-service.ts`)
+- `buildCandidatePool()`:
+  - Lê `user_roles` (role `developer`) + `profiles`
+  - `getUserWorkloads()` (reuso)
+  - Uma query única em `demand_audit_logs` (últimos 90d, ação `assigned`) + `demands` para derivar `type_affinity` e `avg_resolution_h` no cliente
+  - Retorna `Candidate[]`
+- Cache via React Query (staleTime 5 min)
 
-- Rota protegida por `ProtectedRoute` + check `user.isAdministrador`.
-- RLS: novas policies com `public.has_role(auth.uid(), 'admin')`.
-- Sanitização: markdown → HTML via `react-markdown` com `rehype-sanitize` (adicionar dep).
-- Auditoria: cada mutation grava linha em `activity_log` (reuso do trigger existente) e em `knowledge_article_versions`.
+### Hook
+- `useRoutingSuggestions(demand)` → `{ ranking, isLoading }` — combina `useTeamPool` + `rankCandidates` em `useMemo`
 
-## Navegação
+## Integrações
 
-Item "Base de Conhecimento" na sidebar admin (dentro de AppLayout, gate `isAdministrador`). Comando na Command Palette: "Gerenciar base de conhecimento".
+**DemandDetailDialog** (arquivo existente — insert aditivo)
+- Novo bloco `RoutingSuggestionCard` acima do seletor de responsável (quando `demand.assigned_to == null`)
+- Botão "Atribuir" chama `useAssignDemand` já existente
+- Alternativas expansíveis
 
-## Testes
+**Centro de Operações** (`OperationsPage`)
+- Nova aba/card `UnassignedQueue`: lista demandas sem responsável ordenadas por score do top candidato
+- `insights-engine` recebe insumo do motor para: "3 sugestões prontas para atribuir", "distribuição desigual — pico em X"
 
-Vitest para: service CRUD, transitions de workflow, restauração de versão, diff, guardas de permissão, hook de métricas.
+**Inbox** (`modules/inbox`)
+- Nova seção `SuggestedForYou`: filtra ranking cujo `top.user_id === currentUser.id` e score ≥ 70
+- Reutiliza `PriorityCard` com badge "Sugerido pra você"
+
+## Fora do escopo (não tocar)
+- AI / Context / Platform / UX / Knowledge / Portal
+- Nenhuma nova tabela, RPC, migration ou Edge Function
+- Nenhuma auto-atribuição (o `AUTO` existente no CreateDemandDialog não muda)
+
+## Testes (`__tests__/`)
+- `scoring`: cada critério isolado
+- `ranker`: pesos, empates, corte de confiança, ordenação estável
+- `affinity`: derivação de `type_affinity` a partir de logs mockados
+- `fallback`: pool vazio, sem elegíveis, workloads todos iguais
 
 ## Documentação
+- `docs/31-Smart-Routing.md`: arquitetura, algoritmo, pesos default, critérios, integração com Demandas/Operações/Inbox, roadmap (auto-assign opcional, pesos configuráveis por admin, aprendizado incremental)
 
-`docs/29-Knowledge-Admin.md` com arquitetura, fluxos, diagrama Mermaid do workflow e do versionamento, roadmap (aprovação por gestores, embeddings, editor rich).
+## Critérios de aceite
+- Motor desacoplado, testado, sem imports de React/Supabase
+- Sugestões visíveis no DemandDetailDialog com botão "Atribuir" manual
+- UnassignedQueue e insight no Centro de Operações
+- SuggestedForYou no Inbox
+- Zero mudanças em AI/Context/Platform/UX/Knowledge/Portal
+- Zero migrations/edge functions novas
+- `tsgo` limpo, vitest verde
 
-## Módulos preservados
-
-AI Workspace, Intent Engine, Context Engine, Platform Layer, UX Layer, Portal, Central Inteligente — nenhum arquivo desses módulos é alterado. Apenas adições em `navigation-registry` e `command-registry` (extensões previstas pela própria Platform Layer).
-
-## Dependências novas
-
-- `react-markdown`, `remark-gfm`, `rehype-sanitize` (renderização segura).
+## Entrega
+Resumo executivo listando reuso (tabelas, RPCs, hooks, componentes) vs. novos artefatos (todos em `src/modules/routing/` + `docs/31-Smart-Routing.md`).
