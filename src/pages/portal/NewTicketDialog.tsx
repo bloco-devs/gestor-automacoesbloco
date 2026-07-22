@@ -220,6 +220,10 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
               minChars={20}
             />
           )}
+
+          <div className="space-y-2">
+            <Label>Anexos (imagens, PDFs)</Label>
+            <label className="flex items-center gap-2 border border-dashed border-border rounded-md px-3 py-4 cursor-pointer hover:bg-muted/40 transition-colors">
               <Upload className="size-4" />
               <span className="text-sm text-muted-foreground">
                 Clique para adicionar arquivos
