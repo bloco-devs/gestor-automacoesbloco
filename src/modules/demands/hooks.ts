@@ -80,6 +80,31 @@ export function useUpdateDemandStatus() {
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(KEY, ctx.prev);
     },
+export function useUpdateDemandStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: DemandStatus }) =>
+      updateDemandStatus(id, status),
+    onMutate: async ({ id, status }) => {
+      await qc.cancelQueries({ queryKey: KEY });
+      const prev = qc.getQueryData<Demand[]>(KEY);
+      qc.setQueryData<Demand[]>(KEY, (curr) =>
+        curr?.map((d) => (d.id === id ? { ...d, status } : d)),
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(KEY, ctx.prev);
+    },
+    onSuccess: (_data, { id, status }) => {
+      const list = qc.getQueryData<Demand[]>(KEY);
+      const demand = list?.find((d) => d.id === id);
+      void workflowRuntime.run({
+        kind: "DemandUpdated",
+        demandId: id,
+        payload: { ...(demand ?? { id }), status } as Record<string, unknown>,
+      });
+    },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: KEY });
       qc.invalidateQueries({ queryKey: ["user-workloads"] });
@@ -92,9 +117,16 @@ export function useAssignDemand() {
   return useMutation({
     mutationFn: ({ id, assigned_to }: { id: string; assigned_to: string | null }) =>
       assignDemand(id, assigned_to),
-    onSuccess: () => {
+    onSuccess: (_data, { id, assigned_to }) => {
       qc.invalidateQueries({ queryKey: KEY });
       qc.invalidateQueries({ queryKey: ["user-workloads"] });
+      const list = qc.getQueryData<Demand[]>(KEY);
+      const demand = list?.find((d) => d.id === id);
+      void workflowRuntime.run({
+        kind: "DemandUpdated",
+        demandId: id,
+        payload: { ...(demand ?? { id }), assigned_to } as Record<string, unknown>,
+      });
     },
   });
 }
