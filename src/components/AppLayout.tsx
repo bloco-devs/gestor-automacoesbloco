@@ -44,6 +44,7 @@ type NavItem = {
 
 const devNav: NavItem[] = [
   { to: "/trabalho/inbox", label: "Inbox", icon: Inbox },
+  { to: "/operacoes", label: "Centro de Operações", icon: Gauge },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   {
     label: "Solicitações",
