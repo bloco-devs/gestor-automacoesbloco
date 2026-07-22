@@ -98,6 +98,16 @@ export function DemandCard({ demand, onStatusChange, onDelete, onOpen, canDelete
           demandStatus={demand.status}
           createdAt={demand.created_at}
         />
+        {ignoredSuggestion && (
+          <Badge
+            variant="outline"
+            className="text-[10px] font-medium border-amber-400/60 text-amber-700 dark:text-amber-400 gap-1"
+            title="Solicitante ignorou uma sugestão do ecossistema"
+          >
+            <AlertTriangle className="size-3" />
+            Ignorou sugestão
+          </Badge>
+        )}
       </div>
 
       <div className="flex items-center justify-between pt-1 text-xs text-muted-foreground">
