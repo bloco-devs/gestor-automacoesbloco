@@ -17,6 +17,8 @@ import { DEFAULT_COMMANDS, DEFAULT_NAV_ITEMS } from "../registry/defaults";
 import { useHotkeys } from "../hotkeys/useHotkeys";
 import type { PlatformCommand, PlatformRole } from "../types";
 import { CommandPalette } from "../components/CommandPalette";
+import { ShortcutsDialog } from "../components/ShortcutsDialog";
+import { SpotlightProviders } from "../spotlight/SpotlightProviders";
 
 const RECENT_KEY = "platform:recent";
 const MAX_RECENT = 12;
