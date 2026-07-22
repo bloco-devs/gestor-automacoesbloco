@@ -51,6 +51,7 @@ import Consolidacao from "./pages/Consolidacao";
 import Inbox from "./pages/Inbox";
 import Operacoes from "./pages/Operacoes";
 import DeveloperWorkspace from "./pages/DeveloperWorkspace";
+import CommandCenter from "./pages/CommandCenter";
 import Portal from "./pages/Portal";
 import PortalIndex from "./pages/portal/PortalIndex";
 import BaseConhecimentoAdmin from "./pages/admin/BaseConhecimento";
@@ -119,6 +120,7 @@ const AppRoutes = () => {
         <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
         <Route path="/operacoes" element={<ProtectedRoute role="developer"><Operacoes /></ProtectedRoute>} />
         <Route path="/workspace" element={<ProtectedRoute role="developer"><DeveloperWorkspace /></ProtectedRoute>} />
+        <Route path="/command-center" element={<ProtectedRoute role="developer"><CommandCenter /></ProtectedRoute>} />
 
         {/* Compartilhado */}
         <Route path="/ajuda" element={<Ajuda />} />

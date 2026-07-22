@@ -60,6 +60,7 @@ export const devGroups: NavGroup[] = [
     label: "Trabalho",
     icon: Briefcase,
     items: [
+      { to: "/command-center", label: "Command Center", icon: Gauge },
       { to: "/workspace", label: "Workspace", icon: Layers },
       { to: "/trabalho/inbox", label: "Inbox", icon: Inbox },
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
