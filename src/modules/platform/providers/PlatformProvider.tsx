@@ -17,6 +17,8 @@ import { DEFAULT_COMMANDS, DEFAULT_NAV_ITEMS } from "../registry/defaults";
 import { useHotkeys } from "../hotkeys/useHotkeys";
 import type { PlatformCommand, PlatformRole } from "../types";
 import { CommandPalette } from "../components/CommandPalette";
+import { ShortcutsDialog } from "../components/ShortcutsDialog";
+import { SpotlightProviders } from "../spotlight/SpotlightProviders";
 
 const RECENT_KEY = "platform:recent";
 const MAX_RECENT = 12;
@@ -77,6 +79,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     : (user?.role as PlatformRole | undefined) ?? null;
 
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [recentIds, setRecentIds] = useState<string[]>(() => loadRecent());
   const recentRef = useRef(recentIds);
   recentRef.current = recentIds;
@@ -113,9 +116,14 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   // Hotkeys globais: mod+k abre palette; comandos com shortcut também respondem.
   const bindings = useMemo(() => {
     const base = [
+      { combo: "mod+k", handler: () => togglePalette() },
+      { combo: "?", handler: () => setHelpOpen((v) => !v) },
       {
-        combo: "mod+k",
-        handler: () => togglePalette(),
+        combo: "mod+.",
+        handler: () => {
+          if (typeof window !== "undefined")
+            window.dispatchEvent(new CustomEvent("platform:toggle-sidebar"));
+        },
       },
     ];
     const cmds = commandRegistry
@@ -168,7 +176,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   return (
     <PlatformContext.Provider value={value}>
       {children}
+      <SpotlightProviders />
       <CommandPalette />
+      <ShortcutsDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </PlatformContext.Provider>
   );
 }

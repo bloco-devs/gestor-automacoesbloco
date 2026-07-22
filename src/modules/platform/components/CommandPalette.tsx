@@ -92,7 +92,23 @@ export function CommandPalette() {
         aria-label="Pesquisa global"
       />
       <CommandList aria-label="Resultados da command palette">
-        <CommandEmpty>Nenhum resultado.</CommandEmpty>
+        <CommandEmpty>
+          {query.trim().length > 0 ? (
+            <button
+              type="button"
+              className="mx-auto flex w-full items-center justify-center gap-2 rounded-md px-4 py-3 text-sm text-primary hover:bg-primary/10"
+              onClick={() => {
+                markRecent(`nav:ai-ask`);
+                navigate(`/nova-solicitacao?q=${encodeURIComponent(query)}`);
+                closePalette();
+              }}
+            >
+              Perguntar à IA: <span className="font-medium">"{query}"</span>
+            </button>
+          ) : (
+            <span>Nenhum resultado.</span>
+          )}
+        </CommandEmpty>
 
         {query.length === 0 && recentCommands.length > 0 && (
           <>

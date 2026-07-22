@@ -67,6 +67,11 @@ export default function AppLayout() {
   useEffect(() => {
     window.localStorage.setItem("app:sidebarHidden", sidebarHidden ? "1" : "0");
   }, [sidebarHidden]);
+  useEffect(() => {
+    const onToggle = () => setSidebarHidden((v) => !v);
+    window.addEventListener("platform:toggle-sidebar", onToggle);
+    return () => window.removeEventListener("platform:toggle-sidebar", onToggle);
+  }, []);
   const draggingRef = useRef(false);
   const isDeveloper = isDeveloperEffective;
   const [pendingEvalCount, setPendingEvalCount] = useState<number>(0);

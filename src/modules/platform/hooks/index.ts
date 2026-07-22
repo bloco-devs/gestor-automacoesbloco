@@ -89,3 +89,6 @@ export function useCommands(): { commands: PlatformCommand[]; run: (id: string) 
 
 export type { NavItem, PlatformCommand, SearchEntity };
 export { useHotkeys } from "../hotkeys/useHotkeys";
+export { useDemandQuickActions } from "./useDemandQuickActions";
+export { useGlobalFavorites } from "../favorites/useGlobalFavorites";
+export type { FavoriteItem, FavoriteKind } from "../favorites/useGlobalFavorites";
