@@ -138,22 +138,24 @@ export default function SaudePage() {
       next.push({ key: "workflow", label: "Workflow Runtime", icon: Workflow, tone: "info", status: "—", detail: "—" });
     }
 
-    // Routing (proxy: demandas atribuídas nas últimas 24h)
+    // Routing (proxy: demandas atendidas nas últimas 24h)
     try {
       const { count } = await supabase
         .from("solicitacoes")
         .select("id", { count: "exact", head: true })
-        .not("owner_id", "is", null)
-        .gte("updated_at", since);
+        .not("atendida_por", "is", null)
+        .gte("atendida_em", since);
       next.push({
         key: "routing",
         label: "Smart Routing",
         icon: Route,
         tone: "success",
-        status: `${count ?? 0} atribuições`,
+        status: `${count ?? 0} atendimentos`,
         detail: "últimas 24h",
       });
     } catch {
+      next.push({ key: "routing", label: "Smart Routing", icon: Route, tone: "info", status: "—", detail: "—" });
+    }
       next.push({ key: "routing", label: "Smart Routing", icon: Route, tone: "info", status: "—", detail: "—" });
     }
 
