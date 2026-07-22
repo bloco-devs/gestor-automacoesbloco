@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { ExternalLink, Layers, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
