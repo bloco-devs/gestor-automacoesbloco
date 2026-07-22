@@ -8,6 +8,7 @@ import { LiveActivity } from "./LiveActivity";
 import { MetricCard } from "./MetricCard";
 import { TeamWorkload } from "./TeamWorkload";
 import { UnassignedQueueCard } from "@/modules/routing";
+import { WorkflowsOpsCard } from "@/modules/workflow-builder";
 
 function fmtHours(h: number | null): string {
   if (h == null) return "—";
