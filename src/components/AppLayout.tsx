@@ -75,6 +75,7 @@ const devNav: NavItem[] = [
   { to: "/admin/dashboard", label: "Dashboard (Operação)", icon: Gauge },
   { to: "/admin/configuracoes/sla", label: "Configuração de SLA", icon: Clock },
   { to: "/admin/configuracoes/webhooks", label: "Webhooks & Integrações", icon: Repeat },
+  { to: "/admin/workflows", label: "Workflows", icon: Repeat },
   { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
