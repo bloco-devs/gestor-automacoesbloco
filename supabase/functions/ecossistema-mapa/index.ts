@@ -15,8 +15,18 @@ interface IntegracaoOut {
   ativo?: boolean | null;
   status?: string | null;
 }
+interface SaudeNode {
+  execs: number;
+  ok: number;
+  falhas: number;
+  falhas_upstream: number;
+  ultima: string | null;
+  janela_inicio?: string | null;
+  janela_dias?: number | null;
+}
+
 interface SaudeOut {
-  [nodeId: string]: { execs: number; ok: number; falhas: number; ultima: string | null };
+  [nodeId: string]: SaudeNode;
 }
 
 function ok(body: unknown, cors: Record<string, string>) {
@@ -70,8 +80,10 @@ Deno.serve(async (req) => {
       if (s?.slug) sistemaBySlug.set(String(s.slug), s);
     }
     const conectorById = new Map<string, any>();
+    const conectorBySlug = new Map<string, any>();
     for (const c of conectoresRaw) {
       if (c?.id) conectorById.set(String(c.id), c);
+      if (c?.slug) conectorBySlug.set(String(c.slug), c);
     }
 
     // nodeId de um conector: se interno → slug do sistema dono; se externo → slug do conector.
@@ -162,19 +174,45 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Saúde: agregada por nodeId
-    const saude: SaudeOut = {};
-    for (const h of saudeRaw) {
-      const conector = h?.conector_id ? conectorById.get(String(h.conector_id)) : null;
-      const nodeId = conectorNodeId(conector);
-      if (!nodeId) continue;
-      const cur = saude[nodeId] ?? { execs: 0, ok: 0, falhas: 0, ultima: null };
+    const resolveConector = (h: any): any | null => {
+      const raw = h?.conector_id ?? h?.conector_slug ?? h?.conector ?? h?.slug ?? null;
+      if (!raw) return null;
+      const key = String(raw);
+      return conectorById.get(key) ?? conectorBySlug.get(key) ?? null;
+    };
+
+    const resolveSistemaNodeId = (h: any): string | null => {
+      const raw = h?.sistema_id ?? h?.sistema_operacao ?? h?.sistema_slug ?? h?.sistema ?? null;
+      if (!raw) return null;
+      const key = String(raw);
+      const sistema = sistemaById.get(key) ?? sistemaBySlug.get(key);
+      return sistema?.slug ? String(sistema.slug) : validNodeIds.has(key) ? key : null;
+    };
+
+    const addSaude = (nodeId: string | null, h: any) => {
+      if (!nodeId || !validNodeIds.has(nodeId)) return;
+      const cur = saude[nodeId] ?? { execs: 0, ok: 0, falhas: 0, falhas_upstream: 0, ultima: null };
       cur.execs += Number(h?.execs ?? 0);
       cur.ok += Number(h?.ok ?? 0);
       cur.falhas += Number(h?.falhas ?? 0);
+      cur.falhas_upstream += Number(h?.falhas_upstream ?? 0);
       const ult = h?.ultima ?? h?.ultima_execucao ?? null;
       if (ult && (!cur.ultima || String(ult) > cur.ultima)) cur.ultima = String(ult);
+      const janelaInicio = h?.janela_inicio ?? catalogo?.janela?.inicio ?? null;
+      if (janelaInicio && !cur.janela_inicio) cur.janela_inicio = String(janelaInicio);
+      const janelaDias = h?.janela_dias ?? catalogo?.janela?.dias ?? null;
+      if (janelaDias != null && cur.janela_dias == null) cur.janela_dias = Number(janelaDias);
       saude[nodeId] = cur;
+    };
+
+    // Saúde: agregada por nodeId. O HUB pode enviar o conector por UUID ou slug
+    // e, em linhas por conector+sistema, também o sistema de operação.
+    const saude: SaudeOut = {};
+    for (const h of saudeRaw) {
+      const conectorNode = conectorNodeId(resolveConector(h));
+      const sistemaNode = resolveSistemaNodeId(h);
+      addSaude(conectorNode, h);
+      if (sistemaNode !== conectorNode) addSaude(sistemaNode, h);
     }
 
     return ok(
