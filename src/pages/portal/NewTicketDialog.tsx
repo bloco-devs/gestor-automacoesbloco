@@ -52,7 +52,8 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
   const [systemId, setSystemId] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [plataformas, setPlataformas] = useState<Array<{ id: string; nome: string }>>([]);
+  const [plataformas, setPlataformas] = useState<Array<{ id: string; nome: string; slug?: string | null }>>([]);
+  const [acknowledgedSuggestions, setAcknowledgedSuggestions] = useState(false);
 
   useEffect(() => {
     if (!open) return;
