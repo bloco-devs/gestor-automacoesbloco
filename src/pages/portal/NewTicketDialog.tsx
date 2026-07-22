@@ -199,8 +199,20 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
             />
           </div>
 
-          {/* Deflexão por IA — reusa a Central de Soluções */}
-          {deflectionQuery.length >= 20 && (
+          {/* Prevenção de duplicatas — F018.1. Consolida sistemas + artigos + chamados. */}
+          <DuplicatePreventionPanel
+            titulo={title}
+            descricao={description}
+            enabled={description.trim().length >= 30}
+            onContinueAnyway={() => setAcknowledgedSuggestions(true)}
+            onResolved={() => {
+              reset();
+              onOpenChange(false);
+            }}
+          />
+
+          {/* Fallback leve para descrições curtas — mantém o comportamento original. */}
+          {description.trim().length < 30 && deflectionQuery.length >= 20 && (
             <KnowledgeSuggestions
               query={deflectionQuery}
               origin="portal"
@@ -208,10 +220,6 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
               minChars={20}
             />
           )}
-
-          <div className="space-y-2">
-            <Label>Anexos (imagens, PDFs)</Label>
-            <label className="flex items-center gap-2 border border-dashed border-border rounded-md px-3 py-4 cursor-pointer hover:bg-muted/40 transition-colors">
               <Upload className="size-4" />
               <span className="text-sm text-muted-foreground">
                 Clique para adicionar arquivos
