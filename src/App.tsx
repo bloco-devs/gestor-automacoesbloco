@@ -56,6 +56,8 @@ import Demandas from "./pages/admin/Demandas";
 import AdminDashboard from "./pages/admin/Dashboard";
 import SLAPolicies from "./pages/admin/SLAPolicies";
 import WebhooksAdmin from "./pages/admin/Webhooks";
+import WorkflowsPage from "./pages/admin/Workflows";
+import WorkflowEditorPage from "./pages/admin/WorkflowEditor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
