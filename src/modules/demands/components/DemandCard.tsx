@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { MoreHorizontal, Paperclip, Trash2, User } from "lucide-react";
+import { AlertTriangle, MoreHorizontal, Paperclip, Trash2, User } from "lucide-react";
+import { hasIgnoredSuggestion } from "@/modules/ecossistema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
