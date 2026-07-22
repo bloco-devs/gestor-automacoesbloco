@@ -176,7 +176,9 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   return (
     <PlatformContext.Provider value={value}>
       {children}
+      <SpotlightProviders />
       <CommandPalette />
+      <ShortcutsDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </PlatformContext.Provider>
   );
 }
