@@ -20,7 +20,6 @@ import {
   BookOpen,
   Sparkles,
   Play,
-  CheckCircle2,
   MessageSquare,
   UploadCloud,
   KeyRound,
@@ -29,6 +28,7 @@ import {
   MonitorSmartphone,
   Bot,
   Building2,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,6 +46,11 @@ import { KnowledgeSuggestions } from "@/modules/knowledge";
 import { useDemands } from "@/modules/demands/hooks";
 import { STATUS_COLUMNS, type Demand, type DemandStatus } from "@/modules/demands/types";
 import { supabase } from "@/integrations/supabase/client";
+import { ThinkingSteps } from "@/components/portal/ThinkingSteps";
+import { RichConfirmation } from "@/components/portal/RichConfirmation";
+import { UniversalSearch } from "@/components/portal/UniversalSearch";
+import { useFavoriteDemands } from "@/components/portal/useFavoriteDemands";
+import { useNavigate } from "react-router-dom";
 
 // ---- Web Speech API (fallback silencioso) ---------------------------------
 type SpeechRecognitionCtor = new () => {
