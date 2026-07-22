@@ -22,10 +22,10 @@ type Row = {
   id: string;
   status: string | null;
   score: number | null;
-  criado_em: string | null;
+  created_at: string | null;
   updated_at: string | null;
-  categoria: string | null;
-  prioridade: string | null;
+  tipo_demanda: string | null;
+  tipo: string | null;
 };
 
 const WINDOW_DAYS = 30;
@@ -33,7 +33,7 @@ const WINDOW_DAYS = 30;
 function bucketByDay(rows: Row[]) {
   const map = new Map<string, number>();
   for (const r of rows) {
-    const d = (r.criado_em ?? r.updated_at ?? "").slice(0, 10);
+    const d = (r.created_at ?? r.updated_at ?? "").slice(0, 10);
     if (!d) continue;
     map.set(d, (map.get(d) ?? 0) + 1);
   }
@@ -54,11 +54,11 @@ function bucketByField(rows: Row[], field: keyof Row) {
 }
 
 function calcCycleTime(rows: Row[]) {
-  const closed = rows.filter((r) => r.status && ["concluido", "concluído", "closed", "done"].includes(r.status.toLowerCase()));
+  const closed = rows.filter((r) => r.status && ["concluido", "concluído", "closed", "done", "atendida"].includes(r.status.toLowerCase()));
   if (!closed.length) return { avg: 0, count: 0 };
   const durations = closed
     .map((r) => {
-      const start = r.criado_em ? new Date(r.criado_em).getTime() : 0;
+      const start = r.created_at ? new Date(r.created_at).getTime() : 0;
       const end = r.updated_at ? new Date(r.updated_at).getTime() : 0;
       return end - start;
     })
@@ -79,8 +79,8 @@ export default function AnalyticsPage() {
       const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
       const { data } = await supabase
         .from("solicitacoes")
-        .select("id, status, score, criado_em, updated_at, categoria, prioridade")
-        .gte("criado_em", since)
+        .select("id, status, score, created_at, updated_at, tipo_demanda, tipo")
+        .gte("created_at", since)
         .limit(1000);
       if (!cancelled) {
         setRows((data ?? []) as Row[]);
@@ -94,8 +94,8 @@ export default function AnalyticsPage() {
 
   const byDay = useMemo(() => bucketByDay(rows), [rows]);
   const byStatus = useMemo(() => bucketByField(rows, "status"), [rows]);
-  const byCategoria = useMemo(() => bucketByField(rows, "categoria"), [rows]);
-  const byPrioridade = useMemo(() => bucketByField(rows, "prioridade"), [rows]);
+  const byCategoria = useMemo(() => bucketByField(rows, "tipo_demanda"), [rows]);
+  const byPrioridade = useMemo(() => bucketByField(rows, "tipo"), [rows]);
   const cycle = useMemo(() => calcCycleTime(rows), [rows]);
   const avgScore = useMemo(() => {
     const s = rows.filter((r) => typeof r.score === "number");
