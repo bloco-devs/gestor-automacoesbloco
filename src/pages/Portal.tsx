@@ -336,9 +336,14 @@ export default function Portal() {
 
   // ===== Home do Portal (v3) ==============================================
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-16 px-4 py-10 sm:py-20">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-16 px-4 py-8 sm:py-14">
+      {/* 6 · Busca Universal */}
+      <div className="mx-auto w-full max-w-xl">
+        <UniversalSearch />
+      </div>
+
       {/* 1 · Hero */}
-      <header className="space-y-3 text-center">
+      <header className="space-y-3 text-center animate-fade-in">
         <p className="text-base font-medium text-muted-foreground">
           {saudacao}
           {nome ? `, ${nome}` : ""}.
