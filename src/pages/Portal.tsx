@@ -499,20 +499,51 @@ export default function Portal() {
         </div>
       </section>
 
-      {/* 3 · Continue de onde parou */}
+      {/* 3 · Continue de onde parou (histórico com busca + favoritos) */}
       <section aria-labelledby="continue" className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="continue" className="text-lg font-semibold tracking-tight">
             Continue de onde parou
           </h2>
-          {myRequests.length > 0 && (
-            <Link
-              to="/minhas-solicitacoes"
-              className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
+          <Link
+            to="/minhas-solicitacoes"
+            className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Ver todas <ArrowRight className="size-3.5" />
+          </Link>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-1 items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1.5 focus-within:border-primary/50">
+            <Search className="size-3.5 text-muted-foreground" />
+            <Input
+              value={historySearch}
+              onChange={(e) => setHistorySearch(e.target.value)}
+              placeholder="Pesquisar no seu histórico…"
+              aria-label="Pesquisar no histórico"
+              className="h-7 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
+            />
+          </div>
+          <div className="inline-flex overflow-hidden rounded-full border border-border bg-card/60 p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setShowFavorites(false)}
+              className={`rounded-full px-3 py-1 transition ${
+                !showFavorites ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
             >
-              Ver todas <ArrowRight className="size-3.5" />
-            </Link>
-          )}
+              Recentes
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowFavorites(true)}
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 transition ${
+                showFavorites ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
+            >
+              <Star className="size-3" /> Favoritos
+            </button>
+          </div>
         </div>
 
         {loadingDemands ? (
@@ -522,15 +553,21 @@ export default function Portal() {
             ))}
           </div>
         ) : myRequests.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card/40 px-6 py-10 text-center">
+          <div className="animate-fade-in rounded-2xl border border-dashed border-border bg-card/40 px-6 py-10 text-center">
             <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
               <MessageSquare className="size-5" />
             </div>
             <p className="mt-3 text-sm font-medium">
-              Você ainda não possui solicitações.
+              {showFavorites
+                ? "Você ainda não favoritou nenhuma solicitação."
+                : historySearch
+                  ? "Nada encontrado no seu histórico."
+                  : "Você ainda não possui solicitações."}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Quando precisar de ajuda, basta conversar comigo. 😊
+              {showFavorites
+                ? "Toque na estrela para marcar como favorita."
+                : "Quando precisar de ajuda, basta conversar comigo. 😊"}
             </p>
           </div>
         ) : (
@@ -540,31 +577,49 @@ export default function Portal() {
               const isDone = vibe.done;
               const statusLabel =
                 STATUS_COLUMNS.find((s) => s.id === d.status)?.label ?? d.status;
+              const fav = isFavorite(d.id);
               return (
-                <li key={d.id}>
+                <li
+                  key={d.id}
+                  className="group relative flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elev-1"
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFav(d.id);
+                    }}
+                    aria-label={fav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                    aria-pressed={fav}
+                    className={`shrink-0 rounded-full p-1 transition ${
+                      fav
+                        ? "text-amber-500"
+                        : "text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:text-amber-500"
+                    }`}
+                  >
+                    <Star className={`size-4 ${fav ? "fill-current" : ""}`} />
+                  </button>
+                  <span
+                    aria-hidden
+                    className={`inline-block size-2.5 shrink-0 rounded-full ${vibe.dot}`}
+                  />
                   <Link
                     to="/minhas-solicitacoes"
-                    className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-elev-1"
+                    className="flex min-w-0 flex-1 items-center gap-3"
                   >
-                    <span
-                      aria-hidden
-                      className={`inline-block size-2.5 shrink-0 rounded-full ${vibe.dot}`}
-                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-muted-foreground">
                           {vibe.label}
                         </span>
                         <span className="text-xs text-muted-foreground/60">·</span>
-                        <span className="text-xs text-muted-foreground">
-                          {statusLabel}
-                        </span>
+                        <span className="text-xs text-muted-foreground">{statusLabel}</span>
                       </div>
-                      <p className="mt-0.5 truncate text-sm font-medium">
-                        {d.title}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Atualizado {humanTime(d.updated_at ?? d.created_at)}
+                      <p className="mt-0.5 truncate text-sm font-medium">{d.title}</p>
+                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                        {d.description
+                          ? d.description
+                          : `Atualizado ${humanTime(d.updated_at ?? d.created_at)}`}
                       </p>
                     </div>
                     <Button
