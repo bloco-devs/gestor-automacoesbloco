@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DemandTimeline } from "@/modules/demands/components/DemandTimeline";
 import { SLAIndicator } from "@/modules/demands/components/SLAIndicator";
 import { STATUS_COLUMNS, type Demand } from "@/modules/demands/types";
+import { RequestStepper } from "@/components/portal/RequestStepper";
 
 interface Props {
   demand: Demand | null;
@@ -57,6 +58,15 @@ export function RequestDetailModal({ demand, open, onOpenChange }: Props) {
                     <p className="text-sm whitespace-pre-wrap">{demand.description}</p>
                   </section>
                 )}
+
+                <section>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                    Linha do tempo
+                  </h3>
+                  <div className="rounded-2xl border border-border bg-card/40 p-4">
+                    <RequestStepper status={demand.status} />
+                  </div>
+                </section>
 
                 <section>
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
