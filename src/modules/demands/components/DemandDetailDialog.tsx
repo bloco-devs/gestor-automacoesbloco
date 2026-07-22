@@ -269,6 +269,7 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
                 <TabsTrigger value="ia" className="gap-1">
                   <Sparkles className="size-3.5" /> IA
                 </TabsTrigger>
+                <TabsTrigger value="automacoes">Automações</TabsTrigger>
               </TabsList>
 
               <ScrollArea className="flex-1">
