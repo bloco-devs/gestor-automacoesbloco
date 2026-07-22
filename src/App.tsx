@@ -50,6 +50,7 @@ import ObservabilidadeIA from "./pages/ObservabilidadeIA";
 import Consolidacao from "./pages/Consolidacao";
 import Inbox from "./pages/Inbox";
 import Operacoes from "./pages/Operacoes";
+import DeveloperWorkspace from "./pages/DeveloperWorkspace";
 import Portal from "./pages/Portal";
 import PortalIndex from "./pages/portal/PortalIndex";
 import BaseConhecimentoAdmin from "./pages/admin/BaseConhecimento";
