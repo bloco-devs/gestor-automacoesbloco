@@ -107,6 +107,11 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
         type: "melhoria",
       });
 
+      // Marca a demanda como "criada apesar da sugestão" para o badge do Workspace.
+      if (acknowledgedSuggestions && demand?.id) {
+        markDemandIgnoredSuggestion(demand.id);
+      }
+
       for (const file of files) {
         const path = `${demand.id}/${crypto.randomUUID()}-${file.name}`;
         const { error: upErr } = await supabase.storage
