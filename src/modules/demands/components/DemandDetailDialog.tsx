@@ -524,6 +524,10 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
                       </div>
                     )}
                   </TabsContent>
+
+                  <TabsContent value="automacoes" className="mt-0">
+                    <DemandWorkflowsTab demandId={demand.id} />
+                  </TabsContent>
                 </div>
               </ScrollArea>
             </Tabs>
