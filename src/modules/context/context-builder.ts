@@ -110,6 +110,14 @@ export function buildFromRoute(pathname: string): Pick<
       module = "diagrama";
       workspace = "engineering";
       break;
+    case "ecossistema":
+      module = "ecossistema";
+      workspace = "engineering";
+      if (parts[1]) {
+        entityType = "sistema";
+        entityId = parts[1];
+      }
+      break;
     case "observabilidade-ia":
       module = "observabilidade-ia";
       break;
