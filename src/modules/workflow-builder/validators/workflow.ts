@@ -27,7 +27,7 @@ function validateNode(node: ConditionNode, path: string, errors: ValidationError
     }
     return;
   }
-  if (!node.children.length && node.op !== "NOT") {
+  if (!node.children.length && node.op !== "NOT" && path !== "conditions") {
     errors.push({ path, message: "Grupo vazio — adicione ao menos uma condição" });
   }
   node.children.forEach((c, i) => validateNode(c, `${path}.children[${i}]`, errors));
