@@ -350,6 +350,7 @@ export default function AppLayout() {
           <OnboardingTour />
           <Outlet />
         </div>
+        <CopilotDock />
       </main>
     </div>
   );
