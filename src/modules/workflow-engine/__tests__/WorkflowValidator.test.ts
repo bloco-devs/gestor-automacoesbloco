@@ -9,6 +9,7 @@ import {
 describe("WorkflowValidator", () => {
   it("workflow completo é válido", () => {
     const wf = makeEmptyWorkflow();
+    wf.name = "OK";
     wf.actions.push({ id: uid("a"), type: "refresh_inbox", params: {} });
     expect(isValidForEngine(wf)).toBe(true);
   });
