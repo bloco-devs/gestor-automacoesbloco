@@ -63,7 +63,7 @@ export const DemandDetailInline = memo(function DemandDetailInline({ demand }: P
   );
   useDemandQuickActions(!!demand && !fullOpen, handlers);
 
-  const openFull = useCallback(() => setFullOpen(true), []);
+  
 
   if (!demand) {
     return (
