@@ -118,6 +118,7 @@ const AppRoutes = () => {
         {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
         <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
         <Route path="/operacoes" element={<ProtectedRoute role="developer"><Operacoes /></ProtectedRoute>} />
+        <Route path="/workspace" element={<ProtectedRoute role="developer"><DeveloperWorkspace /></ProtectedRoute>} />
 
         {/* Compartilhado */}
         <Route path="/ajuda" element={<Ajuda />} />
