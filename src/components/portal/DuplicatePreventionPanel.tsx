@@ -238,39 +238,43 @@ function KbCard({
     );
     onOpen?.();
   };
-  const external = item.urlExterna && kind === "article";
+  const external = kind === "article" && item.urlExterna ? item.urlExterna : null;
+  const inner = (
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="line-clamp-1 text-sm font-medium">{item.titulo}</div>
+        {item.resumo && (
+          <p className="line-clamp-2 text-xs text-muted-foreground">{item.resumo}</p>
+        )}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          {item.categoria && (
+            <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+              {item.categoria}
+            </Badge>
+          )}
+        </div>
+      </div>
+      <div className="w-24 shrink-0 space-y-1.5">
+        <SimilarityBar value={item.relevancia} />
+        <div className="text-right text-[10px] font-medium text-primary opacity-0 transition group-hover:opacity-100">
+          {kind === "article" ? "Ler artigo" : "Acompanhar"}
+          <ExternalLink className="ml-0.5 inline size-3" />
+        </div>
+      </div>
+    </div>
+  );
   return (
     <Card className="group border-border/70 transition hover:border-primary/40 hover:shadow-sm">
       <CardContent className="p-3.5">
-        <Link
-          to={external ? "" : item.href}
-          {...(external ? { as: "a", href: item.urlExterna ?? "#", target: "_blank", rel: "noreferrer" } : {})}
-          onClick={handleClick}
-          className="block"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1 space-y-1">
-              <div className="line-clamp-1 text-sm font-medium">{item.titulo}</div>
-              {item.resumo && (
-                <p className="line-clamp-2 text-xs text-muted-foreground">{item.resumo}</p>
-              )}
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                {item.categoria && (
-                  <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
-                    {item.categoria}
-                  </Badge>
-                )}
-              </div>
-            </div>
-            <div className="w-24 shrink-0 space-y-1.5">
-              <SimilarityBar value={item.relevancia} />
-              <div className="text-right text-[10px] font-medium text-primary opacity-0 transition group-hover:opacity-100">
-                {kind === "article" ? "Ler artigo" : "Acompanhar"}
-                <ExternalLink className="ml-0.5 inline size-3" />
-              </div>
-            </div>
-          </div>
-        </Link>
+        {external ? (
+          <a href={external} target="_blank" rel="noreferrer" onClick={handleClick} className="block">
+            {inner}
+          </a>
+        ) : (
+          <Link to={item.href} onClick={handleClick} className="block">
+            {inner}
+          </Link>
+        )}
       </CardContent>
     </Card>
   );
