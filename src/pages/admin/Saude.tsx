@@ -156,8 +156,6 @@ export default function SaudePage() {
     } catch {
       next.push({ key: "routing", label: "Smart Routing", icon: Route, tone: "info", status: "—", detail: "—" });
     }
-      next.push({ key: "routing", label: "Smart Routing", icon: Route, tone: "info", status: "—", detail: "—" });
-    }
 
     // Knowledge
     try {
