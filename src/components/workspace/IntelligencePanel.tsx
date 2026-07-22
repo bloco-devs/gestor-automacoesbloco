@@ -46,7 +46,7 @@ export const IntelligencePanel = memo(function IntelligencePanel({ demand }: Pro
 
   const handleAssign = async (userId: string) => {
     try {
-      await assign.mutateAsync({ id: demand.id, userId });
+      await assign.mutateAsync({ id: demand.id, assigned_to: userId });
       toast({ title: "Responsável atribuído" });
     } catch (e) {
       toast({
