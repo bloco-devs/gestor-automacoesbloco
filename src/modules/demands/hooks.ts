@@ -50,9 +50,16 @@ export function useCreateDemand() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateDemandInput & { assigned_to?: string | null }) => createDemand(input),
-    onSuccess: () => {
+    onSuccess: (demand) => {
       qc.invalidateQueries({ queryKey: KEY });
       qc.invalidateQueries({ queryKey: ["user-workloads"] });
+      if (demand?.id) {
+        void workflowRuntime.run({
+          kind: "DemandCreated",
+          demandId: demand.id,
+          payload: demand as unknown as Record<string, unknown>,
+        });
+      }
     },
   });
 }
