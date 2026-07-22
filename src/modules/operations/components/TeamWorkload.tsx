@@ -2,7 +2,8 @@ import { Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import type { UserWorkload, UserProfileLite } from "@/modules/demands/types";
+import type { UserProfileLite } from "@/modules/demands/types";
+import type { UserWorkload } from "@/modules/demands/service";
 
 function initials(name: string | null | undefined, email: string | null | undefined): string {
   const src = (name ?? email ?? "?").trim();

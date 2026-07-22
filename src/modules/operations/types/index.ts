@@ -2,7 +2,8 @@
  * Operations Center — tipos públicos.
  * Módulo puramente agregador; não define novas entidades de banco.
  */
-import type { Demand, UserWorkload } from "@/modules/demands/types";
+import type { Demand } from "@/modules/demands/types";
+import type { UserWorkload } from "@/modules/demands/service";
 import type { DemandMetrics } from "@/modules/dashboard/service";
 import type { AppNotification } from "@/modules/notifications/service";
 

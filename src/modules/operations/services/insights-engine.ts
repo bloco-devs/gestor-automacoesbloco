@@ -3,7 +3,8 @@
  * Executa 100% no cliente sobre dados já carregados. Nunca dispara ações;
  * apenas sugere. Reutiliza tipos do módulo `demands`.
  */
-import type { Demand, UserWorkload } from "@/modules/demands/types";
+import type { Demand } from "@/modules/demands/types";
+import type { UserWorkload } from "@/modules/demands/service";
 import type { OperationsInsight } from "../types";
 
 const HOUR = 60 * 60 * 1000;
