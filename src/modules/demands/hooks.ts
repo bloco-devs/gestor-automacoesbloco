@@ -80,22 +80,6 @@ export function useUpdateDemandStatus() {
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(KEY, ctx.prev);
     },
-export function useUpdateDemandStatus() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: DemandStatus }) =>
-      updateDemandStatus(id, status),
-    onMutate: async ({ id, status }) => {
-      await qc.cancelQueries({ queryKey: KEY });
-      const prev = qc.getQueryData<Demand[]>(KEY);
-      qc.setQueryData<Demand[]>(KEY, (curr) =>
-        curr?.map((d) => (d.id === id ? { ...d, status } : d)),
-      );
-      return { prev };
-    },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(KEY, ctx.prev);
-    },
     onSuccess: (_data, { id, status }) => {
       const list = qc.getQueryData<Demand[]>(KEY);
       const demand = list?.find((d) => d.id === id);
