@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DemandTimeline } from "@/modules/demands/components/DemandTimeline";
 import { SLAIndicator } from "@/modules/demands/components/SLAIndicator";
 import { STATUS_COLUMNS, type Demand } from "@/modules/demands/types";
+import { RequestStepper } from "@/components/portal/RequestStepper";
 
 interface Props {
   demand: Demand | null;
