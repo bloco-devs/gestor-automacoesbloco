@@ -9,7 +9,7 @@ export {
   useDemandQuickActions,
   useGlobalFavorites,
 } from "./hooks";
-export type { FavoriteItem, FavoreKind } from "./hooks";
+export type { FavoriteItem, FavoriteKind } from "./hooks";
 export { navigationRegistry } from "./registry/navigation-registry";
 export { commandRegistry } from "./registry/command-registry";
 export { searchRegistry } from "./registry/search-registry";
