@@ -69,7 +69,13 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
     setDescription("");
     setSystemId("");
     setFiles([]);
+    setAcknowledgedSuggestions(false);
   };
+
+  // Reset ack ao mudar o texto substancialmente (nova rodada de sugestões).
+  useEffect(() => {
+    setAcknowledgedSuggestions(false);
+  }, [description, title]);
 
   const handleResolvedByKB = (item: KnowledgeItem | null) => {
     // Registra a deflexão para o dashboard (métricas de economia operacional).
