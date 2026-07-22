@@ -120,6 +120,11 @@
     --sidebar-ring: 47 100% 55%;
 
     --surface-2: 40 10% 94%;
+
+    /* DS 2.0 — elevação e motion (aditivo) */
+    --elev-1: 0 1px 2px hsl(0 0% 0% / 0.06), 0 1px 3px hsl(0 0% 0% / 0.04);
+    --elev-2: 0 4px 12px hsl(0 0% 0% / 0.08), 0 2px 4px hsl(0 0% 0% / 0.04);
+    --elev-3: 0 12px 32px hsl(0 0% 0% / 0.14), 0 4px 12px hsl(0 0% 0% / 0.06);
   }
 
   .dark {
@@ -171,7 +176,26 @@
     --sidebar-ring: 47 100% 68%;
 
     --surface-2: 0 0% 9%;
+
+    /* DS 2.0 — elevação (mais leve no escuro) */
+    --elev-1: 0 1px 2px hsl(0 0% 0% / 0.35), 0 1px 3px hsl(0 0% 0% / 0.25);
+    --elev-2: 0 4px 12px hsl(0 0% 0% / 0.45), 0 2px 4px hsl(0 0% 0% / 0.3);
+    --elev-3: 0 12px 32px hsl(0 0% 0% / 0.55), 0 4px 12px hsl(0 0% 0% / 0.4);
   }
+}
+
+/* ===== DS 2.0 — Tipografia oficial ===== */
+@layer utilities {
+  .ds-display    { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 2.5rem;   line-height: 3rem;    font-weight: 700; letter-spacing: -0.02em; }
+  .ds-h1         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.75rem;  line-height: 2rem;    font-weight: 600; letter-spacing: -0.01em; }
+  .ds-h2         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.375rem; line-height: 1.75rem; font-weight: 600; letter-spacing: -0.005em; }
+  .ds-h3         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.125rem; line-height: 1.5rem;  font-weight: 600; }
+  .ds-card-title { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1rem;     line-height: 1.375rem;font-weight: 600; }
+  .ds-body       { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+  .ds-body-strong{ font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; }
+  .ds-caption    { font-size: 0.75rem;  line-height: 1rem;    font-weight: 400; }
+  .ds-label      { font-size: 0.6875rem;line-height: 0.875rem;font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ds-helper     { font-size: 0.75rem;  line-height: 1rem;    font-weight: 400; color: hsl(var(--muted-foreground)); }
 }
 
 @layer base {

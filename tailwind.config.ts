@@ -78,6 +78,20 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      boxShadow: {
+        "elev-1": "var(--elev-1)",
+        "elev-2": "var(--elev-2)",
+        "elev-3": "var(--elev-3)",
+      },
+      transitionTimingFunction: {
+        standard: "cubic-bezier(0.2, 0, 0, 1)",
+        emphasized: "cubic-bezier(0.3, 0, 0, 1)",
+      },
+      transitionDuration: {
+        fast: "120ms",
+        base: "200ms",
+        slow: "320ms",
+      },
       keyframes: {
         "accordion-down": {
           from: {

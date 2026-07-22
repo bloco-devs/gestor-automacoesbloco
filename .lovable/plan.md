@@ -1,122 +1,100 @@
+# FEATURE 009 — Design System 2.0 + UX Consolidation
 
-# Feature 005 — Smart Routing (Motor de Sugestão de Responsáveis)
+Consolidação puramente visual/estrutural. **Nenhuma** alteração em regra de negócio, edge functions, hooks de dados, schemas, RLS, engines (AI/Intent/Context/Workflow/Routing) ou rotas existentes.
 
-## Escopo
-Motor 100% local e determinístico que rankeia candidatos para cada demanda. Apenas **sugere**; a atribuição continua manual (reusa `useAssignDemand`). Zero backend novo.
+## 🔒 Regras invioláveis (aprovadas pelo owner)
 
-## Auditoria — o que já existe e será reutilizado
+### 1. Execução incremental (OBRIGATÓRIO)
+- Feature executada em ondas **independentes**.
+- Cada onda: concluída → validada (`tsgo` + `vitest run` verdes) → preserva 100% do comportamento → só então a próxima começa.
+- **Proibido** modificar arquivos que não pertençam à onda atual.
+- Se uma alteração puder impactar outra funcionalidade, adiar para onda posterior.
+- Ao fim de cada onda o sistema permanece totalmente funcional.
 
-**Dados / Backend (nenhuma migration nova)**
-- `demands` (assigned_to, type, priority, complexity, sla_*, ai_*)
-- `profiles` (nome, email, avatar_url)
-- `user_roles` (papel `developer`) — fonte da equipe elegível
-- RPC `get_user_workloads` — carga ativa por atendente
-- `demand_audit_logs` — histórico para cálculo de tempo médio e afinidade por tipo
+### 2. Preservação de telas administrativas
+Telas técnicas (Diagramas, Observabilidade IA, SLA, Workflows, Logs, Auditoria, Integrações, Webhooks, Configurações) **não sofrem simplificação funcional**. Só recebem: melhoria visual, alinhamento, tipografia, espaçamento, responsividade, organização.
+- **Proibido**: esconder configurações, remover opções, alterar fluxos ou comportamentos.
 
-**Módulos**
-- `modules/demands/service.ts` — `getUserWorkloads`, `assignDemand`, `listDemands`
-- `modules/demands/hooks.ts` — `useAssignDemand`, `useDemands`
-- `modules/operations/*` — `useOperationsData` (snapshot já traz demandas+workloads); `insights-engine` receberá insumos do motor
-- `modules/inbox/*` — `PriorityCard`, hook de dados; ganha seção "Sugestões para mim"
-- `modules/context/*` — `contextStore` fornece `user.id` e módulo atual
-- `modules/platform/*` — sem alteração
-- `modules/ai/*` — não é chamado (motor local)
+### 3. Não alterar identidade visual
+Preservar paleta institucional Bloco (preto/areia/marrom/amarelo), logotipo, cores da marca, tema claro/escuro, componentes exclusivos. Evoluir o DS, não criar produto visual novo.
 
-## Novo módulo: `src/modules/routing/`
+### 4. Guarda-corpos técnicos
+- **Não editar**: `src/modules/ai/*`, `src/modules/context/*`, `src/modules/workflow-*`, `src/modules/routing/*`, `src/modules/knowledge*/services`, `src/hooks/useAuth`, `src/hooks/useAIWorkspace`, edge functions, migrations.
+- **Pode editar** (só na onda correspondente): `src/components/ui/*`, `src/components/AppLayout.tsx`, `src/index.css`, `tailwind.config.ts`, wrappers de página, arquivos novos em `src/design-system/`.
+- Storage keys novos usam prefixo `ds2:` (não colidir com tour/onboarding).
+- IDs de `driver.js` (`data-tour="..."`) permanecem.
 
-```text
-routing/
-  engine/
-    scoring.ts        # cálculo puro de score por candidato
-    ranker.ts         # aplica pesos, desempates, corte de confiança
-    weights.ts        # pesos default + tipo Weights
-    affinity.ts       # deriva afinidade por tipo a partir do histórico
-  services/
-    routing-service.ts # monta CandidatePool (equipe + workloads + histórico) via Supabase
-  hooks/
-    useRoutingSuggestions.ts  # React Query: (demand) => Ranking
-    useTeamPool.ts            # cache do pool de candidatos
-  components/
-    RoutingSuggestionCard.tsx # UI "Sugestão da IA" no DemandDetailDialog
-    SuggestionReasons.tsx     # chips de motivos + score
-    AlternativesList.tsx
-  types/index.ts
-  utils/format.ts
-  __tests__/
-    scoring.test.ts
-    ranker.test.ts
-    affinity.test.ts
-    fallback.test.ts
-  index.ts
+## Onda 0 — Auditoria (só relatório, zero código)
+Varrer código e produzir `docs/34-Design-System-2.md` (seção "Auditoria"):
+- Cards/headers duplicados (Dashboard vs Operações vs Inbox).
+- Botões com alturas divergentes, tamanhos ad-hoc (`text-[13px]`).
+- Espaçamentos fora da escala 4/8/12/16/24/32/48/64.
+- KPIs redundantes entre dashboards.
+- Sidebar plana com 15+ itens.
+
+## Onda 1 — Tokens & fundações
+Criar `src/design-system/`:
 ```
-
-### Motor (`engine/`) — puro, sem React/Supabase
-Assinatura:
-```ts
-rankCandidates(demand: DemandInput, pool: Candidate[], weights?: Weights): Ranking
+tokens/     spacing.ts, typography.ts, radius.ts, elevation.ts, motion.ts
+layout/     PageShell.tsx, PageHeader.tsx, Section.tsx, Toolbar.tsx
+patterns/   StatCard.tsx, KpiRow.tsx, EmptyPanel.tsx
+index.ts, docs/README.md
 ```
-- `Candidate`: `{ user_id, nome, avatar_url, active_count, avg_resolution_h, type_affinity: Record<type, number>, priority_affinity, complexity_affinity }`
-- Score 0–100 = soma ponderada normalizada de:
-  - Especialidade (afinidade por `type`) — peso 25
-  - Carga atual (invertida, normalizada pela mediana) — peso 20
-  - Tempo médio de resolução (invertido) — peso 15
-  - Histórico (nº atendidos no mesmo tipo) — peso 10
-  - Complexidade compatível — peso 10
-  - Prioridade compatível — peso 10
-  - SLA/urgência (favorece quem tem folga) — peso 10
-- Desempate: menor `active_count` → maior `type_affinity` → menor `avg_resolution_h`
-- Confiança: `high >= 80`, `medium >= 60`, `low` caso contrário
-- Motivos: strings i18n curtas (ex.: "Especialista em Backend RH", "Carga 45%")
-- Fallback: sem candidatos → `Ranking.empty`; ninguém elegível → sugere quem tem menor carga apenas com aviso `low`
+- Utilities em `index.css`: `.ds-display / .ds-h1 / .ds-h2 / .ds-card-title / .ds-body / .ds-caption / .ds-label / .ds-helper` (fonte `NewBlackTypeface`).
+- Tokens `--elev-1/2/3`, `--ease-standard`, durations 120/200/320ms.
+- `tailwind.config.ts`: `fontSize` semântico, `boxShadow` (`elev-1..3`), `transitionTimingFunction`.
+- Nenhuma cor nova. Nenhum componente existente tocado.
 
-### Serviço (`services/routing-service.ts`)
-- `buildCandidatePool()`:
-  - Lê `user_roles` (role `developer`) + `profiles`
-  - `getUserWorkloads()` (reuso)
-  - Uma query única em `demand_audit_logs` (últimos 90d, ação `assigned`) + `demands` para derivar `type_affinity` e `avg_resolution_h` no cliente
-  - Retorna `Candidate[]`
-- Cache via React Query (staleTime 5 min)
+## Onda 2 — Primitivos shadcn afinados
+Somente em `src/components/ui/`, sem quebrar API:
+- `button.tsx`: alturas normalizadas (32/40/44), foco `ring-2 ring-ring/60`, variante `fab` aditiva.
+- `card.tsx`: `rounded-2xl`, padding uniforme, `shadow-elev-1` default.
+- `input/select/textarea/label`: altura 40, helper padronizado.
+- `badge.tsx`: variantes success/warning/info/danger explícitas.
 
-### Hook
-- `useRoutingSuggestions(demand)` → `{ ranking, isLoading }` — combina `useTeamPool` + `rankCandidates` em `useMemo`
+## Onda 3 — Sidebar reorganizada + AppLayout
+Editar só `src/components/AppLayout.tsx`:
+- Grupos `TRABALHO / ATENDIMENTO / ADMINISTRAÇÃO` via `SidebarGroup` colapsável.
+- **Todas** rotas atuais preservadas.
+- Grupo da rota ativa auto-expandido; estado persistido em `ds2:sidebar:<group>`.
+- Header com `SidebarTrigger` sempre visível.
+- `NotificacoesBell`, `ThemeToggle`, avatar, atalhos preservados.
 
-## Integrações
+## Onda 4 — PageShell aplicado por página (visual only)
+Envolver páginas em `<PageShell><PageHeader/><Section/></PageShell>`:
+Dashboard, Operações, Inbox, Portal, Board Demandas, Base de Conhecimento, Workflows, SLA, Webhooks, Diagrama, Observabilidade IA, Configurações, MeuPerfil, Atividades.
+- Nenhuma alteração de props/dados; só molde externo e classes tipográficas.
+- **Telas administrativas**: nenhuma configuração escondida ou removida.
 
-**DemandDetailDialog** (arquivo existente — insert aditivo)
-- Novo bloco `RoutingSuggestionCard` acima do seletor de responsável (quando `demand.assigned_to == null`)
-- Botão "Atribuir" chama `useAssignDemand` já existente
-- Alternativas expansíveis
+## Onda 5 — Consolidação visual dos dashboards
+- Unificar `MetricCard`/`HealthCard`/KPIs em `patterns/StatCard` + `KpiRow`.
+- Hierarquia: atenção → indicadores → detalhes.
+- Board Demandas: cards mais compactos, badges destacados, drag preservado.
+- Centro Operações: 3 blocos verticais respiráveis.
+- Base Conhecimento: leitura estilo Notion (max-w-3xl).
+- AI Workspace: mais respiro, timeline discreta, preview em `elev-2`.
 
-**Centro de Operações** (`OperationsPage`)
-- Nova aba/card `UnassignedQueue`: lista demandas sem responsável ordenadas por score do top candidato
-- `insights-engine` recebe insumo do motor para: "3 sugestões prontas para atribuir", "distribuição desigual — pico em X"
+## Onda 6 — Microanimações, a11y, performance
+- `transition-[background,box-shadow,transform] duration-200 ease-standard` em Card/Button hover.
+- Foco visível universal.
+- `React.memo` em `KanbanCard`, `MetricCard`, `StatCard`. `useMemo` em listas.
+- Auditoria a11y: alt/aria-label faltantes.
 
-**Inbox** (`modules/inbox`)
-- Nova seção `SuggestedForYou`: filtra ranking cujo `top.user_id === currentUser.id` e score ≥ 70
-- Reutiliza `PriorityCard` com badge "Sugerido pra você"
+## Onda 7 — Documentação + verificação final
+- `docs/34-Design-System-2.md` completo.
+- Link em `docs/15-Design-System.md`.
+- `tsgo` + `vitest run` + Playwright em rotas principais.
 
-## Fora do escopo (não tocar)
-- AI / Context / Platform / UX / Knowledge / Portal
-- Nenhuma nova tabela, RPC, migration ou Edge Function
-- Nenhuma auto-atribuição (o `AUTO` existente no CreateDemandDialog não muda)
-
-## Testes (`__tests__/`)
-- `scoring`: cada critério isolado
-- `ranker`: pesos, empates, corte de confiança, ordenação estável
-- `affinity`: derivação de `type_affinity` a partir de logs mockados
-- `fallback`: pool vazio, sem elegíveis, workloads todos iguais
-
-## Documentação
-- `docs/31-Smart-Routing.md`: arquitetura, algoritmo, pesos default, critérios, integração com Demandas/Operações/Inbox, roadmap (auto-assign opcional, pesos configuráveis por admin, aprendizado incremental)
+## Fora de escopo
+- Nada de tabela, migration, edge function, RPC nova.
+- Nenhuma remoção de página, rota, permissão, item de menu.
+- Sem trocar biblioteca de gráficos, DnD, roteamento.
 
 ## Critérios de aceite
-- Motor desacoplado, testado, sem imports de React/Supabase
-- Sugestões visíveis no DemandDetailDialog com botão "Atribuir" manual
-- UnassignedQueue e insight no Centro de Operações
-- SuggestedForYou no Inbox
-- Zero mudanças em AI/Context/Platform/UX/Knowledge/Portal
-- Zero migrations/edge functions novas
-- `tsgo` limpo, vitest verde
-
-## Entrega
-Resumo executivo listando reuso (tabelas, RPCs, hooks, componentes) vs. novos artefatos (todos em `src/modules/routing/` + `docs/31-Smart-Routing.md`).
+- `tsgo` limpo, `vitest run` verde por onda.
+- Todas rotas respondem e renderizam.
+- Sidebar agrupada e colapsável com estado persistido.
+- Cards/botões/inputs uniformes.
+- Tipografia via `.ds-*` ou tokens shadcn — sem `text-[13px]` sobrando.
+- `docs/34-Design-System-2.md` publicado.
+- Identidade Bloco preservada; nenhuma configuração administrativa escondida.
