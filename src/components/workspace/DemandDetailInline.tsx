@@ -152,7 +152,7 @@ export const DemandDetailInline = memo(function DemandDetailInline({ demand }: P
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
-        <Tabs defaultValue="timeline" className="flex h-full flex-col">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="flex h-full flex-col">
           <TabsList className="w-fit">
             <TabsTrigger value="timeline">Timeline & Comentários</TabsTrigger>
             <TabsTrigger value="descricao">Descrição</TabsTrigger>
