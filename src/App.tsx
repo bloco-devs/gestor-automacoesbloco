@@ -59,6 +59,7 @@ import SLAPolicies from "./pages/admin/SLAPolicies";
 import WebhooksAdmin from "./pages/admin/Webhooks";
 import WorkflowsPage from "./pages/admin/Workflows";
 import WorkflowEditorPage from "./pages/admin/WorkflowEditor";
+import WorkflowExecutionsPage from "./pages/admin/WorkflowExecutions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
