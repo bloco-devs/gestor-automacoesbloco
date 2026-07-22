@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { KnowledgeSuggestions } from "@/modules/knowledge";
 import type { KnowledgeItem } from "@/modules/knowledge";
+import { DuplicatePreventionPanel } from "@/components/portal/DuplicatePreventionPanel";
+import { markDemandIgnoredSuggestion } from "@/modules/ecossistema";
 import {
   useAddAttachment,
   useAutoRespondDemand,
@@ -50,7 +52,8 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
   const [systemId, setSystemId] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [plataformas, setPlataformas] = useState<Array<{ id: string; nome: string }>>([]);
+  const [plataformas, setPlataformas] = useState<Array<{ id: string; nome: string; slug?: string | null }>>([]);
+  const [acknowledgedSuggestions, setAcknowledgedSuggestions] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -66,7 +69,13 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
     setDescription("");
     setSystemId("");
     setFiles([]);
+    setAcknowledgedSuggestions(false);
   };
+
+  // Reset ack ao mudar o texto substancialmente (nova rodada de sugestões).
+  useEffect(() => {
+    setAcknowledgedSuggestions(false);
+  }, [description, title]);
 
   const handleResolvedByKB = (item: KnowledgeItem | null) => {
     // Registra a deflexão para o dashboard (métricas de economia operacional).
@@ -97,6 +106,11 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
         system_id: systemId || null,
         type: "melhoria",
       });
+
+      // Marca a demanda como "criada apesar da sugestão" para o badge do Workspace.
+      if (acknowledgedSuggestions && demand?.id) {
+        markDemandIgnoredSuggestion(demand.id);
+      }
 
       for (const file of files) {
         const path = `${demand.id}/${crypto.randomUUID()}-${file.name}`;
@@ -185,8 +199,20 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
             />
           </div>
 
-          {/* Deflexão por IA — reusa a Central de Soluções */}
-          {deflectionQuery.length >= 20 && (
+          {/* Prevenção de duplicatas — F018.1. Consolida sistemas + artigos + chamados. */}
+          <DuplicatePreventionPanel
+            titulo={title}
+            descricao={description}
+            enabled={description.trim().length >= 30}
+            onContinueAnyway={() => setAcknowledgedSuggestions(true)}
+            onResolved={() => {
+              reset();
+              onOpenChange(false);
+            }}
+          />
+
+          {/* Fallback leve para descrições curtas — mantém o comportamento original. */}
+          {description.trim().length < 30 && deflectionQuery.length >= 20 && (
             <KnowledgeSuggestions
               query={deflectionQuery}
               origin="portal"
