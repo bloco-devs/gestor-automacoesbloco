@@ -153,3 +153,51 @@ Ao criar/alterar tela:
 - [ ] Ícones-only têm `aria-label`?
 - [ ] Foco visível (`focus-visible:ring-2`)?
 - [ ] Nenhum comportamento/regra de negócio alterado?
+
+## Onda 2 — Refinamento dos Primitivos
+
+Refinamento aditivo em `src/components/ui/`. **Nenhuma API pública alterada**; consumidores herdam o novo visual automaticamente.
+
+### Button
+- Alturas normalizadas: `sm` = 32px, `default` = 40px, `lg` = 44px.
+- Novos tamanhos aditivos: `icon-sm` (32), `icon-lg` (44), `fab` (56).
+- Nova variante `fab` (Floating Action Button) com `rounded-full` + `shadow-elev-2`.
+- Radius via token (`rounded-lg`).
+- Focus: `ring-2 ring-ring/60 ring-offset-2` (mais suave, alto contraste).
+- Motion: `transition-[…] duration-fast ease-standard`, `active:translate-y-px`.
+- Variantes existentes (`default/destructive/outline/secondary/ghost/link`) preservadas.
+
+### Card
+- `rounded-2xl` + `shadow-elev-1` default, `hover:shadow-elev-2` (`duration-base ease-standard`).
+- Padding uniforme `p-5` em Header/Content/Footer.
+- `CardTitle` migra para `.ds-card-title`; `CardDescription` para `.ds-caption`.
+
+### Input / Textarea / SelectTrigger
+- Altura 40px, radius `rounded-lg`.
+- Placeholder padronizado (`text-muted-foreground/70`).
+- Focus unificado com Button (`ring-ring/60` + `border-ring/60`).
+- Motion: `transition-[border-color,box-shadow] duration-fast ease-standard`.
+- `SelectContent` migrado para `rounded-xl` + `shadow-elev-2`.
+
+### Badge
+- Variantes semânticas oficiais adicionadas: `success`, `warning`, `danger`, `info`, `neutral`, `primary`.
+- Variantes legadas (`default`, `secondary`, `destructive`, `outline`) preservadas — `danger` é alias de `destructive`, `primary` de `default`.
+- Focus alinhado (`ring-2 ring-ring/60`).
+
+### Skeleton
+- `rounded-lg` (alinhado a inputs/cards internos).
+- Animação `animate-pulse` mantida.
+
+### Separator / ScrollArea / Label
+- APIs mantidas. Sem mudanças de estilo relevantes — já estavam consistentes com tokens semânticos.
+
+### Tokens consumidos
+- `shadow-elev-1`, `shadow-elev-2`, `shadow-elev-3` (Onda 1).
+- `duration-fast` / `duration-base`, `ease-standard` (Onda 1).
+- `.ds-card-title` / `.ds-caption` (Onda 1).
+- Cores semânticas existentes (`success`, `warning`, `info`, `destructive`).
+
+### Garantias
+- Zero mudanças em módulos, páginas, hooks, providers, engines, rotas.
+- APIs, props e exports 100% preservados.
+- 167/167 testes verdes.
