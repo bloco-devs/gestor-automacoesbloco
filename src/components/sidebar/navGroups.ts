@@ -1,5 +1,6 @@
 import {
   Activity,
+  BarChart3,
   BookOpen,
   Briefcase,
   Clock,
@@ -95,7 +96,10 @@ export const devGroups: NavGroup[] = [
     label: "Administração",
     icon: Shield,
     items: [
+      { to: "/admin", label: "Admin Hub", icon: Shield },
       { to: "/admin/dashboard", label: "Dashboard (Operação)", icon: Gauge },
+      { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+      { to: "/admin/saude", label: "Centro de Saúde", icon: Activity },
       { to: "/admin/configuracoes/sla", label: "Configuração de SLA", icon: Clock },
       { to: "/admin/configuracoes/webhooks", label: "Webhooks & Integrações", icon: Repeat },
       { to: "/configuracoes", label: "Configurações", icon: Settings },
