@@ -2214,6 +2214,102 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_definitions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          definition: Json
+          deleted_at: string | null
+          description: string
+          enabled: boolean
+          id: string
+          name: string
+          priority: number
+          trigger: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          definition?: Json
+          deleted_at?: string | null
+          description?: string
+          enabled?: boolean
+          id?: string
+          name: string
+          priority?: number
+          trigger: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          definition?: Json
+          deleted_at?: string | null
+          description?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          priority?: number
+          trigger?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      workflow_execution_logs: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          demand_id: string | null
+          duration_ms: number
+          execution_result: Json
+          id: string
+          status: string
+          workflow_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          demand_id?: string | null
+          duration_ms?: number
+          execution_result?: Json
+          id?: string
+          status: string
+          workflow_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          demand_id?: string | null
+          duration_ms?: number
+          execution_result?: Json
+          id?: string
+          status?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_execution_logs_demand_id_fkey"
+            columns: ["demand_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_execution_logs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       atividades_boards_resumo: {
