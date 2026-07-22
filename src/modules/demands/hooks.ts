@@ -21,6 +21,7 @@ import {
   updateDemandStatus,
 } from "./service";
 import type { CreateDemandInput, Demand, DemandStatus } from "./types";
+import { workflowRuntime } from "@/modules/workflow-runtime";
 
 const KEY = ["demands"] as const;
 
@@ -49,9 +50,16 @@ export function useCreateDemand() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateDemandInput & { assigned_to?: string | null }) => createDemand(input),
-    onSuccess: () => {
+    onSuccess: (demand) => {
       qc.invalidateQueries({ queryKey: KEY });
       qc.invalidateQueries({ queryKey: ["user-workloads"] });
+      if (demand?.id) {
+        void workflowRuntime.run({
+          kind: "DemandCreated",
+          demandId: demand.id,
+          payload: demand as unknown as Record<string, unknown>,
+        });
+      }
     },
   });
 }
@@ -72,6 +80,15 @@ export function useUpdateDemandStatus() {
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(KEY, ctx.prev);
     },
+    onSuccess: (_data, { id, status }) => {
+      const list = qc.getQueryData<Demand[]>(KEY);
+      const demand = list?.find((d) => d.id === id);
+      void workflowRuntime.run({
+        kind: "DemandUpdated",
+        demandId: id,
+        payload: { ...(demand ?? { id }), status } as Record<string, unknown>,
+      });
+    },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: KEY });
       qc.invalidateQueries({ queryKey: ["user-workloads"] });
@@ -84,9 +101,16 @@ export function useAssignDemand() {
   return useMutation({
     mutationFn: ({ id, assigned_to }: { id: string; assigned_to: string | null }) =>
       assignDemand(id, assigned_to),
-    onSuccess: () => {
+    onSuccess: (_data, { id, assigned_to }) => {
       qc.invalidateQueries({ queryKey: KEY });
       qc.invalidateQueries({ queryKey: ["user-workloads"] });
+      const list = qc.getQueryData<Demand[]>(KEY);
+      const demand = list?.find((d) => d.id === id);
+      void workflowRuntime.run({
+        kind: "DemandUpdated",
+        demandId: id,
+        payload: { ...(demand ?? { id }), assigned_to } as Record<string, unknown>,
+      });
     },
   });
 }

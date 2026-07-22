@@ -16,6 +16,7 @@ import AppLayout from "@/components/AppLayout";
 import { ContextProvider } from "@/modules/context";
 import { PlatformProvider } from "@/modules/platform";
 import { LanguageProvider } from "@/modules/ux";
+import { WorkflowRuntimeProvider } from "@/modules/workflow-runtime";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SsoCallback from "./pages/SsoCallback";
@@ -58,6 +59,7 @@ import SLAPolicies from "./pages/admin/SLAPolicies";
 import WebhooksAdmin from "./pages/admin/Webhooks";
 import WorkflowsPage from "./pages/admin/Workflows";
 import WorkflowEditorPage from "./pages/admin/WorkflowEditor";
+import WorkflowExecutionsPage from "./pages/admin/WorkflowExecutions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -109,6 +111,7 @@ const AppRoutes = () => {
         <Route path="/admin/configuracoes/webhooks" element={<ProtectedRoute role="developer"><WebhooksAdmin /></ProtectedRoute>} />
         <Route path="/admin/workflows" element={<ProtectedRoute role="developer"><WorkflowsPage /></ProtectedRoute>} />
         <Route path="/admin/workflows/novo" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
+        <Route path="/admin/workflows/execucoes" element={<ProtectedRoute role="developer"><WorkflowExecutionsPage /></ProtectedRoute>} />
         <Route path="/admin/workflows/:id" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
 
         {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
@@ -141,8 +144,10 @@ const App = () => (
           <ContextProvider>
             <LanguageProvider>
               <PlatformProvider>
-                <RecoveryGuard />
-                <AppRoutes />
+                <WorkflowRuntimeProvider>
+                  <RecoveryGuard />
+                  <AppRoutes />
+                </WorkflowRuntimeProvider>
               </PlatformProvider>
             </LanguageProvider>
           </ContextProvider>

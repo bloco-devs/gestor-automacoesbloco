@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DemandWorkflowsTab } from "./DemandWorkflowsTab";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getAttachmentSignedUrl } from "../service";
@@ -269,6 +270,7 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
                 <TabsTrigger value="ia" className="gap-1">
                   <Sparkles className="size-3.5" /> IA
                 </TabsTrigger>
+                <TabsTrigger value="automacoes">Automações</TabsTrigger>
               </TabsList>
 
               <ScrollArea className="flex-1">
@@ -522,6 +524,10 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
                         )}
                       </div>
                     )}
+                  </TabsContent>
+
+                  <TabsContent value="automacoes" className="mt-0">
+                    <DemandWorkflowsTab demandId={demand.id} />
                   </TabsContent>
                 </div>
               </ScrollArea>
