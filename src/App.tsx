@@ -66,6 +66,10 @@ const WebhooksAdmin = lazy(() => import(/* webpackChunkName: "admin" */ "./pages
 const WorkflowsPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/Workflows"));
 const WorkflowEditorPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/WorkflowEditor"));
 const WorkflowExecutionsPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/WorkflowExecutions"));
+const AdminHub = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/AdminHub"));
+const SaudePage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Saude"));
+const AnalyticsPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Analytics"));
+const EcossistemaPage = lazy(() => import("./pages/Ecossistema"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
