@@ -18,6 +18,7 @@ export type ModuleKey =
   | "solucoes"
   | "atividades"
   | "diagrama"
+  | "ecossistema"
   | "observabilidade-ia"
   | "consolidacao"
   | "configuracoes"
