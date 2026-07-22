@@ -7,6 +7,7 @@ import { createMockAdapters } from "../adapters/mocks";
 
 function wfWith2Actions() {
   const wf = makeEmptyWorkflow();
+  wf.name = "Runner test";
   wf.actions.push(
     { id: uid("a"), type: "set_priority", params: { priority: "alta" } },
     { id: uid("a"), type: "send_notification", params: { to: "ops" } },
