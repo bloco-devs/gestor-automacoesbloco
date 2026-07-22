@@ -20,7 +20,6 @@ import {
   BookOpen,
   Sparkles,
   Play,
-  CheckCircle2,
   MessageSquare,
   UploadCloud,
   KeyRound,
@@ -29,6 +28,7 @@ import {
   MonitorSmartphone,
   Bot,
   Building2,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,6 +46,11 @@ import { KnowledgeSuggestions } from "@/modules/knowledge";
 import { useDemands } from "@/modules/demands/hooks";
 import { STATUS_COLUMNS, type Demand, type DemandStatus } from "@/modules/demands/types";
 import { supabase } from "@/integrations/supabase/client";
+import { ThinkingSteps } from "@/components/portal/ThinkingSteps";
+import { RichConfirmation } from "@/components/portal/RichConfirmation";
+import { UniversalSearch } from "@/components/portal/UniversalSearch";
+import { useFavoriteDemands } from "@/components/portal/useFavoriteDemands";
+import { useNavigate } from "react-router-dom";
 
 // ---- Web Speech API (fallback silencioso) ---------------------------------
 type SpeechRecognitionCtor = new () => {
@@ -126,6 +131,10 @@ async function fetchQuickArticles(): Promise<QuickArticle[]> {
 export default function Portal() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isFavorite, toggle: toggleFav, favorites } = useFavoriteDemands();
+  const [historySearch, setHistorySearch] = useState("");
+  const [showFavorites, setShowFavorites] = useState(false);
   const {
     phase,
     messages,
@@ -178,8 +187,18 @@ export default function Portal() {
 
   const myRequests = useMemo<Demand[]>(() => {
     if (!user?.id) return [];
-    return demands.filter((d) => d.created_by === user.id).slice(0, 3);
-  }, [demands, user?.id]);
+    const mine = demands.filter((d) => d.created_by === user.id);
+    const q = historySearch.trim().toLowerCase();
+    const base = showFavorites ? mine.filter((d) => favorites.includes(d.id)) : mine;
+    const searched = q
+      ? base.filter(
+          (d) =>
+            d.title.toLowerCase().includes(q) ||
+            (d.description ?? "").toLowerCase().includes(q),
+        )
+      : base;
+    return searched.slice(0, historySearch || showFavorites ? 10 : 4);
+  }, [demands, user?.id, historySearch, showFavorites, favorites]);
 
   const filteredArticles = useMemo(() => {
     const q = kbQuery.trim().toLowerCase();
@@ -288,14 +307,7 @@ export default function Portal() {
         {!showPreview && (
           <>
             <ChatContainer messages={messages} thinking={thinking} />
-            {processing && (
-              <div
-                className="flex items-center gap-2 text-sm text-muted-foreground"
-                role="status"
-              >
-                <Loader2 className="size-4 animate-spin" /> Organizando sua solicitação…
-              </div>
-            )}
+            {processing && <ThinkingSteps />}
             <ConversationInput
               onSend={sendMessage}
               disabled={thinking || processing}
@@ -320,35 +332,13 @@ export default function Portal() {
           />
         )}
 
-        {/* 7 · Pós envio — tela "Perfeito" enquanto grava/redireciona */}
-        {submitting && (
-          <div className="rounded-3xl border border-border bg-card p-8 text-center shadow-elev-1">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="size-8" />
-            </div>
-            <h2 className="mt-4 text-2xl font-semibold tracking-tight">Perfeito.</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Já entendemos seu problema. Agora iremos:
-            </p>
-            <ul className="mx-auto mt-5 max-w-sm space-y-2 text-left text-sm">
-              {[
-                "classificar",
-                "procurar soluções",
-                "encontrar o responsável",
-                "iniciar o atendimento",
-              ].map((s) => (
-                <li key={s} className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-emerald-500" /> {s}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-5 text-xs text-muted-foreground">
-              Você poderá acompanhar tudo em tempo real.
-            </p>
-            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" /> Abrindo suas solicitações…
-            </div>
-          </div>
+        {/* 7 · Pós envio — Confirmação Rica */}
+        {submitting && preview && (
+          <RichConfirmation
+            preview={preview}
+            score={previewScore}
+            onTrack={() => navigate("/minhas-solicitacoes")}
+          />
         )}
       </div>
     );
@@ -356,9 +346,14 @@ export default function Portal() {
 
   // ===== Home do Portal (v3) ==============================================
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-16 px-4 py-10 sm:py-20">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-16 px-4 py-8 sm:py-14">
+      {/* 6 · Busca Universal */}
+      <div className="mx-auto w-full max-w-xl">
+        <UniversalSearch />
+      </div>
+
       {/* 1 · Hero */}
-      <header className="space-y-3 text-center">
+      <header className="space-y-3 text-center animate-fade-in">
         <p className="text-base font-medium text-muted-foreground">
           {saudacao}
           {nome ? `, ${nome}` : ""}.
@@ -504,20 +499,51 @@ export default function Portal() {
         </div>
       </section>
 
-      {/* 3 · Continue de onde parou */}
+      {/* 3 · Continue de onde parou (histórico com busca + favoritos) */}
       <section aria-labelledby="continue" className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="continue" className="text-lg font-semibold tracking-tight">
             Continue de onde parou
           </h2>
-          {myRequests.length > 0 && (
-            <Link
-              to="/minhas-solicitacoes"
-              className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
+          <Link
+            to="/minhas-solicitacoes"
+            className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Ver todas <ArrowRight className="size-3.5" />
+          </Link>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-1 items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1.5 focus-within:border-primary/50">
+            <Search className="size-3.5 text-muted-foreground" />
+            <Input
+              value={historySearch}
+              onChange={(e) => setHistorySearch(e.target.value)}
+              placeholder="Pesquisar no seu histórico…"
+              aria-label="Pesquisar no histórico"
+              className="h-7 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
+            />
+          </div>
+          <div className="inline-flex overflow-hidden rounded-full border border-border bg-card/60 p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setShowFavorites(false)}
+              className={`rounded-full px-3 py-1 transition ${
+                !showFavorites ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
             >
-              Ver todas <ArrowRight className="size-3.5" />
-            </Link>
-          )}
+              Recentes
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowFavorites(true)}
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 transition ${
+                showFavorites ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
+            >
+              <Star className="size-3" /> Favoritos
+            </button>
+          </div>
         </div>
 
         {loadingDemands ? (
@@ -527,15 +553,21 @@ export default function Portal() {
             ))}
           </div>
         ) : myRequests.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card/40 px-6 py-10 text-center">
+          <div className="animate-fade-in rounded-2xl border border-dashed border-border bg-card/40 px-6 py-10 text-center">
             <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
               <MessageSquare className="size-5" />
             </div>
             <p className="mt-3 text-sm font-medium">
-              Você ainda não possui solicitações.
+              {showFavorites
+                ? "Você ainda não favoritou nenhuma solicitação."
+                : historySearch
+                  ? "Nada encontrado no seu histórico."
+                  : "Você ainda não possui solicitações."}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Quando precisar de ajuda, basta conversar comigo. 😊
+              {showFavorites
+                ? "Toque na estrela para marcar como favorita."
+                : "Quando precisar de ajuda, basta conversar comigo. 😊"}
             </p>
           </div>
         ) : (
@@ -545,31 +577,49 @@ export default function Portal() {
               const isDone = vibe.done;
               const statusLabel =
                 STATUS_COLUMNS.find((s) => s.id === d.status)?.label ?? d.status;
+              const fav = isFavorite(d.id);
               return (
-                <li key={d.id}>
+                <li
+                  key={d.id}
+                  className="group relative flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elev-1"
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFav(d.id);
+                    }}
+                    aria-label={fav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                    aria-pressed={fav}
+                    className={`shrink-0 rounded-full p-1 transition ${
+                      fav
+                        ? "text-amber-500"
+                        : "text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:text-amber-500"
+                    }`}
+                  >
+                    <Star className={`size-4 ${fav ? "fill-current" : ""}`} />
+                  </button>
+                  <span
+                    aria-hidden
+                    className={`inline-block size-2.5 shrink-0 rounded-full ${vibe.dot}`}
+                  />
                   <Link
                     to="/minhas-solicitacoes"
-                    className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-elev-1"
+                    className="flex min-w-0 flex-1 items-center gap-3"
                   >
-                    <span
-                      aria-hidden
-                      className={`inline-block size-2.5 shrink-0 rounded-full ${vibe.dot}`}
-                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-muted-foreground">
                           {vibe.label}
                         </span>
                         <span className="text-xs text-muted-foreground/60">·</span>
-                        <span className="text-xs text-muted-foreground">
-                          {statusLabel}
-                        </span>
+                        <span className="text-xs text-muted-foreground">{statusLabel}</span>
                       </div>
-                      <p className="mt-0.5 truncate text-sm font-medium">
-                        {d.title}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Atualizado {humanTime(d.updated_at ?? d.created_at)}
+                      <p className="mt-0.5 truncate text-sm font-medium">{d.title}</p>
+                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                        {d.description
+                          ? d.description
+                          : `Atualizado ${humanTime(d.updated_at ?? d.created_at)}`}
                       </p>
                     </div>
                     <Button
