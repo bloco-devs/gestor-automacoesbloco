@@ -78,7 +78,13 @@ export const DemandDetailInline = memo(function DemandDetailInline({ demand }: P
           <Badge variant="outline" className="text-xs">
             {cpx.label}
           </Badge>
-          <SLAIndicator status={demand.sla_status} dueAt={demand.sla_due_at} />
+          <SLAIndicator
+            slaDueAt={demand.sla_due_at}
+            slaStatus={demand.sla_status}
+            demandStatus={demand.status}
+            createdAt={demand.created_at}
+            size="sm"
+          />
           <div className="ml-auto flex items-center gap-2">
             <Select
               value={demand.status}
