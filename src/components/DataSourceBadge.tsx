@@ -1,11 +1,32 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
+export type DataSourceVariant = "hub" | "local" | "seed" | "match-ia" | "importado";
+
 interface Props {
-  source: string;
+  /** Etiqueta livre (legado). Se `variant` não for informado, é exibida como fonte. */
+  source?: string;
+  /** Fonte semântica; controla texto e cor. */
+  variant?: DataSourceVariant;
   updatedAt?: string | Date;
   className?: string;
 }
+
+const VARIANT_LABEL: Record<DataSourceVariant, string> = {
+  hub: "HUB Bloco ID",
+  local: "Local",
+  seed: "Semente (offline)",
+  "match-ia": "Sugestão IA",
+  importado: "Importado",
+};
+
+const VARIANT_CLASSES: Record<DataSourceVariant, string> = {
+  hub: "border-primary/40 text-primary",
+  local: "border-border text-foreground/80",
+  seed: "border-amber-500/40 text-amber-700 dark:text-amber-400",
+  "match-ia": "border-violet-500/40 text-violet-700 dark:text-violet-400",
+  importado: "border-blue-500/40 text-blue-700 dark:text-blue-400",
+};
 
 function relativeTime(d: Date): string {
   const diff = Date.now() - d.getTime();
@@ -22,12 +43,22 @@ function relativeTime(d: Date): string {
   return `há ${years} ano${years === 1 ? "" : "s"}`;
 }
 
-export function DataSourceBadge({ source, updatedAt, className }: Props) {
+/**
+ * Badge único para indicar a origem de um dado no Ecossistema:
+ * HUB / Local / Semente / Sugestão IA / Importado.
+ * Compatível com uso legado (`source` livre) quando `variant` não é passado.
+ */
+export function DataSourceBadge({ source, variant, updatedAt, className }: Props) {
   const date = updatedAt ? (updatedAt instanceof Date ? updatedAt : new Date(updatedAt)) : null;
   const rel = date && !Number.isNaN(date.getTime()) ? relativeTime(date) : null;
+  const label = variant ? VARIANT_LABEL[variant] : source ?? "";
+  const colorCls = variant ? VARIANT_CLASSES[variant] : "";
   return (
-    <Badge variant="outline" className={cn("text-[10px] font-normal py-0 px-1.5 h-5 gap-1", className)}>
-      <span className="text-muted-foreground">Fonte:</span> {source}
+    <Badge
+      variant="outline"
+      className={cn("text-[10px] font-normal py-0 px-1.5 h-5 gap-1", colorCls, className)}
+    >
+      <span className="text-muted-foreground">Fonte:</span> {label}
       {rel && <span className="text-muted-foreground"> · atualizado {rel}</span>}
     </Badge>
   );
