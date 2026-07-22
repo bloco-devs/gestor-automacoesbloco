@@ -131,6 +131,10 @@ async function fetchQuickArticles(): Promise<QuickArticle[]> {
 export default function Portal() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isFavorite, toggle: toggleFav, favorites } = useFavoriteDemands();
+  const [historySearch, setHistorySearch] = useState("");
+  const [showFavorites, setShowFavorites] = useState(false);
   const {
     phase,
     messages,
