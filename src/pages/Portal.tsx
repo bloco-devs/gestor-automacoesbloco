@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+  type KeyboardEvent,
+} from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,20 +16,24 @@ import {
   SendHorizontal,
   Loader2,
   ArrowRight,
-  Bug,
-  Lightbulb,
-  HelpCircle,
-  Cog,
   Search,
   BookOpen,
   Sparkles,
-  Clock,
+  Play,
+  CheckCircle2,
+  MessageSquare,
+  UploadCloud,
+  KeyRound,
+  Users,
+  DollarSign,
+  MonitorSmartphone,
+  Bot,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,7 +44,7 @@ import { ConversationFooter } from "@/components/ai-workspace/ConversationFooter
 import { PreviewPanel } from "@/components/ai-workspace/PreviewPanel";
 import { KnowledgeSuggestions } from "@/modules/knowledge";
 import { useDemands } from "@/modules/demands/hooks";
-import { STATUS_COLUMNS, type Demand } from "@/modules/demands/types";
+import { STATUS_COLUMNS, type Demand, type DemandStatus } from "@/modules/demands/types";
 import { supabase } from "@/integrations/supabase/client";
 
 // ---- Web Speech API (fallback silencioso) ---------------------------------
@@ -54,41 +66,42 @@ function getSpeech(): SpeechRecognitionCtor | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-// ---- Ações rápidas (linguagem 100% leiga) ---------------------------------
-const QUICK_PICKS = [
-  {
-    id: "problema",
-    icon: Bug,
-    title: "Reportar um problema",
-    hint: "Algo parou de funcionar",
-    prompt: "Quero relatar um problema: ",
-    tone: "bg-red-500/10 text-red-600 dark:text-red-400",
-  },
-  {
-    id: "melhoria",
-    icon: Lightbulb,
-    title: "Sugerir uma melhoria",
-    hint: "Uma ideia para melhorar o dia a dia",
-    prompt: "Tenho uma sugestão de melhoria: ",
-    tone: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  },
-  {
-    id: "duvida",
-    icon: HelpCircle,
-    title: "Tirar uma dúvida",
-    hint: "Preciso de uma orientação",
-    prompt: "Tenho uma dúvida sobre: ",
-    tone: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
-  },
-  {
-    id: "automacao",
-    icon: Cog,
-    title: "Pedir uma automação",
-    hint: "Automatizar um processo repetitivo",
-    prompt: "Preciso automatizar o seguinte processo: ",
-    tone: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
-  },
-] as const;
+// ---- Exemplos estilo ChatGPT ---------------------------------------------
+const EXAMPLES = [
+  "Não consigo acessar o sistema RH",
+  "Preciso de um relatório financeiro",
+  "Quero automatizar um processo",
+  "Meu computador não liga",
+];
+
+// ---- Categorias humanizadas para a Central --------------------------------
+const CATEGORIAS = [
+  { label: "Acessos", icon: KeyRound, tone: "text-amber-600 dark:text-amber-400 bg-amber-500/10" },
+  { label: "Portal RH", icon: Users, tone: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10" },
+  { label: "Financeiro", icon: DollarSign, tone: "text-sky-600 dark:text-sky-400 bg-sky-500/10" },
+  { label: "TI", icon: MonitorSmartphone, tone: "text-violet-600 dark:text-violet-400 bg-violet-500/10" },
+  { label: "Automação", icon: Bot, tone: "text-fuchsia-600 dark:text-fuchsia-400 bg-fuchsia-500/10" },
+  { label: "Administrativo", icon: Building2, tone: "text-slate-600 dark:text-slate-300 bg-slate-500/10" },
+];
+
+// ---- Status "amigável" para o histórico -----------------------------------
+function statusVibe(status: DemandStatus): { label: string; dot: string; done: boolean } {
+  if (status === "concluido") return { label: "Concluído", dot: "bg-emerald-500", done: true };
+  if (status === "backlog") return { label: "Recebida", dot: "bg-slate-400", done: false };
+  return { label: "Em andamento", dot: "bg-amber-500", done: false };
+}
+
+function humanTime(iso: string): string {
+  const d = new Date(iso).getTime();
+  const diff = Date.now() - d;
+  const h = Math.floor(diff / 3_600_000);
+  if (h < 1) return "há poucos minutos";
+  if (h < 24) return `há ${h} hora${h > 1 ? "s" : ""}`;
+  const days = Math.floor(h / 24);
+  if (days === 1) return "ontem";
+  if (days < 7) return `há ${days} dias`;
+  return new Date(iso).toLocaleDateString("pt-BR");
+}
 
 // ---- Base de conhecimento (leve, no rodapé) -------------------------------
 interface QuickArticle {
@@ -105,7 +118,7 @@ async function fetchQuickArticles(): Promise<QuickArticle[]> {
     .select("id, titulo, resumo, categoria, url_externa, updated_at")
     .eq("status", "publicado")
     .order("updated_at", { ascending: false })
-    .limit(6);
+    .limit(8);
   if (error) return [];
   return (data ?? []) as QuickArticle[];
 }
@@ -133,13 +146,22 @@ export default function Portal() {
   const [draft, setDraft] = useState("");
   const [kbQuery, setKbQuery] = useState("");
   const [listening, setListening] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [attached, setAttached] = useState<string[]>([]);
   const recognitionRef = useRef<InstanceType<SpeechRecognitionCtor> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const saudacao = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Bom dia";
+    if (h < 18) return "Boa tarde";
+    return "Boa noite";
+  }, []);
   const nome = (user?.nome ?? "").split(" ")[0];
   const started = phase !== "welcome";
   const showPreview = phase === "preview" || phase === "submitting";
+  const submitting = phase === "submitting";
   const processing = phase === "processing";
 
   useEffect(() => () => recognitionRef.current?.stop(), []);
@@ -156,14 +178,8 @@ export default function Portal() {
 
   const myRequests = useMemo<Demand[]>(() => {
     if (!user?.id) return [];
-    return demands.filter((d) => d.created_by === user.id).slice(0, 5);
+    return demands.filter((d) => d.created_by === user.id).slice(0, 3);
   }, [demands, user?.id]);
-
-  const categorias = useMemo(() => {
-    const set = new Set<string>();
-    for (const a of articles) if (a.categoria) set.add(a.categoria);
-    return Array.from(set).slice(0, 6);
-  }, [articles]);
 
   const filteredArticles = useMemo(() => {
     const q = kbQuery.trim().toLowerCase();
@@ -181,6 +197,7 @@ export default function Portal() {
     if (!t) return;
     sendMessage(t);
     setDraft("");
+    setAttached([]);
   }
 
   function handleKey(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -190,8 +207,8 @@ export default function Portal() {
     }
   }
 
-  function pickQuick(prompt: string) {
-    setDraft((d) => (d ? d : prompt));
+  function pickExample(text: string) {
+    setDraft(text);
     setTimeout(() => textareaRef.current?.focus(), 0);
   }
 
@@ -231,34 +248,51 @@ export default function Portal() {
     }
   }
 
+  function addFiles(files: File[]) {
+    if (!files.length) return;
+    setAttached((prev) => [...prev, ...files.map((f) => f.name)].slice(0, 8));
+    toast({
+      title: `${files.length} arquivo(s) prontos`,
+      description: "Serão anexados assim que a solicitação for criada.",
+    });
+  }
+
   function handleFiles(e: ChangeEvent<HTMLInputElement>) {
     const files = e.target.files ? Array.from(e.target.files) : [];
-    if (!files.length) return;
-    toast({
-      title: `${files.length} arquivo(s) selecionado(s)`,
-      description: "Você poderá anexá-los na sua solicitação assim que ela for criada.",
-    });
+    addFiles(files);
     e.target.value = "";
   }
 
-  // ===== Etapa 2+: conversa / preview — reusa AI Workspace ================
+  function handleDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files ?? []);
+    addFiles(files);
+  }
+
+  // ===== Etapa 2+: conversa / preview =====================================
   if (started) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 py-4">
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Estamos entendendo sua solicitação
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Responda em poucas palavras. Você poderá revisar tudo antes de enviar.
-          </p>
-        </header>
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6">
+        {!submitting && (
+          <header className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Estamos entendendo sua solicitação
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Responda com suas próprias palavras. Você poderá revisar tudo antes de enviar.
+            </p>
+          </header>
+        )}
 
         {!showPreview && (
           <>
             <ChatContainer messages={messages} thinking={thinking} />
             {processing && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+              <div
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+                role="status"
+              >
                 <Loader2 className="size-4 animate-spin" /> Organizando sua solicitação…
               </div>
             )}
@@ -272,7 +306,7 @@ export default function Portal() {
           </>
         )}
 
-        {showPreview && preview && (
+        {showPreview && preview && !submitting && (
           <PreviewPanel
             preview={preview}
             score={previewScore}
@@ -282,44 +316,94 @@ export default function Portal() {
             onConfirm={confirmSubmit}
             onCancel={reset}
             onBackToChat={goBackToChat}
-            submitting={phase === "submitting"}
+            submitting={false}
           />
+        )}
+
+        {/* 7 · Pós envio — tela "Perfeito" enquanto grava/redireciona */}
+        {submitting && (
+          <div className="rounded-3xl border border-border bg-card p-8 text-center shadow-elev-1">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="size-8" />
+            </div>
+            <h2 className="mt-4 text-2xl font-semibold tracking-tight">Perfeito.</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Já entendemos seu problema. Agora iremos:
+            </p>
+            <ul className="mx-auto mt-5 max-w-sm space-y-2 text-left text-sm">
+              {[
+                "classificar",
+                "procurar soluções",
+                "encontrar o responsável",
+                "iniciar o atendimento",
+              ].map((s) => (
+                <li key={s} className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-emerald-500" /> {s}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-5 text-xs text-muted-foreground">
+              Você poderá acompanhar tudo em tempo real.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" /> Abrindo suas solicitações…
+            </div>
+          </div>
         )}
       </div>
     );
   }
 
-  // ===== Home do Portal (v2) ==============================================
+  // ===== Home do Portal (v3) ==============================================
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-14 px-4 py-10 sm:py-16">
-      {/* 1 · Boas-vindas */}
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-16 px-4 py-10 sm:py-20">
+      {/* 1 · Hero */}
       <header className="space-y-3 text-center">
         <p className="text-base font-medium text-muted-foreground">
-          {nome ? `Olá, ${nome} 👋` : "Olá 👋"}
+          {saudacao}
+          {nome ? `, ${nome}` : ""}.
         </p>
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-          Como podemos ajudar você hoje?
+          Como posso ajudar você hoje?
         </h1>
-        <p className="text-base text-muted-foreground">
-          Conte com suas palavras. Nós cuidamos do resto.
-        </p>
       </header>
 
-      {/* 2 · Grande caixa de conversa */}
-      <section aria-label="Descreva o que aconteceu" className="space-y-3">
-        <div className="rounded-3xl border border-border bg-card p-4 shadow-elev-1 transition focus-within:shadow-elev-2 focus-within:ring-2 focus-within:ring-ring/40">
+      {/* 2 · Grande caixa de conversa (drag & drop) */}
+      <section aria-label="Descreva o que aconteceu" className="space-y-4">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          className={`rounded-3xl border bg-card p-4 shadow-elev-1 transition focus-within:shadow-elev-2 focus-within:ring-2 focus-within:ring-ring/40 ${
+            dragOver ? "border-primary/60 ring-2 ring-primary/30" : "border-border"
+          }`}
+        >
           <Textarea
             ref={textareaRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKey}
             placeholder="Descreva o que aconteceu…"
-            rows={4}
+            rows={5}
             aria-label="Descreva o que aconteceu"
-            className="min-h-[130px] resize-none border-0 bg-transparent px-3 text-base shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
+            className="min-h-[160px] resize-none border-0 bg-transparent px-3 text-base shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
             autoFocus
           />
-          <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/60 pt-3">
+
+          {attached.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5 px-1">
+              {attached.map((n) => (
+                <Badge key={n} variant="secondary" className="max-w-[16rem] truncate">
+                  <Paperclip className="mr-1 size-3" /> {n}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
             <div className="flex items-center gap-1">
               <Button
                 type="button"
@@ -372,6 +456,21 @@ export default function Portal() {
           </div>
         </div>
 
+        {/* 5 · Área de upload sugerida */}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-card/40 px-4 py-4 text-sm text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+        >
+          <UploadCloud className="size-5" />
+          <span>
+            Arraste imagens, PDF, prints ou vídeos aqui — ou{" "}
+            <span className="font-medium text-foreground underline underline-offset-4">
+              clique para escolher
+            </span>
+          </span>
+        </button>
+
         <KnowledgeSuggestions
           query={draft}
           origin="portal"
@@ -384,95 +483,111 @@ export default function Portal() {
             });
           }}
         />
-      </section>
 
-      {/* 3 · Sugestões rápidas */}
-      <section aria-labelledby="quick-picks" className="space-y-4">
-        <h2
-          id="quick-picks"
-          className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-        >
-          Sugestões
-        </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {QUICK_PICKS.map((q) => {
-            const Icon = q.icon;
-            return (
+        {/* Exemplos */}
+        <div className="flex flex-col items-center gap-2 pt-2">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Exemplos
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {EXAMPLES.map((ex) => (
               <button
-                key={q.id}
+                key={ex}
                 type="button"
-                onClick={() => pickQuick(q.prompt)}
-                className="group flex flex-col items-start gap-3 rounded-2xl border border-border bg-card p-5 text-left transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elev-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={() => pickExample(ex)}
+                className="rounded-full border border-border bg-card px-3.5 py-1.5 text-sm text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
               >
-                <span
-                  aria-hidden
-                  className={`flex size-11 items-center justify-center rounded-xl ${q.tone}`}
-                >
-                  <Icon className="size-5" />
-                </span>
-                <span className="space-y-0.5">
-                  <span className="block text-sm font-semibold leading-tight">
-                    {q.title}
-                  </span>
-                  <span className="block text-xs text-muted-foreground">{q.hint}</span>
-                </span>
+                {ex}
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* 4 · Minhas últimas solicitações */}
-      <section aria-labelledby="my-requests" className="space-y-4">
+      {/* 3 · Continue de onde parou */}
+      <section aria-labelledby="continue" className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2
-            id="my-requests"
-            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground inline-flex items-center gap-2"
-          >
-            <Clock className="size-3.5" /> Minhas últimas solicitações
+          <h2 id="continue" className="text-lg font-semibold tracking-tight">
+            Continue de onde parou
           </h2>
-          <Link
-            to="/minhas-solicitacoes"
-            className="inline-flex items-center gap-1 text-xs font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
-          >
-            Ver todas <ArrowRight className="size-3" />
-          </Link>
+          {myRequests.length > 0 && (
+            <Link
+              to="/minhas-solicitacoes"
+              className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Ver todas <ArrowRight className="size-3.5" />
+            </Link>
+          )}
         </div>
 
         {loadingDemands ? (
           <div className="space-y-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full" />
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full rounded-2xl" />
             ))}
           </div>
         ) : myRequests.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">
-            Você ainda não tem solicitações. Comece descrevendo o que precisa lá em cima. ✨
+          <div className="rounded-2xl border border-dashed border-border bg-card/40 px-6 py-10 text-center">
+            <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <MessageSquare className="size-5" />
+            </div>
+            <p className="mt-3 text-sm font-medium">
+              Você ainda não possui solicitações.
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Quando precisar de ajuda, basta conversar comigo. 😊
+            </p>
           </div>
         ) : (
           <ul className="space-y-2">
             {myRequests.map((d) => {
-              const status = STATUS_COLUMNS.find((s) => s.id === d.status);
+              const vibe = statusVibe(d.status);
+              const isDone = vibe.done;
+              const statusLabel =
+                STATUS_COLUMNS.find((s) => s.id === d.status)?.label ?? d.status;
               return (
                 <li key={d.id}>
                   <Link
                     to="/minhas-solicitacoes"
-                    className="block rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-elev-1"
+                    className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-elev-1"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{d.title}</p>
-                        <div className="mt-1.5 flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            {status?.label ?? d.status}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(d.created_at).toLocaleDateString("pt-BR")}
-                          </span>
-                        </div>
+                    <span
+                      aria-hidden
+                      className={`inline-block size-2.5 shrink-0 rounded-full ${vibe.dot}`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {vibe.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground/60">·</span>
+                        <span className="text-xs text-muted-foreground">
+                          {statusLabel}
+                        </span>
                       </div>
-                      <ArrowRight className="size-4 text-muted-foreground" />
+                      <p className="mt-0.5 truncate text-sm font-medium">
+                        {d.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Atualizado {humanTime(d.updated_at ?? d.created_at)}
+                      </p>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 gap-1"
+                      tabIndex={-1}
+                    >
+                      {isDone ? (
+                        <>
+                          Ver conversa <ArrowRight className="size-3.5" />
+                        </>
+                      ) : (
+                        <>
+                          <Play className="size-3.5" /> Continuar
+                        </>
+                      )}
+                    </Button>
                   </Link>
                 </li>
               );
@@ -481,20 +596,20 @@ export default function Portal() {
         )}
       </section>
 
-      {/* 5 · Central de Soluções (rodapé, leve) */}
-      <section aria-labelledby="kb" className="space-y-4">
+      {/* 8 · Central de soluções (Notion-like) */}
+      <section aria-labelledby="kb" className="space-y-5">
         <div className="flex items-center justify-between">
           <h2
             id="kb"
-            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground inline-flex items-center gap-2"
+            className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"
           >
-            <BookOpen className="size-3.5" /> Central de soluções
+            <BookOpen className="size-4" /> Pesquisar ajuda
           </h2>
           <Link
             to="/portal/central"
-            className="inline-flex items-center gap-1 text-xs font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
+            className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
           >
-            Explorar tudo <ArrowRight className="size-3" />
+            Explorar tudo <ArrowRight className="size-3.5" />
           </Link>
         </div>
 
@@ -509,31 +624,43 @@ export default function Portal() {
           />
         </div>
 
-        {categorias.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {categorias.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setKbQuery(c)}
-                className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
-              >
-                {c}
-              </button>
-            ))}
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Categorias
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {CATEGORIAS.map((c) => {
+              const Icon = c.icon;
+              return (
+                <button
+                  key={c.label}
+                  type="button"
+                  onClick={() => setKbQuery(c.label)}
+                  className="group flex items-center gap-3 rounded-2xl border border-border bg-card p-3 text-left transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elev-1"
+                >
+                  <span
+                    aria-hidden
+                    className={`flex size-9 items-center justify-center rounded-xl ${c.tone}`}
+                  >
+                    <Icon className="size-4" />
+                  </span>
+                  <span className="text-sm font-medium">{c.label}</span>
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
 
         {loadingArticles ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 w-full" />
+              <Skeleton key={i} className="h-28 w-full rounded-2xl" />
             ))}
           </div>
         ) : filteredArticles.length === 0 ? (
-          <p className="text-sm italic text-muted-foreground">
-            Nenhum artigo por aqui ainda.
-          </p>
+          <div className="rounded-2xl border border-dashed border-border bg-card/40 p-6 text-center text-sm text-muted-foreground">
+            Nenhum artigo por aqui ainda. Assim que houver, aparecerá neste espaço. ✨
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {filteredArticles.slice(0, 6).map((a) => {
@@ -545,30 +672,22 @@ export default function Portal() {
                   href={href}
                   target={external ? "_blank" : undefined}
                   rel={external ? "noopener noreferrer" : undefined}
-                  className="group rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-elev-1"
+                  className="group flex flex-col gap-2 rounded-2xl border border-border bg-card p-5 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elev-2"
                 >
-                  <div className="flex items-start gap-3">
-                    <span
-                      aria-hidden
-                      className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                    >
-                      <Sparkles className="size-4" />
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+                    <Sparkles className="size-3.5" /> Artigo recomendado
+                  </div>
+                  <p className="line-clamp-2 text-base font-semibold leading-tight group-hover:underline">
+                    {a.titulo}
+                  </p>
+                  {a.resumo && (
+                    <p className="line-clamp-2 text-sm text-muted-foreground">{a.resumo}</p>
+                  )}
+                  <div className="mt-auto flex items-center justify-between pt-2">
+                    <span className="text-xs text-muted-foreground">Leitura: 2 minutos</span>
+                    <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                      Resolver agora <ArrowRight className="size-3.5" />
                     </span>
-                    <div className="min-w-0">
-                      <p className="line-clamp-2 text-sm font-medium leading-tight group-hover:underline">
-                        {a.titulo}
-                      </p>
-                      {a.resumo && (
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                          {a.resumo}
-                        </p>
-                      )}
-                      {a.categoria && (
-                        <Badge variant="outline" className="mt-2 text-[10px]">
-                          {a.categoria}
-                        </Badge>
-                      )}
-                    </div>
                   </div>
                 </a>
               );
