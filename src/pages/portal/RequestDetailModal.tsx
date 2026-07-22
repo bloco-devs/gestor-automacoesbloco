@@ -64,7 +64,11 @@ export function RequestDetailModal({ demand, open, onOpenChange }: Props) {
                     Linha do tempo
                   </h3>
                   <div className="rounded-2xl border border-border bg-card/40 p-4">
-                    <RequestStepper status={demand.status} />
+                    <RequestStepper
+                      status={demand.status}
+                      responsavel={demand.assigned_to}
+                      updatedAt={demand.updated_at}
+                    />
                   </div>
                 </section>
 
