@@ -5,7 +5,6 @@ import { listDemands, getUserWorkloads, getProfilesByIds } from "@/modules/deman
 import { computeMetrics, fetchDeflectionStats } from "@/modules/dashboard/service";
 import { listNotifications } from "@/modules/notifications/service";
 import type { Demand, UserProfileLite } from "@/modules/demands/types";
-import type { UserWorkload } from "@/modules/demands/service";
 import {
   buildBuckets,
   fetchRecentActivity,
