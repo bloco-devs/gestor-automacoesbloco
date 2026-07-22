@@ -58,6 +58,7 @@ import {
 } from "../types";
 import { cn } from "@/lib/utils";
 import { SLAIndicator } from "./SLAIndicator";
+import { RoutingSuggestionCard, useRoutingSuggestions } from "@/modules/routing";
 import { DemandTimeline } from "./DemandTimeline";
 import { MessageSquare, Wand2 } from "lucide-react";
 
