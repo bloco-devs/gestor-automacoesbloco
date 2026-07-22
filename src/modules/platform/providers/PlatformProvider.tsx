@@ -116,9 +116,14 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   // Hotkeys globais: mod+k abre palette; comandos com shortcut também respondem.
   const bindings = useMemo(() => {
     const base = [
+      { combo: "mod+k", handler: () => togglePalette() },
+      { combo: "?", handler: () => setHelpOpen((v) => !v) },
       {
-        combo: "mod+k",
-        handler: () => togglePalette(),
+        combo: "mod+.",
+        handler: () => {
+          if (typeof window !== "undefined")
+            window.dispatchEvent(new CustomEvent("platform:toggle-sidebar"));
+        },
       },
     ];
     const cmds = commandRegistry
