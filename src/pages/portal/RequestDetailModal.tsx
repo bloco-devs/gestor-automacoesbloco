@@ -60,6 +60,15 @@ export function RequestDetailModal({ demand, open, onOpenChange }: Props) {
                 )}
 
                 <section>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                    Linha do tempo
+                  </h3>
+                  <div className="rounded-2xl border border-border bg-card/40 p-4">
+                    <RequestStepper status={demand.status} />
+                  </div>
+                </section>
+
+                <section>
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
                     Andamento e mensagens
                   </h3>
