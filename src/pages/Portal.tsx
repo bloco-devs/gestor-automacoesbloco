@@ -293,14 +293,7 @@ export default function Portal() {
         {!showPreview && (
           <>
             <ChatContainer messages={messages} thinking={thinking} />
-            {processing && (
-              <div
-                className="flex items-center gap-2 text-sm text-muted-foreground"
-                role="status"
-              >
-                <Loader2 className="size-4 animate-spin" /> Organizando sua solicitação…
-              </div>
-            )}
+            {processing && <ThinkingSteps />}
             <ConversationInput
               onSend={sendMessage}
               disabled={thinking || processing}
