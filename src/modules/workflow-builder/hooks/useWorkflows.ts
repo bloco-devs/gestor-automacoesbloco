@@ -1,32 +1,19 @@
 /**
- * Store em memória com persistência opcional em localStorage.
- * SEM Supabase, SEM banco. Base para a futura Engine.
+ * Persistência de workflows — agora via Supabase (workflow_definitions).
+ * Mantém a API do hook original para compatibilidade com o Editor/Lista.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import type { WorkflowDefinition } from "../types";
 import { uid } from "../utils/id";
 import { emptyRootGroup } from "../validators/workflow";
-
-const STORAGE_KEY = "workflow-builder:drafts:v1";
-
-function readStore(): WorkflowDefinition[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as WorkflowDefinition[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeStore(list: WorkflowDefinition[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  } catch {
-    /* silent */
-  }
-}
+import {
+  useCreateWorkflow,
+  useDeleteWorkflow,
+  useDuplicateWorkflow,
+  useUpdateWorkflow,
+  useWorkflowDefinitions,
+} from "@/modules/workflow-runtime/hooks";
+import { getWorkflow } from "@/modules/workflow-runtime/service";
 
 export function makeEmptyWorkflow(author = "Você"): WorkflowDefinition {
   const now = new Date().toISOString();
@@ -48,83 +35,30 @@ export function makeEmptyWorkflow(author = "Você"): WorkflowDefinition {
   };
 }
 
-const listeners = new Set<() => void>();
-function notify() {
-  for (const fn of listeners) fn();
-}
-
 export function useWorkflows() {
-  const [items, setItems] = useState<WorkflowDefinition[]>(() => readStore());
-
-  useEffect(() => {
-    const l = () => setItems(readStore());
-    listeners.add(l);
-    return () => {
-      listeners.delete(l);
-    };
-  }, []);
-
-  const persist = useCallback((next: WorkflowDefinition[]) => {
-    writeStore(next);
-    setItems(next);
-    notify();
-  }, []);
+  const { data: items = [], isLoading } = useWorkflowDefinitions();
+  const createMut = useCreateWorkflow();
+  const updateMut = useUpdateWorkflow();
+  const deleteMut = useDeleteWorkflow();
+  const duplicateMut = useDuplicateWorkflow();
 
   const create = useCallback(
-    (wf: WorkflowDefinition) => {
-      const next = [wf, ...readStore()];
-      persist(next);
-      return wf;
-    },
-    [persist],
+    (wf: WorkflowDefinition) => createMut.mutateAsync(wf),
+    [createMut],
   );
-
   const update = useCallback(
-    (wf: WorkflowDefinition) => {
-      const now = new Date().toISOString();
-      const prev = readStore();
-      const existing = prev.find((x) => x.id === wf.id);
-      const updated: WorkflowDefinition = {
-        ...wf,
-        version: existing ? existing.version + 1 : wf.version,
-        updated_at: now,
-      };
-      const next = existing
-        ? prev.map((x) => (x.id === wf.id ? updated : x))
-        : [updated, ...prev];
-      persist(next);
-      return updated;
-    },
-    [persist],
+    (wf: WorkflowDefinition) => updateMut.mutateAsync(wf),
+    [updateMut],
   );
-
   const remove = useCallback(
-    (id: string) => {
-      persist(readStore().filter((x) => x.id !== id));
-    },
-    [persist],
+    (id: string) => deleteMut.mutateAsync(id),
+    [deleteMut],
   );
-
   const duplicate = useCallback(
-    (id: string) => {
-      const src = readStore().find((x) => x.id === id);
-      if (!src) return null;
-      const clone: WorkflowDefinition = {
-        ...src,
-        id: uid("wf"),
-        name: `${src.name} (cópia)`,
-        version: 1,
-        enabled: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      persist([clone, ...readStore()]);
-      return clone;
-    },
-    [persist],
+    (id: string) => duplicateMut.mutateAsync(id),
+    [duplicateMut],
   );
+  const getById = useCallback((id: string) => getWorkflow(id), []);
 
-  const getById = useCallback((id: string) => readStore().find((x) => x.id === id) ?? null, []);
-
-  return { items, create, update, remove, duplicate, getById };
+  return { items, isLoading, create, update, remove, duplicate, getById };
 }
