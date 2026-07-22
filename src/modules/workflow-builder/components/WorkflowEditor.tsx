@@ -34,16 +34,20 @@ export function WorkflowEditor({ initial }: Props) {
   const patch = <K extends keyof WorkflowDefinition>(k: K, v: WorkflowDefinition[K]) =>
     setWf((prev) => ({ ...prev, [k]: v }));
 
-  const onSave = () => {
+  const onSave = async () => {
     if (errors.length) {
       toast.error("Revise os campos antes de salvar", { description: errors[0].message });
       return;
     }
-    const saved = isNew ? create(wf) : update(wf);
-    toast.success(isNew ? "Workflow criado" : "Workflow atualizado", {
-      description: `Versão ${saved.version}`,
-    });
-    nav("/admin/workflows");
+    try {
+      const saved = isNew ? await create(wf) : await update(wf);
+      toast.success(isNew ? "Workflow criado" : "Workflow atualizado", {
+        description: `Versão ${saved.version}`,
+      });
+      nav("/admin/workflows");
+    } catch (err) {
+      toast.error("Falha ao salvar", { description: (err as Error).message });
+    }
   };
 
   return (
