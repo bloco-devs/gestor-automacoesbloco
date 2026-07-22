@@ -142,8 +142,10 @@ const App = () => (
           <ContextProvider>
             <LanguageProvider>
               <PlatformProvider>
-                <RecoveryGuard />
-                <AppRoutes />
+                <WorkflowRuntimeProvider>
+                  <RecoveryGuard />
+                  <AppRoutes />
+                </WorkflowRuntimeProvider>
               </PlatformProvider>
             </LanguageProvider>
           </ContextProvider>
