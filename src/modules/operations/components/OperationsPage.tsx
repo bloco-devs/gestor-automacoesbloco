@@ -8,6 +8,7 @@ import { LiveActivity } from "./LiveActivity";
 import { MetricCard } from "./MetricCard";
 import { TeamWorkload } from "./TeamWorkload";
 import { UnassignedQueueCard } from "@/modules/routing";
+import { WorkflowsOpsCard } from "@/modules/workflow-builder";
 
 function fmtHours(h: number | null): string {
   if (h == null) return "—";
@@ -100,9 +101,14 @@ export function OperationsPage() {
         <LiveActivity items={data?.activity ?? []} profiles={profiles} />
       </section>
 
-      {/* Smart Routing — fila sem responsável com sugestão da IA */}
-      <section>
-        <UnassignedQueueCard />
+      {/* Smart Routing + Workflows */}
+      <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="xl:col-span-2">
+          <UnassignedQueueCard />
+        </div>
+        <div>
+          <WorkflowsOpsCard />
+        </div>
       </section>
     </div>
   );

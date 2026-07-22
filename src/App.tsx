@@ -56,6 +56,8 @@ import Demandas from "./pages/admin/Demandas";
 import AdminDashboard from "./pages/admin/Dashboard";
 import SLAPolicies from "./pages/admin/SLAPolicies";
 import WebhooksAdmin from "./pages/admin/Webhooks";
+import WorkflowsPage from "./pages/admin/Workflows";
+import WorkflowEditorPage from "./pages/admin/WorkflowEditor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -105,6 +107,9 @@ const AppRoutes = () => {
         <Route path="/admin/dashboard" element={<ProtectedRoute role="developer"><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/configuracoes/sla" element={<ProtectedRoute role="developer"><SLAPolicies /></ProtectedRoute>} />
         <Route path="/admin/configuracoes/webhooks" element={<ProtectedRoute role="developer"><WebhooksAdmin /></ProtectedRoute>} />
+        <Route path="/admin/workflows" element={<ProtectedRoute role="developer"><WorkflowsPage /></ProtectedRoute>} />
+        <Route path="/admin/workflows/novo" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
+        <Route path="/admin/workflows/:id" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
 
         {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
         <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
