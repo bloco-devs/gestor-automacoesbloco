@@ -201,3 +201,77 @@ Refinamento aditivo em `src/components/ui/`. **Nenhuma API pública alterada**; 
 - Zero mudanças em módulos, páginas, hooks, providers, engines, rotas.
 - APIs, props e exports 100% preservados.
 - 167/167 testes verdes.
+
+## Onda 3 — Sidebar Inteligente + Navegação Consolidada
+
+Reorganização puramente visual do menu lateral. Nenhuma rota, permissão, página, hook, provider ou engine foi alterada.
+
+### Estrutura da Sidebar
+Os itens de navegação passam a ser distribuídos em grupos temáticos, cada um com título, ícone Lucide e conteúdo colapsável com animação suave (grid-rows transition, `duration-200 ease-out`).
+
+Grupos por papel (definidos em `src/components/sidebar/navGroups.ts`):
+
+- **Developer/Admin**
+  - `Trabalho`: Inbox, Dashboard, Solicitações (Lista/Kanban/Gantt), Atividades
+  - `Atendimento`: Base de Conhecimento, Board de Demandas, Centro de Operações
+  - `Automações`: Workflows, Soluções (Lista/Kanban/Gantt), Diagrama, Observabilidade IA, Consolidação
+  - `Administração`: Dashboard (Operação), Configuração de SLA, Webhooks & Integrações, Configurações
+  - `Suporte`: Ajuda
+- **Requester**
+  - `Trabalho`: Portal, Inbox, Dashboard, Minhas Solicitações, Nova Solicitação, Solicitações
+  - `Suporte`: Ajuda
+- **Builder**
+  - `Trabalho`: Inbox, Dashboard, Minhas Solicitações, Nova Solicitação, Solicitações
+  - `Automações`: Soluções, Diagrama
+  - `Suporte`: Ajuda
+
+Todos os menus existentes foram preservados; apenas o agrupamento mudou.
+
+### Componentes
+- `src/components/sidebar/navGroups.ts` — configuração declarativa dos grupos e helper `findActive(groups, pathname)`.
+- `src/components/sidebar/SidebarGroupsNav.tsx` — renderiza grupos + itens; memoizado para evitar renders extras.
+- `src/components/sidebar/SidebarBreadcrumb.tsx` — breadcrumb automático `Grupo › Item › Sub-item` derivado da rota atual.
+
+### Comportamento
+- Grupo que contém a rota atual: **expandido automaticamente**.
+- Demais grupos: **colapsados por padrão**.
+- Toggle manual sobrescreve a preferência (persistida). Ao navegar para um grupo colapsado, ele reabre.
+
+### Persistência
+- Chave: `ds2:sidebar:<grupoId>` (`"1"` = aberto, `"0"` = fechado).
+- Nenhuma outra chave de `localStorage` foi alterada. `app:sidebarWidth`, `app:sidebarHidden` e as demais permanecem intactas.
+
+### Header + Breadcrumb
+- Novo cabeçalho fixo (desktop) com `SidebarBreadcrumb` sobre `backdrop-blur` + borda `border-b/60`.
+- Cabeçalho mobile mantém trigger de drawer, notificações, tour, tema e logout.
+
+### Hierarquia visual
+- Página atual: `bg-sidebar-accent` + borda + `aria-current="page"`.
+- Grupo atual: label e ícone com contraste normal; grupos inativos ficam em `text-muted-foreground` e itens com opacidade reduzida (`dim`).
+- Ações principais (perfil, notificações, sair) permanecem no rodapé da sidebar.
+
+### Ícones
+- Somente Lucide. Tamanho unificado (`size-3.5`/`size-4`) e alinhamento consistente em todos os grupos e itens.
+
+### Responsividade
+- **Desktop**: sidebar tradicional redimensionável (persistência `app:sidebarWidth`).
+- **Tablet/Mobile**: drawer com overlay (`fixed inset-y-0 left-0 w-72`), fecha ao navegar.
+- Botão "Esconder barra lateral" continua disponível no desktop, com botão flutuante para reexibir.
+
+### Acessibilidade
+- Cada grupo: `aria-expanded`, `aria-controls`, `aria-label` descritivo.
+- Itens de menu: `aria-current="page"` quando ativos.
+- `focus-visible:ring-2 ring-ring/60` em todos os elementos interativos da sidebar.
+- Toda a navegação por teclado herdada (Tab / Enter / setas do resizer) preservada.
+
+### Performance
+- `SidebarGroupsNav` é `React.memo`; cada grupo mantém seu próprio estado local.
+- `findActive` roda em `useMemo` por render de sidebar; O(grupos × itens) — trivial.
+
+### Nota sobre reordenação por drag
+O drag-and-drop de itens de topo da Onda anterior foi **superado** pela nova arquitetura de grupos. A ordem passa a ser semântica (por grupo) em vez de personalizada. Isso não altera regras de negócio nem esconde funcionalidades — todas as rotas continuam alcançáveis.
+
+### Garantias
+- Todas as rotas preservadas (nenhuma alteração em `App.tsx`).
+- Nenhum hook, provider, engine, service ou edge function alterado.
+- Typecheck limpo. 167/167 testes verdes.
