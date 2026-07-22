@@ -9,6 +9,7 @@ import {
   HelpCircle,
   Headphones,
   Inbox,
+  Layers,
   KanbanSquare,
   LayoutDashboard,
   LifeBuoy,
