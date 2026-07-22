@@ -11,6 +11,7 @@ import QuickActions from "./QuickActions";
 import InsightsPanel from "./InsightsPanel";
 import EmptyInbox from "./EmptyInbox";
 import LoadingInbox from "./LoadingInbox";
+import { SuggestedForMe } from "@/modules/routing";
 
 export default function InboxPage() {
   const { user } = useAuth();
@@ -57,6 +58,7 @@ export default function InboxPage() {
             <RecentActivity items={recent} />
           </div>
           <aside className="space-y-6" aria-label="Insights e atalhos">
+            <SuggestedForMe />
             <QuickActions />
             <InsightsPanel insights={insights} />
           </aside>
