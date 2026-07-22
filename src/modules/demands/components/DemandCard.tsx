@@ -43,6 +43,7 @@ export function DemandCard({ demand, onStatusChange, onDelete, onOpen, canDelete
     () => (demand.assigned_to ? demand.assigned_to.slice(0, 2).toUpperCase() : null),
     [demand.assigned_to],
   );
+  const ignoredSuggestion = useMemo(() => hasIgnoredSuggestion(demand.id), [demand.id]);
 
   return (
     <Card
