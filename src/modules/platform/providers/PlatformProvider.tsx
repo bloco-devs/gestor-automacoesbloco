@@ -79,6 +79,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     : (user?.role as PlatformRole | undefined) ?? null;
 
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [recentIds, setRecentIds] = useState<string[]>(() => loadRecent());
   const recentRef = useRef(recentIds);
   recentRef.current = recentIds;
