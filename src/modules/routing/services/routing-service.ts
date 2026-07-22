@@ -1,7 +1,11 @@
 /**
  * Serviço — monta o CandidatePool a partir de dados já existentes.
- * Reusa: user_roles, profiles, get_user_workloads, demands.
+ * Reusa: profiles, get_user_workloads, demands.
  * Nenhuma nova tabela, RPC ou edge function.
+ *
+ * A equipe elegível é a união de:
+ *   1) atendentes com carga ativa (get_user_workloads)
+ *   2) atendentes com histórico de resolução nos últimos 90 dias
  */
 import { supabase } from "@/integrations/supabase/client";
 import { getUserWorkloads } from "@/modules/demands/service";
@@ -11,9 +15,6 @@ import type { Candidate } from "../types";
 
 const HISTORY_DAYS = 90;
 
-interface RoleRow {
-  user_id: string;
-}
 interface ProfileRow {
   id: string;
   nome: string | null;
@@ -31,20 +32,16 @@ interface ResolvedRow {
   updated_at: string;
 }
 
-async function fetchDevelopers(): Promise<ProfileRow[]> {
-  const { data: roles, error: rolesErr } = await supabase
-    .from("user_roles")
-    .select("user_id")
-    .eq("role", "developer");
-  if (rolesErr) throw rolesErr;
-  const ids = Array.from(new Set(((roles as RoleRow[] | null) ?? []).map((r) => r.user_id))).filter(Boolean);
-  if (ids.length === 0) return [];
-  const { data: profiles, error: pErr } = await supabase
+async function fetchProfiles(ids: string[]): Promise<Map<string, ProfileRow>> {
+  const map = new Map<string, ProfileRow>();
+  if (ids.length === 0) return map;
+  const { data, error } = await supabase
     .from("profiles")
     .select("id, nome, email, avatar_url")
     .in("id", ids);
-  if (pErr) throw pErr;
-  return (profiles as ProfileRow[] | null) ?? [];
+  if (error) return map;
+  for (const p of ((data as ProfileRow[] | null) ?? [])) map.set(p.id, p);
+  return map;
 }
 
 async function fetchRecentResolved(): Promise<ResolvedRow[]> {
@@ -60,23 +57,30 @@ async function fetchRecentResolved(): Promise<ResolvedRow[]> {
 }
 
 export async function buildCandidatePool(): Promise<Candidate[]> {
-  const [developers, workloads, resolved] = await Promise.all([
-    fetchDevelopers(),
+  const [workloads, resolved] = await Promise.all([
     getUserWorkloads().catch(() => []),
     fetchRecentResolved().catch(() => [] as ResolvedRow[]),
   ]);
 
-  const workloadMap = new Map(workloads.map((w) => [w.user_id, w]));
+  const ids = new Set<string>();
+  for (const w of workloads) ids.add(w.user_id);
+  for (const r of resolved) if (r.assigned_to) ids.add(r.assigned_to);
+
+  const workloadMap = new Map<string, (typeof workloads)[number]>();
+  for (const w of workloads) workloadMap.set(w.user_id, w);
+  const profiles = await fetchProfiles(Array.from(ids));
+
   const resolvedAsDemands = resolved as unknown as Demand[];
 
-  return developers.map<Candidate>((p) => {
-    const wl = workloadMap.get(p.id);
-    const hist = deriveHistory(p.id, resolvedAsDemands);
+  return Array.from(ids).map<Candidate>((userId) => {
+    const wl = workloadMap.get(userId);
+    const prof = profiles.get(userId);
+    const hist = deriveHistory(userId, resolvedAsDemands);
     return {
-      user_id: p.id,
-      nome: p.nome ?? wl?.nome ?? null,
-      email: p.email ?? wl?.email ?? null,
-      avatar_url: p.avatar_url ?? wl?.avatar_url ?? null,
+      user_id: userId,
+      nome: prof?.nome ?? wl?.nome ?? null,
+      email: prof?.email ?? wl?.email ?? null,
+      avatar_url: prof?.avatar_url ?? wl?.avatar_url ?? null,
       active_count: wl?.active_count ?? 0,
       ...hist,
     };
