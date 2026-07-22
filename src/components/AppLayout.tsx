@@ -24,6 +24,7 @@ import blocoLogo from "@/assets/bloco-logo.png";
 import { SidebarGroupsNav } from "@/components/sidebar/SidebarGroupsNav";
 import { SidebarBreadcrumb } from "@/components/sidebar/SidebarBreadcrumb";
 import { builderGroups, devGroups, requesterGroups } from "@/components/sidebar/navGroups";
+import { CopilotDock } from "@/modules/copilot/CopilotDock";
 
 const SIDEBAR_MIN = 160;
 const SIDEBAR_MAX = 480;
@@ -350,6 +351,7 @@ export default function AppLayout() {
           <OnboardingTour />
           <Outlet />
         </div>
+        <CopilotDock />
       </main>
     </div>
   );

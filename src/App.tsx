@@ -66,6 +66,10 @@ const WebhooksAdmin = lazy(() => import(/* webpackChunkName: "admin" */ "./pages
 const WorkflowsPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/Workflows"));
 const WorkflowEditorPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/WorkflowEditor"));
 const WorkflowExecutionsPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/WorkflowExecutions"));
+const AdminHub = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/AdminHub"));
+const SaudePage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Saude"));
+const AnalyticsPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Analytics"));
+const EcossistemaPage = lazy(() => import("./pages/Ecossistema"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -149,6 +153,10 @@ const AppRoutes = () => {
           <Route path="/admin/workflows/novo" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
           <Route path="/admin/workflows/execucoes" element={<ProtectedRoute role="developer"><WorkflowExecutionsPage /></ProtectedRoute>} />
           <Route path="/admin/workflows/:id" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute role="developer"><AdminHub /></ProtectedRoute>} />
+          <Route path="/admin/saude" element={<ProtectedRoute role="developer"><SaudePage /></ProtectedRoute>} />
+          <Route path="/admin/analytics" element={<ProtectedRoute role="developer"><AnalyticsPage /></ProtectedRoute>} />
+          <Route path="/ecossistema" element={<ProtectedRoute><EcossistemaPage /></ProtectedRoute>} />
 
           {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
           <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
