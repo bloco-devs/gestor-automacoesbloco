@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { ExternalLink, Layers, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,7 @@ import { SLAIndicator } from "@/modules/demands/components/SLAIndicator";
 import { DemandTimeline } from "@/modules/demands/components/DemandTimeline";
 import { DemandWorkflowsTab } from "@/modules/demands/components/DemandWorkflowsTab";
 import { DemandDetailDialog } from "@/modules/demands/components/DemandDetailDialog";
+import { useDemandQuickActions } from "@/modules/platform";
 
 interface Props {
   demand: Demand | null;
@@ -40,6 +41,29 @@ export const DemandDetailInline = memo(function DemandDetailInline({ demand }: P
   const updateStatus = useUpdateDemandStatus();
   const { data: profilesMap } = useDemandProfiles(demand ? [demand] : []);
   const [fullOpen, setFullOpen] = useState(false);
+  const [tab, setTab] = useState<"timeline" | "descricao" | "workflow">("timeline");
+
+  const handlers = useMemo(
+    () => ({
+      onComment: () => setTab("timeline"),
+      onWorkflow: () => setTab("workflow"),
+      onKnowledge: () => {
+        if (typeof window !== "undefined")
+          window.dispatchEvent(new CustomEvent("workspace:focus-panel", { detail: "knowledge" }));
+      },
+      onRouting: () => {
+        if (typeof window !== "undefined")
+          window.dispatchEvent(new CustomEvent("workspace:focus-panel", { detail: "routing" }));
+      },
+      onAssign: () => setFullOpen(true),
+      onPriority: () => setFullOpen(true),
+      onStatus: () => setFullOpen(true),
+    }),
+    [],
+  );
+  useDemandQuickActions(!!demand && !fullOpen, handlers);
+
+  const openFull = useCallback(() => setFullOpen(true), []);
 
   if (!demand) {
     return (
