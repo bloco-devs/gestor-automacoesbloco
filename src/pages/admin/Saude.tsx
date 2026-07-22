@@ -198,7 +198,7 @@ export default function SaudePage() {
     <PageShell>
       <PageHeader
         title="Centro de Saúde"
-        description="Status de todas as camadas da plataforma em tempo real."
+        subtitle="Status de todas as camadas da plataforma em tempo real."
         actions={
           <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
             <RefreshCw className={"mr-2 h-4 w-4" + (loading ? " animate-spin" : "")} aria-hidden />
@@ -209,10 +209,10 @@ export default function SaudePage() {
 
       <Section>
         <KpiRow>
-          <StatCard label="Status geral" value={overallTone === "success" ? "Saudável" : overallTone === "warning" ? "Atenção" : "Crítico"} tone={overallTone === "danger" ? "danger" : overallTone === "warning" ? "warning" : "success"} icon={<Activity className="h-4 w-4" aria-hidden />} />
-          <StatCard label="Chamadas IA (24h)" value={kpis.ia} icon={<Bot className="h-4 w-4" aria-hidden />} />
-          <StatCard label="Latência SQL" value={`${kpis.sql} ms`} icon={<Database className="h-4 w-4" aria-hidden />} />
-          <StatCard label="Execuções Workflow" value={kpis.execWf} icon={<Workflow className="h-4 w-4" aria-hidden />} />
+          <StatCard label="Status geral" value={overallTone === "success" ? "Saudável" : overallTone === "warning" ? "Atenção" : "Crítico"} tone={overallTone === "danger" ? "danger" : overallTone === "warning" ? "warning" : "success"} icon={Activity} />
+          <StatCard label="Chamadas IA (24h)" value={kpis.ia} icon={Bot} />
+          <StatCard label="Latência SQL" value={`${kpis.sql} ms`} icon={Database} />
+          <StatCard label="Execuções Workflow" value={kpis.execWf} icon={Workflow} />
         </KpiRow>
       </Section>
 
