@@ -69,15 +69,17 @@ export const IntelligencePanel = memo(function IntelligencePanel({ demand }: Pro
       </header>
 
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4">
-        {demand.ai_response && (
+        {demand.ai_auto_responded && (
           <section>
             <h3 className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <Bot className="size-3.5" /> Resposta da IA
+              <Bot className="size-3.5" /> Agente IA Nível 1
             </h3>
-            <Card className="p-3 text-sm">
-              <p className="line-clamp-6 whitespace-pre-wrap text-muted-foreground">
-                {demand.ai_response}
-              </p>
+            <Card className="p-3 text-xs text-muted-foreground">
+              Resposta automática publicada por IA
+              {demand.ai_confidence_score != null && (
+                <> · confiança {Math.round(Number(demand.ai_confidence_score) * 100)}%</>
+              )}
+              .
             </Card>
           </section>
         )}
