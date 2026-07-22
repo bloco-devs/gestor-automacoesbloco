@@ -48,6 +48,7 @@ import MeuPerfil from "./pages/MeuPerfil";
 import ObservabilidadeIA from "./pages/ObservabilidadeIA";
 import Consolidacao from "./pages/Consolidacao";
 import Inbox from "./pages/Inbox";
+import Operacoes from "./pages/Operacoes";
 import Portal from "./pages/Portal";
 import PortalIndex from "./pages/portal/PortalIndex";
 import BaseConhecimentoAdmin from "./pages/admin/BaseConhecimento";
@@ -107,6 +108,7 @@ const AppRoutes = () => {
 
         {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
         <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+        <Route path="/operacoes" element={<ProtectedRoute role="developer"><Operacoes /></ProtectedRoute>} />
 
         {/* Compartilhado */}
         <Route path="/ajuda" element={<Ajuda />} />
