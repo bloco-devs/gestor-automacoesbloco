@@ -178,19 +178,6 @@ export default function AnalyticsPage() {
           </Card>
           <Card className="md:col-span-2">
             <CardHeader><CardTitle className="text-base">Por tipo (classificação)</CardTitle></CardHeader>
-              <ResponsiveContainer>
-                <BarChart data={byCategoria} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis type="number" fontSize={12} allowDecimals={false} />
-                  <YAxis dataKey="key" type="category" fontSize={11} width={110} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="hsl(var(--info))" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-          <Card className="md:col-span-2">
-            <CardHeader><CardTitle className="text-base">Por prioridade</CardTitle></CardHeader>
             <CardContent className="h-64">
               <ResponsiveContainer>
                 <BarChart data={byPrioridade}>
