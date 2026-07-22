@@ -287,6 +287,19 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
                       )}
                     </section>
 
+                    {!demand.assigned_to && (
+                      <section className="pt-2 border-t border-border/60">
+                        <RoutingSuggestionCard
+                          ranking={routing.ranking}
+                          isLoading={routing.isLoading}
+                          isAssigning={assign.isPending}
+                          onAssign={(userId) =>
+                            assign.mutate({ id: demand.id, assigned_to: userId })
+                          }
+                        />
+                      </section>
+                    )}
+
                     <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/60">
                       <ProfileBlock
                         label="Criado por"
