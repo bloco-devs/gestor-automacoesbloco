@@ -58,6 +58,7 @@ import {
 } from "../types";
 import { cn } from "@/lib/utils";
 import { SLAIndicator } from "./SLAIndicator";
+import { RoutingSuggestionCard, useRoutingSuggestions } from "@/modules/routing";
 import { DemandTimeline } from "./DemandTimeline";
 import { MessageSquare, Wand2 } from "lucide-react";
 
@@ -87,6 +88,16 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
   const assign = useAssignDemand();
   const { data: workloads = [] } = useUserWorkloads(open);
   const aiPlan = useGenerateAIPlan(demandId);
+  const routing = useRoutingSuggestions(
+    demand && open && !demand.assigned_to
+      ? {
+          type: demand.type,
+          priority: demand.priority,
+          complexity: demand.complexity,
+          sla_status: demand.sla_status,
+        }
+      : null,
+  );
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [aiResult, setAiResult] = useState<{
@@ -275,6 +286,19 @@ export function DemandDetailDialog({ demand, open, onOpenChange }: Props) {
                         <p className="text-sm text-muted-foreground italic">Sem descrição.</p>
                       )}
                     </section>
+
+                    {!demand.assigned_to && (
+                      <section className="pt-2 border-t border-border/60">
+                        <RoutingSuggestionCard
+                          ranking={routing.ranking}
+                          isLoading={routing.isLoading}
+                          isAssigning={assign.isPending}
+                          onAssign={(userId) =>
+                            assign.mutate({ id: demand.id, assigned_to: userId })
+                          }
+                        />
+                      </section>
+                    )}
 
                     <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/60">
                       <ProfileBlock

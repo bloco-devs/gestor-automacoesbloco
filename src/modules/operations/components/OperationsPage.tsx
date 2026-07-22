@@ -7,6 +7,7 @@ import { HealthCard } from "./HealthCard";
 import { LiveActivity } from "./LiveActivity";
 import { MetricCard } from "./MetricCard";
 import { TeamWorkload } from "./TeamWorkload";
+import { UnassignedQueueCard } from "@/modules/routing";
 
 function fmtHours(h: number | null): string {
   if (h == null) return "—";
@@ -97,6 +98,11 @@ export function OperationsPage() {
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <TeamWorkload workloads={data?.workloads ?? []} profiles={profiles} />
         <LiveActivity items={data?.activity ?? []} profiles={profiles} />
+      </section>
+
+      {/* Smart Routing — fila sem responsável com sugestão da IA */}
+      <section>
+        <UnassignedQueueCard />
       </section>
     </div>
   );
