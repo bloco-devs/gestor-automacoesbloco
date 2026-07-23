@@ -411,11 +411,7 @@ const AppRoutes = () => {
             independentemente para permitir migração progressiva. */}
         {/* /portal/* — tratado dentro do AppLayout (ver FEATURE 026.2). */}
 
-        <Route path="/workspace/hoje" element={<Navigate to="/trabalho/inbox" replace />} />
-        <Route path="/workspace/demandas" element={<Navigate to="/solicitacoes/kanban" replace />} />
-        <Route path="/workspace/builder" element={<Navigate to="/admin/workflows" replace />} />
-        <Route path="/workspace/devtools" element={<Navigate to="/developer" replace />} />
-        <Route path="/workspace/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
+        {/* /workspace/* — tratado dentro do AppLayout (ver FEATURE 026.3). */}
 
         <Route path="/gestao/panorama" element={<Navigate to="/command-center" replace />} />
         <Route path="/gestao/equipe" element={<Navigate to="/operacoes" replace />} />
