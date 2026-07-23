@@ -14,7 +14,7 @@ export const INVENTORY: InventoryStat[] = [
   { key: "services", label: "Services/libs", count: 12 },
   { key: "engines", label: "Engines", count: 6, description: "workflow-engine, workflow-runtime, routing, context, platform, ux" },
   { key: "providers", label: "Providers", count: 6, description: "Auth, QueryClient, Context, Platform, Language, WorkflowRuntime" },
-  { key: "edges", label: "Edge Functions", count: 21 },
+  { key: "edges", label: "Edge Functions", count: 20 },
   { key: "ds", label: "Design System 2.0 (arquivos)", count: 14 },
   { key: "docs", label: "Documentos oficiais", count: 45 },
   { key: "tests", label: "Arquivos de teste", count: 33 },
