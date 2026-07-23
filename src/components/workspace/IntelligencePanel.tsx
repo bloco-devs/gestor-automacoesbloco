@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Activity, Bot, Sparkles, UserPlus, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -8,8 +8,11 @@ import { Separator } from "@/components/ui/separator";
 import { useAssignDemand } from "@/modules/demands/hooks";
 import type { Demand } from "@/modules/demands/types";
 import { useRoutingSuggestions, RoutingSuggestionCard } from "@/modules/routing";
+import { findSystemEntry, systemAffinityPercent } from "@/modules/routing/engine/system-fit";
 import { KnowledgeSuggestions } from "@/modules/knowledge";
 import { useToast } from "@/hooks/use-toast";
+import { useContextEngine } from "@/modules/context/context-provider";
+import { logEcossistemaEvent } from "@/modules/ecossistema";
 
 interface Props {
   demand: Demand | null;
@@ -18,6 +21,7 @@ interface Props {
 export const IntelligencePanel = memo(function IntelligencePanel({ demand }: Props) {
   const { toast } = useToast();
   const assign = useAssignDemand();
+  const engine = useContextEngine();
 
   const routing = useRoutingSuggestions(
     demand
