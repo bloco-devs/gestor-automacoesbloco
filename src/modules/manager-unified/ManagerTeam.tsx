@@ -33,7 +33,7 @@ export function ManagerTeam({ limit = 6, showLink = true }: Props) {
         <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-card/40">
           {workloads.map((w) => {
             const p = profiles.get(w.user_id);
-            const nome = p?.full_name || p?.email || "Sem nome";
+            const nome = w.nome || p?.nome || p?.email || w.email || "Sem nome";
             return (
               <li key={w.user_id} className="flex items-center gap-3 px-3 py-2.5">
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
@@ -42,7 +42,7 @@ export function ManagerTeam({ limit = 6, showLink = true }: Props) {
                 <div className="min-w-0 flex-1">
                   <div className="line-clamp-1 text-sm font-medium">{nome}</div>
                   <div className="text-xs text-muted-foreground">
-                    {w.total ?? 0} demandas · {w.em_andamento ?? 0} em andamento
+                    {w.active_count} demanda{w.active_count === 1 ? "" : "s"} em aberto
                   </div>
                 </div>
               </li>
