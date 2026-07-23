@@ -1,11 +1,18 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import { UxRewriteGate } from "@/modules/portal-unified";
 
 function RedirectLegacySolicitacao() {
   const { id } = useParams();
   return <Navigate to={`/solicitacao/${id ?? ""}`} replace />;
 }
+
+/** FEATURE 026.2 — Alterna entre a nova experiência (flag ON) e a legada. */
+function UxRoute({ on, off }: { on: ReactElement; off: ReactElement }) {
+  return <UxRewriteGate enabled={on} disabled={off} />;
+}
+
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -58,6 +65,10 @@ const DeveloperWorkspace = lazy(() => import(/* webpackChunkName: "workspace" */
 const CommandCenter = lazy(() => import(/* webpackChunkName: "operations" */ "./pages/CommandCenter"));
 const Portal = lazy(() => import("./pages/Portal"));
 const PortalIndex = lazy(() => import("./pages/portal/PortalIndex"));
+const PortalUnifiedHome = lazy(() => import(/* webpackChunkName: "portal-unified" */ "./pages/portal/PortalUnifiedHome"));
+const PortalDemandasPage = lazy(() => import(/* webpackChunkName: "portal-unified" */ "./pages/portal/PortalDemandasPage"));
+const PortalConhecimentoPage = lazy(() => import(/* webpackChunkName: "portal-unified" */ "./pages/portal/PortalConhecimentoPage"));
+const PortalInboxPage = lazy(() => import(/* webpackChunkName: "portal-unified" */ "./pages/portal/PortalInboxPage"));
 const BaseConhecimentoAdmin = lazy(() => import(/* webpackChunkName: "knowledge" */ "./pages/admin/BaseConhecimento"));
 const Demandas = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Demandas"));
 const AdminDashboard = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Dashboard"));
@@ -173,12 +184,76 @@ const AppRoutes = () => {
 
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           {/* Solicitante */}
-          <Route path="/portal" element={<ProtectedRoute><Portal /></ProtectedRoute>} />
+          {/* FEATURE 026.2 — Portal Unificado (gated por `ux.rewrite`). */}
+          <Route
+            path="/portal"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<PortalUnifiedHome />} off={<Portal />} />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/portal/central" element={<ProtectedRoute><PortalIndex /></ProtectedRoute>} />
-          <Route path="/dashboard-solicitante" element={<ProtectedRoute role="requester"><RequesterDashboard /></ProtectedRoute>} />
-          <Route path="/minhas-solicitacoes" element={<ProtectedRoute role="requester"><MinhasSolicitacoes /></ProtectedRoute>} />
-          <Route path="/nova-solicitacao" element={<ProtectedRoute role="requester"><AIWorkspace /></ProtectedRoute>} />
+          <Route
+            path="/dashboard-solicitante"
+            element={
+              <ProtectedRoute role="requester">
+                <UxRoute on={<Navigate to="/portal/inicio" replace />} off={<RequesterDashboard />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/minhas-solicitacoes"
+            element={
+              <ProtectedRoute role="requester">
+                <UxRoute on={<Navigate to="/portal/demandas" replace />} off={<MinhasSolicitacoes />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/nova-solicitacao"
+            element={
+              <ProtectedRoute role="requester">
+                <UxRoute on={<Navigate to="/portal/inicio" replace />} off={<AIWorkspace />} />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/nova-solicitacao/classico" element={<ProtectedRoute role="requester"><NovaSolicitacao /></ProtectedRoute>} />
+
+          {/* Portal Unificado — rotas canônicas (gated por `ux.rewrite`). */}
+          <Route
+            path="/portal/inicio"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<PortalUnifiedHome />} off={<Navigate to="/portal" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/portal/demandas"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<PortalDemandasPage />} off={<Navigate to="/minhas-solicitacoes" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/portal/conhecimento"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<PortalConhecimentoPage />} off={<Navigate to="/portal/central" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/portal/inbox"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<PortalInboxPage />} off={<Navigate to="/trabalho/inbox" replace />} />
+              </ProtectedRoute>
+            }
+          />
+
 
           {/* Desenvolvedor */}
           <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
@@ -284,10 +359,7 @@ const AppRoutes = () => {
         {/* FEATURE 026.1 — Nova UX (perfis). Aliases ADITIVOS que apontam para páginas existentes.
             Feature flag `ux.rewrite` controla se a nova sidebar é exibida; as URLs abaixo funcionam
             independentemente para permitir migração progressiva. */}
-        <Route path="/portal/inicio" element={<Navigate to="/portal" replace />} />
-        <Route path="/portal/demandas" element={<Navigate to="/minhas-solicitacoes" replace />} />
-        <Route path="/portal/conhecimento" element={<Navigate to="/portal/central" replace />} />
-        <Route path="/portal/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
+        {/* /portal/* — tratado dentro do AppLayout (ver FEATURE 026.2). */}
 
         <Route path="/workspace/hoje" element={<Navigate to="/trabalho/inbox" replace />} />
         <Route path="/workspace/demandas" element={<Navigate to="/solicitacoes/kanban" replace />} />
