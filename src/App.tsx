@@ -87,6 +87,16 @@ const BackupCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pa
 const PerformanceCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/PerformanceCenter"));
 const ReleaseCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/ReleaseCenter"));
 
+// FEATURE 024 — Enterprise Security Center
+const SecurityCenterPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityCenter"));
+const SecurityThreatsPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityThreats"));
+const SecurityCompliancePage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityCompliance"));
+const SecurityPermissionsPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityPermissions"));
+const SecurityPoliciesPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityPolicies"));
+const SecurityIntegrityPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityIntegrity"));
+const SecurityTimelinePage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityTimeline"));
+const SecurityReportsPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityReports"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -187,6 +197,15 @@ const AppRoutes = () => {
           <Route path="/admin/backup" element={<ProtectedRoute role="developer"><BackupCenterPage /></ProtectedRoute>} />
           <Route path="/admin/performance" element={<ProtectedRoute role="developer"><PerformanceCenterPage /></ProtectedRoute>} />
           <Route path="/admin/release" element={<ProtectedRoute role="developer"><ReleaseCenterPage /></ProtectedRoute>} />
+          {/* FEATURE 024 — Enterprise Security */}
+          <Route path="/admin/security" element={<ProtectedRoute role="developer"><SecurityCenterPage /></ProtectedRoute>} />
+          <Route path="/admin/security/threats" element={<ProtectedRoute role="developer"><SecurityThreatsPage /></ProtectedRoute>} />
+          <Route path="/admin/security/compliance" element={<ProtectedRoute role="developer"><SecurityCompliancePage /></ProtectedRoute>} />
+          <Route path="/admin/security/permissions" element={<ProtectedRoute role="developer"><SecurityPermissionsPage /></ProtectedRoute>} />
+          <Route path="/admin/security/policies" element={<ProtectedRoute role="developer"><SecurityPoliciesPage /></ProtectedRoute>} />
+          <Route path="/admin/security/integrity" element={<ProtectedRoute role="developer"><SecurityIntegrityPage /></ProtectedRoute>} />
+          <Route path="/admin/security/timeline" element={<ProtectedRoute role="developer"><SecurityTimelinePage /></ProtectedRoute>} />
+          <Route path="/admin/security/reports" element={<ProtectedRoute role="developer"><SecurityReportsPage /></ProtectedRoute>} />
           <Route path="/ecossistema" element={<ProtectedRoute><EcossistemaPage /></ProtectedRoute>} />
 
           {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
