@@ -215,28 +215,32 @@ export function detectRisks(pool: Candidate[]): Risk[] {
   }
 
   const risks: Risk[] = [];
+  const rank: Record<RiskSeverity, number> = { baixa: 1, media: 2, alta: 3 };
+  const bump = (cur: RiskSeverity, next: RiskSeverity): RiskSeverity =>
+    rank[next] > rank[cur] ? next : cur;
+
   for (const [slug, v] of perSystem) {
     const reasons: string[] = [];
-    let severity = "baixa" as RiskSeverity;
+    let severity: RiskSeverity = "baixa";
 
     if (v.specialists.length === 0) {
       reasons.push("Nenhum especialista com afinidade ≥ 60%");
-      severity = "alta";
+      severity = bump(severity, "alta");
     } else if (v.specialists.length === 1) {
       reasons.push("Apenas um especialista (ponto único de falha)");
-      if (severity !== "alta") severity = "media";
+      severity = bump(severity, "media");
     }
 
     if (v.totalDocs === 0) {
       reasons.push("Sem documentação escrita");
-      if (severity === "baixa") severity = "media";
+      severity = bump(severity, "media");
     }
 
     const soleActive =
       v.specialists.length === 1 && v.specialists[0].active_count === 0;
     if (soleActive) {
       reasons.push("Único especialista sem carga ativa");
-      severity = "alta";
+      severity = bump(severity, "alta");
     }
 
     if (reasons.length === 0) continue;
