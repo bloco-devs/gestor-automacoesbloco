@@ -464,11 +464,8 @@ const AppRoutes = () => {
 
         {/* /workspace/* — tratado dentro do AppLayout (ver FEATURE 026.3). */}
 
-        <Route path="/gestao/panorama" element={<Navigate to="/command-center" replace />} />
-        <Route path="/gestao/equipe" element={<Navigate to="/operacoes" replace />} />
-        <Route path="/gestao/demandas" element={<Navigate to="/admin/demandas" replace />} />
-        <Route path="/gestao/insights" element={<Navigate to="/admin/analytics" replace />} />
-        <Route path="/gestao/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
+        {/* /gestao/* — tratado dentro do AppLayout (ver FEATURE 026.4). */}
+
 
         <Route path="/admin/plataforma" element={<Navigate to="/admin" replace />} />
         <Route path="/admin/pessoas" element={<Navigate to="/admin" replace />} />
