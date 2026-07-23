@@ -25,6 +25,7 @@ import { SidebarGroupsNav } from "@/components/sidebar/SidebarGroupsNav";
 import { SidebarBreadcrumb } from "@/components/sidebar/SidebarBreadcrumb";
 import { builderGroups, devGroups, requesterGroups } from "@/components/sidebar/navGroups";
 import { CopilotDock } from "@/modules/copilot/CopilotDock";
+import { useEcossistemaAutoSync } from "@/modules/ecossistema";
 
 const SIDEBAR_MIN = 160;
 const SIDEBAR_MAX = 480;
@@ -37,6 +38,9 @@ export default function AppLayout() {
   const { start: startTour } = useOnboardingTour();
 
   const isDeveloperEffective = user?.role === "developer" || !!user?.isAdministrador;
+
+  // F018.3 — auto-sync do Ecossistema (Realtime → reprocessar-matches, debounced)
+  useEcossistemaAutoSync(!!user);
   const isBuilderRole = user?.role === "builder";
   const groups = isDeveloperEffective ? devGroups : isBuilderRole ? builderGroups : requesterGroups;
   const roleLabel = user?.isAdministrador

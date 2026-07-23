@@ -22,6 +22,7 @@ import { TeamWorkload } from "@/modules/operations/components/TeamWorkload";
 import { AIInsightsPanel } from "@/modules/operations/components/AIInsightsPanel";
 import { UnassignedQueueCard } from "@/modules/routing";
 import { WorkflowsOpsCard } from "@/modules/workflow-builder";
+import { EcossistemaLivePanel } from "@/modules/ecossistema";
 import { Button } from "@/components/ui/button";
 
 const CommandCenter = memo(function CommandCenter() {
@@ -93,13 +94,14 @@ const CommandCenter = memo(function CommandCenter() {
         <AIInsightsPanel insights={data?.insights ?? []} />
       </section>
 
-      {/* Smart Routing + Workflows (reutilizados) */}
+      {/* Smart Routing + Workflows + Ecossistema */}
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
           <UnassignedQueueCard />
         </div>
-        <div>
+        <div className="space-y-4">
           <WorkflowsOpsCard />
+          <EcossistemaLivePanel />
         </div>
       </section>
 

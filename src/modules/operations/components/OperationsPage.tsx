@@ -9,6 +9,7 @@ import { MetricCard } from "./MetricCard";
 import { TeamWorkload } from "./TeamWorkload";
 import { UnassignedQueueCard } from "@/modules/routing";
 import { WorkflowsOpsCard } from "@/modules/workflow-builder";
+import { EcossistemaSaudeCard } from "@/modules/ecossistema";
 
 function fmtHours(h: number | null): string {
   if (h == null) return "—";
@@ -109,6 +110,12 @@ export function OperationsPage() {
         <div>
           <WorkflowsOpsCard />
         </div>
+      </section>
+
+      {/* Saúde do Ecossistema */}
+      <section aria-labelledby="op-ecossistema">
+        <h2 id="op-ecossistema" className="sr-only">Saúde do Ecossistema</h2>
+        <EcossistemaSaudeCard />
       </section>
     </div>
   );
