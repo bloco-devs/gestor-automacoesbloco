@@ -70,9 +70,14 @@ export default function SdkSandboxPage() {
         <TabsList>
           <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
           <TabsTrigger value="mesh">Service Mesh</TabsTrigger>
+          <TabsTrigger value="repositories">Repositories</TabsTrigger>
           <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
         </TabsList>
+        <TabsContent value="repositories" className="space-y-6">
+          <RepositoriesPanel />
+        </TabsContent>
         <TabsContent value="sandbox" className="space-y-6">
+
 
       {/* Host Runtime (FEATURE 101) */}
       <Card>
