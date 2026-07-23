@@ -8,7 +8,7 @@ describe("navigation registry", () => {
 
   it("has canonical home per profile", () => {
     expect(getNavigation("portal").home).toBe("/portal/inicio");
-    expect(getNavigation("workspace").home).toBe("/workspace/hoje");
+    expect(getNavigation("workspace").home).toBe("/workspace");
     expect(getNavigation("gestao").home).toBe("/gestao/panorama");
     expect(getNavigation("admin").home).toBe("/admin/plataforma");
   });
