@@ -402,11 +402,55 @@ const AppRoutes = () => {
           <Route path="/workspace/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
           <Route path="/command-center" element={<ProtectedRoute role="developer"><CommandCenter /></ProtectedRoute>} />
 
+          {/* FEATURE 026.4 — Gestão Unificada (gated por `ux.rewrite`). */}
+          <Route
+            path="/gestao/panorama"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<ManagerPanoramaPage />} off={<Navigate to="/command-center" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gestao/equipe"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<ManagerEquipePage />} off={<Navigate to="/operacoes" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gestao/demandas"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<ManagerDemandasPage />} off={<Navigate to="/admin/demandas" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gestao/insights"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<ManagerInsightsPage />} off={<Navigate to="/admin/analytics" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gestao/inbox"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<ManagerInboxPage />} off={<Navigate to="/trabalho/inbox" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/gestao" element={<Navigate to="/gestao/panorama" replace />} />
+
           {/* Compartilhado */}
           <Route path="/ajuda" element={<Ajuda />} />
           <Route path="/perfil" element={<MeuPerfil />} />
           <Route path="/solicitacao/:id" element={<SolicitacaoDetail />} />
         </Route>
+
 
         {/* Redirecionamentos de rotas antigas (compatibilidade) */}
         <Route path="/minhas-demandas" element={<Navigate to="/minhas-solicitacoes" replace />} />
