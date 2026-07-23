@@ -90,10 +90,7 @@ export interface EcossistemaSaudeResult {
 }
 
 function articleMentionsSistema(a: KnowledgeArticleAggRow, slug: string, nome: string): boolean {
-  const meta = a.metadata ?? {};
-  const metaSlug = typeof (meta as { sistema_slug?: unknown }).sistema_slug === "string"
-    ? String((meta as { sistema_slug?: string }).sistema_slug).toLowerCase()
-    : null;
+  const metaSlug = a.sistema_slug ? a.sistema_slug.toLowerCase() : null;
   if (metaSlug && metaSlug === slug.toLowerCase()) return true;
   const titulo = (a.titulo ?? "").toLowerCase();
   return titulo.includes(slug.toLowerCase()) || (nome.length > 2 && titulo.includes(nome.toLowerCase()));
