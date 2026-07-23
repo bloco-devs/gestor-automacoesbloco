@@ -28,8 +28,8 @@ export const DeveloperShell = memo(function DeveloperShell({
     <PageShell maxWidth="full">
       <PageHeader
         title={title}
-        description={description}
-        icon={Code2}
+        subtitle={description}
+        icon={<Code2 className="h-6 w-6" />}
         actions={actions}
       />
       <nav

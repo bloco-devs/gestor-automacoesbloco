@@ -33,7 +33,7 @@ function safe<T>(fn: () => T, fallback: T): T {
 export function collectCodeHealth(): CodeHealthReport {
   const diag = safe(() => pluginHost.diagnostics(), null);
   const plugins = diag?.plugins ?? [];
-  const ok = plugins.filter((p) => p.status === "loaded" || p.status === "enabled").length;
+  const ok = plugins.filter((p) => p.status === "active" || p.status === "registered").length;
   const err = plugins.filter((p) => p.status === "error" || p.status === "rejected").length;
   const ai = safe(() => collectAiSdkDiagnostics(), null);
   const wf = safe(() => collectWorkflowSdkDiagnostics(), null);
