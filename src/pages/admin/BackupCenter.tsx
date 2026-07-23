@@ -12,12 +12,12 @@ export default function BackupCenterPage() {
       />
 
       <KpiRow>
-        <StatCard label="Último backup" value={lastBackup.toLocaleString()} tone="positive" hint="Gerido pelo Supabase" />
-        <StatCard label="Status" value="OK" tone="positive" />
+        <StatCard label="Último backup" value={lastBackup.toLocaleString()} tone="success" hint="Gerido pelo Supabase" />
+        <StatCard label="Status" value="OK" tone="success" />
         <StatCard label="Tamanho estimado" value="~ 128 MB" tone="neutral" />
         <StatCard label="Duração" value="~ 12s" tone="neutral" />
-        <StatCard label="Integridade" value="Verificada" tone="positive" />
-        <StatCard label="Restore disponível" value="Sim" tone="positive" hint="via painel Supabase" />
+        <StatCard label="Integridade" value="Verificada" tone="success" />
+        <StatCard label="Restore disponível" value="Sim" tone="success" hint="via painel Supabase" />
       </KpiRow>
 
       <Section title="Como funciona">
