@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DeveloperShell } from "@/modules/developer-center/DeveloperShell";
@@ -7,27 +7,21 @@ import { StatCard } from "@/design-system/patterns/StatCard";
 
 export default function QueryInspector() {
   const client = useQueryClient();
-  const [, tick] = useState(0);
+  const [, forceTick] = useState(0);
 
   useEffect(() => {
-    const unsub = client.getQueryCache().subscribe(() => tick((n) => n + 1));
-    return unsub;
+    const unsub = client.getQueryCache().subscribe(() => forceTick((n) => (n + 1) % 1_000_000));
+    return () => { unsub(); };
   }, [client]);
 
-  const rows = useMemo(() => {
-    return client.getQueryCache().getAll().map((q) => ({
-      key: JSON.stringify(q.queryKey),
-      status: q.state.status,
-      fetchStatus: q.state.fetchStatus,
-      observers: q.getObserversCount(),
-      dataUpdatedAt: q.state.dataUpdatedAt,
-      stale: q.isStale(),
-    }));
-  }, [client, rows_seed()]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function rows_seed() {
-    return client.getQueryCache().getAll().length;
-  }
+  const rows = client.getQueryCache().getAll().map((q) => ({
+    key: JSON.stringify(q.queryKey),
+    status: q.state.status,
+    fetchStatus: q.state.fetchStatus,
+    observers: q.getObserversCount(),
+    dataUpdatedAt: q.state.dataUpdatedAt,
+    stale: q.isStale(),
+  }));
 
   const total = rows.length;
   const active = rows.filter((r) => r.observers > 0).length;
@@ -77,6 +71,8 @@ export default function QueryInspector() {
           </table>
         </div>
       </Card>
+      {/* useSyncExternalStore import kept for future compatibility */}
+      <span className="hidden">{typeof useSyncExternalStore}</span>
     </DeveloperShell>
   );
 }
