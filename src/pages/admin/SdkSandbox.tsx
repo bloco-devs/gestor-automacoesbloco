@@ -13,6 +13,12 @@ import type { ExtensionPointId } from "@/platform-sdk";
 import { pluginHost } from "@/platform-sdk/runtime";
 import { useHostDiagnostics } from "@/platform-sdk/runtime/hooks";
 import HelloPlugin from "@/platform-sdk/runtime/plugins/hello";
+import AICopilotPlugin from "@/plugins/ai-copilot";
+import {
+  useCopilotEvents,
+  useCopilotDiagnostics,
+  useCopilotMessages,
+} from "@/plugins/ai-copilot";
 
 /**
  * /admin/sdk — Developer Sandbox (read-only).
