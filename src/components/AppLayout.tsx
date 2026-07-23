@@ -25,6 +25,7 @@ import { SidebarGroupsNav } from "@/components/sidebar/SidebarGroupsNav";
 import { SidebarBreadcrumb } from "@/components/sidebar/SidebarBreadcrumb";
 import { builderGroups, devGroups, requesterGroups } from "@/components/sidebar/navGroups";
 import { CopilotDock } from "@/modules/copilot/CopilotDock";
+import { useEcossistemaAutoSync } from "@/modules/ecossistema";
 
 const SIDEBAR_MIN = 160;
 const SIDEBAR_MAX = 480;
