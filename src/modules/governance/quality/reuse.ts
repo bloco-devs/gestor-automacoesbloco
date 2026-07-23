@@ -11,7 +11,7 @@ export function computeReuseBoard(): {
   const components: ReuseEntry[] = DESIGN_SYSTEM.map((c) => ({
     id: c.id,
     label: c.label,
-    kind: "component",
+    kind: "component" as const,
     reuseCount: c.reuse ?? 0,
     path: c.path,
   })).sort((a, b) => b.reuseCount - a.reuseCount);
@@ -19,7 +19,7 @@ export function computeReuseBoard(): {
   const hooks: ReuseEntry[] = HOOKS.map((h) => ({
     id: h.id,
     label: h.label,
-    kind: "hook",
+    kind: "hook" as const,
     reuseCount: h.reuse ?? 0,
     path: h.path,
   })).sort((a, b) => b.reuseCount - a.reuseCount);
@@ -27,7 +27,7 @@ export function computeReuseBoard(): {
   const services: ReuseEntry[] = SERVICES.map((s) => ({
     id: s.id,
     label: s.label,
-    kind: "service",
+    kind: "service" as const,
     reuseCount: s.reuse ?? 0,
     path: s.path,
   })).sort((a, b) => b.reuseCount - a.reuseCount);
@@ -35,7 +35,7 @@ export function computeReuseBoard(): {
   const isolated: ReuseEntry[] = MODULES.filter((m) => (m.reuse ?? 0) <= 1).map((m) => ({
     id: m.id,
     label: m.label,
-    kind: "module",
+    kind: "module" as const,
     reuseCount: m.reuse ?? 0,
     path: m.path,
   }));
