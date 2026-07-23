@@ -5,6 +5,8 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MarketplacePage from "@/plugins/marketplace/pages/MarketplacePage";
 import RepositoriesPanel from "@/platform-sdk/extension-host/components/RepositoriesPanel";
+import WorkflowSdkPanel from "@/platform-sdk/workflow-sdk/components/WorkflowSdkPanel";
+import WorkflowExtensionsPlugin from "@/plugins/workflow-extensions";
 import {
   EXTENSION_POINTS,
   useEventHistory,
@@ -53,7 +55,7 @@ export default function SdkSandboxPage() {
       return;
     }
     pluginHost
-      .initialize([HelloPlugin, AICopilotPlugin])
+      .initialize([HelloPlugin, AICopilotPlugin, WorkflowExtensionsPlugin])
       .finally(() => setBooted(true));
   }, [diag.initializedAt]);
 
@@ -72,12 +74,17 @@ export default function SdkSandboxPage() {
           <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
           <TabsTrigger value="mesh">Service Mesh</TabsTrigger>
           <TabsTrigger value="repositories">Repositories</TabsTrigger>
+          <TabsTrigger value="workflow-sdk">Workflow SDK</TabsTrigger>
           <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
         </TabsList>
         <TabsContent value="repositories" className="space-y-6">
           <RepositoriesPanel />
         </TabsContent>
+        <TabsContent value="workflow-sdk" className="space-y-6">
+          <WorkflowSdkPanel />
+        </TabsContent>
         <TabsContent value="sandbox" className="space-y-6">
+
 
 
       {/* Host Runtime (FEATURE 101) */}
