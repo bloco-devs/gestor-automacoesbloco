@@ -16,6 +16,7 @@ export {
   useEmitPlatformEvent,
   useEventHistory,
 } from "./hooks";
+export * from "./services";
 export const EXTENSION_POINTS = [
   "sidebar",
   "dashboard",
