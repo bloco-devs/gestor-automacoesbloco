@@ -158,6 +158,7 @@ const AppRoutes = () => {
           <Route path="/admin/workflows/:id" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute role="developer"><AdminShellPage /></ProtectedRoute>} />
           <Route path="/admin/quality" element={<ProtectedRoute role="developer"><GovernancePage /></ProtectedRoute>} />
+          <Route path="/admin/sdk" element={<ProtectedRoute role="developer"><SdkSandbox /></ProtectedRoute>} />
           <Route path="/admin/legado" element={<ProtectedRoute role="developer"><AdminHubLegado /></ProtectedRoute>} />
           <Route path="/admin/saude" element={<ProtectedRoute role="developer"><SaudePage /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute role="developer"><AnalyticsPage /></ProtectedRoute>} />
