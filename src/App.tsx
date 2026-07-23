@@ -93,6 +93,13 @@ const WorkspaceDemandasPage = lazy(() => import(/* webpackChunkName: "workspace-
 const WorkspaceBuilderPage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceBuilderPage"));
 const WorkspaceDevToolsPage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceDevToolsPage"));
 
+// FEATURE 026.4 — Panorama do Gestor + Insights Unificados (gated por `ux.rewrite`).
+const ManagerPanoramaPage = lazy(() => import(/* webpackChunkName: "manager-unified" */ "./pages/gestao/ManagerPanoramaPage"));
+const ManagerEquipePage = lazy(() => import(/* webpackChunkName: "manager-unified" */ "./pages/gestao/ManagerEquipePage"));
+const ManagerDemandasPage = lazy(() => import(/* webpackChunkName: "manager-unified" */ "./pages/gestao/ManagerDemandasPage"));
+const ManagerInsightsPage = lazy(() => import(/* webpackChunkName: "manager-unified" */ "./pages/gestao/ManagerInsightsPage"));
+const ManagerInboxPage = lazy(() => import(/* webpackChunkName: "manager-unified" */ "./pages/gestao/ManagerInboxPage"));
+
 // FEATURE 023 — Production Hardening
 const PlatformHealthPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/PlatformHealth"));
 const ErrorCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/ErrorCenter"));
@@ -395,11 +402,55 @@ const AppRoutes = () => {
           <Route path="/workspace/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
           <Route path="/command-center" element={<ProtectedRoute role="developer"><CommandCenter /></ProtectedRoute>} />
 
+          {/* FEATURE 026.4 — Gestão Unificada (gated por `ux.rewrite`). */}
+          <Route
+            path="/gestao/panorama"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<ManagerPanoramaPage />} off={<Navigate to="/command-center" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gestao/equipe"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<ManagerEquipePage />} off={<Navigate to="/operacoes" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gestao/demandas"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<ManagerDemandasPage />} off={<Navigate to="/admin/demandas" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gestao/insights"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<ManagerInsightsPage />} off={<Navigate to="/admin/analytics" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gestao/inbox"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<ManagerInboxPage />} off={<Navigate to="/trabalho/inbox" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/gestao" element={<Navigate to="/gestao/panorama" replace />} />
+
           {/* Compartilhado */}
           <Route path="/ajuda" element={<Ajuda />} />
           <Route path="/perfil" element={<MeuPerfil />} />
           <Route path="/solicitacao/:id" element={<SolicitacaoDetail />} />
         </Route>
+
 
         {/* Redirecionamentos de rotas antigas (compatibilidade) */}
         <Route path="/minhas-demandas" element={<Navigate to="/minhas-solicitacoes" replace />} />
@@ -413,11 +464,8 @@ const AppRoutes = () => {
 
         {/* /workspace/* — tratado dentro do AppLayout (ver FEATURE 026.3). */}
 
-        <Route path="/gestao/panorama" element={<Navigate to="/command-center" replace />} />
-        <Route path="/gestao/equipe" element={<Navigate to="/operacoes" replace />} />
-        <Route path="/gestao/demandas" element={<Navigate to="/admin/demandas" replace />} />
-        <Route path="/gestao/insights" element={<Navigate to="/admin/analytics" replace />} />
-        <Route path="/gestao/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
+        {/* /gestao/* — tratado dentro do AppLayout (ver FEATURE 026.4). */}
+
 
         <Route path="/admin/plataforma" element={<Navigate to="/admin" replace />} />
         <Route path="/admin/pessoas" element={<Navigate to="/admin" replace />} />
