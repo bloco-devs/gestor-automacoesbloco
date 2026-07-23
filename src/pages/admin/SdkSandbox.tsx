@@ -44,6 +44,9 @@ export default function SdkSandboxPage() {
   const copilotMessages = useCopilotMessages();
 
   useEffect(() => {
+    // PLUGIN 003 — Service Mesh: providers built-in devem estar disponíveis
+    // ANTES da ativação dos plugins consumidores (ex. AI Copilot).
+    bootstrapBuiltInProviders();
     if (diag.initializedAt) {
       setBooted(true);
       return;
