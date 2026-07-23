@@ -4,10 +4,10 @@ import { PageShell, PageHeader, Section, KpiRow, StatCard } from "@/design-syste
 import { Badge } from "@/components/ui/badge";
 import { collectRuntimeHealth, collectPerformance, collectSystemInfo } from "@/modules/platform-health";
 
-const TONE: Record<string, "positive" | "warning" | "negative"> = {
-  green: "positive",
+const TONE: Record<string, "success" | "warning" | "danger"> = {
+  green: "success",
   amber: "warning",
-  red: "negative",
+  red: "danger",
 };
 
 export default function PlatformHealthPage() {

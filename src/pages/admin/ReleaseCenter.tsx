@@ -52,11 +52,11 @@ export default function ReleaseCenterPage() {
       />
 
       <KpiRow>
-        <StatCard label="Score" value={`${score}%`} tone={ready ? "positive" : "warning"} />
+        <StatCard label="Score" value={`${score}%`} tone={ready ? "success" : "warning"} />
         <StatCard label="Checks OK" value={`${passed}/${checks.length}`} tone="neutral" />
         <StatCard label="Versão" value={system.version} tone="neutral" />
         <StatCard label="Ambiente" value={system.environment} tone="neutral" />
-        <StatCard label="Status" value={ready ? "Production Ready" : "Necessita atenção"} tone={ready ? "positive" : "warning"} />
+        <StatCard label="Status" value={ready ? "Production Ready" : "Necessita atenção"} tone={ready ? "success" : "warning"} />
       </KpiRow>
 
       <Section title="Checklist">
