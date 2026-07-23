@@ -16,7 +16,9 @@ import WorkflowExtensionsPlugin, {
   workflowExtensionsSampleList,
 } from "@/plugins/workflow-extensions";
 
-function makeAction(id: string, ok = true): WorkflowExtension {
+import type { WorkflowAction } from "../workflow-sdk";
+
+function makeAction(id: string, ok = true): WorkflowAction {
   return {
     kind: "action",
     id,

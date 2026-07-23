@@ -160,7 +160,7 @@ export const WorkflowExtensionsPlugin = definePlugin({
   description:
     "Plugin de exemplo que registra triggers, conditions, actions, validators e hooks no Workflow SDK.",
   author: "platform.bundled",
-  activate: () => {
+  activate: (_ctx) => {
     bootstrapWorkflowSdkProvider();
     disposer = workflowSdkService.registerAll(extensions);
   },
