@@ -75,6 +75,18 @@ const SaudePage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/adm
 const AnalyticsPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Analytics"));
 const EcossistemaPage = lazy(() => import("./pages/Ecossistema"));
 
+// FEATURE 023 — Production Hardening
+const PlatformHealthPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/PlatformHealth"));
+const ErrorCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/ErrorCenter"));
+const FeatureFlagsPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/FeatureFlags"));
+const SettingsCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SettingsCenter"));
+const SecretsCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SecretsCenter"));
+const SessionsCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SessionsCenter"));
+const AuditCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/AuditCenter"));
+const BackupCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/BackupCenter"));
+const PerformanceCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/PerformanceCenter"));
+const ReleaseCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/ReleaseCenter"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -164,6 +176,17 @@ const AppRoutes = () => {
           <Route path="/admin/legado" element={<ProtectedRoute role="developer"><AdminHubLegado /></ProtectedRoute>} />
           <Route path="/admin/saude" element={<ProtectedRoute role="developer"><SaudePage /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute role="developer"><AnalyticsPage /></ProtectedRoute>} />
+          {/* FEATURE 023 — Production Hardening */}
+          <Route path="/admin/platform" element={<ProtectedRoute role="developer"><PlatformHealthPage /></ProtectedRoute>} />
+          <Route path="/admin/errors" element={<ProtectedRoute role="developer"><ErrorCenterPage /></ProtectedRoute>} />
+          <Route path="/admin/feature-flags" element={<ProtectedRoute role="developer"><FeatureFlagsPage /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute role="developer"><SettingsCenterPage /></ProtectedRoute>} />
+          <Route path="/admin/secrets" element={<ProtectedRoute role="developer"><SecretsCenterPage /></ProtectedRoute>} />
+          <Route path="/admin/sessions" element={<ProtectedRoute role="developer"><SessionsCenterPage /></ProtectedRoute>} />
+          <Route path="/admin/audit" element={<ProtectedRoute role="developer"><AuditCenterPage /></ProtectedRoute>} />
+          <Route path="/admin/backup" element={<ProtectedRoute role="developer"><BackupCenterPage /></ProtectedRoute>} />
+          <Route path="/admin/performance" element={<ProtectedRoute role="developer"><PerformanceCenterPage /></ProtectedRoute>} />
+          <Route path="/admin/release" element={<ProtectedRoute role="developer"><ReleaseCenterPage /></ProtectedRoute>} />
           <Route path="/ecossistema" element={<ProtectedRoute><EcossistemaPage /></ProtectedRoute>} />
 
           {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
