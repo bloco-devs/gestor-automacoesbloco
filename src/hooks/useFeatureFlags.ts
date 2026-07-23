@@ -4,7 +4,8 @@ export type FeatureFlagKey =
   | "copilot-dock"
   | "compact-density"
   | "beta-analytics"
-  | "keyboard-hints";
+  | "keyboard-hints"
+  | "ux.rewrite";
 
 export interface FeatureFlagDef {
   key: FeatureFlagKey;
@@ -18,6 +19,7 @@ export const ALL_FLAGS: FeatureFlagDef[] = [
   { key: "compact-density", label: "Densidade compacta", description: "Reduz paddings em listas e cards.", defaultValue: false },
   { key: "beta-analytics", label: "Analytics beta", description: "Visualizações experimentais em /admin/analytics.", defaultValue: false },
   { key: "keyboard-hints", label: "Atalhos visíveis", description: "Mostra dicas de teclado nos botões.", defaultValue: false },
+  { key: "ux.rewrite", label: "Nova UX (Perfis)", description: "Ativa a nova navegação unificada por perfil (Portal/Workspace/Gestão/Admin).", defaultValue: false },
 ];
 
 const STORAGE_KEY = "gab:featureFlags:v1";
