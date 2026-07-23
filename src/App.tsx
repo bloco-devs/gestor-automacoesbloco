@@ -237,6 +237,16 @@ const AppRoutes = () => {
           <Route path="/admin/security/reports" element={<ProtectedRoute role="developer"><SecurityReportsPage /></ProtectedRoute>} />
           {/* FEATURE 026 — Enterprise Observability */}
           <Route path="/admin/observability" element={<ProtectedRoute role="developer"><ObservabilityCenterPage /></ProtectedRoute>} />
+          {/* FEATURE 027 — Enterprise Integration Hub */}
+          <Route path="/admin/integrations" element={<ProtectedRoute role="developer"><IntegrationsOverview /></ProtectedRoute>} />
+          <Route path="/admin/integrations/apis" element={<ProtectedRoute role="developer"><IntegrationsApis /></ProtectedRoute>} />
+          <Route path="/admin/integrations/webhooks" element={<ProtectedRoute role="developer"><IntegrationsWebhooks /></ProtectedRoute>} />
+          <Route path="/admin/integrations/connectors" element={<ProtectedRoute role="developer"><IntegrationsConnectors /></ProtectedRoute>} />
+          <Route path="/admin/integrations/mesh" element={<ProtectedRoute role="developer"><IntegrationsMesh /></ProtectedRoute>} />
+          <Route path="/admin/integrations/sdk" element={<ProtectedRoute role="developer"><IntegrationsSdk /></ProtectedRoute>} />
+          <Route path="/admin/integrations/catalog" element={<ProtectedRoute role="developer"><IntegrationsCatalog /></ProtectedRoute>} />
+          <Route path="/admin/integrations/diagnostics" element={<ProtectedRoute role="developer"><IntegrationsDiagnostics /></ProtectedRoute>} />
+          <Route path="/admin/integrations/docs" element={<ProtectedRoute role="developer"><IntegrationsDocs /></ProtectedRoute>} />
           {/* FEATURE 026 — Developer Experience Center */}
           <Route path="/developer" element={<ProtectedRoute role="developer"><DeveloperCenter /></ProtectedRoute>} />
           <Route path="/developer/runtime" element={<ProtectedRoute role="developer"><DevRuntime /></ProtectedRoute>} />

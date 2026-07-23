@@ -21,6 +21,7 @@ import {
   MessageCircleQuestion,
   Network,
   Plus,
+  Plug,
   Repeat,
   Settings,
   Shield,
