@@ -101,6 +101,17 @@ const SecurityReportsPage = lazy(() => import(/* webpackChunkName: "security" */
 // FEATURE 026 — Enterprise Observability
 const ObservabilityCenterPage = lazy(() => import(/* webpackChunkName: "observability" */ "./pages/admin/ObservabilityCenter"));
 
+// FEATURE 027 — Enterprise Integration Hub
+const IntegrationsOverview = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Overview"));
+const IntegrationsApis = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Apis"));
+const IntegrationsWebhooks = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Webhooks"));
+const IntegrationsConnectors = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Connectors"));
+const IntegrationsMesh = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Mesh"));
+const IntegrationsSdk = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Sdk"));
+const IntegrationsCatalog = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Catalog"));
+const IntegrationsDiagnostics = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Diagnostics"));
+const IntegrationsDocs = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Docs"));
+
 // FEATURE 026 — Developer Experience Center
 const DeveloperCenter = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Index"));
 const DevRuntime = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Runtime"));
