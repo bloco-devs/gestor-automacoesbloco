@@ -224,7 +224,7 @@ export function detectRisks(pool: Candidate[]): Risk[] {
       severity = "alta";
     } else if (v.specialists.length === 1) {
       reasons.push("Apenas um especialista (ponto único de falha)");
-      severity = severity === "alta" ? "alta" : "media";
+      if (severity !== "alta") severity = "media";
     }
 
     if (v.totalDocs === 0) {
