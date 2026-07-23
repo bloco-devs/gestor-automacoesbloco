@@ -9,6 +9,8 @@ import WorkflowSdkPanel from "@/platform-sdk/workflow-sdk/components/WorkflowSdk
 import WorkflowExtensionsPlugin from "@/plugins/workflow-extensions";
 import EventSdkPanel from "@/platform-sdk/event-sdk/components/EventSdkPanel";
 import EventAutomationPlugin from "@/plugins/event-automation";
+import AiSdkPanel from "@/platform-sdk/ai-sdk/components/AiSdkPanel";
+import AiSkillsPlugin from "@/plugins/ai-skills";
 import {
   EXTENSION_POINTS,
   useEventHistory,
