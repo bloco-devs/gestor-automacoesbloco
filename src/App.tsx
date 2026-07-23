@@ -70,6 +70,7 @@ const AdminHubLegado = lazy(() => import(/* webpackChunkName: "admin" */ "./page
 const AdminShellPage = lazy(() => import(/* webpackChunkName: "admin" */ "./modules/admin-shell/AdminShellPage"));
 const GovernancePage = lazy(() => import(/* webpackChunkName: "admin" */ "./modules/governance/GovernancePage"));
 const SdkSandbox = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SdkSandbox"));
+const MarketplacePage = lazy(() => import(/* webpackChunkName: "admin" */ "./plugins/marketplace/pages/MarketplacePage"));
 const SaudePage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Saude"));
 const AnalyticsPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Analytics"));
 const EcossistemaPage = lazy(() => import("./pages/Ecossistema"));
@@ -159,6 +160,7 @@ const AppRoutes = () => {
           <Route path="/admin" element={<ProtectedRoute role="developer"><AdminShellPage /></ProtectedRoute>} />
           <Route path="/admin/quality" element={<ProtectedRoute role="developer"><GovernancePage /></ProtectedRoute>} />
           <Route path="/admin/sdk" element={<ProtectedRoute role="developer"><SdkSandbox /></ProtectedRoute>} />
+          <Route path="/admin/marketplace" element={<ProtectedRoute role="developer"><MarketplacePage /></ProtectedRoute>} />
           <Route path="/admin/legado" element={<ProtectedRoute role="developer"><AdminHubLegado /></ProtectedRoute>} />
           <Route path="/admin/saude" element={<ProtectedRoute role="developer"><SaudePage /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute role="developer"><AnalyticsPage /></ProtectedRoute>} />
