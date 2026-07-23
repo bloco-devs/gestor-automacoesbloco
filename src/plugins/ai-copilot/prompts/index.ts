@@ -63,6 +63,7 @@ function matchRoute(route: string): CopilotPromptTemplate | null {
 }
 
 function matchModule(mod: ModuleKey): CopilotPromptTemplate | null {
+  if (mod === "unknown") return null;
   return ALL_PROMPTS.find((p) => p.module === mod) ?? null;
 }
 
