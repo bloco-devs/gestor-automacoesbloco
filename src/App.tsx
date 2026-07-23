@@ -101,6 +101,20 @@ const SecurityReportsPage = lazy(() => import(/* webpackChunkName: "security" */
 // FEATURE 026 — Enterprise Observability
 const ObservabilityCenterPage = lazy(() => import(/* webpackChunkName: "observability" */ "./pages/admin/ObservabilityCenter"));
 
+// FEATURE 026 — Developer Experience Center
+const DeveloperCenter = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Index"));
+const DevRuntime = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Runtime"));
+const DevComponents = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Components"));
+const DevQuery = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Query"));
+const DevServices = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Services"));
+const DevPlugins = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Plugins"));
+const DevAI = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/AI"));
+const DevWorkflows = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Workflows"));
+const DevPerformance = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Performance"));
+const DevDependencies = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Dependencies"));
+const DevQuality = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Quality"));
+const DevDocs = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Docs"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -212,6 +226,19 @@ const AppRoutes = () => {
           <Route path="/admin/security/reports" element={<ProtectedRoute role="developer"><SecurityReportsPage /></ProtectedRoute>} />
           {/* FEATURE 026 — Enterprise Observability */}
           <Route path="/admin/observability" element={<ProtectedRoute role="developer"><ObservabilityCenterPage /></ProtectedRoute>} />
+          {/* FEATURE 026 — Developer Experience Center */}
+          <Route path="/developer" element={<ProtectedRoute role="developer"><DeveloperCenter /></ProtectedRoute>} />
+          <Route path="/developer/runtime" element={<ProtectedRoute role="developer"><DevRuntime /></ProtectedRoute>} />
+          <Route path="/developer/components" element={<ProtectedRoute role="developer"><DevComponents /></ProtectedRoute>} />
+          <Route path="/developer/query" element={<ProtectedRoute role="developer"><DevQuery /></ProtectedRoute>} />
+          <Route path="/developer/services" element={<ProtectedRoute role="developer"><DevServices /></ProtectedRoute>} />
+          <Route path="/developer/plugins" element={<ProtectedRoute role="developer"><DevPlugins /></ProtectedRoute>} />
+          <Route path="/developer/ai" element={<ProtectedRoute role="developer"><DevAI /></ProtectedRoute>} />
+          <Route path="/developer/workflows" element={<ProtectedRoute role="developer"><DevWorkflows /></ProtectedRoute>} />
+          <Route path="/developer/performance" element={<ProtectedRoute role="developer"><DevPerformance /></ProtectedRoute>} />
+          <Route path="/developer/dependencies" element={<ProtectedRoute role="developer"><DevDependencies /></ProtectedRoute>} />
+          <Route path="/developer/quality" element={<ProtectedRoute role="developer"><DevQuality /></ProtectedRoute>} />
+          <Route path="/developer/docs" element={<ProtectedRoute role="developer"><DevDocs /></ProtectedRoute>} />
           <Route path="/ecossistema" element={<ProtectedRoute><EcossistemaPage /></ProtectedRoute>} />
           <Route path="/studio" element={<ProtectedRoute role="developer"><StudioPage /></ProtectedRoute>} />
 
