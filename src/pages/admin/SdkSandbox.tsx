@@ -69,6 +69,7 @@ export default function SdkSandboxPage() {
       <Tabs defaultValue="sandbox" className="space-y-4">
         <TabsList>
           <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
+          <TabsTrigger value="mesh">Service Mesh</TabsTrigger>
           <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
         </TabsList>
         <TabsContent value="sandbox" className="space-y-6">
