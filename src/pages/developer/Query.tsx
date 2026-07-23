@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DeveloperShell } from "@/modules/developer-center/DeveloperShell";
@@ -71,8 +71,6 @@ export default function QueryInspector() {
           </table>
         </div>
       </Card>
-      {/* useSyncExternalStore import kept for future compatibility */}
-      <span className="hidden">{typeof useSyncExternalStore}</span>
     </DeveloperShell>
   );
 }
