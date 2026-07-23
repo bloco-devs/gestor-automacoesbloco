@@ -98,6 +98,9 @@ const SecurityIntegrityPage = lazy(() => import(/* webpackChunkName: "security" 
 const SecurityTimelinePage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityTimeline"));
 const SecurityReportsPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityReports"));
 
+// FEATURE 026 — Enterprise Observability
+const ObservabilityCenterPage = lazy(() => import(/* webpackChunkName: "observability" */ "./pages/admin/ObservabilityCenter"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -207,6 +210,8 @@ const AppRoutes = () => {
           <Route path="/admin/security/integrity" element={<ProtectedRoute role="developer"><SecurityIntegrityPage /></ProtectedRoute>} />
           <Route path="/admin/security/timeline" element={<ProtectedRoute role="developer"><SecurityTimelinePage /></ProtectedRoute>} />
           <Route path="/admin/security/reports" element={<ProtectedRoute role="developer"><SecurityReportsPage /></ProtectedRoute>} />
+          {/* FEATURE 026 — Enterprise Observability */}
+          <Route path="/admin/observability" element={<ProtectedRoute role="developer"><ObservabilityCenterPage /></ProtectedRoute>} />
           <Route path="/ecossistema" element={<ProtectedRoute><EcossistemaPage /></ProtectedRoute>} />
           <Route path="/studio" element={<ProtectedRoute role="developer"><StudioPage /></ProtectedRoute>} />
 
