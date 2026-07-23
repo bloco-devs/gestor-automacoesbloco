@@ -93,6 +93,13 @@ const WorkspaceDemandasPage = lazy(() => import(/* webpackChunkName: "workspace-
 const WorkspaceBuilderPage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceBuilderPage"));
 const WorkspaceDevToolsPage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceDevToolsPage"));
 
+// FEATURE 026.4 — Panorama do Gestor + Insights Unificados (gated por `ux.rewrite`).
+const ManagerPanoramaPage = lazy(() => import(/* webpackChunkName: "manager-unified" */ "./pages/gestao/ManagerPanoramaPage"));
+const ManagerEquipePage = lazy(() => import(/* webpackChunkName: "manager-unified" */ "./pages/gestao/ManagerEquipePage"));
+const ManagerDemandasPage = lazy(() => import(/* webpackChunkName: "manager-unified" */ "./pages/gestao/ManagerDemandasPage"));
+const ManagerInsightsPage = lazy(() => import(/* webpackChunkName: "manager-unified" */ "./pages/gestao/ManagerInsightsPage"));
+const ManagerInboxPage = lazy(() => import(/* webpackChunkName: "manager-unified" */ "./pages/gestao/ManagerInboxPage"));
+
 // FEATURE 023 — Production Hardening
 const PlatformHealthPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/PlatformHealth"));
 const ErrorCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/ErrorCenter"));
