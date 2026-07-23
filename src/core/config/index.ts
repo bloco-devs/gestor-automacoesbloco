@@ -12,7 +12,7 @@ function readEnv(key: string): string | undefined {
 }
 
 export const runtimeConfig = {
-  isDev: readEnv("DEV") === true || readEnv("MODE") === "development",
+  isDev: readEnv("MODE") === "development" || readEnv("DEV") === "true",
   supabaseProjectRef: "cgbhpenkytibgiosksrb",
   hubProjectRef: "yzuvwhszpyxchlejxsjd",
   appVersion: readEnv("VITE_APP_VERSION") ?? "26.5.0",

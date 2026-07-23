@@ -14,7 +14,8 @@ export interface DomainEventBus {
 const HISTORY_LIMIT = 200;
 
 export function createDomainEventBus(): DomainEventBus {
-  const listeners = new Map<DomainEventName, Set<Listener<DomainEventName>>>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const listeners = new Map<DomainEventName, Set<(event: any) => void>>();
   const anyListeners = new Set<AnyListener>();
   const history: DomainEvent[] = [];
 
@@ -25,9 +26,9 @@ export function createDomainEventBus(): DomainEventBus {
         bag = new Set();
         listeners.set(name, bag);
       }
-      bag.add(listener as Listener<DomainEventName>);
+      bag.add(listener as (event: DomainEvent) => void);
       return () => {
-        bag!.delete(listener as Listener<DomainEventName>);
+        bag!.delete(listener as (event: DomainEvent) => void);
       };
     },
     onAny(listener) {
