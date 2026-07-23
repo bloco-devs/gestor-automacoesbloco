@@ -20,7 +20,7 @@ export type HostPluginStatus =
   | "rejected"
   | "error";
 
-export interface HostPluginRecord extends PluginRecord {
+export interface HostPluginRecord extends Omit<PluginRecord, "status"> {
   status: HostPluginStatus;
   validation?: ValidationResult;
   initMs?: number;
