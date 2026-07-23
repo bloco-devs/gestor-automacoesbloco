@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MarketplacePage from "@/plugins/marketplace/pages/MarketplacePage";
 import {
   EXTENSION_POINTS,
   useEventHistory,
@@ -55,6 +57,13 @@ export default function SdkSandboxPage() {
           (FEATURE 101). Nenhum plugin é consumido fora deste painel.
         </p>
       </header>
+
+      <Tabs defaultValue="sandbox" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
+          <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+        </TabsList>
+        <TabsContent value="sandbox" className="space-y-6">
 
       {/* Host Runtime (FEATURE 101) */}
       <Card>
@@ -389,7 +398,13 @@ export default function SdkSandboxPage() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+        <TabsContent value="marketplace">
+          <MarketplacePage embedded />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
+
 
