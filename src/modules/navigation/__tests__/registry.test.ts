@@ -24,7 +24,7 @@ describe("navigation registry", () => {
   it("resolves legacy aliases to canonical routes", () => {
     expect(resolveRoute("/atividades")).toBe("/workspace/demandas");
     expect(resolveRoute("/solicitacoes/kanban")).toBe("/workspace/demandas");
-    expect(resolveRoute("/dashboard")).toBe("/workspace/hoje");
+    expect(resolveRoute("/dashboard")).toBe("/workspace");
     expect(resolveRoute("/command-center")).toBe("/gestao/panorama");
     expect(resolveRoute("/admin")).toBe("/admin/plataforma");
   });
