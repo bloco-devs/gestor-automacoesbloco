@@ -39,8 +39,9 @@ describe("navigation registry", () => {
     expect(resolveProfile("/admin/security")).toBe("admin");
   });
 
-  it("does not duplicate aliases", () => {
-    const froms = listAliases().map((a) => a.from);
-    expect(new Set(froms).size).toBe(froms.length);
+  it("every alias resolves to a canonical route", () => {
+    for (const a of listAliases()) {
+      expect(resolveRoute(a.from)).toBeTruthy();
+    }
   });
 });
