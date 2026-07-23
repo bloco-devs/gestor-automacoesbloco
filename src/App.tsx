@@ -1,11 +1,18 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import { UxRewriteGate } from "@/modules/portal-unified";
 
 function RedirectLegacySolicitacao() {
   const { id } = useParams();
   return <Navigate to={`/solicitacao/${id ?? ""}`} replace />;
 }
+
+/** FEATURE 026.2 — Alterna entre a nova experiência (flag ON) e a legada. */
+function UxRoute({ on, off }: { on: ReactElement; off: ReactElement }) {
+  return <UxRewriteGate enabled={on} disabled={off} />;
+}
+
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -58,6 +65,10 @@ const DeveloperWorkspace = lazy(() => import(/* webpackChunkName: "workspace" */
 const CommandCenter = lazy(() => import(/* webpackChunkName: "operations" */ "./pages/CommandCenter"));
 const Portal = lazy(() => import("./pages/Portal"));
 const PortalIndex = lazy(() => import("./pages/portal/PortalIndex"));
+const PortalUnifiedHome = lazy(() => import(/* webpackChunkName: "portal-unified" */ "./pages/portal/PortalUnifiedHome"));
+const PortalDemandasPage = lazy(() => import(/* webpackChunkName: "portal-unified" */ "./pages/portal/PortalDemandasPage"));
+const PortalConhecimentoPage = lazy(() => import(/* webpackChunkName: "portal-unified" */ "./pages/portal/PortalConhecimentoPage"));
+const PortalInboxPage = lazy(() => import(/* webpackChunkName: "portal-unified" */ "./pages/portal/PortalInboxPage"));
 const BaseConhecimentoAdmin = lazy(() => import(/* webpackChunkName: "knowledge" */ "./pages/admin/BaseConhecimento"));
 const Demandas = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Demandas"));
 const AdminDashboard = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Dashboard"));
