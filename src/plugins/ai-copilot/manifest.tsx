@@ -79,6 +79,10 @@ export const AICopilotPlugin = definePlugin({
   ],
   activate: (ctx) => {
     ctx.logger("[ai-copilot] activated");
+    // PLUGIN 003 — Copilot descobre serviços via Service Mesh (sem imports diretos).
+    ctx.permissions.grant("plugin.ai-copilot", "knowledge.read");
+    ctx.permissions.grant("plugin.ai-copilot", "routing.read");
+    ctx.permissions.grant("plugin.ai-copilot", "analytics.read");
     emitCopilotEvent("plugin.loaded", { pluginId: "plugin.ai-copilot", at: Date.now() });
   },
   deactivate: () => {

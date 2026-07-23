@@ -32,3 +32,8 @@ export {
   summarizeCopilotContext,
 } from "./context/provider";
 export { copilotCommands } from "./commands";
+export {
+  resolveCopilotServices,
+  fetchRelatedKnowledge,
+  copilotMeshSnapshot,
+} from "./services/mesh-consumer";

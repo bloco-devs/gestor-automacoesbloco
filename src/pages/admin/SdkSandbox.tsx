@@ -10,12 +10,17 @@ import {
   usePlugins,
   usePluginCommands,
   pluginRegistry,
+  useServices,
+  useMeshEvents,
+  bootstrapBuiltInProviders,
+  listContracts,
 } from "@/platform-sdk";
 import type { ExtensionPointId } from "@/platform-sdk";
 import { pluginHost } from "@/platform-sdk/runtime";
 import { useHostDiagnostics } from "@/platform-sdk/runtime/hooks";
 import HelloPlugin from "@/platform-sdk/runtime/plugins/hello";
 import AICopilotPlugin from "@/plugins/ai-copilot";
+import { copilotMeshSnapshot } from "@/plugins/ai-copilot";
 import {
   useCopilotEvents,
   useCopilotDiagnostics,
@@ -39,6 +44,9 @@ export default function SdkSandboxPage() {
   const copilotMessages = useCopilotMessages();
 
   useEffect(() => {
+    // PLUGIN 003 — Service Mesh: providers built-in devem estar disponíveis
+    // ANTES da ativação dos plugins consumidores (ex. AI Copilot).
+    bootstrapBuiltInProviders();
     if (diag.initializedAt) {
       setBooted(true);
       return;
@@ -61,6 +69,7 @@ export default function SdkSandboxPage() {
       <Tabs defaultValue="sandbox" className="space-y-4">
         <TabsList>
           <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
+          <TabsTrigger value="mesh">Service Mesh</TabsTrigger>
           <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
         </TabsList>
         <TabsContent value="sandbox" className="space-y-6">
@@ -399,6 +408,9 @@ export default function SdkSandboxPage() {
         </CardContent>
       </Card>
         </TabsContent>
+        <TabsContent value="mesh">
+          <ServiceMeshTab />
+        </TabsContent>
         <TabsContent value="marketplace">
           <MarketplacePage embedded />
         </TabsContent>
@@ -406,5 +418,141 @@ export default function SdkSandboxPage() {
     </div>
   );
 }
+
+function ServiceMeshTab() {
+  const services = useServices();
+  const events = useMeshEvents();
+  const contracts = listContracts();
+  const consumers = new Map<string, number>();
+  for (const e of events) {
+    if (e.kind === "consumer.resolved" && e.pluginId) {
+      consumers.set(e.pluginId, (consumers.get(e.pluginId) ?? 0) + 1);
+    }
+  }
+  const copilotSnap = copilotMeshSnapshot();
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Service Mesh · Providers ({services.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {services.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum serviço publicado.</p>
+          ) : (
+            services.map((s) => (
+              <div key={s.id} className="flex items-start justify-between gap-3 rounded-md border border-border p-3">
+                <div className="space-y-1">
+                  <div className="text-sm font-medium">{s.id}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {s.pluginId} · {s.contract} · v{s.version} · {s.visibility}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Resoluções: {s.resolveCount}
+                    {s.requiresCapabilities?.length
+                      ? ` · caps: ${s.requiresCapabilities.join(", ")}`
+                      : ""}
+                  </div>
+                </div>
+                <Badge
+                  variant={
+                    s.health.status === "healthy"
+                      ? "default"
+                      : s.health.status === "down"
+                        ? "destructive"
+                        : "secondary"
+                  }
+                >
+                  {s.health.status}
+                </Badge>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Contracts registrados</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            {contracts.length === 0 ? (
+              <p className="text-muted-foreground">Sem contracts publicados.</p>
+            ) : (
+              contracts.map((c) => (
+                <div key={c.contract} className="flex items-center justify-between">
+                  <span className="font-mono text-xs">{c.contract}</span>
+                  <Badge variant="outline">{c.providers} provider(s)</Badge>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Consumers (via eventos)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            {consumers.size === 0 ? (
+              <p className="text-muted-foreground">Nenhum consumo detectado ainda.</p>
+            ) : (
+              Array.from(consumers.entries()).map(([pid, count]) => (
+                <div key={pid} className="flex items-center justify-between">
+                  <span className="font-mono text-xs">{pid}</span>
+                  <Badge variant="outline">{count} resolve(s)</Badge>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">AI Copilot · dependências via Mesh</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1 text-sm">
+          {Object.entries(copilotSnap.services).map(([kind, rec]) => (
+            <div key={kind} className="flex items-center justify-between">
+              <span className="font-mono text-xs">{kind}</span>
+              <Badge variant={rec ? "default" : "secondary"}>
+                {rec ? `${rec.pluginId} · v${rec.version}` : "não resolvido"}
+              </Badge>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Mesh events ({events.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {events.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem eventos.</p>
+          ) : (
+            <ul className="space-y-1 font-mono text-xs">
+              {events.slice().reverse().slice(0, 20).map((e, idx) => (
+                <li key={idx} className="flex items-center justify-between border-b border-border/40 pb-1">
+                  <span>
+                    {e.kind}
+                    {e.pluginId ? ` · ${e.pluginId}` : ""}
+                    {e.contract ? ` · ${e.contract}` : ""}
+                    {e.detail ? ` — ${e.detail}` : ""}
+                  </span>
+                  <span className="text-muted-foreground">{new Date(e.at).toLocaleTimeString()}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 
 
