@@ -184,11 +184,40 @@ const AppRoutes = () => {
 
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           {/* Solicitante */}
-          <Route path="/portal" element={<ProtectedRoute><Portal /></ProtectedRoute>} />
+          {/* FEATURE 026.2 — Portal Unificado (gated por `ux.rewrite`). */}
+          <Route
+            path="/portal"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<PortalUnifiedHome />} off={<Portal />} />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/portal/central" element={<ProtectedRoute><PortalIndex /></ProtectedRoute>} />
-          <Route path="/dashboard-solicitante" element={<ProtectedRoute role="requester"><RequesterDashboard /></ProtectedRoute>} />
-          <Route path="/minhas-solicitacoes" element={<ProtectedRoute role="requester"><MinhasSolicitacoes /></ProtectedRoute>} />
-          <Route path="/nova-solicitacao" element={<ProtectedRoute role="requester"><AIWorkspace /></ProtectedRoute>} />
+          <Route
+            path="/dashboard-solicitante"
+            element={
+              <ProtectedRoute role="requester">
+                <UxRoute on={<Navigate to="/portal/inicio" replace />} off={<RequesterDashboard />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/minhas-solicitacoes"
+            element={
+              <ProtectedRoute role="requester">
+                <UxRoute on={<Navigate to="/portal/demandas" replace />} off={<MinhasSolicitacoes />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/nova-solicitacao"
+            element={
+              <ProtectedRoute role="requester">
+                <UxRoute on={<Navigate to="/portal/inicio" replace />} off={<AIWorkspace />} />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/nova-solicitacao/classico" element={<ProtectedRoute role="requester"><NovaSolicitacao /></ProtectedRoute>} />
 
           {/* Desenvolvedor */}
