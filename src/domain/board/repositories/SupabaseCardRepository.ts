@@ -78,7 +78,7 @@ export class SupabaseCardRepository implements CardRepository {
 
     const { data, error } = await supabase
       .from("atividades_cards")
-      .update(dbPatch)
+      .update(dbPatch as never)
       .eq("id", id)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .select("id, board_id, coluna_id, titulo, descricao, ordem, data_entrega, concluido, criado_em:created_at, atualizado_em:updated_at" as any)
