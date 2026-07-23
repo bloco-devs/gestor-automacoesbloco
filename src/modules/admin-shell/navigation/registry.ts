@@ -5,6 +5,7 @@ import {
   BookOpen,
   Boxes,
   Bug,
+  Gauge,
   Cog,
   FileCode2,
   FileWarning,
