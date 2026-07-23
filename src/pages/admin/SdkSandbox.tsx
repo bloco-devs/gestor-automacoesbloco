@@ -11,6 +11,8 @@ import EventSdkPanel from "@/platform-sdk/event-sdk/components/EventSdkPanel";
 import EventAutomationPlugin from "@/plugins/event-automation";
 import AiSdkPanel from "@/platform-sdk/ai-sdk/components/AiSdkPanel";
 import AiSkillsPlugin from "@/plugins/ai-skills";
+import OrchestratorPanel from "@/platform-sdk/orchestrator/components/OrchestratorPanel";
+import MultiAgentPlugin from "@/plugins/multi-agent";
 import {
   EXTENSION_POINTS,
   useEventHistory,
@@ -59,7 +61,7 @@ export default function SdkSandboxPage() {
       return;
     }
     pluginHost
-      .initialize([HelloPlugin, AICopilotPlugin, WorkflowExtensionsPlugin, EventAutomationPlugin, AiSkillsPlugin])
+      .initialize([HelloPlugin, AICopilotPlugin, WorkflowExtensionsPlugin, EventAutomationPlugin, AiSkillsPlugin, MultiAgentPlugin])
       .finally(() => setBooted(true));
   }, [diag.initializedAt]);
 
@@ -81,6 +83,7 @@ export default function SdkSandboxPage() {
           <TabsTrigger value="workflow-sdk">Workflow SDK</TabsTrigger>
           <TabsTrigger value="event-sdk">Event SDK</TabsTrigger>
           <TabsTrigger value="ai-sdk">AI SDK</TabsTrigger>
+          <TabsTrigger value="ai-orchestrator">AI Orchestrator</TabsTrigger>
           <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
         </TabsList>
         <TabsContent value="repositories" className="space-y-6">
@@ -94,6 +97,9 @@ export default function SdkSandboxPage() {
         </TabsContent>
         <TabsContent value="ai-sdk" className="space-y-6">
           <AiSdkPanel />
+        </TabsContent>
+        <TabsContent value="ai-orchestrator" className="space-y-6">
+          <OrchestratorPanel />
         </TabsContent>
         <TabsContent value="sandbox" className="space-y-6">
 
