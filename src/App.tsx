@@ -87,6 +87,12 @@ const AnalyticsPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages
 const EcossistemaPage = lazy(() => import("./pages/Ecossistema"));
 const StudioPage = lazy(() => import(/* webpackChunkName: "studio" */ "./pages/Studio"));
 
+// FEATURE 026.3 — Workspace Unificado (gated por `ux.rewrite`).
+const WorkspaceHomePage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceHomePage"));
+const WorkspaceDemandasPage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceDemandasPage"));
+const WorkspaceBuilderPage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceBuilderPage"));
+const WorkspaceDevToolsPage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceDevToolsPage"));
+
 // FEATURE 023 — Production Hardening
 const PlatformHealthPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/PlatformHealth"));
 const ErrorCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/ErrorCenter"));
@@ -267,7 +273,17 @@ const AppRoutes = () => {
           <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
           <Route path="/configuracoes" element={<ProtectedRoute role="developer"><Configuracoes /></ProtectedRoute>} />
           <Route path="/diagrama" element={<ProtectedRoute role="developer"><Diagrama /></ProtectedRoute>} />
-          <Route path="/atividades" element={<ProtectedRoute role="developer"><Atividades /></ProtectedRoute>} />
+          <Route
+            path="/atividades"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute
+                  on={<Navigate to="/workspace/demandas?view=board" replace />}
+                  off={<Atividades />}
+                />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/atividades/importar" element={<ProtectedRoute role="developer"><ImportarQuadro /></ProtectedRoute>} />
           <Route path="/atividades/:boardId" element={<ProtectedRoute role="developer"><AtividadesBoard /></ProtectedRoute>} />
 
@@ -342,7 +358,41 @@ const AppRoutes = () => {
           {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
           <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
           <Route path="/operacoes" element={<ProtectedRoute role="developer"><Operacoes /></ProtectedRoute>} />
-          <Route path="/workspace" element={<ProtectedRoute role="developer"><DeveloperWorkspace /></ProtectedRoute>} />
+          {/* FEATURE 026.3 — Workspace Unificado (gated por `ux.rewrite`). */}
+          <Route
+            path="/workspace"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<WorkspaceHomePage />} off={<DeveloperWorkspace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/demandas"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<WorkspaceDemandasPage />} off={<Navigate to="/solicitacoes/kanban" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/builder"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<WorkspaceBuilderPage />} off={<Navigate to="/admin/workflows" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/devtools"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<WorkspaceDevToolsPage />} off={<Navigate to="/developer" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/workspace/hoje" element={<Navigate to="/workspace" replace />} />
+          <Route path="/workspace/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
           <Route path="/command-center" element={<ProtectedRoute role="developer"><CommandCenter /></ProtectedRoute>} />
 
           {/* Compartilhado */}
@@ -361,11 +411,7 @@ const AppRoutes = () => {
             independentemente para permitir migração progressiva. */}
         {/* /portal/* — tratado dentro do AppLayout (ver FEATURE 026.2). */}
 
-        <Route path="/workspace/hoje" element={<Navigate to="/trabalho/inbox" replace />} />
-        <Route path="/workspace/demandas" element={<Navigate to="/solicitacoes/kanban" replace />} />
-        <Route path="/workspace/builder" element={<Navigate to="/admin/workflows" replace />} />
-        <Route path="/workspace/devtools" element={<Navigate to="/developer" replace />} />
-        <Route path="/workspace/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
+        {/* /workspace/* — tratado dentro do AppLayout (ver FEATURE 026.3). */}
 
         <Route path="/gestao/panorama" element={<Navigate to="/command-center" replace />} />
         <Route path="/gestao/equipe" element={<Navigate to="/operacoes" replace />} />

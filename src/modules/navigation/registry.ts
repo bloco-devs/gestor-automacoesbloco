@@ -56,13 +56,13 @@ const PORTAL: NavigationSchema = {
 
 const WORKSPACE: NavigationSchema = {
   profile: "workspace",
-  home: "/workspace/hoje",
+  home: "/workspace",
   groups: [
     {
       id: "workspace-main",
       label: "Workspace",
       items: [
-        { id: "ws.hoje", label: "Hoje", route: "/workspace/hoje", icon: Home, aliases: ["/dashboard", "/workspace"] },
+        { id: "ws.hoje", label: "Hoje", route: "/workspace", icon: Home, aliases: ["/dashboard", "/workspace/hoje"] },
         {
           id: "ws.demandas",
           label: "Demandas",
@@ -79,7 +79,7 @@ const WORKSPACE: NavigationSchema = {
         },
         { id: "ws.builder", label: "Builder", route: "/workspace/builder", icon: Wrench, aliases: ["/admin/workflows", "/studio"] },
         { id: "ws.devtools", label: "DevTools", route: "/workspace/devtools", icon: Terminal, aliases: ["/developer"] },
-        { id: "ws.inbox", label: "Inbox", route: "/workspace/inbox", icon: InboxIcon, aliases: ["/trabalho/inbox"] },
+        { id: "ws.inbox", label: "Inbox", route: "/trabalho/inbox", icon: InboxIcon, aliases: ["/workspace/inbox"] },
       ],
     },
   ],
