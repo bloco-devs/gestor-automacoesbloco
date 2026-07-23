@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAIWorkspace } from "@/hooks/useAIWorkspace";
 import { KnowledgeSuggestions } from "@/modules/knowledge";
-import { DuplicatePreventionPanel } from "@/components/portal/DuplicatePreventionPanel";
+
 import { ChatContainer } from "@/components/ai-workspace/ChatContainer";
 import { ConversationInput } from "@/components/ai-workspace/ConversationInput";
 import { ConversationFooter } from "@/components/ai-workspace/ConversationFooter";
@@ -136,7 +136,6 @@ export function PortalQuickCreate() {
         </div>
       </div>
 
-      <DuplicatePreventionPanel query={draft} />
 
       <KnowledgeSuggestions
         query={draft}
