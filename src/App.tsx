@@ -87,6 +87,12 @@ const AnalyticsPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages
 const EcossistemaPage = lazy(() => import("./pages/Ecossistema"));
 const StudioPage = lazy(() => import(/* webpackChunkName: "studio" */ "./pages/Studio"));
 
+// FEATURE 026.3 — Workspace Unificado (gated por `ux.rewrite`).
+const WorkspaceHomePage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceHomePage"));
+const WorkspaceDemandasPage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceDemandasPage"));
+const WorkspaceBuilderPage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceBuilderPage"));
+const WorkspaceDevToolsPage = lazy(() => import(/* webpackChunkName: "workspace-unified" */ "./pages/workspace/WorkspaceDevToolsPage"));
+
 // FEATURE 023 — Production Hardening
 const PlatformHealthPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/PlatformHealth"));
 const ErrorCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/ErrorCenter"));
