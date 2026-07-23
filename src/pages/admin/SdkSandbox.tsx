@@ -55,7 +55,7 @@ export default function SdkSandboxPage() {
       return;
     }
     pluginHost
-      .initialize([HelloPlugin, AICopilotPlugin])
+      .initialize([HelloPlugin, AICopilotPlugin, WorkflowExtensionsPlugin])
       .finally(() => setBooted(true));
   }, [diag.initializedAt]);
 
