@@ -220,6 +220,41 @@ const AppRoutes = () => {
           />
           <Route path="/nova-solicitacao/classico" element={<ProtectedRoute role="requester"><NovaSolicitacao /></ProtectedRoute>} />
 
+          {/* Portal Unificado — rotas canônicas (gated por `ux.rewrite`). */}
+          <Route
+            path="/portal/inicio"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<PortalUnifiedHome />} off={<Navigate to="/portal" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/portal/demandas"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<PortalDemandasPage />} off={<Navigate to="/minhas-solicitacoes" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/portal/conhecimento"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<PortalConhecimentoPage />} off={<Navigate to="/portal/central" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/portal/inbox"
+            element={
+              <ProtectedRoute>
+                <UxRoute on={<PortalInboxPage />} off={<Navigate to="/trabalho/inbox" replace />} />
+              </ProtectedRoute>
+            }
+          />
+
+
           {/* Desenvolvedor */}
           <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
           <Route path="/solicitacoes" element={<ProtectedRoute><Solicitacoes /></ProtectedRoute>} />
