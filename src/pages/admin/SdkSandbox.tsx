@@ -32,13 +32,18 @@ export default function SdkSandboxPage() {
   const issues = pluginRegistry.issues();
   const diag = useHostDiagnostics();
   const [booted, setBooted] = useState(false);
+  const copilotEvents = useCopilotEvents();
+  const copilotDiag = useCopilotDiagnostics();
+  const copilotMessages = useCopilotMessages();
 
   useEffect(() => {
     if (diag.initializedAt) {
       setBooted(true);
       return;
     }
-    pluginHost.initialize([HelloPlugin]).finally(() => setBooted(true));
+    pluginHost
+      .initialize([HelloPlugin, AICopilotPlugin])
+      .finally(() => setBooted(true));
   }, [diag.initializedAt]);
 
   return (
