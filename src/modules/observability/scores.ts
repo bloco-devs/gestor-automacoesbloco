@@ -55,20 +55,21 @@ export function computeEnterpriseScores(): EnterpriseScore[] {
     (overview.traces ? 40 : 0) + (overview.meshEvents ? 30 : 0) + (overview.errors >= 0 ? 30 : 0),
   );
   const security = computeSecurityScore();
+  const securityScore = clamp(security.overall ?? 0);
   const platformScore = clamp(
-    (healthScore + pluginScore + productionScore + aiScore + wfScore + observabilityScore + (security.score ?? 0)) / 7,
+    (healthScore + pluginScore + productionScore + aiScore + wfScore + observabilityScore + securityScore) / 7,
   );
   const qualityScore = clamp((platformScore + productionScore + healthScore) / 3);
 
   return [
     { id: "platform", label: "Platform Score", score: platformScore, detail: "Média dos motores." },
-    { id: "security", label: "Security Score", score: security.score ?? 0, detail: "Postura de segurança." },
+    { id: "security", label: "Security Score", score: securityScore, detail: "Postura de segurança." },
     { id: "quality", label: "Quality Score", score: qualityScore, detail: "Estabilidade + Saúde." },
     { id: "production", label: "Production Score", score: productionScore, detail: `Erros críticos: ${errs.length}` },
     { id: "health", label: "Health Score", score: healthScore, detail: `${health.length} runtimes` },
     { id: "plugin", label: "Plugin Score", score: pluginScore, detail: `${plugins.length} plugins` },
     { id: "ai", label: "AI Score", score: aiScore, detail: `${ai.skills} skills · ${ai.agents} agents` },
-    { id: "workflow", label: "Workflow Score", score: wfScore, detail: `${wf.actions} actions` },
+    { id: "workflow", label: "Workflow Score", score: wfScore, detail: `${wf.total} extensões` },
     { id: "observability", label: "Observability Score", score: observabilityScore, detail: `${overview.traces} traces` },
   ];
 }
