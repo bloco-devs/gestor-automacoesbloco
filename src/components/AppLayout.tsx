@@ -26,6 +26,7 @@ import { SidebarBreadcrumb } from "@/components/sidebar/SidebarBreadcrumb";
 import { builderGroups, devGroups, requesterGroups } from "@/components/sidebar/navGroups";
 import { CopilotDock } from "@/modules/copilot/CopilotDock";
 import { useEcossistemaAutoSync } from "@/modules/ecossistema";
+import { attachGlobalErrorHandlers } from "@/modules/errors";
 
 const SIDEBAR_MIN = 160;
 const SIDEBAR_MAX = 480;
@@ -41,6 +42,8 @@ export default function AppLayout() {
 
   // F018.3 — auto-sync do Ecossistema (Realtime → reprocessar-matches, debounced)
   useEcossistemaAutoSync(!!user);
+  // FEATURE 023 — Error Center (captura global uma única vez)
+  useEffect(() => { attachGlobalErrorHandlers(); }, []);
   const isBuilderRole = user?.role === "builder";
   const groups = isDeveloperEffective ? devGroups : isBuilderRole ? builderGroups : requesterGroups;
   const roleLabel = user?.isAdministrador
