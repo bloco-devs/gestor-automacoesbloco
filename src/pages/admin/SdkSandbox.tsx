@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MarketplacePage from "@/plugins/marketplace/pages/MarketplacePage";
+import RepositoriesPanel from "@/platform-sdk/extension-host/components/RepositoriesPanel";
 import {
   EXTENSION_POINTS,
   useEventHistory,
@@ -70,9 +71,14 @@ export default function SdkSandboxPage() {
         <TabsList>
           <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
           <TabsTrigger value="mesh">Service Mesh</TabsTrigger>
+          <TabsTrigger value="repositories">Repositories</TabsTrigger>
           <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
         </TabsList>
+        <TabsContent value="repositories" className="space-y-6">
+          <RepositoriesPanel />
+        </TabsContent>
         <TabsContent value="sandbox" className="space-y-6">
+
 
       {/* Host Runtime (FEATURE 101) */}
       <Card>

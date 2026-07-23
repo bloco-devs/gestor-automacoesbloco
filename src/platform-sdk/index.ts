@@ -17,6 +17,8 @@ export {
   useEventHistory,
 } from "./hooks";
 export * from "./services";
+export * as ExtensionHost from "./extension-host";
+export * as Repository from "./repository";
 export const EXTENSION_POINTS = [
   "sidebar",
   "dashboard",
