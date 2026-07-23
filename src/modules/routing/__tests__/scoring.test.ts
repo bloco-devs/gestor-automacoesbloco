@@ -21,6 +21,7 @@ const base: Candidate = {
   type_history: { bug: 6, melhoria: 4 },
   priority_history: { alta: 5, critica: 3, media: 2 },
   complexity_history: { media: 6, dificil: 4 },
+  system_history: [],
 };
 
 const demand: DemandInput = {

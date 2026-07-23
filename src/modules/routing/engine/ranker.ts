@@ -20,6 +20,7 @@ import {
   scoreSpeed,
   scoreWorkload,
 } from "./scoring";
+import { findSystemEntry, scoreSystemFit } from "./system-fit";
 import { TYPE_META } from "@/modules/demands/types";
 
 const EMPTY: Ranking = { top: null, alternatives: [], all: [], empty: true };
@@ -94,8 +95,10 @@ export function rankCandidates(
     const complexity = scoreComplexityFit(demand, c);
     const priority = scorePriorityFit(demand, c);
     const sla = scoreSlaFit(demand, workload);
+    // F018.4 — bônus aditivo (0..10) que NUNCA substitui o algoritmo base.
+    const systemFit = demand.system_slug ? scoreSystemFit(demand, c) : 0;
 
-    const breakdown = { specialty, workload, speed, history, complexity, priority, sla };
+    const breakdown = { specialty, workload, speed, history, complexity, priority, sla, systemFit };
     const raw =
       specialty * weights.specialty +
       workload * weights.workload +
@@ -104,8 +107,19 @@ export function rankCandidates(
       complexity * weights.complexity +
       priority * weights.priority +
       sla * weights.sla;
-    const score = Math.round(raw);
+    const score = Math.round(raw) + systemFit;
     const reasons = buildReasons(demand, c, workload);
+    // Reason de especialista no sistema (quando aplicável)
+    if (demand.system_slug) {
+      const entry = findSystemEntry(demand, c);
+      if (entry && entry.total >= 3) {
+        reasons.unshift(
+          `Especialista neste sistema (${entry.total} demanda${entry.total > 1 ? "s" : ""})`,
+        );
+      } else if (entry && entry.total > 0) {
+        reasons.unshift(`Já atendeu ${entry.total} no sistema`);
+      }
+    }
     return { candidate: c, score, breakdown, reasons, confidence: "low" as ConfidenceLevel };
   });
 

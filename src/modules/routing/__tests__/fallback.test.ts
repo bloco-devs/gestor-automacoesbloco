@@ -26,6 +26,7 @@ describe("fallback behavior", () => {
         type_history: {},
         priority_history: {},
         complexity_history: {},
+        system_history: [],
       },
     ];
     const r = rankCandidates(demand, pool);

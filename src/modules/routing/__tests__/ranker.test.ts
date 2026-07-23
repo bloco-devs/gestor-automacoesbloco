@@ -13,8 +13,9 @@ function mkCand(over: Partial<Candidate> & { user_id: string }): Candidate {
     type_history: {},
     priority_history: {},
     complexity_history: {},
+    system_history: [],
     ...over,
-  };
+  } as Candidate;
 }
 
 const demand: DemandInput = {
