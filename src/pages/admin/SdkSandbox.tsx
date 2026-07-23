@@ -408,6 +408,9 @@ export default function SdkSandboxPage() {
         </CardContent>
       </Card>
         </TabsContent>
+        <TabsContent value="mesh">
+          <ServiceMeshTab />
+        </TabsContent>
         <TabsContent value="marketplace">
           <MarketplacePage embedded />
         </TabsContent>
