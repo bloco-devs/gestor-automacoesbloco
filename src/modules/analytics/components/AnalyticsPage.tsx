@@ -15,6 +15,11 @@ import { SLASection } from "./SLASection";
 import { InsightsSection } from "./InsightsSection";
 import { EcossistemaSection } from "./EcossistemaSection";
 import { AfinidadeSistemaSection } from "./AfinidadeSistemaSection";
+import { SystemAffinityHeatmap } from "./SystemAffinityHeatmap";
+import { SystemAffinityRanking } from "./SystemAffinityRanking";
+import { SystemCoverageCard } from "./SystemCoverageCard";
+import { SystemRiskCard } from "./SystemRiskCard";
+import { SystemInsights } from "./SystemInsights";
 import { downloadCsv, toCsv, triggerPrint } from "../utils/csv";
 import type { AnalyticsFilters } from "../types";
 import { useQuery } from "@tanstack/react-query";
@@ -119,6 +124,21 @@ export function AnalyticsPage() {
           <InsightsSection data={data} workloads={workloadsQ.data ?? []} />
           <EcossistemaSection />
           <AfinidadeSistemaSection />
+          <EcossistemaSection />
+          <AfinidadeSistemaSection />
+
+          {/* F018.5 — Afinidade do Ecossistema (analítico) */}
+          <Section
+            id="analytics-ecossistema-afinidade"
+            title="Afinidade do Ecossistema"
+            description="Heatmap, ranking, cobertura, riscos e insights derivados do CandidatePool (F018.4)."
+          >
+            <SystemAffinityHeatmap />
+            <SystemAffinityRanking />
+            <SystemCoverageCard />
+            <SystemRiskCard />
+            <SystemInsights />
+          </Section>
         </>
       )}
     </PageShell>

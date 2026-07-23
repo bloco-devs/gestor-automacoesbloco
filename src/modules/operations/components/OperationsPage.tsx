@@ -10,6 +10,9 @@ import { TeamWorkload } from "./TeamWorkload";
 import { UnassignedQueueCard, EspecialistasEcossistemaCard } from "@/modules/routing";
 import { WorkflowsOpsCard } from "@/modules/workflow-builder";
 import { EcossistemaSaudeCard } from "@/modules/ecossistema";
+import { SystemAffinityRanking } from "@/modules/analytics/components/SystemAffinityRanking";
+import { SystemRiskCard } from "@/modules/analytics/components/SystemRiskCard";
+import { SystemCoverageCard } from "@/modules/analytics/components/SystemCoverageCard";
 
 function fmtHours(h: number | null): string {
   if (h == null) return "—";
@@ -122,6 +125,18 @@ export function OperationsPage() {
       <section aria-labelledby="op-especialistas">
         <h2 id="op-especialistas" className="sr-only">Especialistas por Sistema</h2>
         <EspecialistasEcossistemaCard />
+      </section>
+
+      {/* F018.5 — Especialização do Time */}
+      <section aria-labelledby="op-especializacao" className="space-y-3">
+        <h2 id="op-especializacao" className="text-sm font-semibold text-muted-foreground">
+          Especialização do Time
+        </h2>
+        <SystemAffinityRanking topN={3} systemsLimit={4} />
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <SystemRiskCard limit={6} />
+          <SystemCoverageCard />
+        </div>
       </section>
     </div>
   );

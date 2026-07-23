@@ -7,6 +7,7 @@ import { DemandListPanel } from "@/components/workspace/DemandListPanel";
 import { DemandDetailInline } from "@/components/workspace/DemandDetailInline";
 import { IntelligencePanel } from "@/components/workspace/IntelligencePanel";
 import { EspecialidadeCard } from "@/modules/routing";
+import { MinhaEspecializacaoCard } from "@/modules/analytics/components/MinhaEspecializacaoCard";
 import { useAuth } from "@/hooks/useAuth";
 
 const LS_SELECTED = "workspace:selectedId:v1";
@@ -103,6 +104,7 @@ export default function DeveloperWorkspace() {
         </div>
         {rightOpen && (
           <div className="min-h-0 hidden lg:flex lg:w-[340px] xl:w-[380px] flex-col gap-3 overflow-y-auto p-3">
+            <MinhaEspecializacaoCard userId={user?.id ?? null} />
             <EspecialidadeCard userId={user?.id ?? null} />
             <IntelligencePanel demand={selected} />
           </div>
