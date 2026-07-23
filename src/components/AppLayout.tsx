@@ -38,6 +38,9 @@ export default function AppLayout() {
   const { start: startTour } = useOnboardingTour();
 
   const isDeveloperEffective = user?.role === "developer" || !!user?.isAdministrador;
+
+  // F018.3 — auto-sync do Ecossistema (Realtime → reprocessar-matches, debounced)
+  useEcossistemaAutoSync(!!user);
   const isBuilderRole = user?.role === "builder";
   const groups = isDeveloperEffective ? devGroups : isBuilderRole ? builderGroups : requesterGroups;
   const roleLabel = user?.isAdministrador
