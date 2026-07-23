@@ -328,6 +328,68 @@ export default function SdkSandboxPage() {
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">AI Copilot · Developer Tools</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="text-xs text-muted-foreground">
+            Diagnóstico do plugin <code>plugin.ai-copilot</code>. Mensagens em sessão:{" "}
+            {copilotMessages.length}
+          </div>
+          <div>
+            <div className="mb-1 text-xs font-medium text-muted-foreground">
+              Últimos prompts ({copilotDiag.length})
+            </div>
+            {copilotDiag.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Execute um command <code>copilot.*</code> para gerar prompts.
+              </p>
+            ) : (
+              <ul className="space-y-1 font-mono text-xs">
+                {copilotDiag.slice(0, 8).map((d, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-center justify-between border-b border-border/40 pb-1"
+                  >
+                    <span>
+                      {d.actionId} · {d.template} · {d.module}
+                    </span>
+                    <span className="text-muted-foreground">
+                      ~{d.tokensEstimated} tok · {d.durationMs.toFixed(1)}ms
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div>
+            <div className="mb-1 text-xs font-medium text-muted-foreground">
+              Plugin events ({copilotEvents.length})
+            </div>
+            {copilotEvents.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Nenhum evento do Copilot ainda.</p>
+            ) : (
+              <ul className="space-y-1 font-mono text-xs">
+                {copilotEvents
+                  .slice()
+                  .reverse()
+                  .slice(0, 10)
+                  .map((e, idx) => (
+                    <li key={idx} className="flex items-center justify-between">
+                      <span>{String(e.name)}</span>
+                      <span className="text-muted-foreground">
+                        {new Date(e.at).toLocaleTimeString()}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
