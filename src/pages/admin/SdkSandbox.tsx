@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MarketplacePage from "@/plugins/marketplace/pages/MarketplacePage";
+import RepositoriesPanel from "@/platform-sdk/extension-host/components/RepositoriesPanel";
 import {
   EXTENSION_POINTS,
   useEventHistory,
