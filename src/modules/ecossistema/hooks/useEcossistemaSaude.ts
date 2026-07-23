@@ -34,7 +34,7 @@ interface SolicitacaoAggRow {
 interface KnowledgeArticleAggRow {
   id: string;
   titulo: string | null;
-  metadata: Record<string, unknown> | null;
+  sistema_slug: string | null;
 }
 
 async function fetchSolicitacoesAgg(sinceIso: string): Promise<SolicitacaoAggRow[]> {
@@ -50,12 +50,12 @@ async function fetchSolicitacoesAgg(sinceIso: string): Promise<SolicitacaoAggRow
 async function fetchKnowledgeArticles(): Promise<KnowledgeArticleAggRow[]> {
   const { data, error } = await supabase
     .from("knowledge_articles")
-    .select("id, titulo, metadata")
+    .select("id, titulo, sistema_slug")
     .eq("status", "published")
     .is("deleted_at", null)
     .limit(1000);
   if (error) return [];
-  return (data ?? []) as KnowledgeArticleAggRow[];
+  return (data ?? []) as unknown as KnowledgeArticleAggRow[];
 }
 
 export interface SistemaMetric {
