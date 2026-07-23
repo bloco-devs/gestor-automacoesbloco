@@ -103,6 +103,7 @@ export const devGroups: NavGroup[] = [
       { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
       { to: "/admin/saude", label: "Centro de Saúde", icon: Activity },
       { to: "/admin/observability", label: "Observabilidade", icon: Activity },
+      { to: "/admin/integrations", label: "Integrações", icon: Plug, matchPrefix: "/admin/integrations" },
       { to: "/admin/configuracoes/sla", label: "Configuração de SLA", icon: Clock },
       { to: "/admin/configuracoes/webhooks", label: "Webhooks & Integrações", icon: Repeat },
       { to: "/configuracoes", label: "Configurações", icon: Settings },
