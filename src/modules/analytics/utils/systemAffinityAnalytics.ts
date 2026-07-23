@@ -217,7 +217,7 @@ export function detectRisks(pool: Candidate[]): Risk[] {
   const risks: Risk[] = [];
   for (const [slug, v] of perSystem) {
     const reasons: string[] = [];
-    let severity: RiskSeverity = "baixa";
+    let severity = "baixa" as RiskSeverity;
 
     if (v.specialists.length === 0) {
       reasons.push("Nenhum especialista com afinidade ≥ 60%");
