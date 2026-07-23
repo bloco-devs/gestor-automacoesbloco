@@ -85,22 +85,28 @@ async function fetchRecentResolved(): Promise<ResolvedRow[]> {
 }
 
 /**
- * Traduz `plataformas.id (UUID) → slug`. Como a tabela `plataformas` não tem
- * coluna `slug`, derivamos do `nome` (slugify). Isso permite casar com
- * `knowledge_articles.sistema_slug` para contar documentação.
+ * `plataformas` não tem coluna `slug`. Derivamos slug ← slugify(nome).
+ * Retornamos o map inverso `slug → id` para traduzir `knowledge_articles.sistema_slug`
+ * ao mesmo espaço de chaves usado no histórico por sistema (system_id).
  */
-async function fetchPlataformaSlugs(): Promise<Map<string, string>> {
+async function fetchPlataformaSlugToId(): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   const { data, error } = await supabase.from("plataformas").select("id, nome");
   if (error) return map;
   for (const p of (data as PlataformaRow[] | null) ?? []) {
     const s = slugify(p.nome);
-    if (s) map.set(p.id, s);
+    if (s) map.set(s, p.id);
   }
   return map;
 }
 
-async function fetchKnowledgeAuthorship(): Promise<Map<string, Map<string, number>>> {
+/**
+ * Retorna `Map<user_id, Map<system_id, count>>` já traduzido do slug do artigo
+ * para o `system_id` correspondente. Slugs sem match ficam de fora.
+ */
+async function fetchKnowledgeAuthorship(
+  slugToId: Map<string, string>,
+): Promise<Map<string, Map<string, number>>> {
   const out = new Map<string, Map<string, number>>();
   const { data, error } = await supabase
     .from("knowledge_articles")
@@ -111,20 +117,24 @@ async function fetchKnowledgeAuthorship(): Promise<Map<string, Map<string, numbe
   if (error) return out;
   for (const a of (data as KnowledgeRow[] | null) ?? []) {
     if (!a.autor_id || !a.sistema_slug) continue;
+    const systemId = slugToId.get(a.sistema_slug);
+    if (!systemId) continue;
     const bucket = out.get(a.autor_id) ?? new Map<string, number>();
-    bucket.set(a.sistema_slug, (bucket.get(a.sistema_slug) ?? 0) + 1);
+    bucket.set(systemId, (bucket.get(systemId) ?? 0) + 1);
     out.set(a.autor_id, bucket);
   }
   return out;
 }
 
 export async function buildCandidatePool(): Promise<Candidate[]> {
-  const [workloads, resolved, plataformas, docs] = await Promise.all([
+  const [workloads, resolved, slugToId] = await Promise.all([
     getUserWorkloads().catch(() => []),
     fetchRecentResolved().catch(() => [] as ResolvedRow[]),
-    fetchPlataformaSlugs().catch(() => new Map<string, string>()),
-    fetchKnowledgeAuthorship().catch(() => new Map<string, Map<string, number>>()),
+    fetchPlataformaSlugToId().catch(() => new Map<string, string>()),
   ]);
+  const docs = await fetchKnowledgeAuthorship(slugToId).catch(
+    () => new Map<string, Map<string, number>>(),
+  );
 
   const ids = new Set<string>();
   for (const w of workloads) ids.add(w.user_id);
@@ -135,14 +145,13 @@ export async function buildCandidatePool(): Promise<Candidate[]> {
   const profiles = await fetchProfiles(Array.from(ids));
 
   const resolvedAsDemands = resolved as unknown as Demand[];
-  const systemKey = (systemId: string): string | null =>
-    plataformas.get(systemId) ?? systemId; // fallback: id cru é mantido para consumidores
 
   return Array.from(ids).map<Candidate>((userId) => {
     const wl = workloadMap.get(userId);
     const prof = profiles.get(userId);
+    // Histórico é indexado pelo próprio `system_id` (mesma chave que o consumidor
+    // usa em `demand.system_slug`), mantendo o motor agnóstico do formato do slug.
     const hist = deriveHistory(userId, resolvedAsDemands, {
-      systemKey,
       docsBySystem: docs.get(userId),
     });
     return {
