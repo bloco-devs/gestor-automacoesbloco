@@ -74,6 +74,7 @@ const MarketplacePage = lazy(() => import(/* webpackChunkName: "admin" */ "./plu
 const SaudePage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Saude"));
 const AnalyticsPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Analytics"));
 const EcossistemaPage = lazy(() => import("./pages/Ecossistema"));
+const StudioPage = lazy(() => import(/* webpackChunkName: "studio" */ "./pages/Studio"));
 
 // FEATURE 023 — Production Hardening
 const PlatformHealthPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/PlatformHealth"));
@@ -207,6 +208,8 @@ const AppRoutes = () => {
           <Route path="/admin/security/timeline" element={<ProtectedRoute role="developer"><SecurityTimelinePage /></ProtectedRoute>} />
           <Route path="/admin/security/reports" element={<ProtectedRoute role="developer"><SecurityReportsPage /></ProtectedRoute>} />
           <Route path="/ecossistema" element={<ProtectedRoute><EcossistemaPage /></ProtectedRoute>} />
+          <Route path="/studio" element={<ProtectedRoute role="developer"><StudioPage /></ProtectedRoute>} />
+
 
           {/* Trabalho — Inbox (Centro de Trabalho Inteligente) */}
           <Route path="/trabalho/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
