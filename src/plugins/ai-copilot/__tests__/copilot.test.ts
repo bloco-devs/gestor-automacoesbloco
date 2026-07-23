@@ -139,8 +139,7 @@ describe("AI Copilot · developer tools + runAction", () => {
     __resetDiagnosticsForTests();
     __resetMemoryForTests();
     __resetCopilotEventsForTests();
-    // Aponta o context engine para um estado conhecido
-    contextEngine.patchMetadata({});
+    contextEngine.reset();
   });
 
   it("runAction registra diagnóstico + evento + mensagem", () => {
