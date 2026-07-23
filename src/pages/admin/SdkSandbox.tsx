@@ -57,7 +57,7 @@ export default function SdkSandboxPage() {
       return;
     }
     pluginHost
-      .initialize([HelloPlugin, AICopilotPlugin, WorkflowExtensionsPlugin])
+      .initialize([HelloPlugin, AICopilotPlugin, WorkflowExtensionsPlugin, EventAutomationPlugin])
       .finally(() => setBooted(true));
   }, [diag.initializedAt]);
 
@@ -77,6 +77,7 @@ export default function SdkSandboxPage() {
           <TabsTrigger value="mesh">Service Mesh</TabsTrigger>
           <TabsTrigger value="repositories">Repositories</TabsTrigger>
           <TabsTrigger value="workflow-sdk">Workflow SDK</TabsTrigger>
+          <TabsTrigger value="event-sdk">Event SDK</TabsTrigger>
           <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
         </TabsList>
         <TabsContent value="repositories" className="space-y-6">
@@ -84,6 +85,9 @@ export default function SdkSandboxPage() {
         </TabsContent>
         <TabsContent value="workflow-sdk" className="space-y-6">
           <WorkflowSdkPanel />
+        </TabsContent>
+        <TabsContent value="event-sdk" className="space-y-6">
+          <EventSdkPanel />
         </TabsContent>
         <TabsContent value="sandbox" className="space-y-6">
 
