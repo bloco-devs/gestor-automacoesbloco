@@ -13,6 +13,7 @@ import { KnowledgeSection } from "./KnowledgeSection";
 import { AISection } from "./AISection";
 import { SLASection } from "./SLASection";
 import { InsightsSection } from "./InsightsSection";
+import { EcossistemaSection } from "./EcossistemaSection";
 import { downloadCsv, toCsv, triggerPrint } from "../utils/csv";
 import type { AnalyticsFilters } from "../types";
 import { useQuery } from "@tanstack/react-query";
@@ -115,6 +116,7 @@ export function AnalyticsPage() {
           <AISection data={data} />
           <SLASection data={data} />
           <InsightsSection data={data} workloads={workloadsQ.data ?? []} />
+          <EcossistemaSection />
         </>
       )}
     </PageShell>

@@ -9,6 +9,7 @@ import { MetricCard } from "./MetricCard";
 import { TeamWorkload } from "./TeamWorkload";
 import { UnassignedQueueCard } from "@/modules/routing";
 import { WorkflowsOpsCard } from "@/modules/workflow-builder";
+import { EcossistemaSaudeCard } from "@/modules/ecossistema";
 
 function fmtHours(h: number | null): string {
   if (h == null) return "—";
