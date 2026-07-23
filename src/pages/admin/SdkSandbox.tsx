@@ -7,6 +7,8 @@ import MarketplacePage from "@/plugins/marketplace/pages/MarketplacePage";
 import RepositoriesPanel from "@/platform-sdk/extension-host/components/RepositoriesPanel";
 import WorkflowSdkPanel from "@/platform-sdk/workflow-sdk/components/WorkflowSdkPanel";
 import WorkflowExtensionsPlugin from "@/plugins/workflow-extensions";
+import EventSdkPanel from "@/platform-sdk/event-sdk/components/EventSdkPanel";
+import EventAutomationPlugin from "@/plugins/event-automation";
 import {
   EXTENSION_POINTS,
   useEventHistory,
