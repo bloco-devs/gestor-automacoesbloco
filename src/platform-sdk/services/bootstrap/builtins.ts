@@ -35,12 +35,12 @@ export function bootstrapBuiltInProviders(): void {
     async search({ query, limit = 5 }) {
       try {
         const { knowledgeService } = await import("@/modules/knowledge");
-        const results = await knowledgeService.search({ query, limit }).catch(() => []);
-        return (results ?? []).map((r) => ({
-          id: r.id,
-          title: r.title ?? r.slug ?? r.id,
-          slug: r.slug,
-          similarity: r.similarity,
+        const results = await knowledgeService.search(query).catch(() => []);
+        return (results ?? []).slice(0, limit).map((r: Record<string, unknown>) => ({
+          id: String(r.id ?? ""),
+          title: String(r.title ?? r.slug ?? r.id ?? ""),
+          slug: typeof r.slug === "string" ? r.slug : undefined,
+          similarity: typeof r.similarity === "number" ? r.similarity : undefined,
           source: "knowledge",
         }));
       } catch {
