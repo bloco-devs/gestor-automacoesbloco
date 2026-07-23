@@ -324,10 +324,7 @@ const AppRoutes = () => {
         {/* FEATURE 026.1 — Nova UX (perfis). Aliases ADITIVOS que apontam para páginas existentes.
             Feature flag `ux.rewrite` controla se a nova sidebar é exibida; as URLs abaixo funcionam
             independentemente para permitir migração progressiva. */}
-        <Route path="/portal/inicio" element={<Navigate to="/portal" replace />} />
-        <Route path="/portal/demandas" element={<Navigate to="/minhas-solicitacoes" replace />} />
-        <Route path="/portal/conhecimento" element={<Navigate to="/portal/central" replace />} />
-        <Route path="/portal/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
+        {/* /portal/* — tratado dentro do AppLayout (ver FEATURE 026.2). */}
 
         <Route path="/workspace/hoje" element={<Navigate to="/trabalho/inbox" replace />} />
         <Route path="/workspace/demandas" element={<Navigate to="/solicitacoes/kanban" replace />} />
