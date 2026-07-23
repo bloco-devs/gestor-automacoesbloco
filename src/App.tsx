@@ -69,6 +69,7 @@ const WorkflowExecutionsPage = lazy(() => import(/* webpackChunkName: "workflows
 const AdminHubLegado = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/AdminHub"));
 const AdminShellPage = lazy(() => import(/* webpackChunkName: "admin" */ "./modules/admin-shell/AdminShellPage"));
 const GovernancePage = lazy(() => import(/* webpackChunkName: "admin" */ "./modules/governance/GovernancePage"));
+const SdkSandbox = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SdkSandbox"));
 const SaudePage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Saude"));
 const AnalyticsPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Analytics"));
 const EcossistemaPage = lazy(() => import("./pages/Ecossistema"));
