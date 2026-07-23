@@ -26,6 +26,7 @@ export const IntelligencePanel = memo(function IntelligencePanel({ demand }: Pro
           priority: demand.priority,
           complexity: demand.complexity,
           sla_status: demand.sla_status,
+          system_slug: demand.system_id, // F018.4 — habilita afinidade por sistema
         }
       : null,
   );
@@ -101,6 +102,7 @@ export const IntelligencePanel = memo(function IntelligencePanel({ demand }: Pro
               ranking={routing.ranking}
               onAssign={handleAssign}
               isAssigning={assign.isPending}
+              systemSlug={demand.system_id}
             />
           )}
         </section>
