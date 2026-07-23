@@ -101,6 +101,17 @@ const SecurityReportsPage = lazy(() => import(/* webpackChunkName: "security" */
 // FEATURE 026 — Enterprise Observability
 const ObservabilityCenterPage = lazy(() => import(/* webpackChunkName: "observability" */ "./pages/admin/ObservabilityCenter"));
 
+// FEATURE 027 — Enterprise Integration Hub
+const IntegrationsOverview = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Overview"));
+const IntegrationsApis = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Apis"));
+const IntegrationsWebhooks = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Webhooks"));
+const IntegrationsConnectors = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Connectors"));
+const IntegrationsMesh = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Mesh"));
+const IntegrationsSdk = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Sdk"));
+const IntegrationsCatalog = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Catalog"));
+const IntegrationsDiagnostics = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Diagnostics"));
+const IntegrationsDocs = lazy(() => import(/* webpackChunkName: "integrations" */ "./pages/admin/integrations/Docs"));
+
 // FEATURE 026 — Developer Experience Center
 const DeveloperCenter = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Index"));
 const DevRuntime = lazy(() => import(/* webpackChunkName: "developer" */ "./pages/developer/Runtime"));
@@ -226,6 +237,16 @@ const AppRoutes = () => {
           <Route path="/admin/security/reports" element={<ProtectedRoute role="developer"><SecurityReportsPage /></ProtectedRoute>} />
           {/* FEATURE 026 — Enterprise Observability */}
           <Route path="/admin/observability" element={<ProtectedRoute role="developer"><ObservabilityCenterPage /></ProtectedRoute>} />
+          {/* FEATURE 027 — Enterprise Integration Hub */}
+          <Route path="/admin/integrations" element={<ProtectedRoute role="developer"><IntegrationsOverview /></ProtectedRoute>} />
+          <Route path="/admin/integrations/apis" element={<ProtectedRoute role="developer"><IntegrationsApis /></ProtectedRoute>} />
+          <Route path="/admin/integrations/webhooks" element={<ProtectedRoute role="developer"><IntegrationsWebhooks /></ProtectedRoute>} />
+          <Route path="/admin/integrations/connectors" element={<ProtectedRoute role="developer"><IntegrationsConnectors /></ProtectedRoute>} />
+          <Route path="/admin/integrations/mesh" element={<ProtectedRoute role="developer"><IntegrationsMesh /></ProtectedRoute>} />
+          <Route path="/admin/integrations/sdk" element={<ProtectedRoute role="developer"><IntegrationsSdk /></ProtectedRoute>} />
+          <Route path="/admin/integrations/catalog" element={<ProtectedRoute role="developer"><IntegrationsCatalog /></ProtectedRoute>} />
+          <Route path="/admin/integrations/diagnostics" element={<ProtectedRoute role="developer"><IntegrationsDiagnostics /></ProtectedRoute>} />
+          <Route path="/admin/integrations/docs" element={<ProtectedRoute role="developer"><IntegrationsDocs /></ProtectedRoute>} />
           {/* FEATURE 026 — Developer Experience Center */}
           <Route path="/developer" element={<ProtectedRoute role="developer"><DeveloperCenter /></ProtectedRoute>} />
           <Route path="/developer/runtime" element={<ProtectedRoute role="developer"><DevRuntime /></ProtectedRoute>} />
