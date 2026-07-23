@@ -7,7 +7,7 @@ import { HealthCard } from "./HealthCard";
 import { LiveActivity } from "./LiveActivity";
 import { MetricCard } from "./MetricCard";
 import { TeamWorkload } from "./TeamWorkload";
-import { UnassignedQueueCard } from "@/modules/routing";
+import { UnassignedQueueCard, EspecialistasEcossistemaCard } from "@/modules/routing";
 import { WorkflowsOpsCard } from "@/modules/workflow-builder";
 import { EcossistemaSaudeCard } from "@/modules/ecossistema";
 
@@ -116,6 +116,12 @@ export function OperationsPage() {
       <section aria-labelledby="op-ecossistema">
         <h2 id="op-ecossistema" className="sr-only">Saúde do Ecossistema</h2>
         <EcossistemaSaudeCard />
+      </section>
+
+      {/* F018.4 — Especialistas por sistema */}
+      <section aria-labelledby="op-especialistas">
+        <h2 id="op-especialistas" className="sr-only">Especialistas por Sistema</h2>
+        <EspecialistasEcossistemaCard />
       </section>
     </div>
   );

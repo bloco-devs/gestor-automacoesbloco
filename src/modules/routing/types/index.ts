@@ -16,6 +16,25 @@ export interface DemandInput {
   complexity: DemandComplexity;
   sla_status?: DemandSlaStatus | null;
   sla_due_at?: string | null;
+  /**
+   * F018.4 — sistema relacionado à demanda. Quando presente, o ranker soma um
+   * bônus 0..10 baseado na afinidade do candidato com esse sistema. Quando
+   * ausente, o comportamento é 100% idêntico ao algoritmo anterior.
+   */
+  system_slug?: string | null;
+}
+
+/**
+ * F018.4 — histórico de um candidato em um sistema específico do Ecossistema.
+ * Derivado de demandas resolvidas + artigos de conhecimento produzidos.
+ */
+export interface SystemHistoryEntry {
+  slug: string;
+  total: number;
+  success: number;
+  avg_resolution_h: number;
+  /** Nº de artigos de knowledge escritos por este dev sobre o sistema. */
+  documentation?: number;
 }
 
 /**
@@ -39,13 +58,15 @@ export interface Candidate {
   priority_history: Partial<Record<DemandPriority, number>>;
   /** Contagem por complexidade (últimos 90d). */
   complexity_history: Partial<Record<DemandComplexity, number>>;
+  /** F018.4 — histórico por sistema do Ecossistema (últimos 90d). */
+  system_history: SystemHistoryEntry[];
 }
 
 export type ConfidenceLevel = "high" | "medium" | "low";
 
 export interface ScoredCandidate {
   candidate: Candidate;
-  score: number; // 0..100
+  score: number; // 0..100 (+ bônus systemFit 0..10 = até 110)
   breakdown: ScoreBreakdown;
   reasons: string[];
   confidence: ConfidenceLevel;
@@ -59,6 +80,8 @@ export interface ScoreBreakdown {
   complexity: number;
   priority: number;
   sla: number;
+  /** F018.4 — bônus aditivo 0..10 (ausente quando demand.system_slug não informado). */
+  systemFit?: number;
 }
 
 export interface Weights {

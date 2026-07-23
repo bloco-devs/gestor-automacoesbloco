@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Activity, Bot, Sparkles, UserPlus, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -8,8 +8,11 @@ import { Separator } from "@/components/ui/separator";
 import { useAssignDemand } from "@/modules/demands/hooks";
 import type { Demand } from "@/modules/demands/types";
 import { useRoutingSuggestions, RoutingSuggestionCard } from "@/modules/routing";
+import { findSystemEntry, systemAffinityPercent } from "@/modules/routing/engine/system-fit";
 import { KnowledgeSuggestions } from "@/modules/knowledge";
 import { useToast } from "@/hooks/use-toast";
+import { useContextEngine } from "@/modules/context/context-provider";
+import { logEcossistemaEvent } from "@/modules/ecossistema";
 
 interface Props {
   demand: Demand | null;
@@ -18,6 +21,7 @@ interface Props {
 export const IntelligencePanel = memo(function IntelligencePanel({ demand }: Props) {
   const { toast } = useToast();
   const assign = useAssignDemand();
+  const engine = useContextEngine();
 
   const routing = useRoutingSuggestions(
     demand
@@ -26,6 +30,7 @@ export const IntelligencePanel = memo(function IntelligencePanel({ demand }: Pro
           priority: demand.priority,
           complexity: demand.complexity,
           sla_status: demand.sla_status,
+          system_slug: demand.system_id, // F018.4 — habilita afinidade por sistema
         }
       : null,
   );
@@ -34,6 +39,45 @@ export const IntelligencePanel = memo(function IntelligencePanel({ demand }: Pro
     if (!demand) return "";
     return [demand.title, demand.description ?? ""].join(" ").trim();
   }, [demand]);
+
+  // F018.4 — enriquece o Context Engine com afinidade calculada (sem alterar contratos).
+  useEffect(() => {
+    if (!demand?.system_id || !routing.ranking.top) return;
+    const top = routing.ranking.top;
+    const entry = findSystemEntry(
+      { system_slug: demand.system_id },
+      top.candidate,
+    );
+    if (!entry) {
+      logEcossistemaEvent("ecossistema.updated", {
+        source: "routing.system.affinity.fallback",
+        demand: demand.id,
+      });
+      return;
+    }
+    const pct = systemAffinityPercent(entry);
+    engine.patch({
+      metadata: {
+        ...engine.get().metadata,
+        systemSlug: demand.system_id,
+        developerAffinity: pct,
+        developerHistory: {
+          userId: top.candidate.user_id,
+          total: entry.total,
+          success: entry.success,
+          avg_resolution_h: entry.avg_resolution_h,
+          documentation: entry.documentation ?? 0,
+          bonus: top.breakdown.systemFit ?? 0,
+        },
+      },
+    });
+    logEcossistemaEvent("ecossistema.updated", {
+      source: "routing.system.affinity.used",
+      demand: demand.id,
+      user: top.candidate.user_id,
+      pct,
+    });
+  }, [engine, demand?.id, demand?.system_id, routing.ranking.top]);
 
   if (!demand) {
     return (
@@ -101,6 +145,7 @@ export const IntelligencePanel = memo(function IntelligencePanel({ demand }: Pro
               ranking={routing.ranking}
               onAssign={handleAssign}
               isAssigning={assign.isPending}
+              systemSlug={demand.system_id}
             />
           )}
         </section>

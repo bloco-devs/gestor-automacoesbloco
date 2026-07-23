@@ -6,6 +6,8 @@ import { useDemands } from "@/modules/demands/hooks";
 import { DemandListPanel } from "@/components/workspace/DemandListPanel";
 import { DemandDetailInline } from "@/components/workspace/DemandDetailInline";
 import { IntelligencePanel } from "@/components/workspace/IntelligencePanel";
+import { EspecialidadeCard } from "@/modules/routing";
+import { useAuth } from "@/hooks/useAuth";
 
 const LS_SELECTED = "workspace:selectedId:v1";
 const LS_LEFT = "workspace:panels:left:v1";
@@ -18,6 +20,7 @@ function readBool(key: string, fallback: boolean): boolean {
 }
 
 export default function DeveloperWorkspace() {
+  const { user } = useAuth();
   const { data: demands = [] } = useDemands();
   const [params, setParams] = useSearchParams();
 
@@ -99,7 +102,8 @@ export default function DeveloperWorkspace() {
           <DemandDetailInline demand={selected} />
         </div>
         {rightOpen && (
-          <div className="min-h-0 hidden lg:block lg:w-[340px] xl:w-[380px]">
+          <div className="min-h-0 hidden lg:flex lg:w-[340px] xl:w-[380px] flex-col gap-3 overflow-y-auto p-3">
+            <EspecialidadeCard userId={user?.id ?? null} />
             <IntelligencePanel demand={selected} />
           </div>
         )}

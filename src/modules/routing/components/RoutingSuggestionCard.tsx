@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Bot, ChevronDown, ChevronUp, Sparkles, UserPlus } from "lucide-react";
+import { Bot, ChevronDown, ChevronUp, Sparkles, UserPlus, Layers } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { Ranking, ScoredCandidate } from "../types";
 import { confidenceClass, confidenceLabel, initialsOf } from "../utils/format";
+import { findSystemEntry, systemAffinityPercent } from "../engine/system-fit";
 
 interface Props {
   ranking: Ranking;
@@ -13,6 +15,8 @@ interface Props {
   onAssign: (userId: string) => void;
   isAssigning?: boolean;
   disabled?: boolean;
+  /** F018.4 — sistema alvo da demanda; habilita o painel de afinidade. */
+  systemSlug?: string | null;
 }
 
 function CandidateRow({
@@ -21,15 +25,19 @@ function CandidateRow({
   isAssigning,
   disabled,
   primary = false,
+  systemSlug,
 }: {
   s: ScoredCandidate;
   onAssign: (userId: string) => void;
   isAssigning?: boolean;
   disabled?: boolean;
   primary?: boolean;
+  systemSlug?: string | null;
 }) {
   const c = s.candidate;
   const name = c.nome || c.email || "Sem nome";
+  const sysEntry = systemSlug ? findSystemEntry({ system_slug: systemSlug }, c) : null;
+  const sysAff = sysEntry ? systemAffinityPercent(sysEntry) : 0;
   return (
     <div
       className={cn(
@@ -58,6 +66,36 @@ function CandidateRow({
             {s.reasons.join(" · ")}
           </p>
         )}
+        {sysEntry && (
+          <div
+            className="mt-2 rounded-md border border-primary/20 bg-primary/5 p-2"
+            aria-label="Afinidade neste sistema"
+          >
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-primary">
+              <Layers className="size-3" aria-hidden />
+              Especialista neste sistema
+              <span className="ml-auto tabular-nums">{sysAff}%</span>
+            </div>
+            <Progress value={sysAff} className="mt-1 h-1" />
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground tabular-nums">
+              <span>{sysEntry.total} demandas</span>
+              <span>
+                {Math.round((sysEntry.success / Math.max(1, sysEntry.total)) * 100)}% sucesso
+              </span>
+              {sysEntry.avg_resolution_h > 0 && (
+                <span>
+                  Tempo médio{" "}
+                  {sysEntry.avg_resolution_h < 1
+                    ? `${Math.round(sysEntry.avg_resolution_h * 60)}m`
+                    : `${sysEntry.avg_resolution_h.toFixed(1)}h`}
+                </span>
+              )}
+              {(sysEntry.documentation ?? 0) > 0 && (
+                <span>{sysEntry.documentation} artigos</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       <Button
         type="button"
@@ -73,7 +111,7 @@ function CandidateRow({
   );
 }
 
-export function RoutingSuggestionCard({ ranking, isLoading, onAssign, isAssigning, disabled }: Props) {
+export function RoutingSuggestionCard({ ranking, isLoading, onAssign, isAssigning, disabled, systemSlug }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   if (isLoading) {
@@ -105,6 +143,7 @@ export function RoutingSuggestionCard({ ranking, isLoading, onAssign, isAssignin
         isAssigning={isAssigning}
         disabled={disabled}
         primary
+        systemSlug={systemSlug}
       />
       {ranking.alternatives.length > 0 && (
         <>
@@ -125,6 +164,7 @@ export function RoutingSuggestionCard({ ranking, isLoading, onAssign, isAssignin
                   onAssign={onAssign}
                   isAssigning={isAssigning}
                   disabled={disabled}
+                  systemSlug={systemSlug}
                 />
               ))}
             </div>
