@@ -80,6 +80,17 @@ export const ADMIN_NAV: AdminNavItem[] = [
     icon: LayoutDashboard,
   },
   {
+    id: "quality",
+    group: "plataforma",
+    label: "Quality Center",
+    description: "Governança técnica, catalog e score.",
+    href: "/admin/quality",
+    icon: Gauge,
+    keywords: ["governança", "score", "catalog", "release"],
+    status: "novo",
+    details: "Somente leitura — inventário, dependências, reuso e prontidão.",
+  },
+  {
     id: "logs",
     group: "plataforma",
     label: "Logs & Auditoria",
