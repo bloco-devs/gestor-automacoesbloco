@@ -273,7 +273,17 @@ const AppRoutes = () => {
           <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
           <Route path="/configuracoes" element={<ProtectedRoute role="developer"><Configuracoes /></ProtectedRoute>} />
           <Route path="/diagrama" element={<ProtectedRoute role="developer"><Diagrama /></ProtectedRoute>} />
-          <Route path="/atividades" element={<ProtectedRoute role="developer"><Atividades /></ProtectedRoute>} />
+          <Route
+            path="/atividades"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute
+                  on={<Navigate to="/workspace/demandas?view=board" replace />}
+                  off={<Atividades />}
+                />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/atividades/importar" element={<ProtectedRoute role="developer"><ImportarQuadro /></ProtectedRoute>} />
           <Route path="/atividades/:boardId" element={<ProtectedRoute role="developer"><AtividadesBoard /></ProtectedRoute>} />
 
