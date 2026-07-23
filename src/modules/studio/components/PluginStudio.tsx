@@ -23,7 +23,7 @@ function PluginStudioInner() {
     >
       <KpiRow>
         <StatCard label="Superfícies" value={SURFACES.length} />
-        <StatCard label="Extension Host" value="OK" tone="positive" />
+        <StatCard label="Extension Host" value="OK" tone="success" />
         <StatCard label="Marketplace" value="Read-only" tone="info" />
       </KpiRow>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
