@@ -22,6 +22,7 @@ import { TeamWorkload } from "@/modules/operations/components/TeamWorkload";
 import { AIInsightsPanel } from "@/modules/operations/components/AIInsightsPanel";
 import { UnassignedQueueCard } from "@/modules/routing";
 import { WorkflowsOpsCard } from "@/modules/workflow-builder";
+import { EcossistemaLivePanel } from "@/modules/ecossistema";
 import { Button } from "@/components/ui/button";
 
 const CommandCenter = memo(function CommandCenter() {

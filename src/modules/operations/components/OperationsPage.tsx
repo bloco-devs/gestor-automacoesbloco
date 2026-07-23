@@ -111,6 +111,12 @@ export function OperationsPage() {
           <WorkflowsOpsCard />
         </div>
       </section>
+
+      {/* Saúde do Ecossistema */}
+      <section aria-labelledby="op-ecossistema">
+        <h2 id="op-ecossistema" className="sr-only">Saúde do Ecossistema</h2>
+        <EcossistemaSaudeCard />
+      </section>
     </div>
   );
 }
