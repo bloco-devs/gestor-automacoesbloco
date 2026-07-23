@@ -33,7 +33,7 @@ export function runIntegrityChecks(): IntegrityIssue[] {
           detail: p.error ?? "sem detalhe",
         });
       }
-      if (p.status === "loaded" && !p.enabled) {
+      if (p.status === "loaded") {
         issues.push({
           id: `plugin.parado.${p.id}`,
           area: "Plugin Host",

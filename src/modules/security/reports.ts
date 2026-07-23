@@ -70,7 +70,7 @@ export function buildPluginReport(): string {
       ["Plugin Report", new Date().toISOString()],
       [],
       ["ID", "Status", "Enabled", "Version", "Error"],
-      ...(diag.plugins ?? []).map((p) => [p.id, p.status, String(p.enabled), p.version ?? "", p.error ?? ""]),
+      ...(diag.plugins ?? []).map((p) => [p.id, p.status, p.status === "active" ? "yes" : "no", p.version, p.error ?? ""]),
     ]);
   } catch {
     return "Plugin Report\nDiagnostics unavailable\n";

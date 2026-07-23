@@ -30,7 +30,7 @@ export function collectPermissionTree(): PermissionNode[] {
         id: pid,
         label: p.id,
         kind: "plugin",
-        detail: `${p.status} · ${p.enabled ? "ativo" : "inativo"}`,
+        detail: `${p.status} · ${p.status === "active" ? "ativo" : "inativo"}`,
       });
       const caps = platformPermissions.listForPlugin(p.id);
       for (const c of caps) {
