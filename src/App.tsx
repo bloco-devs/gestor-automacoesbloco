@@ -281,6 +281,33 @@ const AppRoutes = () => {
         <Route path="/nova-demanda" element={<Navigate to="/nova-solicitacao" replace />} />
         <Route path="/demanda/:id" element={<RedirectLegacySolicitacao />} />
 
+        {/* FEATURE 026.1 — Nova UX (perfis). Aliases ADITIVOS que apontam para páginas existentes.
+            Feature flag `ux.rewrite` controla se a nova sidebar é exibida; as URLs abaixo funcionam
+            independentemente para permitir migração progressiva. */}
+        <Route path="/portal/inicio" element={<Navigate to="/portal" replace />} />
+        <Route path="/portal/demandas" element={<Navigate to="/minhas-solicitacoes" replace />} />
+        <Route path="/portal/conhecimento" element={<Navigate to="/portal/central" replace />} />
+        <Route path="/portal/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
+
+        <Route path="/workspace/hoje" element={<Navigate to="/trabalho/inbox" replace />} />
+        <Route path="/workspace/demandas" element={<Navigate to="/solicitacoes/kanban" replace />} />
+        <Route path="/workspace/builder" element={<Navigate to="/admin/workflows" replace />} />
+        <Route path="/workspace/devtools" element={<Navigate to="/developer" replace />} />
+        <Route path="/workspace/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
+
+        <Route path="/gestao/panorama" element={<Navigate to="/command-center" replace />} />
+        <Route path="/gestao/equipe" element={<Navigate to="/operacoes" replace />} />
+        <Route path="/gestao/demandas" element={<Navigate to="/admin/demandas" replace />} />
+        <Route path="/gestao/insights" element={<Navigate to="/admin/analytics" replace />} />
+        <Route path="/gestao/inbox" element={<Navigate to="/trabalho/inbox" replace />} />
+
+        <Route path="/admin/plataforma" element={<Navigate to="/admin" replace />} />
+        <Route path="/admin/pessoas" element={<Navigate to="/admin" replace />} />
+        <Route path="/admin/integracoes" element={<Navigate to="/admin/integrations" replace />} />
+        <Route path="/admin/conhecimento" element={<Navigate to="/admin/base-conhecimento" replace />} />
+        <Route path="/admin/seguranca" element={<Navigate to="/admin/security" replace />} />
+        <Route path="/admin/auditoria" element={<Navigate to="/admin/audit" replace />} />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
