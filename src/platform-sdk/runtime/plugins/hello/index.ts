@@ -1,4 +1,4 @@
-import { definePlugin } from "../../core/definePlugin";
+import { definePlugin } from "../../../core/definePlugin";
 
 /**
  * HelloPlugin — plugin de exemplo (FEATURE 101).
