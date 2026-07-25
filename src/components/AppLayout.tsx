@@ -52,9 +52,17 @@ export default function AppLayout() {
   // UnifiedNavigationRegistry em vez do menu antigo de ~40 itens. O papel
   // "builder" ainda não tem um perfil dedicado no registry novo, então
   // continua no menu legado até essa decisão de produto ser tomada.
+  //
+  // Developer/administrador recebem "workspace" + "admin" combinados: o
+  // perfil "admin" do registry aponta para /admin (AdminShellPage), que já
+  // é um hub consolidado com cards para toda a sprawl antiga (Segurança,
+  // Integrações, Observabilidade, Secrets, Backup, Release, etc.) — nada é
+  // perdido, só fica a um clique de distância em vez de expandido no menu.
   const groups = isBuilderRole
     ? builderGroups
-    : fromUnifiedNav(getNavigation(isDeveloperEffective ? "workspace" : "portal"));
+    : isDeveloperEffective
+      ? [...fromUnifiedNav(getNavigation("workspace")), ...fromUnifiedNav(getNavigation("admin"))]
+      : fromUnifiedNav(getNavigation("portal"));
   const roleLabel = user?.isAdministrador
     ? "Administrador"
     : user?.role === "developer"

@@ -30,9 +30,9 @@ export default function SolicitacoesGantt() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Cronograma de Solicitações</h1>
+        <h1 className="text-2xl font-semibold">Cronograma de Demandas</h1>
         <p className="text-sm text-muted-foreground">
-          Visão Gantt baseada em datas planejadas. Clique numa barra para editar; clique no nome para abrir a solicitação.
+          Visão Gantt baseada em datas planejadas. Clique numa barra para editar; clique no nome para abrir a demanda.
         </p>
       </div>
 
@@ -42,7 +42,7 @@ export default function SolicitacoesGantt() {
         onSaveDates={async (id, start, end) => {
           await updateSolicitacao(id, { dataInicioPrevista: start, dataFimPrevista: end });
         }}
-        emptyLabel="Nenhuma solicitação com cronograma definido."
+        emptyLabel="Nenhuma demanda com cronograma definido."
       />
     </div>
   );

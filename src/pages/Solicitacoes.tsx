@@ -94,7 +94,7 @@ export default function Solicitacoes() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Todas as solicitações</h1>
+        <h1 className="text-2xl font-semibold">Todas as demandas</h1>
         <p className="text-sm text-muted-foreground">
           Lista completa com ordenação e paginação.
         </p>
@@ -141,7 +141,7 @@ export default function Solicitacoes() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableHead label="Solicitação" k="titulo" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <SortableHead label="Demanda" k="titulo" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <SortableHead label="Status" k="status" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <SortableHead label="Data" k="createdAt" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                 </TableRow>
@@ -150,7 +150,7 @@ export default function Solicitacoes() {
                 {pageItems.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={3} className="text-center py-12 text-muted-foreground">
-                      Nenhuma solicitação encontrada.
+                      Nenhuma demanda encontrada.
                     </TableCell>
                   </TableRow>
                 ) : (
