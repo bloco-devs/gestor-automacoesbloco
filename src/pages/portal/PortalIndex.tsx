@@ -69,7 +69,7 @@ export default function PortalIndex() {
           Como podemos te ajudar hoje?
         </h1>
         <p className="text-sm text-muted-foreground">
-          Busque uma solução na nossa base ou abra um chamado.
+          Busque uma solução na nossa base ou abra uma demanda.
         </p>
 
         <div className="mx-auto flex max-w-2xl items-center gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring/40">
@@ -82,7 +82,7 @@ export default function PortalIndex() {
             aria-label="Buscar na base de conhecimento"
           />
           <Button onClick={() => setNewOpen(true)} className="rounded-xl gap-1.5 shrink-0">
-            <Plus className="size-4" /> Abrir chamado
+            <Plus className="size-4" /> Nova demanda
           </Button>
         </div>
 
@@ -150,7 +150,7 @@ export default function PortalIndex() {
         <div className="mb-3 flex items-center gap-2">
           <Clock className="size-4 text-muted-foreground" />
           <h2 id="my-requests" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Meus chamados
+            Minhas demandas
           </h2>
         </div>
 
@@ -163,8 +163,8 @@ export default function PortalIndex() {
         ) : myRequests.length === 0 ? (
           <EmptyState
             icon={Plus}
-            title="Você ainda não abriu chamados"
-            description="Clique em “Abrir chamado” acima para registrar sua primeira solicitação."
+            title="Você ainda não abriu nenhuma demanda"
+            description="Clique em “Nova demanda” acima para registrar a primeira."
           />
         ) : (
           <ul className="space-y-2">

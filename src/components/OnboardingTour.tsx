@@ -40,15 +40,15 @@ function buildSteps(isDeveloper: boolean) {
       {
         element: '[data-tour="nav-solicitacoes"]',
         popover: {
-          title: "Solicitações",
-          description: "Lista, Kanban e Gantt das demandas cadastradas pelos solicitantes.",
+          title: "Demandas",
+          description: "Lista, Kanban e Gantt de tudo que foi pedido pelos solicitantes.",
         },
       },
       {
         element: '[data-tour="nav-solucoes"]',
         popover: {
           title: "Soluções",
-          description: "Catálogo das soluções que você cria a partir das solicitações.",
+          description: "Catálogo das soluções que você cria a partir das demandas.",
         },
       },
       ...common,
@@ -65,7 +65,7 @@ function buildSteps(isDeveloper: boolean) {
     {
       element: '[data-tour="nav-solicitacoes"]',
       popover: {
-        title: "Minhas Solicitações",
+        title: "Minhas Demandas",
         description: "Veja o status detalhado de cada demanda que você cadastrou.",
       },
     },

@@ -86,7 +86,7 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
     });
     toast({
       title: "Ótimo! 🎉",
-      description: "Ficamos felizes em ajudar. Nenhum chamado precisou ser aberto.",
+      description: "Ficamos felizes em ajudar. Nenhuma demanda precisou ser aberta.",
     });
     reset();
     onOpenChange(false);
@@ -126,7 +126,7 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
         });
       }
 
-      toast({ title: "Chamado registrado!", description: "Você poderá acompanhá-lo no portal." });
+      toast({ title: "Demanda registrada!", description: "Você poderá acompanhá-la no portal." });
 
       // Aciona Agente Autônomo IA Nível 1 (portal sempre cria sem responsável).
       void autoRespond.mutateAsync(demand.id);
@@ -151,9 +151,9 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Abrir um chamado</DialogTitle>
+          <DialogTitle>Nova demanda</DialogTitle>
           <DialogDescription>
-            Conte o que está acontecendo. Vamos tentar te ajudar antes mesmo de abrir o chamado.
+            Conte o que está acontecendo. Vamos tentar te ajudar antes mesmo de abrir a demanda.
           </DialogDescription>
         </DialogHeader>
 
@@ -272,7 +272,7 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
                   <Loader2 className="mr-1 size-4 animate-spin" /> Enviando…
                 </>
               ) : (
-                "Enviar chamado"
+                "Enviar demanda"
               )}
             </Button>
           </DialogFooter>

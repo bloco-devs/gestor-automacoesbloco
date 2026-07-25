@@ -8,8 +8,23 @@ import { findActive, type NavGroup, type NavItem } from "./navGroups";
 const GROUP_STORAGE_PREFIX = "ds2:sidebar:";
 
 function dataTourFor(item: NavItem): string | null {
-  if (item.to === "/dashboard" || item.to === "/dashboard-solicitante") return "nav-dashboard";
-  if (item.matchPrefix === "/solicitacoes" || item.to === "/minhas-solicitacoes") return "nav-solicitacoes";
+  // FEATURE 026.1 — inclui as rotas novas do UnifiedNavigationRegistry
+  // (/workspace, /workspace/demandas, /portal/inicio, /portal/demandas),
+  // mantendo compatibilidade com as rotas antigas para não quebrar o tour.
+  if (
+    item.to === "/dashboard" ||
+    item.to === "/dashboard-solicitante" ||
+    item.to === "/workspace" ||
+    item.to === "/portal/inicio"
+  )
+    return "nav-dashboard";
+  if (
+    item.matchPrefix === "/solicitacoes" ||
+    item.to === "/minhas-solicitacoes" ||
+    item.to === "/workspace/demandas" ||
+    item.to === "/portal/demandas"
+  )
+    return "nav-solicitacoes";
   if (item.matchPrefix === "/solucoes") return "nav-solucoes";
   if (item.to === "/ajuda") return "nav-ajuda";
   return null;
@@ -164,7 +179,9 @@ function SidebarNavItem({
   }, [isParentActive]);
 
   const showBadge =
-    isDeveloper && item.matchPrefix === "/solicitacoes" && pendingEvalCount > 0;
+    isDeveloper &&
+    (item.matchPrefix === "/solicitacoes" || item.to === "/workspace/demandas") &&
+    pendingEvalCount > 0;
   const dataTour = dataTourFor(item);
   const Icon = item.icon;
 

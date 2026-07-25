@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Compass,
+  HelpCircle,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -23,7 +24,9 @@ import { OnboardingTour, useOnboardingTour } from "@/components/OnboardingTour";
 import blocoLogo from "@/assets/bloco-logo.png";
 import { SidebarGroupsNav } from "@/components/sidebar/SidebarGroupsNav";
 import { SidebarBreadcrumb } from "@/components/sidebar/SidebarBreadcrumb";
-import { builderGroups, devGroups, requesterGroups } from "@/components/sidebar/navGroups";
+import { builderGroups } from "@/components/sidebar/navGroups";
+import { fromUnifiedNav } from "@/components/sidebar/fromUnifiedNav";
+import { getNavigation } from "@/modules/navigation";
 import { CopilotDock } from "@/modules/copilot/CopilotDock";
 import { useEcossistemaAutoSync } from "@/modules/ecossistema";
 import { attachGlobalErrorHandlers } from "@/modules/errors";
@@ -45,7 +48,13 @@ export default function AppLayout() {
   // FEATURE 023 — Error Center (captura global uma única vez)
   useEffect(() => { attachGlobalErrorHandlers(); }, []);
   const isBuilderRole = user?.role === "builder";
-  const groups = isDeveloperEffective ? devGroups : isBuilderRole ? builderGroups : requesterGroups;
+  // FEATURE 026.1 — sidebar simplificado (Demanda + Conhecimento), lido do
+  // UnifiedNavigationRegistry em vez do menu antigo de ~40 itens. O papel
+  // "builder" ainda não tem um perfil dedicado no registry novo, então
+  // continua no menu legado até essa decisão de produto ser tomada.
+  const groups = isBuilderRole
+    ? builderGroups
+    : fromUnifiedNav(getNavigation(isDeveloperEffective ? "workspace" : "portal"));
   const roleLabel = user?.isAdministrador
     ? "Administrador"
     : user?.role === "developer"
@@ -226,6 +235,16 @@ export default function AppLayout() {
                 aria-label="Refazer tour"
               >
                 <Compass className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                data-tour="nav-ajuda"
+                onClick={() => navigate("/ajuda")}
+                title="Ajuda"
+                aria-label="Ajuda"
+              >
+                <HelpCircle className="size-4" />
               </Button>
               <ThemeToggle />
               {isDual && (
