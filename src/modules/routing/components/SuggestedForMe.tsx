@@ -43,7 +43,7 @@ export function SuggestedForMe({ minScore = 70, limit = 5 }: Props) {
   if (suggestions.length === 0) return null;
 
   return (
-    <section className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+    <section className="rounded-lg border border-border/70 p-4">
       <header className="flex items-center gap-2 mb-3">
         <Sparkles className="size-4 text-primary" aria-hidden />
         <h3 className="text-sm font-semibold">Sugestões para você</h3>

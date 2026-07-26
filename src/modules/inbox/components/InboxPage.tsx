@@ -39,25 +39,25 @@ export default function InboxPage() {
   const displayName = (user?.nome ?? user?.email ?? "por aí").split(" ")[0];
 
   return (
-    <div className="mx-auto w-full max-w-7xl p-4 md:p-6 space-y-6">
+    <div className="mx-auto w-full max-w-7xl px-5 py-6 md:px-8 md:py-8 space-y-10">
       <HeroSummary name={displayName} counts={summary} />
 
       {loading ? (
         <LoadingInbox />
       ) : error ? (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive" role="alert">
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 ds-caption text-destructive" role="alert">
           Não foi possível carregar a Inbox: {error.message}
         </div>
       ) : items.length === 0 ? (
         <EmptyInbox />
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 gap-x-10 gap-y-10 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-10">
             {priority && <PriorityCard item={priority} />}
             <TaskList items={myTasks} />
             <RecentActivity items={recent} />
           </div>
-          <aside className="space-y-6" aria-label="Insights e atalhos">
+          <aside className="space-y-10" aria-label="Insights e atalhos">
             <SuggestedForMe />
             <QuickActions />
             <InsightsPanel insights={insights} />

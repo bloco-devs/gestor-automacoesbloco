@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Section } from "@/design-system";
 import { formatDaysAgo } from "../utils/format";
 import type { RecentActivityItem } from "../types";
 
@@ -13,34 +13,32 @@ const KIND_LABEL: Record<RecentActivityItem["kind"], string> = {
   qa: "QA",
 };
 
-interface Props {
-  items: RecentActivityItem[];
-}
-
-function RecentActivity({ items }: Props) {
+/** DS 3.0 — timeline minimalista: sem card, poucas linhas, muito respiro. */
+function RecentActivity({ items }: { items: RecentActivityItem[] }) {
   return (
-    <Card>
-      <CardHeader className="pb-2"><CardTitle className="text-base">Recentes</CardTitle></CardHeader>
-      <CardContent>
-        {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Sem atividade recente.</p>
-        ) : (
-          <ul className="space-y-2" role="list">
-            {items.map((a) => (
-              <li key={a.id} className="text-sm flex items-center justify-between gap-2">
-                <span className="min-w-0 truncate">
-                  <span className="text-muted-foreground">{KIND_LABEL[a.kind]} · </span>
-                  {a.href ? (
-                    <Link to={a.href} className="hover:underline">{a.title}</Link>
-                  ) : a.title}
-                </span>
-                <span className="text-xs text-muted-foreground tabular-nums shrink-0">{formatDaysAgo(a.when)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+    <Section title="Recentes">
+      {items.length === 0 ? (
+        <p className="ds-caption text-muted-foreground">Sem atividade recente.</p>
+      ) : (
+        <ul className="divide-y divide-border/50 border-y border-border/50" role="list">
+          {items.map((a) => (
+            <li key={a.id} className="flex items-center justify-between gap-3 py-2.5 ds-caption">
+              <span className="min-w-0 truncate">
+                <span className="text-muted-foreground">{KIND_LABEL[a.kind]} · </span>
+                {a.href ? (
+                  <Link to={a.href} className="hover:underline">
+                    {a.title}
+                  </Link>
+                ) : (
+                  a.title
+                )}
+              </span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">{formatDaysAgo(a.when)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
   );
 }
 

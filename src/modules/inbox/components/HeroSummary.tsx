@@ -1,7 +1,5 @@
 import { memo } from "react";
-import { AlertTriangle, Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { StatCard, type StatTone } from "@/design-system";
 import { greeting } from "../utils/format";
 import type { InboxSummaryCounts } from "../types";
 
@@ -10,45 +8,43 @@ interface Props {
   counts: InboxSummaryCounts;
 }
 
+/**
+ * DS 3.0 — os quatro contadores deixaram de ser cards com ícone colorido dentro
+ * de um quadradinho e viraram blocos tipográficos (StatCard). A cor só aparece
+ * quando o número significa algo: "Críticos" fica vermelho apenas se houver
+ * algum, e "Concluídos hoje" fica verde apenas se houver algum. Zero é neutro —
+ * um contador zerado não precisa chamar atenção.
+ */
 const chips: Array<{
   key: keyof Omit<InboxSummaryCounts, "total">;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  tone: string;
+  toneWhenPositive: StatTone;
 }> = [
-  { key: "critical", label: "Críticos", icon: AlertTriangle, tone: "bg-red-500/10 text-red-600 dark:text-red-400" },
-  { key: "inProgress", label: "Em andamento", icon: Loader2, tone: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-  { key: "waitingQa", label: "Aguardando QA", icon: ShieldCheck, tone: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
-  { key: "doneToday", label: "Concluídos hoje", icon: CheckCircle2, tone: "bg-muted text-muted-foreground" },
+  { key: "critical", label: "Críticos", toneWhenPositive: "danger" },
+  { key: "inProgress", label: "Em andamento", toneWhenPositive: "neutral" },
+  { key: "waitingQa", label: "Aguardando QA", toneWhenPositive: "neutral" },
+  { key: "doneToday", label: "Concluídos hoje", toneWhenPositive: "success" },
 ];
 
 function HeroSummary({ name, counts }: Props) {
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="ds-h1">
           {greeting()}, {name} <span aria-hidden>👋</span>
         </h1>
-        <p className="text-sm text-muted-foreground">Seu trabalho de hoje, em ordem de prioridade.</p>
+        <p className="ds-caption text-muted-foreground">Seu trabalho de hoje, em ordem de prioridade.</p>
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
         {chips.map((c) => {
           const value = counts[c.key];
-          const Icon = c.icon;
           return (
-            <Card
+            <StatCard
               key={c.key}
-              className={cn("p-3 flex items-center gap-3 border-border/60")}
-              aria-label={`${c.label}: ${value}`}
-            >
-              <span className={cn("flex h-9 w-9 items-center justify-center rounded-lg", c.tone)}>
-                <Icon className="h-4 w-4" />
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-muted-foreground truncate">{c.label}</div>
-                <div className="text-lg font-semibold tabular-nums">{value}</div>
-              </div>
-            </Card>
+              label={c.label}
+              value={value}
+              tone={value > 0 ? c.toneWhenPositive : "neutral"}
+            />
           );
         })}
       </div>
