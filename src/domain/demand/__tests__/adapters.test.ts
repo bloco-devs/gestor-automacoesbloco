@@ -329,3 +329,59 @@ describe("domain/demand — duplicidade", () => {
     expect(achados.map((d) => d.id)).toEqual(["y"]);
   });
 });
+
+describe("domain/demand — duplicidade não pode dar falso positivo", () => {
+  function comTitulo(id: string, titulo: string, descricao = ""): Demanda {
+    return {
+      id,
+      referencia: `#${id}`,
+      titulo,
+      descricao,
+      status: { id: "s", rotulo: "Em andamento", categoria: "andamento", ordem: 1 },
+      prioridade: "media",
+      tipo: null,
+      complexidade: null,
+      sistema: null,
+      responsaveis: [],
+      autor: null,
+      criadaEm: "",
+      atualizadaEm: "",
+      diasParada: 0,
+      prazo: null,
+      sla: null,
+      ia: null,
+      progresso: null,
+      comentarios: null,
+      anexos: null,
+      etiquetas: [],
+      concluida: false,
+      risco: null,
+      fonte: "atividades",
+    };
+  }
+
+  it("não casa por palavras que só existem na descrição", () => {
+    // Caso real observado em produção: a descrição do primeiro citava "acessos"
+    // e "onboarding", que aparecem no título do segundo — e eles foram
+    // apontados como duplicados sem ter nada a ver.
+    const alvo = comTitulo(
+      "a",
+      "[GO-11] ADR sobre papel engenheiro",
+      "Decisao sobre o papel de engenheiro no sistema de acessos e onboarding de usuarios",
+    );
+    const outro = comTitulo("b", "[GO-10] Popular usuario_acessos + onboarding de acessos");
+    expect(semelhantes(alvo, [alvo, outro])).toHaveLength(0);
+  });
+
+  it("não casa por prefixo de código do projeto", () => {
+    const a = comTitulo("a", "[GO-11] Revisar contrato de fornecedor");
+    const b = comTitulo("b", "[GO-12] Ajustar relatorio de vendas");
+    expect(semelhantes(a, [a, b])).toHaveLength(0);
+  });
+
+  it("ainda encontra duplicata de verdade", () => {
+    const a = comTitulo("a", "Cadastrar fornecedores em lote");
+    const b = comTitulo("b", "Cadastrar novos fornecedores em lote");
+    expect(semelhantes(a, [a, b]).map((d) => d.id)).toEqual(["b"]);
+  });
+});

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAtividadesBoard, atividadesKeys } from "@/hooks/useAtividadesBoard";
 import { countAnexosByBoard } from "@/lib/atividadesAnexos";
+import { getBoardResumo } from "@/lib/atividadesBoards";
 import { useDemands, useDemandProfiles } from "@/modules/demands";
 import { listSolucoes } from "@/lib/supabaseData";
 import {
@@ -13,7 +14,7 @@ import {
   type Sistema,
 } from "@/domain/demand";
 import { projetoDoEscopo, resolverFonte } from "./resolverFonte";
-import type { EstadoDemandas, Escopo } from "./types";
+import type { EstadoDemandas, Escopo, ProjetoAtual } from "./types";
 
 /**
  * A porta de leitura. É o único hook que a UI de demandas precisa conhecer.
@@ -48,6 +49,13 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
     staleTime: 60_000,
   });
 
+  const projetoQ = useQuery({
+    queryKey: ["atividades", "board-resumo", board.boardId],
+    queryFn: () => getBoardResumo(board.boardId!),
+    enabled: fonte === "atividades" && !!board.boardId,
+    staleTime: 30_000,
+  });
+
   // ---- fonte: demands -----------------------------------------------------
   const demandsQ = useDemands();
   const demandsList = useMemo(() => demandsQ.data ?? [], [demandsQ.data]);
@@ -71,8 +79,14 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
         solucoes: board.solucoes,
         anexosPorCard: anexosQ.data,
       });
+      const r = projetoQ.data;
+      const projeto: ProjetoAtual | null = r
+        ? { id: r.id, nome: r.nome, descricao: r.descricao, cor: r.cor, capaUrl: r.coverUrl }
+        : null;
+
       return {
         demandas,
+        projeto,
         capacidades: CAPACIDADES_ATIVIDADES,
         fonte,
         carregando: board.loading,
@@ -93,6 +107,7 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
 
     return {
       demandas,
+      projeto: null,
       capacidades: CAPACIDADES_DEMANDS,
       fonte,
       carregando: demandsQ.isLoading,
@@ -108,6 +123,7 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
     board.solucoes,
     board.loading,
     anexosQ.data,
+    projetoQ.data,
     demandsList,
     demandsQ.isLoading,
     demandsQ.error,

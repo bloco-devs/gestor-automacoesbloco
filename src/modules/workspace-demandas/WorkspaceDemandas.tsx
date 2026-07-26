@@ -12,6 +12,7 @@ import {
   type FilaId,
   type LenteId,
 } from "@/domain/demand";
+import { CabecalhoProjeto } from "./components/CabecalhoProjeto";
 import { FilaBar, LenteBar, isFilaId, isLenteId } from "./components/Barras";
 import { ListaLente } from "./components/ListaLente";
 import { BoardLente } from "./components/BoardLente";
@@ -57,7 +58,7 @@ export default function WorkspaceDemandas() {
     setParams(proximo, { replace: true });
   };
 
-  const { demandas, capacidades, carregando, erro } = useDemandas(escopo);
+  const { demandas, projeto, capacidades, carregando, erro } = useDemandas(escopo);
   const acoes = useAcoesDemanda(escopo);
 
   const contagens = useMemo(() => contarFilas(demandas, user?.id ?? null), [demandas, user?.id]);
@@ -65,6 +66,20 @@ export default function WorkspaceDemandas() {
   const visiveis = useMemo(() => buscar(daFila, busca), [daFila, busca]);
   const grupos = useMemo(() => agrupar(visiveis, lente), [visiveis, lente]);
   const resumo = useMemo(() => resumir(daFila), [daFila]);
+
+  // "A fonte suporta prazo" e "existe prazo preenchido" sao coisas diferentes,
+  // e so a segunda justifica desenhar a coluna. Sem isso, um projeto que nao
+  // usa prazo ganha uma coluna inteira de tracos.
+  const capacidadesVisiveis = useMemo(() => {
+    const temPrazo = demandas.some((d) => d.prazo !== null);
+    const temProgresso = demandas.some((d) => d.progresso !== null);
+    return {
+      ...capacidades,
+      prazo: capacidades.prazo && temPrazo,
+      sla: capacidades.sla && temPrazo,
+      progresso: capacidades.progresso && temProgresso,
+    };
+  }, [capacidades, demandas]);
 
   // O detalhe tem endereço próprio. Era a mudança estrutural que faltava para
   // uma demanda poder ser colada num Slack ou num e-mail.
@@ -90,6 +105,13 @@ export default function WorkspaceDemandas() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      {projeto && (
+        <CabecalhoProjeto
+          projeto={projeto}
+          resumo={resumo}
+          onFila={(f) => trocar("fila", f)}
+        />
+      )}
       <FilaBar fila={fila} onFila={(f) => trocar("fila", f)} contagens={contagens} />
       <LenteBar
         lente={lente}
@@ -106,7 +128,7 @@ export default function WorkspaceDemandas() {
             {lente === "board" ? (
               <BoardLente
                 grupos={grupos}
-                capacidades={capacidades}
+                capacidades={capacidadesVisiveis}
                 onAbrir={abrir}
                 onMover={({ demandaId, statusId }) => void acoes.mover({ demandaId, statusId })}
                 podeMover={acoes.podeMover}
@@ -116,7 +138,7 @@ export default function WorkspaceDemandas() {
             ) : (
               <ListaLente
                 grupos={grupos}
-                capacidades={capacidades}
+                capacidades={capacidadesVisiveis}
                 onAbrir={abrir}
                 mostrarStatusNaLinha={lente !== "lista"}
                 vazio={{

@@ -7,4 +7,4 @@
 export { useDemandas, useDemanda } from "./useDemandas";
 export { useAcoesDemanda } from "./useAcoesDemanda";
 export { resolverFonte, projetoDoEscopo } from "./resolverFonte";
-export type { Escopo, EstadoDemandas, AcoesDemanda } from "./types";
+export type { Escopo, EstadoDemandas, AcoesDemanda, ProjetoAtual } from "./types";

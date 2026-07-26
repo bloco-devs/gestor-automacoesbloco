@@ -326,28 +326,58 @@ export function resumir(demandas: Demanda[]): Resumo {
 // Semelhança — base da detecção de duplicidade
 // ---------------------------------------------------------------------------
 
+/**
+ * Palavras significativas de um título.
+ *
+ * Remove o prefixo de código do projeto (`[GO-11]`, `[IN-05]`) porque ele é
+ * identificador, não conteúdo — e duas demandas do mesmo projeto compartilham
+ * o prefixo sem terem nada a ver uma com a outra.
+ */
 function tokens(texto: string): Set<string> {
   return new Set(
     normalizar(texto)
+      .replace(/\[[^\]]*\]/g, " ")
       .split(/[^a-z0-9]+/)
       .filter((t) => t.length > 3),
   );
 }
 
-/** Sobreposição de palavras do título. Heurística local, sem rede e sem IA. */
+/**
+ * Demandas que parecem ser a mesma coisa.
+ *
+ * COMO ESTA FUNÇÃO ESTAVA ERRADA
+ * A primeira versão montava os tokens do alvo a partir de título + descrição e
+ * comparava contra o título dos outros, exigindo 2 palavras em comum. Uma
+ * descrição longa gera dezenas de tokens, então quase tudo batia: na tela real,
+ * "ADR sobre papel engenheiro" apareceu como duplicata de "Popular
+ * usuario_acessos + onboarding" porque a descrição do primeiro citava acessos e
+ * onboarding.
+ *
+ * Falso positivo aqui é caro: o painel existe para o usuário confiar nele. Um
+ * alerta errado ensina a ignorar todos os outros.
+ *
+ * A correção tem três partes:
+ *   1. compara título com título — descrição é ruído para semelhança;
+ *   2. exige proporção, não contagem: metade das palavras do título mais curto
+ *      precisa coincidir, então títulos curtos não casam por acidente;
+ *   3. ignora o prefixo de código do projeto.
+ */
 export function semelhantes(alvo: Demanda, universo: Demanda[], limite = 3): Demanda[] {
-  const alvoTokens = tokens(`${alvo.titulo} ${alvo.descricao}`);
-  if (alvoTokens.size === 0) return [];
+  const alvoTokens = tokens(alvo.titulo);
+  if (alvoTokens.size < 2) return [];
 
   return universo
     .filter((d) => d.id !== alvo.id)
     .map((d) => {
+      const outroTokens = tokens(d.titulo);
+      if (outroTokens.size < 2) return { d, proporcao: 0, comuns: 0 };
       let comuns = 0;
-      for (const t of tokens(d.titulo)) if (alvoTokens.has(t)) comuns += 1;
-      return { d, comuns };
+      for (const t of outroTokens) if (alvoTokens.has(t)) comuns += 1;
+      const menor = Math.min(alvoTokens.size, outroTokens.size);
+      return { d, comuns, proporcao: comuns / menor };
     })
-    .filter((x) => x.comuns >= 2)
-    .sort((a, b) => b.comuns - a.comuns)
+    .filter((x) => x.comuns >= 2 && x.proporcao >= 0.5)
+    .sort((a, b) => b.proporcao - a.proporcao || b.comuns - a.comuns)
     .slice(0, limite)
     .map((x) => x.d);
 }

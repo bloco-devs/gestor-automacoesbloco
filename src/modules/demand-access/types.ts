@@ -25,8 +25,22 @@ export type Escopo =
   | { tipo: "global" }
   | { tipo: "demanda"; demandaId: string; projetoId?: string };
 
+/** Identidade do recorte aberto. `null` quando o escopo é a fila global. */
+export interface ProjetoAtual {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  cor: string | null;
+  capaUrl: string | null;
+}
+
 export interface EstadoDemandas {
   demandas: Demanda[];
+  /**
+   * O projeto aberto. Fica aqui, e não na UI, porque descobrir o nome exige
+   * saber de qual fonte ele vem — exatamente o que a UI não pode saber.
+   */
+  projeto: ProjetoAtual | null;
   /** O que a fonte ativa sabe responder. A UI usa isto para não desenhar coluna vazia. */
   capacidades: Capacidades;
   fonte: FonteId;
