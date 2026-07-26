@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { pluginRegistry } from "../core/registry";
 import { platformBus } from "../events/eventBus";
+import { stableSnapshot } from "@/lib/stable-snapshot";
 import type {
   ExtensionPointId,
   PlatformEventMap,
@@ -12,28 +13,30 @@ function subscribeRegistry(cb: () => void) {
   return pluginRegistry.subscribe(cb);
 }
 
+const getPlugins = stableSnapshot(() => pluginRegistry.list());
+const getCommands = stableSnapshot(() => pluginRegistry.commands());
+
+const widgetSnapshots = new Map<ExtensionPointId, () => ReturnType<typeof pluginRegistry.widgets>>();
+function getWidgetsSnapshot(slot: ExtensionPointId) {
+  let fn = widgetSnapshots.get(slot);
+  if (!fn) {
+    fn = stableSnapshot(() => pluginRegistry.widgets(slot));
+    widgetSnapshots.set(slot, fn);
+  }
+  return fn;
+}
+
 export function usePlugins(): PluginRecord[] {
-  return useSyncExternalStore(
-    subscribeRegistry,
-    () => pluginRegistry.list(),
-    () => pluginRegistry.list()
-  );
+  return useSyncExternalStore(subscribeRegistry, getPlugins, getPlugins);
 }
 
 export function useExtensionPoint(slot: ExtensionPointId) {
-  return useSyncExternalStore(
-    subscribeRegistry,
-    () => pluginRegistry.widgets(slot),
-    () => pluginRegistry.widgets(slot)
-  );
+  const snapshot = getWidgetsSnapshot(slot);
+  return useSyncExternalStore(subscribeRegistry, snapshot, snapshot);
 }
 
 export function usePluginCommands() {
-  return useSyncExternalStore(
-    subscribeRegistry,
-    () => pluginRegistry.commands(),
-    () => pluginRegistry.commands()
-  );
+  return useSyncExternalStore(subscribeRegistry, getCommands, getCommands);
 }
 
 export function usePlatformEvent<K extends PlatformEventName>(
