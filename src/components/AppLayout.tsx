@@ -324,7 +324,7 @@ export default function AppLayout() {
         )}
 
         {/* Header desktop: breadcrumb automático + trigger de sidebar */}
-        <header className="hidden md:flex sticky top-0 z-30 h-10 items-center gap-3 border-b border-border/50 bg-background/70 px-5 backdrop-blur-sm">
+        <header className="surface-glass hidden md:flex sticky top-0 z-30 h-10 items-center gap-3 border-b px-5">
           {sidebarHidden && <span className="w-6" aria-hidden="true" />}
           <div className="flex-1 min-w-0 text-xs">
             <SidebarBreadcrumb groups={groups} />

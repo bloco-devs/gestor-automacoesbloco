@@ -6,7 +6,10 @@ import { WorkspaceShell } from "@/modules/workspace-unified";
 import { cn } from "@/lib/utils";
 
 const Solicitacoes = lazy(() => import("@/pages/Solicitacoes"));
-const Kanban = lazy(() => import("@/pages/Kanban"));
+// O "Quadros" e o modulo Atividades (quadros estilo Trello: colunas, drag & drop,
+// etiquetas, checklists, anexos, capas, prazos e importacao do Trello), nao o
+// Kanban simplificado de solicitacoes que estava aqui antes.
+const Atividades = lazy(() => import("@/pages/Atividades"));
 const SolicitacoesGantt = lazy(() => import("@/pages/SolicitacoesGantt"));
 
 /**
@@ -16,7 +19,7 @@ const SolicitacoesGantt = lazy(() => import("@/pages/SolicitacoesGantt"));
  */
 const VIEWS = [
   { id: "lista", label: "Lista", icon: List },
-  { id: "board", label: "Board", icon: LayoutGrid },
+  { id: "board", label: "Quadros", icon: LayoutGrid },
   { id: "sprint", label: "Sprint", icon: Timer },
   { id: "timeline", label: "Timeline", icon: Clock },
   { id: "gantt", label: "Gantt", icon: GanttChart },
@@ -41,7 +44,7 @@ export default function WorkspaceDemandasPage() {
   return (
     <WorkspaceShell>
       <div className="flex h-full min-h-0 flex-col">
-        <div className="flex items-center gap-1 border-b border-border bg-background/40 px-3 py-1.5">
+        <div className="surface-glass sticky top-0 z-10 flex items-center gap-1 border-b px-3 py-1.5">
           {VIEWS.map((v) => {
             const Icon = v.icon;
             const active = v.id === view;
@@ -72,7 +75,7 @@ export default function WorkspaceDemandasPage() {
               </div>
             }
           >
-            {view === "board" && <Kanban />}
+            {view === "board" && <Atividades />}
             {view === "gantt" && <SolicitacoesGantt />}
             {view === "timeline" && <SolicitacoesGantt />}
             {(view === "lista" || view === "sprint") && <Solicitacoes />}

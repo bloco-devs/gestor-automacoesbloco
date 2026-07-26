@@ -81,7 +81,7 @@ export function BoardCard({ board, onToggleFavorito }: Props) {
   return (
     <div
       className={cn(
-        "group relative rounded-xl border overflow-hidden hover:shadow-md transition-shadow flex flex-col bg-card",
+        "surface-raised group relative flex flex-col overflow-hidden rounded-xl",
       )}
     >
       <Link

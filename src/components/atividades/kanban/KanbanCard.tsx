@@ -75,19 +75,17 @@ function KanbanCardImpl({
         e.stopPropagation();
         onEdit();
       }}
-      style={{
-        ...(isOverlay ? undefined : style),
-        backgroundColor: "#ffffff",
-        color: "#172b4d",
-      }}
+      style={isOverlay ? undefined : style}
       className={cn(
-        "group rounded-xl border cursor-grab active:cursor-grabbing transition-all overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5",
-        isMine
-          ? "border-yellow-400/70 ring-2 ring-yellow-400/40"
-          : "border-black/10 hover:border-black/20",
-        isDragging && !isOverlay && "opacity-40",
-        isOverlay && "shadow-lg ring-1 ring-accent/40 rotate-2 scale-105",
-        card.concluido && "opacity-70",
+        // DS 3.1 — o card do quadro e o objeto que o usuario literalmente pega,
+        // entao aqui a profundidade e funcional, nao decorativa: repouso elevado
+        // (elev-2 + fio de luz), lift no hover, e o overlay de arraste sai do
+        // plano com elev-4 e inclinacao.
+        "surface-raised group cursor-grab overflow-hidden rounded-lg text-card-foreground active:cursor-grabbing",
+        isMine && "ring-2 ring-primary/40",
+        isDragging && !isOverlay && "opacity-30",
+        isOverlay && "surface-dragging cursor-grabbing",
+        card.concluido && "opacity-60",
       )}
 
     >
@@ -119,28 +117,28 @@ function KanbanCardImpl({
         <div className="flex items-start gap-2">
           <div
             className={cn(
-              "flex-1 min-w-0 text-sm font-medium leading-snug line-clamp-3 group-hover:text-accent transition-colors",
+              "line-clamp-3 min-w-0 flex-1 text-sm font-medium leading-snug",
               card.concluido && "line-through text-muted-foreground",
             )}
           >
             {card.concluido && (
-              <CheckCircle2 className="inline size-3.5 text-emerald-500 mr-1 -mt-0.5" />
+              <CheckCircle2 className="-mt-0.5 mr-1 inline size-3.5 text-success" />
             )}
             {card.titulo}
           </div>
           {responsaveis.length > 0 && (
             <div className="flex -space-x-1.5 shrink-0">
               {responsaveis.slice(0, 3).map((r) => (
-                <Avatar key={r.id} className="size-5 ring-1 ring-white" title={r.nome}>
+                <Avatar key={r.id} className="size-5 ring-1 ring-card" title={r.nome}>
                   {r.avatarUrl && <AvatarImage src={r.avatarUrl} alt={r.nome} />}
-                  <AvatarFallback className="text-[9px] bg-slate-200 text-slate-800">
+                  <AvatarFallback className="bg-muted text-[9px] text-foreground">
                     {initials(r.nome)}
                   </AvatarFallback>
                 </Avatar>
               ))}
               {responsaveis.length > 3 && (
                 <div
-                  className="size-5 rounded-full bg-slate-200 text-slate-800 ring-1 ring-white flex items-center justify-center text-[9px]"
+                  className="flex size-5 items-center justify-center rounded-full bg-muted text-[9px] text-foreground ring-1 ring-card"
                   title={responsaveis.slice(3).map((r) => r.nome).join(", ")}
                 >
                   +{responsaveis.length - 3}
@@ -156,16 +154,12 @@ function KanbanCardImpl({
           {card.dataEntrega && (
             <span
               className={cn(
-                "flex items-center gap-1 px-1.5 py-0.5 rounded border",
-                status === "atrasado" &&
-                  "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/40",
-                status === "hoje" &&
-                  "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/40",
-                status === "em-breve" &&
-                  "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
-                status === "no-prazo" && "bg-muted text-foreground border-border",
-                status === "concluido" &&
-                  "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40",
+                "flex items-center gap-1 rounded px-1.5 py-0.5",
+                status === "atrasado" && "bg-destructive/12 text-destructive",
+                status === "hoje" && "bg-warning/15 text-warning",
+                status === "em-breve" && "bg-info/12 text-info",
+                status === "no-prazo" && "bg-muted text-muted-foreground",
+                status === "concluido" && "bg-success/12 text-success",
               )}
               title={format(new Date(card.dataEntrega), "PPP", { locale: ptBR })}
             >
@@ -195,8 +189,7 @@ function KanbanCardImpl({
               title={`Checklist: ${checklistDone}/${checklistTotal}`}
               className={cn(
                 "flex items-center gap-0.5 tabular-nums",
-                checklistDone === checklistTotal &&
-                  "text-emerald-600 dark:text-emerald-400",
+                checklistDone === checklistTotal && "text-success",
               )}
             >
               <CheckSquare className="size-3" />
@@ -221,7 +214,7 @@ function KanbanCardImpl({
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
               title={`Solução: ${solucao.titulo}`}
-              className="flex items-center hover:text-accent ml-auto"
+              className="ml-auto flex items-center hover:text-foreground"
             >
               <Link2 className="size-3" />
             </Link>

@@ -121,12 +121,25 @@
 
     --surface-2: 40 10% 94%;
 
-    /* DS 3.0 — elevação quase imperceptível: profundidade vem de contraste de
-     * superfície e espaçamento, não de sombra. elev-1 é reservado para
-     * elementos realmente flutuantes; superfícies em fluxo usam borda sutil. */
-    --elev-1: 0 1px 2px hsl(0 0% 0% / 0.04);
-    --elev-2: 0 2px 8px hsl(0 0% 0% / 0.06), 0 1px 2px hsl(0 0% 0% / 0.04);
-    --elev-3: 0 8px 24px hsl(0 0% 0% / 0.10), 0 2px 6px hsl(0 0% 0% / 0.05);
+    /* DS 3.1 — elevação híbrida.
+     * A regra é: o dia a dia (listas, tabelas, formulários) continua plano;
+     * a profundidade fica reservada para o que o usuário manipula ou para o
+     * que flutua de verdade. Por isso a escala é assimétrica — elev-1 quase
+     * não existe, e elev-3/4 têm presença real.
+     *   1 = superfície em fluxo (quase nada)
+     *   2 = card manipulável em repouso
+     *   3 = card em hover / popover / dialog
+     *   4 = elemento sendo arrastado (a mão do usuário está nele)
+     * Cada nível soma um contato curto + uma difusão longa, que é o que
+     * diferencia sombra de software de sombra de template. */
+    --elev-1: 0 1px 2px hsl(30 10% 20% / 0.05);
+    --elev-2: 0 1px 2px hsl(30 10% 20% / 0.07), 0 3px 8px -2px hsl(30 10% 20% / 0.08);
+    --elev-3: 0 2px 4px hsl(30 10% 20% / 0.08), 0 10px 24px -6px hsl(30 10% 20% / 0.14);
+    --elev-4: 0 4px 8px hsl(30 10% 20% / 0.10), 0 20px 44px -10px hsl(30 10% 20% / 0.24);
+
+    /* Fio de luz no topo das superfícies elevadas — é isso que dá a leitura
+     * de "objeto físico" sem precisar de gradiente na superfície inteira. */
+    --edge-highlight: inset 0 1px 0 hsl(0 0% 100% / 0.75);
   }
 
   .dark {
@@ -179,10 +192,14 @@
 
     --surface-2: 0 0% 9%;
 
-    /* DS 3.0 — no escuro a profundidade vem da superfície, não da sombra. */
-    --elev-1: 0 1px 2px hsl(0 0% 0% / 0.3);
-    --elev-2: 0 2px 8px hsl(0 0% 0% / 0.4), 0 1px 2px hsl(0 0% 0% / 0.25);
-    --elev-3: 0 8px 24px hsl(0 0% 0% / 0.5), 0 2px 6px hsl(0 0% 0% / 0.3);
+    /* DS 3.1 — no escuro a sombra sozinha some, então a profundidade vem da
+     * combinação sombra + fio de luz na borda superior. */
+    --elev-1: 0 1px 2px hsl(0 0% 0% / 0.4);
+    --elev-2: 0 1px 2px hsl(0 0% 0% / 0.5), 0 3px 8px -2px hsl(0 0% 0% / 0.45);
+    --elev-3: 0 2px 4px hsl(0 0% 0% / 0.55), 0 10px 24px -6px hsl(0 0% 0% / 0.6);
+    --elev-4: 0 4px 8px hsl(0 0% 0% / 0.6), 0 20px 44px -10px hsl(0 0% 0% / 0.75);
+
+    --edge-highlight: inset 0 1px 0 hsl(0 0% 100% / 0.06);
   }
 }
 
@@ -221,6 +238,77 @@
   body {
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ============================================================
+   DS 3.1 — Camada de profundidade (uso híbrido)
+   Estes utilitários NÃO devem ser aplicados a listas, tabelas ou
+   formulários. Eles existem para os momentos em que o objeto é
+   manipulável (cards de quadro), flutuante (popover, dialog) ou
+   celebratório (onboarding, sucesso).
+   ============================================================ */
+@layer utilities {
+  /* Objeto que o usuário pega e move. Repouso -> hover -> ativo. */
+  .surface-raised {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border) / 0.7);
+    box-shadow: var(--elev-2), var(--edge-highlight);
+    transition:
+      box-shadow 200ms cubic-bezier(0.2, 0, 0, 1),
+      transform 200ms cubic-bezier(0.2, 0, 0, 1),
+      border-color 200ms cubic-bezier(0.2, 0, 0, 1);
+    will-change: transform;
+  }
+  .surface-raised:hover {
+    box-shadow: var(--elev-3), var(--edge-highlight);
+    transform: translateY(-2px);
+    border-color: hsl(var(--border));
+  }
+  .surface-raised:active { transform: translateY(0); }
+
+  /* Estado de arraste: o cartão sai do plano e inclina de leve. */
+  .surface-dragging {
+    box-shadow: var(--elev-4), var(--edge-highlight);
+    transform: rotate(2.5deg) scale(1.03);
+  }
+
+  /* Superfície translúcida para barras que ficam sobre conteúdo rolável. */
+  .surface-glass {
+    background: hsl(var(--background) / 0.72);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border-color: hsl(var(--border) / 0.6);
+  }
+
+  /* Coluna de quadro: recuada em relação à página, para os cards
+   * parecerem estar dentro dela e não flutuando sobre o nada. */
+  .surface-well {
+    background: hsl(var(--muted) / 0.45);
+    border: 1px solid hsl(var(--border) / 0.5);
+    box-shadow: inset 0 1px 3px hsl(30 10% 20% / 0.05);
+  }
+  .dark .surface-well {
+    background: hsl(0 0% 100% / 0.025);
+    box-shadow: inset 0 1px 3px hsl(0 0% 0% / 0.3);
+  }
+
+  /* Entrada suave para conteúdo que aparece depois do carregamento. */
+  @keyframes ds-rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-rise { animation: ds-rise 260ms cubic-bezier(0.2, 0, 0, 1) both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .surface-raised,
+    .surface-raised:hover,
+    .surface-dragging,
+    .animate-rise {
+      transition: none;
+      animation: none;
+      transform: none;
+    }
   }
 }
 

@@ -77,9 +77,12 @@ function ColunaImpl(props: ColunaProps) {
       ref={setNodeRef}
       style={accent.style}
       className={cn(
-        "rounded-xl border p-2 flex flex-col min-h-[400px] max-h-[calc(100vh-220px)] transition-colors overflow-hidden shadow-sm backdrop-blur-[1px]",
+        // DS 3.1 — a coluna e um "poco" (surface-well): levemente rebaixada em
+        // relacao a pagina, com sombra interna. Isso cria a hierarquia fisica
+        // pagina > coluna > card que faz o quadro parecer um objeto de verdade.
+        "surface-well flex min-h-[400px] max-h-[calc(100vh-220px)] flex-col overflow-hidden rounded-xl p-2 transition-[box-shadow,background-color] duration-base ease-standard",
         accent.column,
-        isOver && "ring-2 ring-accent",
+        isOver && "ring-2 ring-primary/50",
       )}
     >
       <div className="h-1 -mx-2 -mt-2 mb-2 rounded-t-xl" style={accent.barStyle} />
@@ -90,7 +93,7 @@ function ColunaImpl(props: ColunaProps) {
       >
 
         <div className="flex items-center gap-2 min-w-0">
-          <h3 className="text-sm font-semibold truncate">{coluna.nome}</h3>
+          <h3 className="ds-card-title truncate">{coluna.nome}</h3>
           {(() => {
             const wip = coluna.wipLimit ?? 0;
             const count = cards.length;
@@ -169,7 +172,7 @@ function ColunaImpl(props: ColunaProps) {
         </div>
       </div>
       <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-2 flex-1 overflow-y-auto px-1 pb-1">
+        <div className="flex-1 space-y-2.5 overflow-y-auto px-1 pb-1 pt-0.5">
           {cards.map((card) => (
             <KanbanCard
               key={card.id}
@@ -201,7 +204,7 @@ function ColunaImpl(props: ColunaProps) {
             <button
               type="button"
               onClick={onNew}
-              className="w-full rounded-lg border border-dashed border-border/60 py-6 text-xs text-muted-foreground hover:text-foreground hover:border-accent/50 transition-colors"
+              className="w-full rounded-lg border border-dashed border-border/50 py-6 text-xs text-muted-foreground transition-colors duration-fast ease-standard hover:border-border hover:bg-card/50 hover:text-foreground"
             >
               <Plus className="size-3.5 inline mr-1" /> Adicionar card
             </button>

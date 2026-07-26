@@ -24,7 +24,9 @@ const cardVariants = cva("text-card-foreground transition-colors duration-base e
       flat: "rounded-lg border border-border/70 bg-card",
       outline: "rounded-lg border border-border/70 bg-transparent",
       ghost: "rounded-lg border-0 bg-transparent",
-      elevated: "rounded-lg border border-border/60 bg-card shadow-elev-2",
+      // Unico nivel com profundidade real: use so onde o objeto e manipulavel
+      // ou flutua de fato. Em lista/tabela/formulario, continue no flat.
+      elevated: "surface-raised rounded-lg",
     },
   },
   defaultVariants: {

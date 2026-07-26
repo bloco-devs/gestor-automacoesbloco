@@ -82,6 +82,8 @@ export default {
         "elev-1": "var(--elev-1)",
         "elev-2": "var(--elev-2)",
         "elev-3": "var(--elev-3)",
+        "elev-4": "var(--elev-4)",
+        edge: "var(--edge-highlight)",
       },
       transitionTimingFunction: {
         standard: "cubic-bezier(0.2, 0, 0, 1)",
