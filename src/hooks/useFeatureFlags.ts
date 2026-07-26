@@ -19,7 +19,14 @@ export const ALL_FLAGS: FeatureFlagDef[] = [
   { key: "compact-density", label: "Densidade compacta", description: "Reduz paddings em listas e cards.", defaultValue: false },
   { key: "beta-analytics", label: "Analytics beta", description: "Visualizações experimentais em /admin/analytics.", defaultValue: false },
   { key: "keyboard-hints", label: "Atalhos visíveis", description: "Mostra dicas de teclado nos botões.", defaultValue: false },
-  { key: "ux.rewrite", label: "Nova UX (Perfis)", description: "Ativa a nova navegação unificada por perfil (Portal/Workspace/Gestão/Admin).", defaultValue: false },
+  // A MESMA flag estava registrada em dois lugares com defaults opostos:
+  // `src/core/flags/ux.flags.ts` declarava `true`, e aqui estava `false`. Como o
+  // `UxRewriteGate` lê deste hook, valia o `false` — ou seja, todas as rotas
+  // novas (/workspace/*, /portal/*, /gestao/*) redirecionavam de volta para as
+  // páginas legadas. O sidebar unificado, que não passa pelo gate, apontava para
+  // rotas que quicavam: clicar em "Demandas" caía no Pipeline Kanban antigo.
+  // Alinhado em `true`, que é o valor que o outro registro já declarava.
+  { key: "ux.rewrite", label: "Nova UX (Perfis)", description: "Ativa a nova navegação unificada por perfil (Portal/Workspace/Gestão/Admin).", defaultValue: true },
 ];
 
 const STORAGE_KEY = "gab:featureFlags:v1";
