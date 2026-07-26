@@ -14,6 +14,7 @@ import { navigationRegistry } from "../registry/navigation-registry";
 import { commandRegistry } from "../registry/command-registry";
 import { searchRegistry } from "../registry/search-registry";
 import { DEFAULT_COMMANDS, DEFAULT_NAV_ITEMS } from "../registry/defaults";
+import { catalogoDeRotas } from "../registry/routes-catalog";
 import { useHotkeys } from "../hotkeys/useHotkeys";
 import type { PlatformCommand, PlatformRole } from "../types";
 import { CommandPalette } from "../components/CommandPalette";
@@ -66,6 +67,10 @@ let defaultsRegistered = false;
 function ensureDefaults(): void {
   if (defaultsRegistered) return;
   navigationRegistry.registerMany(DEFAULT_NAV_ITEMS);
+  // FEATURE 028 — a paleta passa a conhecer TODOS os destinos (as ~56 páginas
+  // administrativas, os perfis, as filas e as lentes), e não só 16. É isso que
+  // permite o menu encolher: tirar algo do menu deixa de torná-lo inalcançável.
+  navigationRegistry.registerMany(catalogoDeRotas());
   commandRegistry.registerMany(DEFAULT_COMMANDS);
   defaultsRegistered = true;
 }

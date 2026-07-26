@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Compass,
   HelpCircle,
+  Settings2,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -24,6 +25,7 @@ import { OnboardingTour, useOnboardingTour } from "@/components/OnboardingTour";
 import blocoLogo from "@/assets/bloco-logo.png";
 import { SidebarGroupsNav } from "@/components/sidebar/SidebarGroupsNav";
 import { SidebarBreadcrumb } from "@/components/sidebar/SidebarBreadcrumb";
+import { BuscaGlobal } from "@/components/shell/BuscaGlobal";
 import { builderGroups } from "@/components/sidebar/navGroups";
 import { fromUnifiedNav } from "@/components/sidebar/fromUnifiedNav";
 import { getNavigation } from "@/modules/navigation";
@@ -31,9 +33,9 @@ import { CopilotDock } from "@/modules/copilot/CopilotDock";
 import { useEcossistemaAutoSync } from "@/modules/ecossistema";
 import { attachGlobalErrorHandlers } from "@/modules/errors";
 
-const SIDEBAR_MIN = 160;
+const SIDEBAR_MIN = 176;
 const SIDEBAR_MAX = 480;
-const SIDEBAR_DEFAULT = 256;
+const SIDEBAR_DEFAULT = 208;
 const SIDEBAR_STORAGE_KEY = "app:sidebarWidth";
 
 export default function AppLayout() {
@@ -53,15 +55,19 @@ export default function AppLayout() {
   // "builder" ainda não tem um perfil dedicado no registry novo, então
   // continua no menu legado até essa decisão de produto ser tomada.
   //
-  // Developer/administrador recebem "workspace" + "admin" combinados: o
-  // perfil "admin" do registry aponta para /admin (AdminShellPage), que já
-  // é um hub consolidado com cards para toda a sprawl antiga (Segurança,
-  // Integrações, Observabilidade, Secrets, Backup, Release, etc.) — nada é
-  // perdido, só fica a um clique de distância em vez de expandido no menu.
+  // FEATURE 028 — o grupo "Admin" SAI do menu. Antes ele estava aqui porque,
+  // sem ele, as ~56 páginas administrativas ficavam inalcançáveis. Agora a
+  // paleta (⌘K) indexa todas elas, e o hub /admin continua sendo o índice
+  // navegável — então o menu pode carregar só os destinos do dia a dia.
+  //
+  // O raciocínio: navegação serve exploração, busca serve intenção. Ninguém
+  // descobre o Threat Center passeando pelo menu; quem precisa dele sabe que
+  // precisa. Manter as 56 no menu cobrava o custo do ruído de todo usuário,
+  // em toda sessão, para servir a um acesso ocasional.
   const groups = isBuilderRole
     ? builderGroups
     : isDeveloperEffective
-      ? [...fromUnifiedNav(getNavigation("workspace")), ...fromUnifiedNav(getNavigation("admin"))]
+      ? fromUnifiedNav(getNavigation("workspace"))
       : fromUnifiedNav(getNavigation("portal"));
   const roleLabel = user?.isAdministrador
     ? "Administrador"
@@ -254,6 +260,20 @@ export default function AppLayout() {
               >
                 <HelpCircle className="size-4" />
               </Button>
+              {isDeveloperEffective && (
+                // O grupo "Admin" de 6 itens virou este único acesso. O /admin
+                // continua sendo o índice completo das ~56 páginas, e o ⌘K
+                // alcança qualquer uma delas direto.
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/admin")}
+                  title="Administração"
+                  aria-label="Administração"
+                >
+                  <Settings2 className="size-4" />
+                </Button>
+              )}
               <ThemeToggle />
               {isDual && (
                 <Button
@@ -329,6 +349,10 @@ export default function AppLayout() {
           <div className="flex-1 min-w-0 text-xs">
             <SidebarBreadcrumb groups={groups} />
           </div>
+          {/* FEATURE 028 — o gatilho visível da paleta. Sem ele, tirar 56 itens
+              do menu seria esconder as telas; com ele, é trocar navegação por
+              busca, que é a ferramenta certa para acesso por intenção. */}
+          <BuscaGlobal />
         </header>
 
         {/* Header mobile */}

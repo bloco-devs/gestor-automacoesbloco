@@ -2,20 +2,15 @@ import { lazy, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { WorkspaceShell } from "@/modules/workspace-unified";
+import { SeletorDeProjeto } from "@/modules/workspace-demandas/components/SeletorDeProjeto";
 
 const WorkspaceDemandas = lazy(() => import("@/modules/workspace-demandas/WorkspaceDemandas"));
-const Atividades = lazy(() => import("@/pages/Atividades"));
 
 /**
- * FEATURE 027 — /workspace/demandas
+ * /workspace/demandas
  *
- *   sem :projetoId  → seletor de projeto
+ *   sem :projetoId  → entra no projeto se houver só um; senão, mostra o seletor
  *   com :projetoId  → o workspace, com as cinco lentes sobre o mesmo conjunto
- *
- * Sem projeto na URL, o Workspace mostra a fila global do Help Desk. O seletor
- * de projeto continua sendo a página de quadros por enquanto — é o último
- * ponto do fluxo ainda ligado ao vocabulário do Trello, e está registrado no
- * relatório como o próximo a substituir.
  */
 export default function WorkspaceDemandasPage() {
   const { projetoId } = useParams<{ projetoId: string }>();
@@ -30,7 +25,7 @@ export default function WorkspaceDemandasPage() {
           </div>
         }
       >
-        {projetoId ? <WorkspaceDemandas /> : <Atividades hrefBase="/workspace/demandas" />}
+        {projetoId ? <WorkspaceDemandas /> : <SeletorDeProjeto />}
       </Suspense>
     </WorkspaceShell>
   );

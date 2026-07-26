@@ -20,7 +20,7 @@ type Tab = "recentes" | "meus" | "favoritos" | "arquivados";
 
 const TABS: { key: Tab; label: string; icon: typeof Star }[] = [
   { key: "recentes", label: "Recentes", icon: Clock },
-  { key: "meus", label: "Meus Quadros", icon: Grid3x3 },
+  { key: "meus", label: "Meus projetos", icon: Grid3x3 },
   { key: "favoritos", label: "Favoritos", icon: Star },
   { key: "arquivados", label: "Arquivados", icon: Archive },
 ];
@@ -105,13 +105,13 @@ export default function Atividades({ hrefBase = "/atividades" }: AtividadesProps
       return id;
     },
     onSuccess: (id) => {
-      toast.success("Quadro criado");
+      toast.success("Projeto criado");
       qc.invalidateQueries({ queryKey: ["atividades", "boards-resumo"] });
       setDialogOpen(false);
       navigate(`${hrefBase}/${id}`);
     },
     onError: (e: unknown) => {
-      const msg = e instanceof Error ? e.message : "Erro ao criar quadro";
+      const msg = e instanceof Error ? e.message : "Erro ao criar projeto";
       toast.error(msg);
     },
   });
@@ -138,15 +138,15 @@ export default function Atividades({ hrefBase = "/atividades" }: AtividadesProps
 
   return (
     <div className="space-y-6">
-      <nav className="text-sm text-muted-foreground">
-        <span className="text-foreground font-medium">Atividades</span>
+      <nav className="ds-caption text-muted-foreground">
+        <span className="font-medium text-foreground">Demandas</span>
         <span aria-hidden className="mx-1.5">›</span>
-        <span>Quadros</span>
+        <span>Projetos</span>
       </nav>
 
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold">Quadros</h1>
+          <h1 className="ds-h1">Projetos</h1>
           <p className="text-sm text-muted-foreground">
             Workspace <span className="font-medium text-foreground">Grupo Bloco</span>
           </p>
@@ -154,11 +154,11 @@ export default function Atividades({ hrefBase = "/atividades" }: AtividadesProps
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => navigate("/atividades/importar")}>
             <Download className="h-4 w-4 mr-1.5" />
-            Importar quadro
+            Importar projeto
           </Button>
           <Button onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-1.5" />
-            Novo quadro
+            Novo projeto
           </Button>
         </div>
       </div>
@@ -198,7 +198,7 @@ export default function Atividades({ hrefBase = "/atividades" }: AtividadesProps
             <Input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar quadros..."
+              placeholder="Buscar projetos…"
               className="pl-7 h-8 text-sm"
             />
           </div>
@@ -213,24 +213,24 @@ export default function Atividades({ hrefBase = "/atividades" }: AtividadesProps
         </div>
       ) : boardsQ.isError ? (
         <div className="text-sm text-destructive">
-          Não foi possível carregar os quadros. Tente recarregar a página.
+          Não foi possível carregar os projetos. Tente recarregar a página.
         </div>
       ) : filtrados.length === 0 ? (
         <EmptyState
           icon={Grid3x3}
-          title={busca ? "Nenhum quadro encontrado" : "Nenhum quadro por aqui"}
+          title={busca ? "Nenhum projeto encontrado" : "Nenhum projeto por aqui"}
           description={
             busca
               ? "Tente outro termo de busca."
               : tab === "arquivados"
-                ? "Você ainda não arquivou nenhum quadro."
-                : "Crie seu primeiro quadro para começar a organizar suas atividades."
+                ? "Você ainda não arquivou nenhum projeto."
+                : "Crie o primeiro projeto para começar a organizar as demandas."
           }
           action={
             !busca && tab !== "arquivados" ? (
               <Button onClick={() => setDialogOpen(true)} size="sm">
                 <Plus className="h-4 w-4 mr-1.5" />
-                Criar quadro
+                Criar projeto
               </Button>
             ) : null
           }

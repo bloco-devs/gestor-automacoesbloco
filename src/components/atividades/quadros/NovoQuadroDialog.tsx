@@ -88,10 +88,10 @@ export function NovoQuadroDialog({ open, onOpenChange, submitting, onSubmit }: P
       <DialogContent className="sm:max-w-[480px]">
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader>
-            <DialogTitle>Novo Quadro</DialogTitle>
+            <DialogTitle>Novo projeto</DialogTitle>
             <DialogDescription>
-              Crie um novo Quadro. Ele começará com as colunas padrão (Backlog, A Fazer,
-              Em Andamento, Em Revisão, Concluído).
+              Ele começa com as colunas padrão: Backlog, A fazer, Em andamento, Em revisão
+              e Concluído.
             </DialogDescription>
           </DialogHeader>
 
@@ -114,7 +114,7 @@ export function NovoQuadroDialog({ open, onOpenChange, submitting, onSubmit }: P
               id="descricao"
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Do que se trata este quadro?"
+              placeholder="Do que se trata este projeto?"
               rows={2}
               maxLength={280}
             />
@@ -194,7 +194,7 @@ export function NovoQuadroDialog({ open, onOpenChange, submitting, onSubmit }: P
               Cancelar
             </Button>
             <Button type="submit" disabled={submitting || !nome.trim()}>
-              {submitting ? "Criando..." : "Criar quadro"}
+              {submitting ? "Criando..." : "Criar projeto"}
             </Button>
           </DialogFooter>
         </form>
