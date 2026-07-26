@@ -1,13 +1,17 @@
 import { useSyncExternalStore } from "react";
 import { listMessages, subscribeMemory } from "../memory";
+import { stableSnapshot } from "@/lib/stable-snapshot";
 import CopilotContextPanel from "./CopilotContextPanel";
+
+const getMessages = stableSnapshot(listMessages);
 
 /**
  * Drawer lateral leve. Nunca substitui telas.
  * Renderizado por hosts que consumam slot "copilot" via SDK.
  */
 export default function CopilotDock() {
-  const messages = useSyncExternalStore(subscribeMemory, listMessages, listMessages);
+  const messages = useSyncExternalStore(subscribeMemory, getMessages, getMessages);
+
   return (
     <aside className="w-80 shrink-0 space-y-3 border-l border-border p-3">
       <header className="text-sm font-semibold">AI Copilot</header>

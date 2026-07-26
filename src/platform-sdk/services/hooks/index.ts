@@ -6,12 +6,16 @@ import { serviceRegistry, type ServiceRecord } from "../registry/registry";
 import { meshEventHistory, subscribeMeshEvents, type MeshEvent } from "../diagnostics";
 import type { ServiceContractId, ServiceContractMap } from "../contracts";
 import { optional as consumerOptional, type ResolveOptions } from "../consumer";
+import { stableSnapshot } from "@/lib/stable-snapshot";
+
+const getServices = stableSnapshot(() => serviceRegistry.list());
+const getMeshEvents = stableSnapshot(meshEventHistory);
 
 export function useServices(): ServiceRecord[] {
   return useSyncExternalStore(
     (l) => serviceRegistry.subscribe(l),
-    () => serviceRegistry.list(),
-    () => serviceRegistry.list(),
+    getServices,
+    getServices,
   );
 }
 
@@ -24,7 +28,7 @@ export function useServicesByContract<C extends ServiceContractId>(contract: C):
 }
 
 export function useMeshEvents(): ReadonlyArray<MeshEvent> {
-  return useSyncExternalStore(subscribeMeshEvents, meshEventHistory, meshEventHistory);
+  return useSyncExternalStore(subscribeMeshEvents, getMeshEvents, getMeshEvents);
 }
 
 /** Resolve reativo. Retorna null se ainda não há provider. */
