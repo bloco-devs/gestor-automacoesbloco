@@ -25,7 +25,12 @@ const TABS: { key: Tab; label: string; icon: typeof Star }[] = [
   { key: "arquivados", label: "Arquivados", icon: Archive },
 ];
 
-export default function Atividades() {
+interface AtividadesProps {
+  /** Quando embutido no Workspace de Demandas, os quadros abrem dentro dele. */
+  hrefBase?: string;
+}
+
+export default function Atividades({ hrefBase = "/atividades" }: AtividadesProps = {}) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("recentes");
@@ -103,7 +108,7 @@ export default function Atividades() {
       toast.success("Quadro criado");
       qc.invalidateQueries({ queryKey: ["atividades", "boards-resumo"] });
       setDialogOpen(false);
-      navigate(`/atividades/${id}`);
+      navigate(`${hrefBase}/${id}`);
     },
     onError: (e: unknown) => {
       const msg = e instanceof Error ? e.message : "Erro ao criar quadro";
@@ -166,7 +171,7 @@ export default function Atividades() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {favoritos.map((b) => (
-              <BoardCard key={b.id} board={b} onToggleFavorito={(x) => favMut.mutate(x)} />
+              <BoardCard key={b.id} board={b} hrefBase={hrefBase} onToggleFavorito={(x) => favMut.mutate(x)} />
             ))}
           </div>
         </section>
@@ -233,7 +238,7 @@ export default function Atividades() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {filtrados.map((b) => (
-            <BoardCard key={b.id} board={b} onToggleFavorito={(x) => favMut.mutate(x)} />
+            <BoardCard key={b.id} board={b} hrefBase={hrefBase} onToggleFavorito={(x) => favMut.mutate(x)} />
           ))}
         </div>
       )}

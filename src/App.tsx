@@ -53,6 +53,7 @@ const SolucaoDetail = lazy(() => import("./pages/SolucaoDetail"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const Diagrama = lazy(() => import("./pages/Diagrama"));
 const Atividades = lazy(() => import(/* webpackChunkName: "atividades" */ "./pages/Atividades"));
+const DemandaDetalhe = lazy(() => import("./modules/workspace-demandas/DemandaDetalhe"));
 const AtividadesBoard = lazy(() => import(/* webpackChunkName: "atividades" */ "./pages/AtividadesBoard"));
 const ImportarQuadro = lazy(() => import(/* webpackChunkName: "atividades" */ "./pages/atividades/importar/ImportarQuadro"));
 const Ajuda = lazy(() => import("./pages/Ajuda"));
@@ -291,6 +292,17 @@ const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
+          {/* FEATURE 027 — a demanda ganha endereco proprio. Ate aqui o detalhe
+              vivia num Dialog: sem URL, sem link colavel, sem abrir em nova aba
+              e sem voltar pelo botao de voltar. */}
+          <Route
+            path="/demandas/:id"
+            element={
+              <ProtectedRoute>
+                <DemandaDetalhe />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/atividades/importar" element={<ProtectedRoute role="developer"><ImportarQuadro /></ProtectedRoute>} />
           <Route path="/atividades/:boardId" element={<ProtectedRoute role="developer"><AtividadesBoard /></ProtectedRoute>} />
 
@@ -376,6 +388,17 @@ const AppRoutes = () => {
           />
           <Route
             path="/workspace/demandas"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<WorkspaceDemandasPage />} off={<Navigate to="/solicitacoes/kanban" replace />} />
+              </ProtectedRoute>
+            }
+          />
+          {/* FEATURE 027 — o workspace aberto. Mesma página, com o quadro no
+              parâmetro: as cinco visões (Lista/Quadro/Sprint/Timeline/Gantt)
+              passam a ser projeções dos mesmos cards, e não telas diferentes. */}
+          <Route
+            path="/workspace/demandas/:projetoId"
             element={
               <ProtectedRoute role="developer">
                 <UxRoute on={<WorkspaceDemandasPage />} off={<Navigate to="/solicitacoes/kanban" replace />} />

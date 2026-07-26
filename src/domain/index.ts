@@ -4,3 +4,4 @@
  */
 export * as shared from "./shared";
 export * as board from "./board";
+export * as demand from "./demand";

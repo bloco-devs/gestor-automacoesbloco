@@ -26,6 +26,12 @@ function formatRelative(iso: string | null): string {
 interface Props {
   board: BoardResumo;
   onToggleFavorito: (b: BoardResumo) => void;
+  /**
+   * Base da rota do quadro. Permite que o hub abra o quadro DENTRO do
+   * workspace (`/workspace/demandas/:id`) em vez de mandar o usuário para uma
+   * página solta — assim ele nunca sente que trocou de módulo.
+   */
+  hrefBase?: string;
 }
 
 const VISIBILIDADE_LABEL: Record<BoardResumo["visibilidade"], string> = {
@@ -34,7 +40,7 @@ const VISIBILIDADE_LABEL: Record<BoardResumo["visibilidade"], string> = {
   public: "Público",
 };
 
-export function BoardCard({ board, onToggleFavorito }: Props) {
+export function BoardCard({ board, onToggleFavorito, hrefBase = "/atividades" }: Props) {
   // Fundo GLOBAL do quadro: vem do servidor (board.background / board.coverUrl).
   // Todos os membros veem a mesma capa.
   const { bgKey, imageRef: coverPath } = splitBoardBackground(board.background, board.coverUrl);
@@ -85,7 +91,7 @@ export function BoardCard({ board, onToggleFavorito }: Props) {
       )}
     >
       <Link
-        to={`/atividades/${board.id}`}
+        to={`${hrefBase}/${board.id}`}
         className={cn("block h-28 relative", useLocalPreset && bgOption?.className)}
         style={{
           backgroundColor: effectiveImgUrl || useLocalPreset ? undefined : coverColor,
@@ -120,7 +126,7 @@ export function BoardCard({ board, onToggleFavorito }: Props) {
       <div className="p-3 flex-1 flex flex-col gap-2">
         <div className="flex items-start justify-between gap-2">
           <Link
-            to={`/atividades/${board.id}`}
+            to={`${hrefBase}/${board.id}`}
             className="font-medium leading-snug hover:underline line-clamp-2 flex-1"
           >
             {board.nome}
