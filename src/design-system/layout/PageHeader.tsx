@@ -11,22 +11,26 @@ export interface PageHeaderProps {
 }
 
 /**
- * PageHeader — cabeçalho oficial de página.
- * Segue tipografia DS 2.0 (ds-h1 / ds-body caption).
+ * DS 3.0 — PageHeader
+ *
+ * Cabeçalho fino e calmo: breadcrumb discreto, título em ds-h1 (agora menor),
+ * subtítulo em texto secundário. O ícone perdeu a cor primária — cor de marca
+ * em elemento decorativo é exatamente o que fazia a página parecer painel
+ * administrativo. Agora ele é neutro e opcional.
  */
 export function PageHeader({ title, subtitle, icon, actions, breadcrumb, className }: PageHeaderProps) {
   return (
-    <header className={cn("flex flex-col gap-2", className)}>
+    <header className={cn("flex flex-col gap-1.5", className)}>
       {breadcrumb ? <div className="ds-caption text-muted-foreground">{breadcrumb}</div> : null}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex items-start gap-3 min-w-0">
-          {icon ? <div className="mt-1 shrink-0 text-primary">{icon}</div> : null}
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 items-start gap-2.5">
+          {icon ? <div className="mt-0.5 shrink-0 text-muted-foreground">{icon}</div> : null}
           <div className="min-w-0">
             <h1 className="ds-h1 truncate">{title}</h1>
-            {subtitle ? <p className="ds-caption text-muted-foreground mt-1">{subtitle}</p> : null}
+            {subtitle ? <p className="ds-caption mt-1 max-w-2xl text-muted-foreground">{subtitle}</p> : null}
           </div>
         </div>
-        {actions ? <div className="flex items-center gap-2 shrink-0">{actions}</div> : null}
+        {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
       </div>
     </header>
   );

@@ -104,11 +104,11 @@
     --info: 210 70% 45%;
     --info-foreground: 40 8% 96%;
 
-    --border: 24 10% 78%;
-    --input: 24 10% 78%;
+    --border: 30 8% 85%;
+    --input: 30 8% 85%;
     --ring: 47 100% 55%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     --sidebar-background: 40 10% 95%;
     --sidebar-foreground: 0 0% 12%;
@@ -121,10 +121,12 @@
 
     --surface-2: 40 10% 94%;
 
-    /* DS 2.0 — elevação e motion (aditivo) */
-    --elev-1: 0 1px 2px hsl(0 0% 0% / 0.06), 0 1px 3px hsl(0 0% 0% / 0.04);
-    --elev-2: 0 4px 12px hsl(0 0% 0% / 0.08), 0 2px 4px hsl(0 0% 0% / 0.04);
-    --elev-3: 0 12px 32px hsl(0 0% 0% / 0.14), 0 4px 12px hsl(0 0% 0% / 0.06);
+    /* DS 3.0 — elevação quase imperceptível: profundidade vem de contraste de
+     * superfície e espaçamento, não de sombra. elev-1 é reservado para
+     * elementos realmente flutuantes; superfícies em fluxo usam borda sutil. */
+    --elev-1: 0 1px 2px hsl(0 0% 0% / 0.04);
+    --elev-2: 0 2px 8px hsl(0 0% 0% / 0.06), 0 1px 2px hsl(0 0% 0% / 0.04);
+    --elev-3: 0 8px 24px hsl(0 0% 0% / 0.10), 0 2px 6px hsl(0 0% 0% / 0.05);
   }
 
   .dark {
@@ -162,8 +164,8 @@
     --info: 210 70% 60%;
     --info-foreground: 0 0% 8%;
 
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
     --ring: 47 100% 68%;
 
     --sidebar-background: 0 0% 6%;
@@ -177,25 +179,33 @@
 
     --surface-2: 0 0% 9%;
 
-    /* DS 2.0 — elevação (mais leve no escuro) */
-    --elev-1: 0 1px 2px hsl(0 0% 0% / 0.35), 0 1px 3px hsl(0 0% 0% / 0.25);
-    --elev-2: 0 4px 12px hsl(0 0% 0% / 0.45), 0 2px 4px hsl(0 0% 0% / 0.3);
-    --elev-3: 0 12px 32px hsl(0 0% 0% / 0.55), 0 4px 12px hsl(0 0% 0% / 0.4);
+    /* DS 3.0 — no escuro a profundidade vem da superfície, não da sombra. */
+    --elev-1: 0 1px 2px hsl(0 0% 0% / 0.3);
+    --elev-2: 0 2px 8px hsl(0 0% 0% / 0.4), 0 1px 2px hsl(0 0% 0% / 0.25);
+    --elev-3: 0 8px 24px hsl(0 0% 0% / 0.5), 0 2px 6px hsl(0 0% 0% / 0.3);
   }
 }
 
-/* ===== DS 2.0 — Tipografia oficial ===== */
+/* ===== DS 3.0 — Tipografia oficial =====
+ * A hierarquia é carregada por peso + tamanho + cor, nunca por bordas ou caixas.
+ * Escala mais contida (referências: Linear, Vercel, GitHub): títulos menores,
+ * corpo com mais entrelinha para leitura, labels discretos.
+ * Os nomes das classes são os mesmos do DS 2.0 — nenhum consumidor precisa mudar.
+ */
 @layer utilities {
-  .ds-display    { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 2.5rem;   line-height: 3rem;    font-weight: 700; letter-spacing: -0.02em; }
-  .ds-h1         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.75rem;  line-height: 2rem;    font-weight: 600; letter-spacing: -0.01em; }
-  .ds-h2         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.375rem; line-height: 1.75rem; font-weight: 600; letter-spacing: -0.005em; }
-  .ds-h3         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.125rem; line-height: 1.5rem;  font-weight: 600; }
-  .ds-card-title { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1rem;     line-height: 1.375rem;font-weight: 600; }
-  .ds-body       { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
-  .ds-body-strong{ font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; }
-  .ds-caption    { font-size: 0.75rem;  line-height: 1rem;    font-weight: 400; }
-  .ds-label      { font-size: 0.6875rem;line-height: 0.875rem;font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
-  .ds-helper     { font-size: 0.75rem;  line-height: 1rem;    font-weight: 400; color: hsl(var(--muted-foreground)); }
+  .ds-display    { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 2rem;      line-height: 2.5rem;  font-weight: 600; letter-spacing: -0.025em; }
+  .ds-h1         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.375rem;  line-height: 1.875rem;font-weight: 600; letter-spacing: -0.02em; }
+  .ds-h2         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.0625rem; line-height: 1.5rem;  font-weight: 600; letter-spacing: -0.012em; }
+  .ds-h3         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 0.9375rem; line-height: 1.375rem;font-weight: 600; letter-spacing: -0.008em; }
+  .ds-card-title { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 0.875rem;  line-height: 1.25rem; font-weight: 600; letter-spacing: -0.005em; }
+  .ds-body       { font-size: 0.875rem;  line-height: 1.375rem; font-weight: 400; }
+  .ds-body-strong{ font-size: 0.875rem;  line-height: 1.375rem; font-weight: 500; }
+  .ds-caption    { font-size: 0.8125rem; line-height: 1.125rem; font-weight: 400; }
+  .ds-label      { font-size: 0.6875rem; line-height: 1rem;     font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .ds-helper     { font-size: 0.8125rem; line-height: 1.125rem; font-weight: 400; color: hsl(var(--muted-foreground)); }
+
+  /* Valor numérico de KPI — número grande, tabular, sem competir com o título. */
+  .ds-metric     { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.75rem; line-height: 2.125rem; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 }
 
 @layer base {
@@ -217,8 +227,10 @@
 @layer utilities {
   .text-balance { text-wrap: balance; }
   .glow-accent { box-shadow: 0 0 0 1px hsl(var(--accent) / 0.35), 0 8px 24px -8px hsl(var(--accent) / 0.25); }
-  .surface-1 { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); }
-  .surface-2 { background: hsl(var(--surface-2)); border: 1px solid hsl(var(--border)); }
+  .surface-1 { background: hsl(var(--card)); border: 1px solid hsl(var(--border) / 0.7); }
+  .surface-2 { background: hsl(var(--surface-2)); border: 1px solid hsl(var(--border) / 0.7); }
+  /* hairline: separador de 1px que some no fundo — substitui bordas grossas */
+  .hairline { border-color: hsl(var(--border) / 0.55); }
 }
 
 /* Markdown inside sticky notes */

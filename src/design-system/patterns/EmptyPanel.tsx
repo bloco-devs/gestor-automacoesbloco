@@ -10,22 +10,20 @@ export interface EmptyPanelProps {
   className?: string;
 }
 
+/**
+ * DS 3.0 — EmptyPanel
+ *
+ * Sem borda tracejada e sem fundo cinza: um estado vazio não precisa de uma
+ * caixa avisando que está vazio. Muito espaço, ícone pequeno e discreto,
+ * texto curto e uma única ação evidente.
+ */
 export function EmptyPanel({ icon: Icon, title, description, action, className }: EmptyPanelProps) {
   return (
-    <div
-      className={cn(
-        "flex flex-col items-center justify-center text-center gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/20 px-6 py-10",
-        className,
-      )}
-    >
-      {Icon ? (
-        <div className="rounded-full bg-muted p-3 text-muted-foreground">
-          <Icon className="h-6 w-6" aria-hidden />
-        </div>
-      ) : null}
-      <div className="ds-card-title">{title}</div>
-      {description ? <p className="ds-caption text-muted-foreground max-w-sm">{description}</p> : null}
-      {action ? <div className="pt-1">{action}</div> : null}
+    <div className={cn("flex flex-col items-center justify-center gap-2 px-6 py-14 text-center", className)}>
+      {Icon ? <Icon className="h-5 w-5 text-muted-foreground/60" aria-hidden /> : null}
+      <div className="ds-body-strong">{title}</div>
+      {description ? <p className="ds-caption max-w-sm text-muted-foreground">{description}</p> : null}
+      {action ? <div className="pt-2">{action}</div> : null}
     </div>
   );
 }

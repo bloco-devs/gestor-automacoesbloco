@@ -175,31 +175,31 @@ export default function AppLayout() {
         <aside
           aria-label="Navegação principal"
           className={cn(
-            "flex-col border-sidebar-border bg-sidebar shrink-0",
+            "flex-col border-sidebar-border/70 bg-sidebar shrink-0",
             isMobile
-              ? "fixed inset-y-0 left-0 z-50 w-72 flex border-r shadow-xl"
+              ? "fixed inset-y-0 left-0 z-50 w-72 flex border-r shadow-elev-3"
               : "hidden md:flex relative border-r",
           )}
           style={isMobile ? undefined : { width: sidebarWidth }}
         >
-          <div className="px-5 py-6 flex items-center gap-3 min-w-0">
+          <div className="px-4 py-4 flex items-center gap-2.5 min-w-0">
             <img
               src={blocoLogo}
               alt="Bloco Construções"
-              className="size-10 rounded-lg object-cover shrink-0"
+              className="size-7 rounded-md object-cover shrink-0"
             />
             <div className="min-w-0">
-              <div className="text-sm font-brand font-bold truncate">Gestor de Automações</div>
+              <div className="text-[13px] font-brand font-semibold tracking-tight truncate">Gestor de Automações</div>
             </div>
           </div>
-          <nav className="flex-1 px-3 py-2 overflow-y-auto" aria-label="Menu">
+          <nav className="flex-1 space-y-4 overflow-y-auto px-2.5 py-2" aria-label="Menu">
             <SidebarGroupsNav
               groups={groups}
               isDeveloper={isDeveloper}
               pendingEvalCount={pendingEvalCount}
             />
           </nav>
-          <div className="p-3 border-t border-sidebar-border">
+          <div className="p-2.5 border-t border-sidebar-border/70">
             <button
               type="button"
               onClick={() => navigate("/perfil")}
@@ -324,7 +324,7 @@ export default function AppLayout() {
         )}
 
         {/* Header desktop: breadcrumb automático + trigger de sidebar */}
-        <header className="hidden md:flex sticky top-0 z-30 h-11 items-center gap-3 border-b border-border/60 bg-background/80 backdrop-blur px-4">
+        <header className="hidden md:flex sticky top-0 z-30 h-10 items-center gap-3 border-b border-border/50 bg-background/70 px-5 backdrop-blur-sm">
           {sidebarHidden && <span className="w-6" aria-hidden="true" />}
           <div className="flex-1 min-w-0 text-xs">
             <SidebarBreadcrumb groups={groups} />
@@ -332,7 +332,7 @@ export default function AppLayout() {
         </header>
 
         {/* Header mobile */}
-        <header className="md:hidden border-b border-border px-4 py-3 flex items-center justify-between">
+        <header className="md:hidden border-b border-border/60 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
             <Button
               variant="ghost"
@@ -350,7 +350,7 @@ export default function AppLayout() {
               className="size-7 rounded-md object-cover shrink-0"
             />
             <div className="min-w-0">
-              <div className="text-sm font-brand font-bold truncate">Gestor de Automações</div>
+              <div className="text-[13px] font-brand font-semibold tracking-tight truncate">Gestor de Automações</div>
             </div>
           </div>
           <div className="flex items-center gap-1">

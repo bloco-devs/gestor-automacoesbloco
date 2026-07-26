@@ -3,23 +3,34 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-// DS 2.0 — variantes semânticas oficiais (success, warning, danger, info, neutral, primary).
-// Variantes legadas (default, secondary, destructive, outline) permanecem para não quebrar consumidores.
+/**
+ * DS 3.0 — Badge
+ *
+ * Badges deixaram de ser blocos de cor sólida. Agora usam tinta sutil
+ * (fundo com baixa opacidade da cor semântica + texto na própria cor), no
+ * padrão de GitHub Labels / Linear. Resultado: a cor continua comunicando
+ * status, mas para de gritar e de competir com o conteúdo.
+ *
+ * Todas as variantes existentes continuam válidas — nenhum consumidor precisa
+ * mudar. `solid` é a única adição, para o caso raro em que se quer o
+ * contraste antigo de volta (ex.: contador sobre uma superfície escura).
+ */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors duration-fast ease-standard focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2",
+  "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors duration-fast ease-standard focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        primary: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        danger: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        success: "border-transparent bg-success text-success-foreground hover:bg-success/80",
-        warning: "border-transparent bg-warning text-warning-foreground hover:bg-warning/80",
-        info: "border-transparent bg-info text-info-foreground hover:bg-info/80",
-        neutral: "border-transparent bg-muted text-foreground hover:bg-muted/80",
-        outline: "text-foreground",
+        default: "bg-muted text-muted-foreground",
+        neutral: "bg-muted text-muted-foreground",
+        primary: "bg-primary/15 text-foreground",
+        secondary: "bg-secondary/15 text-secondary",
+        success: "bg-success/12 text-success",
+        warning: "bg-warning/15 text-warning",
+        info: "bg-info/12 text-info",
+        danger: "bg-destructive/12 text-destructive",
+        destructive: "bg-destructive/12 text-destructive",
+        outline: "border border-border/70 text-muted-foreground",
+        solid: "bg-foreground text-background",
       },
     },
     defaultVariants: {

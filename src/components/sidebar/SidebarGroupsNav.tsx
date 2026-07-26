@@ -112,13 +112,13 @@ function SidebarGroupBlock({
         aria-controls={contentId}
         aria-label={`${group.label} — ${open ? "recolher" : "expandir"}`}
         className={cn(
-          "w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+          "w-full flex items-center gap-2 px-2 py-1 rounded-md ds-label transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
           isActiveGroup
-            ? "text-sidebar-foreground"
-            : "text-muted-foreground hover:text-sidebar-foreground",
+            ? "text-muted-foreground"
+            : "text-muted-foreground/70 hover:text-muted-foreground",
         )}
       >
-        <GroupIcon className={cn("size-3.5 shrink-0", isActiveGroup ? "text-primary" : "opacity-70")} />
+        <GroupIcon className="size-3.5 shrink-0 opacity-60" />
         <span className="flex-1 text-left truncate">{group.label}</span>
         <ChevronDown
           className={cn(
@@ -193,18 +193,18 @@ function SidebarNavItem({
         {...(dataTour ? { "data-tour": dataTour } : {})}
         className={({ isActive }) =>
           cn(
-            "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+            "flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[13px] leading-5 transition-colors duration-fast ease-standard min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
             isActive
-              ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border"
+              ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
               : cn(
-                  "hover:bg-sidebar-accent/60",
-                  dim ? "text-muted-foreground" : "text-sidebar-foreground",
+                  "hover:bg-sidebar-accent/50",
+                  dim ? "text-sidebar-foreground/60" : "text-sidebar-foreground/85",
                 ),
           )
         }
         aria-current={pathname === item.to ? "page" : undefined}
       >
-        <Icon className="size-4 shrink-0" />
+        <Icon className="size-4 shrink-0 opacity-80" />
         <span className="truncate flex-1">{item.label}</span>
       </NavLink>
     );
@@ -218,21 +218,20 @@ function SidebarNavItem({
         aria-expanded={open}
         {...(dataTour ? { "data-tour": dataTour } : {})}
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+          "w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[13px] leading-5 transition-colors duration-fast ease-standard min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
           isParentActive
-            ? "text-sidebar-accent-foreground bg-sidebar-accent/40"
+            ? "bg-sidebar-accent/40 font-medium text-sidebar-accent-foreground"
             : cn(
-                "hover:bg-sidebar-accent/60",
-                dim ? "text-muted-foreground" : "text-sidebar-foreground",
+                "hover:bg-sidebar-accent/50",
+                dim ? "text-sidebar-foreground/60" : "text-sidebar-foreground/85",
               ),
         )}
       >
-        <Icon className="size-4 shrink-0" />
+        <Icon className="size-4 shrink-0 opacity-80" />
         <span className="truncate flex-1 text-left">{item.label}</span>
         {showBadge && (
           <Badge
-            variant="outline"
-            className="text-[10px] py-0 px-1.5 h-5 border-dashed shrink-0"
+            className="text-[10px] py-0 px-1.5 h-5 shrink-0 tabular-nums"
             title="Solicitações aguardando avaliação técnica"
           >
             ⚙ {pendingEvalCount}
