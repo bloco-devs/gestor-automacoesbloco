@@ -1,113 +1,109 @@
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { PanelLeftClose, PanelRightClose, PanelLeftOpen, PanelRightOpen } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useDemands } from "@/modules/demands/hooks";
-import { DemandListPanel } from "@/components/workspace/DemandListPanel";
-import { DemandDetailInline } from "@/components/workspace/DemandDetailInline";
-import { IntelligencePanel } from "@/components/workspace/IntelligencePanel";
-import { EspecialidadeCard } from "@/modules/routing";
-import { MinhaEspecializacaoCard } from "@/modules/analytics/components/MinhaEspecializacaoCard";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useTodasAsDemandas } from "@/modules/demand-access";
+import { FILAS, type FilaId, aplicarFila, contarFilas, agrupar, sinaisUteis } from "@/domain/demand";
+import { ListaLente } from "@/modules/workspace-demandas/components/ListaLente";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
-const LS_SELECTED = "workspace:selectedId:v1";
-const LS_LEFT = "workspace:panels:left:v1";
-const LS_RIGHT = "workspace:panels:right:v1";
+const LS_FILA = "hoje:fila:v1";
 
-function readBool(key: string, fallback: boolean): boolean {
-  if (typeof window === "undefined") return fallback;
-  const v = window.localStorage.getItem(key);
-  return v == null ? fallback : v === "1";
+function lerFilaSalva(): FilaId {
+  if (typeof window === "undefined") return "todas";
+  const v = window.localStorage.getItem(LS_FILA);
+  return FILAS.some((f) => f.id === v) ? (v as FilaId) : "todas";
 }
 
+/**
+ * Hoje — a fila do desenvolvedor, cruzando as duas fontes.
+ *
+ * ANTES: esta tela lia só `useDemands()` (tabela `demands`, a fila global do
+ * Help Desk). Ficava vazia sempre que a única demanda real do momento vivesse
+ * num quadro importado (`atividades_cards`) — que é, hoje, onde está o
+ * trabalho de verdade. `useTodasAsDemandas` soma as duas fontes; a UI
+ * continua sem saber que existem duas.
+ *
+ * Reaproveita `ListaLente` e o vocabulário fila/lente já usados no Workspace
+ * de projeto — a mesma pergunta ("o que eu vejo"), só que sem recorte de
+ * projeto. Abrir uma demanda navega para `/demandas/:id`, a página real —
+ * nunca um preview embutido.
+ */
 export default function DeveloperWorkspace() {
   const { user } = useAuth();
-  const { data: demands = [] } = useDemands();
-  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { demandas, projetoPorDemanda, capacidades, carregando } = useTodasAsDemandas();
+  const [fila, setFila] = useState<FilaId>(lerFilaSalva);
 
-  const [selectedId, setSelectedId] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return params.get("d") ?? window.localStorage.getItem(LS_SELECTED);
-  });
-  const [leftOpen, setLeftOpen] = useState<boolean>(() => readBool(LS_LEFT, true));
-  const [rightOpen, setRightOpen] = useState<boolean>(() => readBool(LS_RIGHT, true));
-
-  // Persistência
-  useEffect(() => {
-    if (selectedId) window.localStorage.setItem(LS_SELECTED, selectedId);
-    if (selectedId && params.get("d") !== selectedId) {
-      const next = new URLSearchParams(params);
-      next.set("d", selectedId);
-      setParams(next, { replace: true });
-    }
-  }, [selectedId, params, setParams]);
-
-  useEffect(() => {
-    window.localStorage.setItem(LS_LEFT, leftOpen ? "1" : "0");
-  }, [leftOpen]);
-  useEffect(() => {
-    window.localStorage.setItem(LS_RIGHT, rightOpen ? "1" : "0");
-  }, [rightOpen]);
-
-  // Auto-selecionar primeira demanda quando lista carrega
-  useEffect(() => {
-    if (!selectedId && demands.length > 0) {
-      setSelectedId(demands[0].id);
-    } else if (selectedId && demands.length > 0 && !demands.find((d) => d.id === selectedId)) {
-      setSelectedId(demands[0].id);
-    }
-  }, [demands, selectedId]);
-
-  const selected = useMemo(
-    () => demands.find((d) => d.id === selectedId) ?? null,
-    [demands, selectedId],
+  const contagens = useMemo(() => contarFilas(demandas, user?.id ?? null), [demandas, user?.id]);
+  const filtradas = useMemo(
+    () => aplicarFila(demandas, fila, user?.id ?? null),
+    [demandas, fila, user?.id],
   );
+  const grupos = useMemo(() => agrupar(filtradas, "lista"), [filtradas]);
+  const sinais = useMemo(() => sinaisUteis(filtradas), [filtradas]);
+
+  function selecionarFila(f: FilaId) {
+    setFila(f);
+    if (typeof window !== "undefined") window.localStorage.setItem(LS_FILA, f);
+  }
+
+  function abrir(id: string) {
+    const projetoId = projetoPorDemanda.get(id);
+    navigate(projetoId ? `/demandas/${id}?projeto=${projetoId}` : `/demandas/${id}`);
+  }
 
   return (
     <div className="flex h-[calc(100vh-var(--app-header-h,3.5rem))] w-full flex-col">
-      <div className="flex items-center gap-1 border-b border-border bg-card/40 px-3 py-1.5">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setLeftOpen((v) => !v)}
-          aria-label={leftOpen ? "Ocultar lista" : "Mostrar lista"}
-          title={leftOpen ? "Ocultar lista" : "Mostrar lista"}
-        >
-          {leftOpen ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
-        </Button>
-        <span className="text-xs font-medium text-muted-foreground">Developer Workspace</span>
-        <div className="ml-auto flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setRightOpen((v) => !v)}
-            aria-label={rightOpen ? "Ocultar painel inteligente" : "Mostrar painel inteligente"}
-            title={rightOpen ? "Ocultar painel inteligente" : "Mostrar painel inteligente"}
-          >
-            {rightOpen ? (
-              <PanelRightClose className="size-4" />
-            ) : (
-              <PanelRightOpen className="size-4" />
-            )}
-          </Button>
-        </div>
-      </div>
+      <nav
+        aria-label="Fila"
+        className="flex h-10 items-center gap-0.5 overflow-x-auto border-b border-border bg-card/40 px-3 md:px-6"
+      >
+        {FILAS.map((f) => {
+          const ativa = f.id === fila;
+          const n = contagens[f.id];
+          return (
+            <button
+              key={f.id}
+              type="button"
+              aria-current={ativa ? "true" : undefined}
+              title={f.ajuda}
+              onClick={() => selecionarFila(f.id)}
+              className={cn(
+                "flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                ativa
+                  ? "bg-secondary text-secondary-foreground"
+                  : "text-muted-foreground hover:bg-muted/50",
+              )}
+            >
+              {f.rotulo}
+              <span className={cn("tabular-nums", !ativa && "text-muted-foreground/70")}>{n}</span>
+            </button>
+          );
+        })}
+      </nav>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[auto_1fr_auto]">
-        {leftOpen && (
-          <div className="min-h-0 lg:w-[320px] xl:w-[360px]">
-            <DemandListPanel selectedId={selectedId} onSelect={setSelectedId} />
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 md:px-6">
+        {carregando ? (
+          <div className="space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
           </div>
-        )}
-        <div className="min-h-0 min-w-0">
-          <DemandDetailInline demand={selected} />
-        </div>
-        {rightOpen && (
-          <div className="min-h-0 hidden lg:flex lg:w-[340px] xl:w-[380px] flex-col gap-3 overflow-y-auto p-3">
-            <MinhaEspecializacaoCard userId={user?.id ?? null} />
-            <EspecialidadeCard userId={user?.id ?? null} />
-            <IntelligencePanel demand={selected} />
-          </div>
+        ) : (
+          <ListaLente
+            grupos={grupos}
+            capacidades={capacidades}
+            sinais={sinais}
+            onAbrir={abrir}
+            vazio={{
+              titulo: fila === "todas" ? "Nada por aqui ainda" : "Nada nesta fila",
+              descricao:
+                fila === "todas"
+                  ? "Nenhuma demanda em nenhum projeto no momento."
+                  : "Troque de fila ou espere novas demandas chegarem.",
+            }}
+          />
         )}
       </div>
     </div>
