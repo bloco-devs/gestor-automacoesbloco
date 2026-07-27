@@ -68,6 +68,11 @@ export function HeaderContextoProvider({ children }: { children: ReactNode }) {
 
 let proximoId = 1;
 
+function depsEqual(a: unknown[] | null, b: unknown[]): boolean {
+  if (!a || a.length !== b.length) return false;
+  return a.every((item, index) => Object.is(item, b[index]) || shallowEqual(item, b[index]));
+}
+
 /**
  * Preenche o header com o contexto desta página.
  *
@@ -89,7 +94,7 @@ export function useContextoDeHeader(node: ReactNode, deps: unknown[]) {
     const atual = ctxRef.current;
     if (!atual) return;
 
-    const depsMudaram = !depsRef.current || !shallowEqual(depsRef.current, deps);
+    const depsMudaram = !depsEqual(depsRef.current, deps);
     if (!registradoRef.current || depsMudaram) {
       depsRef.current = deps.slice();
       registradoRef.current = true;
