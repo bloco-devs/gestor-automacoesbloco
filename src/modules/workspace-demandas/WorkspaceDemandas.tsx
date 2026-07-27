@@ -132,6 +132,7 @@ export default function WorkspaceDemandas() {
               <BoardLente
                 grupos={grupos}
                 capacidades={capacidadesVisiveis}
+                sinais={sinais}
                 onAbrir={abrir}
                 onMover={({ demandaId, statusId }) => void acoes.mover({ demandaId, statusId })}
                 podeMover={acoes.podeMover}

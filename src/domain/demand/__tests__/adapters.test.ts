@@ -449,3 +449,67 @@ describe("domain/demand — sinais úteis", () => {
     expect(sinaisUteis([]).prioridade).toBe(false);
   });
 });
+
+/**
+ * Grupos concluídos.
+ *
+ * Não é preferência visual: num quadro de 36 itens com 25 prontos, "Feito" é a
+ * maior coluna e empurra o trabalho em curso para fora da tela. O domínio só
+ * informa que o grupo está inteiro concluído; a lente decide o que fazer.
+ */
+describe("grupo concluído", () => {
+  function comEstado(id: string, statusId: string, rotulo: string, concluida: boolean): Demanda {
+    return {
+      id,
+      referencia: `#${id}`,
+      titulo: `Demanda ${id}`,
+      descricao: "",
+      status: {
+        id: statusId,
+        rotulo,
+        categoria: concluida ? "concluida" : "andamento",
+        ordem: concluida ? 9 : 1,
+      },
+      prioridade: "media",
+      tipo: null,
+      complexidade: null,
+      sistema: null,
+      responsaveis: [],
+      autor: null,
+      criadaEm: "",
+      atualizadaEm: "",
+      diasParada: 0,
+      prazo: null,
+      sla: null,
+      ia: null,
+      progresso: null,
+      comentarios: null,
+      anexos: null,
+      etiquetas: [],
+      concluida,
+      risco: null,
+      fonte: "atividades",
+    };
+  }
+
+  it("marca a coluna em que todas as demandas estão concluídas", () => {
+    const grupos = agrupar(
+      [
+        comEstado("a", "andamento", "Em andamento", false),
+        comEstado("b", "feito", "Feito", true),
+        comEstado("c", "feito", "Feito", true),
+      ],
+      "board",
+    );
+    expect(grupos.find((g) => g.id === "feito")?.concluido).toBe(true);
+    expect(grupos.find((g) => g.id === "andamento")?.concluido).toBe(false);
+  });
+
+  it("não marca coluna mista — uma demanda viva ali ainda pede atenção", () => {
+    const grupos = agrupar(
+      [comEstado("a", "revisao", "Revisão", true), comEstado("b", "revisao", "Revisão", false)],
+      "board",
+    );
+    expect(grupos.find((g) => g.id === "revisao")?.concluido).toBe(false);
+  });
+});

@@ -132,6 +132,15 @@ export interface Grupo {
   rotulo: string;
   ajuda?: string;
   itens: Demanda[];
+  /**
+   * Grupo formado apenas por demandas concluidas.
+   *
+   * Existe porque trabalho terminado nao compete por atencao com trabalho em
+   * curso: num quadro de 36 itens com 25 prontos, a coluna "Feito" e a maior
+   * de todas e empurra o que importa para fora da tela. Quem decide o que
+   * fazer com isso e a lente; o dominio so informa.
+   */
+  concluido?: boolean;
 }
 
 const ORDEM_CATEGORIA: Record<StatusCategoria, number> = {
@@ -213,7 +222,19 @@ export function agruparPorAtividade(demandas: Demanda[]): Grupo[] {
   return grupos.filter((g) => g.itens.length > 0);
 }
 
+/** Marca os grupos inteiramente concluidos. Um grupo vazio nao conta. */
+function marcarConcluidos(grupos: Grupo[]): Grupo[] {
+  return grupos.map((g) => ({
+    ...g,
+    concluido: g.itens.length > 0 && g.itens.every((d) => d.concluida),
+  }));
+}
+
 export function agrupar(demandas: Demanda[], lente: LenteId): Grupo[] {
+  return marcarConcluidos(agruparBruto(demandas, lente));
+}
+
+function agruparBruto(demandas: Demanda[], lente: LenteId): Grupo[] {
   switch (lente) {
     case "sprint":
       return agruparPorJanela(demandas);
