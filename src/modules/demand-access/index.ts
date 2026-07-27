@@ -10,5 +10,5 @@ export { resolverFonte, projetoDoEscopo } from "./resolverFonte";
 export { useProjetos } from "./useProjetos";
 export { useCriarDemanda } from "./useCriarDemanda";
 export { useFioDaDemanda } from "./useFioDaDemanda";
-export type { Escopo, EstadoDemandas, AcoesDemanda, ProjetoAtual } from "./types";
+export type { Escopo, EstadoDemandas, AcoesDemanda, ProjetoAtual, EtapaDaFonte } from "./types";
 export type { ProjetoNaLista } from "./useProjetos";

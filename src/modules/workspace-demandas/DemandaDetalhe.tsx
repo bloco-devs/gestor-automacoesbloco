@@ -12,11 +12,13 @@ import {
   TIPO_ROTULO,
   acoesSugeridas,
   montarBriefing,
+  montarProgressao,
   montarFio,
   type AcaoSugerida,
   type Pessoa,
 } from "@/domain/demand";
 import { Contexto } from "./demanda/Contexto";
+import { Progresso } from "./demanda/Progresso";
 import { Fio } from "./demanda/Fio";
 import { CopilotoDaDemanda } from "./demanda/CopilotoDaDemanda";
 
@@ -59,7 +61,7 @@ export default function DemandaDetalhe() {
     [projetoId],
   );
 
-  const { demanda, demandas, capacidades, carregando, erro } = useDemanda(escopo, id ?? null);
+  const { demanda, demandas, etapas, capacidades, carregando, erro } = useDemanda(escopo, id ?? null);
 
   /**
    * Os autores dos eventos vêm como id. Quem sabe traduzir id em pessoa é a
@@ -87,6 +89,11 @@ export default function DemandaDetalhe() {
 
   const eventos = useMemo(() => montarFio(fio.eventos, daEquipe), [fio.eventos, daEquipe]);
   const acoesDemanda = useAcoesDemanda(escopo);
+
+  const progressao = useMemo(
+    () => (demanda ? montarProgressao(demanda, eventos, etapas) : null),
+    [demanda, eventos, etapas],
+  );
 
   const briefing = useMemo(
     () =>
@@ -233,6 +240,9 @@ export default function DemandaDetalhe() {
             </div>
           </div>
         </div>
+
+        {/* Onde ela está, em menos de um segundo. Vem da auditoria: zero IA. */}
+        {progressao && <Progresso progressao={progressao} className="mt-2.5 pl-9" />}
       </header>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)_17rem]">

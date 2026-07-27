@@ -4,6 +4,7 @@ import { useAtividadesBoard, atividadesKeys } from "@/hooks/useAtividadesBoard";
 import { countAnexosByBoard } from "@/lib/atividadesAnexos";
 import { getBoardResumo, getCoverDisplayUrl } from "@/lib/atividadesBoards";
 import { useDemands, useDemandProfiles } from "@/modules/demands";
+import { STATUS_COLUMNS } from "@/modules/demands/types";
 import { listSolucoes } from "@/lib/supabaseData";
 import {
   fromAtividades,
@@ -100,6 +101,7 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
       return {
         demandas,
         projeto,
+        etapas: (board.colunas ?? []).map((c) => ({ id: c.id, rotulo: c.nome })),
         capacidades: CAPACIDADES_ATIVIDADES,
         fonte,
         carregando: board.loading,
@@ -121,6 +123,7 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
     return {
       demandas,
       projeto: null,
+      etapas: STATUS_COLUMNS.map((c) => ({ id: c.id as string, rotulo: c.label })),
       capacidades: CAPACIDADES_DEMANDS,
       fonte,
       carregando: demandsQ.isLoading,

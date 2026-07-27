@@ -34,8 +34,23 @@ export interface ProjetoAtual {
   capaUrl: string | null;
 }
 
+/** Uma etapa do caminho da demanda, na ordem em que a fonte a define. */
+export interface EtapaDaFonte {
+  id: string;
+  rotulo: string;
+}
+
 export interface EstadoDemandas {
   demandas: Demanda[];
+  /**
+   * O caminho completo, incluindo etapas onde não há nenhuma demanda agora.
+   *
+   * Precisa vir daqui e não da lista visível: derivar as etapas das demandas
+   * carregadas faria "Em Testes" desaparecer da linha do tempo sempre que
+   * ninguém estivesse em testes — e some justamente a informação de que aquela
+   * etapa foi pulada.
+   */
+  etapas: EtapaDaFonte[];
   /**
    * O projeto aberto. Fica aqui, e não na UI, porque descobrir o nome exige
    * saber de qual fonte ele vem — exatamente o que a UI não pode saber.
