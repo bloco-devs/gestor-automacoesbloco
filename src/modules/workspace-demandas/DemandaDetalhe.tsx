@@ -92,7 +92,7 @@ export default function DemandaDetalhe() {
 
   // Quem abriu não vê nota interna. É a única regra de visibilidade do fio, e
   // ela mora aqui porque é permissão, não domínio.
-  const daEquipe = user?.role === "developer";
+  const daEquipe = user?.role === "developer" || user?.role === "administrador";
 
   const anexos = useAnexos(id ?? null, capacidades.comentarios);
 
@@ -187,7 +187,7 @@ export default function DemandaDetalhe() {
         document.querySelector<HTMLTextAreaElement>("[data-fio-resposta]")?.focus();
         break;
       case "concluir":
-        await acoesDemanda.mover({ demandaId: demanda.id, statusId: "concluido" });
+        await acoesDemanda.concluir({ demandaId: demanda.id });
         break;
     }
   };

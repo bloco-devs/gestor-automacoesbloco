@@ -73,6 +73,17 @@ export interface AcoesDemanda {
   /** Move para outro status. No quadro é trocar de coluna; em `demands`, trocar o enum. */
   mover: (params: { demandaId: string; statusId: string; ordem?: number }) => Promise<void>;
   atribuir: (params: { demandaId: string; pessoaId: string | null }) => Promise<void>;
+  /**
+   * Marca como concluída.
+   *
+   * Não é `mover({ statusId: "concluido" })`: no quadro, "concluido" não é
+   * o id de nenhuma coluna real — cada quadro tem as suas, com ids próprios
+   * — então mover tentaria trocar para uma coluna que não existe. Concluir
+   * é independente da coluna: `atividades_cards.concluido` é um booleano à
+   * parte (`categorizarColuna` já leva isso em conta ao decidir a categoria
+   * do status). Em `demands`, "concluido" é mesmo um status válido do enum.
+   */
+  concluir: (params: { demandaId: string }) => Promise<void>;
   podeMover: boolean;
   podeAtribuir: boolean;
   executando: boolean;

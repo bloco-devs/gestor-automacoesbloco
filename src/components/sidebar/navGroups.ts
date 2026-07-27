@@ -194,30 +194,46 @@ export const builderGroups: NavGroup[] = [
 /**
  * Localiza o grupo/item que casa com a rota atual.
  * Retorna [grupo, item, child?] para uso em breadcrumb e auto-expand.
+ *
+ * ERA "primeiro que casar", virou "o mais específico que casar". Com
+ * primeiro-que-casa, `/workspace/devtools` batia em "Hoje" (`to: "/workspace"`)
+ * antes de chegar em "DevTools" (`to: "/workspace/devtools"`) — qualquer rota
+ * aninhada sob um item cujo `to` é prefixo de outro tinha o mesmo risco. Agora
+ * cada candidato carrega o comprimento do trecho que casou, e o mais longo
+ * vence — uma correspondência exata sempre tem o maior comprimento possível,
+ * então continua ganhando de qualquer prefixo.
  */
 export function findActive(
   groups: NavGroup[],
   pathname: string,
 ): { group: NavGroup; item: NavItem; child?: NavItem } | null {
+  type Candidato = { group: NavGroup; item: NavItem; child?: NavItem; comprimento: number };
+  let melhor: Candidato | null = null;
+
+  const considerar = (candidato: Candidato) => {
+    if (!melhor || candidato.comprimento > melhor.comprimento) melhor = candidato;
+  };
+
   for (const group of groups) {
     for (const item of group.items) {
       if (item.to && (pathname === item.to || pathname.startsWith(item.to + "/"))) {
-        return { group, item };
+        considerar({ group, item, comprimento: item.to.length });
       }
       if (item.matchPrefix && (pathname === item.matchPrefix || pathname.startsWith(item.matchPrefix + "/"))) {
         const child = item.children?.find(
           (c) => c.to && (pathname === c.to || pathname.startsWith(c.to + "/")),
         );
-        return { group, item, child };
+        considerar({ group, item, child, comprimento: (child?.to ?? item.matchPrefix).length });
       }
       if (item.children) {
         for (const c of item.children) {
           if (c.to && (pathname === c.to || pathname.startsWith(c.to + "/"))) {
-            return { group, item, child: c };
+            considerar({ group, item, child: c, comprimento: c.to.length });
           }
         }
       }
     }
   }
-  return null;
+
+  return melhor;
 }

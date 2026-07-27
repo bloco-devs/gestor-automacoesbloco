@@ -38,6 +38,21 @@ export function useAcoesDemanda(escopo: Escopo): AcoesDemanda {
     [fonte, cards.reorder, statusDemand],
   );
 
+  const concluir = useCallback<AcoesDemanda["concluir"]>(
+    async ({ demandaId }) => {
+      if (fonte === "atividades") {
+        // `concluido` é campo próprio do card, não uma coluna — mover para
+        // uma coluna chamada "concluido" falharia (nenhum quadro tem uma
+        // coluna com esse id). Setar o campo é o que a Lista/Board já leem
+        // via `concluida: card.concluido` no adapter.
+        await cards.update.mutateAsync({ id: demandaId, patch: { concluido: true } });
+        return;
+      }
+      await statusDemand.mutateAsync({ id: demandaId, status: "concluido" as DemandStatus });
+    },
+    [fonte, cards.update, statusDemand],
+  );
+
   const atribuir = useCallback<AcoesDemanda["atribuir"]>(
     async ({ demandaId, pessoaId }) => {
       if (fonte === "atividades") {
@@ -59,6 +74,7 @@ export function useAcoesDemanda(escopo: Escopo): AcoesDemanda {
     () => ({
       mover,
       atribuir,
+      concluir,
       // Sem projeto não há coluna para onde mover: o board fica somente leitura
       // em vez de oferecer uma ação que falharia.
       podeMover: fonte === "demands" || !!projetoId,
@@ -72,6 +88,7 @@ export function useAcoesDemanda(escopo: Escopo): AcoesDemanda {
     [
       mover,
       atribuir,
+      concluir,
       fonte,
       projetoId,
       cards.reorder.isPending,
