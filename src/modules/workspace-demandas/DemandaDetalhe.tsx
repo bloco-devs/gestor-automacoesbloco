@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
 import { cn } from "@/lib/utils";
-import { useAcoesDemanda, useDemanda, useFioDaDemanda, type Escopo } from "@/modules/demand-access";
+import {
+  useAcoesDemanda,
+  useChecklist,
+  useDemanda,
+  useFioDaDemanda,
+  type Escopo,
+} from "@/modules/demand-access";
 import {
   PRIORIDADE_ROTULO,
   RISCO_ROTULO,
@@ -19,6 +25,7 @@ import {
 } from "@/domain/demand";
 import { Contexto } from "./demanda/Contexto";
 import { Progresso } from "./demanda/Progresso";
+import { Checklist } from "./demanda/Checklist";
 import { Fio } from "./demanda/Fio";
 import { CopilotoDaDemanda } from "./demanda/CopilotoDaDemanda";
 
@@ -89,6 +96,7 @@ export default function DemandaDetalhe() {
 
   const eventos = useMemo(() => montarFio(fio.eventos, daEquipe), [fio.eventos, daEquipe]);
   const acoesDemanda = useAcoesDemanda(escopo);
+  const checklist = useChecklist(id ?? null, capacidades.progresso && capacidades.comentarios);
 
   const progressao = useMemo(
     () => (demanda ? montarProgressao(demanda, eventos, etapas) : null),
@@ -108,10 +116,16 @@ export default function DemandaDetalhe() {
    * a quem não tem permissão é prometer um botão que vai falhar — e o preço de
    * uma sugestão que falha é a pessoa parar de acreditar nas outras.
    */
-  const acoes = useMemo<AcaoSugerida[]>(
-    () => (demanda && daEquipe ? acoesSugeridas(demanda, eventos, demanda.autor?.id ?? null) : []),
-    [demanda, eventos, daEquipe],
-  );
+  const acoes = useMemo<AcaoSugerida[]>(() => {
+    if (!demanda || !daEquipe) return [];
+    // O checklist real tem precedência sobre o progresso que veio da fonte: é
+    // ele que o desenvolvedor marca, e é dele que "Concluir" depende.
+    const comProgresso = {
+      ...demanda,
+      progresso: checklist.total > 0 ? { feitos: checklist.feitos, total: checklist.total, percentual: 0 } : demanda.progresso,
+    };
+    return acoesSugeridas(comProgresso, eventos, demanda.autor?.id ?? null);
+  }, [demanda, eventos, daEquipe, checklist.feitos, checklist.total]);
 
   /**
    * Executar a sugestão. Cada caso cai numa ação que já existia — nenhuma
@@ -250,6 +264,17 @@ export default function DemandaDetalhe() {
           demanda={d}
           capacidades={capacidades}
           eventos={eventos}
+          checklist={
+            <Checklist
+              itens={checklist.itens}
+              feitos={checklist.feitos}
+              total={checklist.total}
+              podeEditar={daEquipe && capacidades.progresso}
+              onMarcar={(itemId, feito) => void checklist.marcar(itemId, feito)}
+              onAcrescentar={(texto) => void checklist.acrescentar(texto)}
+              onRemover={(itemId) => void checklist.remover(itemId)}
+            />
+          }
           className="min-h-0 overflow-y-auto border-b border-border/60 lg:border-b-0 lg:border-r"
         />
 

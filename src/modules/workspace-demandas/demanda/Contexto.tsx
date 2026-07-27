@@ -63,17 +63,21 @@ function ContextoImpl({
   demanda: d,
   capacidades,
   eventos,
+  checklist,
   className,
 }: {
   demanda: Demanda;
   capacidades: Capacidades;
   eventos: Evento[];
+  /** A definição de pronto vem antes dos metadados: ela é o trabalho. */
+  checklist?: React.ReactNode;
   className?: string;
 }) {
   const gente = participantes(eventos);
 
   return (
     <aside aria-label="Contexto da demanda" className={className}>
+      {checklist}
       <dl className="px-4 py-3">
         <Linha rotulo="Status">{d.status.rotulo}</Linha>
         {capacidades.tipo && d.tipo && <Linha rotulo="Tipo">{TIPO_ROTULO[d.tipo]}</Linha>}
@@ -100,11 +104,6 @@ function ContextoImpl({
           </Linha>
         )}
 
-        {capacidades.progresso && d.progresso && (
-          <Linha rotulo="Checklist">
-            {d.progresso.feitos}/{d.progresso.total}
-          </Linha>
-        )}
         {capacidades.etiquetas && d.etiquetas.length > 0 && (
           <Linha rotulo="Etiquetas">
             <span className="flex flex-wrap gap-1">
