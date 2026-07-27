@@ -13,5 +13,6 @@ export { useFioDaDemanda } from "./useFioDaDemanda";
 export { useChecklist, type ItemDaLista } from "./useChecklist";
 export { useAnexos, type AnexoExibivel } from "./useAnexos";
 export { useConhecimento } from "./useConhecimento";
+export { usePublicarArtigo } from "./usePublicarArtigo";
 export type { Escopo, EstadoDemandas, AcoesDemanda, ProjetoAtual, EtapaDaFonte } from "./types";
 export type { ProjetoNaLista } from "./useProjetos";

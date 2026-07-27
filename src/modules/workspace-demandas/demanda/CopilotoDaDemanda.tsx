@@ -56,6 +56,11 @@ interface Props {
    */
   relacionados: Relacionado[];
   acoes: AcaoSugerida[];
+  /**
+   * Oferecer o rascunho de artigo. Só aparece em demanda concluída — antes
+   * disso não há solução para documentar, e perguntar seria ruído.
+   */
+  onGerarArtigo?: () => void;
   /** Recebe a rota de destino, não um id: o relacionado pode não ser demanda. */
   onAbrir: (destino: string) => void;
   /** Cada ação é executada pela porta de escrita; este painel só dispara. */
@@ -86,6 +91,7 @@ function CopilotoDaDemandaImpl({
   capacidades,
   relacionados,
   acoes,
+  onGerarArtigo,
   onAbrir,
   onAcao,
   executando,
@@ -122,7 +128,17 @@ function CopilotoDaDemandaImpl({
 
       <Bloco titulo="O que está acontecendo">
         {d.concluida ? (
-          <p className="text-muted-foreground">Concluída. Nada pendente.</p>
+          <div className="space-y-2">
+            <p className="text-muted-foreground">Concluída. Nada pendente.</p>
+            {/* O ciclo só fecha se a pergunta aparecer no momento em que a
+                pessoa ainda lembra do que fez. Uma semana depois ela não
+                escreve mais — não por preguiça, por esquecimento. */}
+            {onGerarArtigo && (
+              <Button variant="outline" size="sm" onClick={onGerarArtigo} className="h-7 w-full justify-start text-[12px]">
+                Virar artigo da base
+              </Button>
+            )}
+          </div>
         ) : (
           <ul className="space-y-1">
             {d.risco && (

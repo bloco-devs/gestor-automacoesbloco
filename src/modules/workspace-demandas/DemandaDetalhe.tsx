@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,12 @@ import {
   useAnexos,
   useChecklist,
   useConhecimento,
+  usePublicarArtigo,
   useDemanda,
   useFioDaDemanda,
   type Escopo,
 } from "@/modules/demand-access";
+import { rascunhoDeDemanda } from "@/domain/knowledge";
 import {
   PRIORIDADE_ROTULO,
   RISCO_ROTULO,
@@ -29,6 +31,7 @@ import { Contexto } from "./demanda/Contexto";
 import { Progresso } from "./demanda/Progresso";
 import { Checklist } from "./demanda/Checklist";
 import { Anexos } from "./demanda/Anexos";
+import { RascunhoDeArtigo } from "./demanda/RascunhoDeArtigo";
 import { Fio } from "./demanda/Fio";
 import { CopilotoDaDemanda } from "./demanda/CopilotoDaDemanda";
 
@@ -104,6 +107,28 @@ export default function DemandaDetalhe() {
   const acoesDemanda = useAcoesDemanda(escopo);
   const checklist = useChecklist(id ?? null, capacidades.progresso && capacidades.comentarios);
   const conhecimento = useConhecimento(demanda ?? null, demandas, !!demanda);
+  const { publicar } = usePublicarArtigo();
+  const [rascunhoAberto, setRascunhoAberto] = useState(false);
+
+  /**
+   * O rascunho de artigo, montado da demanda resolvida.
+   *
+   * Sem nenhuma chamada de IA: problema vem da descrição, sintomas das
+   * primeiras falas de quem abriu, solução das últimas falas da equipe, e o
+   * "como verificar" do checklist. É rearranjo de texto que já existe.
+   */
+  const rascunho = useMemo(
+    () =>
+      demanda
+        ? rascunhoDeDemanda(
+            demanda,
+            eventos,
+            checklist.itens.filter((i) => i.feito).map((i) => i.texto),
+            demanda.autor?.id ?? null,
+          )
+        : null,
+    [demanda, eventos, checklist.itens],
+  );
 
   const progressao = useMemo(
     () => (demanda ? montarProgressao(demanda, eventos, etapas) : null),
@@ -332,10 +357,23 @@ export default function DemandaDetalhe() {
                 )
           }
           onAcao={(a) => void executarAcao(a)}
+          onGerarArtigo={d.concluida && rascunho ? () => setRascunhoAberto(true) : undefined}
           executando={acoesDemanda.executando}
           className="hidden xl:flex"
         />
       </div>
+
+      {rascunho && (
+        <RascunhoDeArtigo
+          rascunho={rascunho}
+          aberto={rascunhoAberto}
+          onFechar={() => setRascunhoAberto(false)}
+          onPublicar={async (r) => {
+            await publicar(r);
+            setRascunhoAberto(false);
+          }}
+        />
+      )}
     </div>
   );
 }
