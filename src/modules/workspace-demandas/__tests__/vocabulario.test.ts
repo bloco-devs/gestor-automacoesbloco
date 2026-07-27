@@ -69,6 +69,25 @@ describe("vocabulário e acoplamento do fluxo de demandas", () => {
     expect(infratores.map((f) => f.caminho)).toEqual([]);
   });
 
+  /**
+   * A herança do Trello não estava no nome — estava no CSS.
+   *
+   *   `surface-well`     coluna com fundo e sombra interna: a "calha" onde os
+   *                      cartões repousam. É a assinatura visual do Trello.
+   *   `surface-raised`   cartão com sombra e `translateY(-2px)` no hover: o
+   *                      cartão levita, como papel sobre uma mesa.
+   *   `surface-dragging` gira 2,5° e amplia 3% ao arrastar.
+   *
+   * As classes continuam existindo e são legítimas em outras telas. O que este
+   * teste protege é que elas não voltem para as lentes — porque foi por elas,
+   * e não pela palavra "quadro", que a tela parecia Trello.
+   */
+  it("as lentes não usam as classes que produziam a sensação de quadro", () => {
+    const trello = /\bsurface-(well|raised|dragging)\b/;
+    const infratores = fontes.filter((f) => trello.test(semComentarios(f.codigo)));
+    expect(infratores.map((f) => f.caminho)).toEqual([]);
+  });
+
   it("a UI não conhece as tabelas: nada de useDemands nem de AtividadeCard", () => {
     const infratores = fontes.filter((f) =>
       /from "@\/modules\/demands|from "@\/hooks\/useDemands/.test(f.codigo),
