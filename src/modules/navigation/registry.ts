@@ -79,7 +79,10 @@ const WORKSPACE: NavigationSchema = {
         },
         { id: "ws.builder", label: "Builder", route: "/workspace/builder", icon: Wrench, aliases: ["/admin/workflows", "/studio"] },
         { id: "ws.devtools", label: "DevTools", route: "/workspace/devtools", icon: Terminal, aliases: ["/developer"] },
-        { id: "ws.inbox", label: "Inbox", route: "/trabalho/inbox", icon: InboxIcon, aliases: ["/workspace/inbox"] },
+        // "Inbox" saiu do menu: era a central de trabalho do fluxo antigo de
+        // Solicitações, que não existe mais como conceito (a demanda nasce
+        // direto pela conversa). A tela e a rota continuam existindo — quem
+        // precisar chega por busca (⌘K) — só o atalho de exploração some.
       ],
     },
   ],

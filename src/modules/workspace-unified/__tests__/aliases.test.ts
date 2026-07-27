@@ -8,9 +8,12 @@ describe("Workspace navigation (FEATURE 026.3)", () => {
     expect(ws.home).toBe("/workspace");
   });
 
-  it("expõe exatamente Hoje, Demandas, Builder, DevTools e Inbox", () => {
+  it("expõe exatamente Hoje, Demandas, Builder e DevTools", () => {
+    // "Inbox" saiu do menu — era a central de trabalho do fluxo antigo de
+    // Solicitações. A rota /trabalho/inbox continua existindo e reachable
+    // por busca (⌘K); só o item de exploração no menu foi removido.
     const labels = ws.groups.flatMap((g) => g.items.map((i) => i.label));
-    expect(labels).toEqual(["Hoje", "Demandas", "Builder", "DevTools", "Inbox"]);
+    expect(labels).toEqual(["Hoje", "Demandas", "Builder", "DevTools"]);
   });
 
   it("/atividades vira alias para /workspace/demandas", () => {
