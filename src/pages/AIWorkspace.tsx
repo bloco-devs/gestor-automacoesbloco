@@ -126,7 +126,7 @@ export default function AIWorkspace() {
             }
             onConfirmar={confirmSubmit}
             onVoltarParaConversa={goBackToChat}
-            enviando={submitting}
+            enviando={phase === "submitting"}
           />
       )}
 
