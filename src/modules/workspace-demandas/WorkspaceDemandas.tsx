@@ -114,7 +114,20 @@ export default function WorkspaceDemandas() {
         </button>
       </>
     ) : null,
-    [projeto, resumo, copiloto],
+    [
+      projeto?.id,
+      projeto?.nome,
+      projeto?.descricao,
+      projeto?.capaUrl,
+      projeto?.cor,
+      resumo.total,
+      resumo.concluidas,
+      resumo.semResponsavel,
+      resumo.emRisco,
+      resumo.progresso,
+      copiloto,
+      params.toString(),
+    ],
   );
 
   if (carregando && demandas.length === 0) {

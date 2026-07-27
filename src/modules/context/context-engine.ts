@@ -7,6 +7,7 @@
  */
 import { buildFromRoute, emptyContext } from "./context-builder";
 import { createEventBus, type ContextEventBus } from "./context-events";
+import { shallowEqual } from "@/lib/stable-snapshot";
 import type {
   BreadcrumbItem,
   EntityType,
@@ -64,37 +65,46 @@ export function createContextEngine(initial?: Partial<WorkspaceContext>): Contex
     },
 
     patch(partial) {
-      commit({ ...state, ...partial });
+      if (shallowEqual(partial, {})) return;
+      const next = { ...state, ...partial };
+      if (shallowEqual(state, next)) return;
+      commit(next);
     },
 
     selectEntity(entityType, entityId) {
+      if (state.entityType === entityType && state.entityId === entityId) return;
       commit({ ...state, entityType, entityId });
       events.emit("ENTITY_SELECTED", { entityType, entityId });
     },
 
     selectCard(cardId) {
+      if (state.entityType === (cardId ? "card" : "none") && state.entityId === cardId) return;
       commit({ ...state, entityType: cardId ? "card" : "none", entityId: cardId });
       events.emit("CARD_SELECTED", { cardId });
       events.emit("ENTITY_SELECTED", { entityType: "card", entityId: cardId });
     },
 
     selectSprint(sprintId) {
+      if (state.entityType === (sprintId ? "sprint" : "none") && state.entityId === sprintId) return;
       commit({ ...state, entityType: sprintId ? "sprint" : "none", entityId: sprintId });
       events.emit("SPRINT_SELECTED", { sprintId });
       events.emit("ENTITY_SELECTED", { entityType: "sprint", entityId: sprintId });
     },
 
     setFilter(key, value) {
+      if (Object.is(state.filters[key], value)) return;
       const filters = { ...state.filters, [key]: value };
       commit({ ...state, filters });
       events.emit("FILTER_CHANGED", { key, value });
     },
 
     setBreadcrumbs(items) {
+      if (shallowEqual(state.breadcrumbs, items)) return;
       commit({ ...state, breadcrumbs: items });
     },
 
     setCurrentUser(user) {
+      if (state.currentUser.id === user.id && state.currentUser.role === user.role) return;
       commit({ ...state, currentUser: user });
     },
 

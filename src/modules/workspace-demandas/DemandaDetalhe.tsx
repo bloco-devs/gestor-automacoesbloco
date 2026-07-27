@@ -199,7 +199,7 @@ export default function DemandaDetalhe() {
         <span className="truncate text-[13px] font-medium">{demanda.titulo}</span>
       </span>
     ) : null,
-    [demanda],
+    [demanda?.id, demanda?.referencia, demanda?.titulo],
   );
 
   if (carregando) {

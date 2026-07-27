@@ -1,23 +1,22 @@
 /**
  * React hooks — usam apenas o registry/diagnostics (sem depender do Core).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { stableSnapshot } from "@/lib/stable-snapshot";
 import { eventExtensionRegistry } from "../registry";
 import {
   collectEventSdkDiagnostics,
   type EventSdkDiagnostics,
 } from "../diagnostics";
 
+const getEventExtensionsSnapshot = stableSnapshot(() => eventExtensionRegistry.listAll());
+
+function subscribeEventRegistry(listener: () => void) {
+  return eventExtensionRegistry.subscribe(listener);
+}
+
 export function useEventExtensions() {
-  const [snapshot, setSnapshot] = useState(() =>
-    eventExtensionRegistry.listAll()
-  );
-  useEffect(() => {
-    return eventExtensionRegistry.subscribe(() => {
-      setSnapshot(eventExtensionRegistry.listAll());
-    });
-  }, []);
-  return snapshot;
+  return useSyncExternalStore(subscribeEventRegistry, getEventExtensionsSnapshot, getEventExtensionsSnapshot);
 }
 
 export function useEventSdkDiagnostics(intervalMs = 2000): EventSdkDiagnostics {
