@@ -12,6 +12,7 @@ import {
   ordenarPorAtencao,
   resumir,
   semelhantes,
+  sinaisUteis,
   type Demanda,
 } from "@/domain/demand";
 
@@ -383,5 +384,68 @@ describe("domain/demand — duplicidade não pode dar falso positivo", () => {
     const a = comTitulo("a", "Cadastrar fornecedores em lote");
     const b = comTitulo("b", "Cadastrar novos fornecedores em lote");
     expect(semelhantes(a, [a, b]).map((d) => d.id)).toEqual(["b"]);
+  });
+});
+
+describe("domain/demand — sinais úteis", () => {
+  function comSinais(id: string, titulo: string, prioridade: "media" | "alta" | null): Demanda {
+    return {
+      id,
+      referencia: `#${id}`,
+      titulo,
+      descricao: "",
+      status: { id: "s", rotulo: "Em andamento", categoria: "andamento", ordem: 1 },
+      prioridade,
+      tipo: null,
+      complexidade: null,
+      sistema: null,
+      responsaveis: [],
+      autor: null,
+      criadaEm: "",
+      atualizadaEm: "",
+      diasParada: 0,
+      prazo: null,
+      sla: null,
+      ia: null,
+      progresso: null,
+      comentarios: null,
+      anexos: null,
+      etiquetas: [],
+      concluida: false,
+      risco: null,
+      fonte: "atividades",
+    };
+  }
+
+  it("esconde prioridade quando todas são iguais — 36 vezes 'Média' é textura", () => {
+    const todas = [
+      comSinais("a", "Primeira", "media"),
+      comSinais("b", "Segunda", "media"),
+      comSinais("c", "Terceira", "media"),
+    ];
+    expect(sinaisUteis(todas).prioridade).toBe(false);
+  });
+
+  it("mostra prioridade assim que ela passa a distinguir", () => {
+    const mistas = [comSinais("a", "Primeira", "media"), comSinais("b", "Segunda", "alta")];
+    expect(sinaisUteis(mistas).prioridade).toBe(true);
+  });
+
+  it("esconde o hash quando o título já traz um código da equipe", () => {
+    const comCodigo = [
+      comSinais("a", "[GO-11] ADR sobre papel engenheiro", "media"),
+      comSinais("b", "[IN-05] Paginação nas queries", "media"),
+    ];
+    // Dois identificadores competindo é pior que um só.
+    expect(sinaisUteis(comCodigo).referencia).toBe(false);
+  });
+
+  it("mantém o hash quando os títulos não têm código", () => {
+    const semCodigo = [comSinais("a", "Revisar contrato", "media"), comSinais("b", "Ajustar relatório", "media")];
+    expect(sinaisUteis(semCodigo).referencia).toBe(true);
+  });
+
+  it("não quebra com lista vazia", () => {
+    expect(sinaisUteis([]).prioridade).toBe(false);
   });
 });

@@ -383,3 +383,58 @@ export function semelhantes(alvo: Demanda, universo: Demanda[], limite = 3): Dem
 }
 
 export { DIAS_PARA_PARADA };
+
+// ---------------------------------------------------------------------------
+// Sinais que valem a pena desenhar
+// ---------------------------------------------------------------------------
+
+/**
+ * O que realmente distingue as demandas visiveis.
+ *
+ * A REGRA: um sinal identico em 100% das linhas nao informa nada — so ocupa
+ * espaco e atencao. Se todas as 36 demandas sao "Media", a palavra "Media"
+ * repetida 36 vezes nao ajuda ninguem a escolher por onde comecar; ela vira
+ * textura. O mesmo vale para etiquetas iguais e para prazo inexistente.
+ *
+ * Isto e diferente de `Capacidades`, que responde "a fonte sabe o que e isso?".
+ * Aqui a pergunta e "isso separa uma demanda da outra AGORA, neste recorte?".
+ */
+export interface SinaisUteis {
+  prioridade: boolean;
+  etiquetas: boolean;
+  prazo: boolean;
+  progresso: boolean;
+  sistema: boolean;
+  /** A referencia curta so vale quando o titulo nao carrega um codigo proprio. */
+  referencia: boolean;
+}
+
+/** Detecta codigos que a equipe ja usa no titulo: `[GO-11]`, `[IN-05]`. */
+const CODIGO_NO_TITULO = /^\s*\[[^\]]{2,12}\]/;
+
+export function sinaisUteis(demandas: Demanda[]): SinaisUteis {
+  if (demandas.length === 0) {
+    return { prioridade: false, etiquetas: false, prazo: false, progresso: false, sistema: false, referencia: true };
+  }
+
+  const distintos = <T>(valores: T[]) => new Set(valores).size;
+
+  const prioridades = demandas.map((d) => d.prioridade ?? "—");
+  const sistemas = demandas.map((d) => d.sistema?.nome ?? "—");
+  const etiquetas = demandas.map((d) =>
+    d.etiquetas.map((e) => e.id).sort().join("|"),
+  );
+
+  // Se a maioria dos titulos ja tem codigo proprio, o hash e um segundo
+  // identificador competindo com o primeiro — e o pior dos dois.
+  const comCodigo = demandas.filter((d) => CODIGO_NO_TITULO.test(d.titulo)).length;
+
+  return {
+    prioridade: distintos(prioridades) > 1,
+    etiquetas: distintos(etiquetas) > 1,
+    prazo: demandas.some((d) => d.prazo !== null),
+    progresso: demandas.some((d) => d.progresso !== null),
+    sistema: distintos(sistemas) > 1,
+    referencia: comCodigo < demandas.length / 2,
+  };
+}

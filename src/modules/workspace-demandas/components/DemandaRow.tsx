@@ -7,6 +7,7 @@ import {
   RISCO_ROTULO,
   type Capacidades,
   type Demanda,
+  type SinaisUteis,
 } from "@/domain/demand";
 
 /**
@@ -55,19 +56,24 @@ function formatarIdade(dias: number): string {
 interface Props {
   demanda: Demanda;
   capacidades: Capacidades;
+  /**
+   * O que distingue as demandas deste recorte. Um sinal igual em todas as
+   * linhas vira textura: ocupa espaço, não ajuda a escolher.
+   */
+  sinais: SinaisUteis;
   onAbrir: (id: string) => void;
   /** Na Lista o status já é o grupo; em Sprint/Timeline ele volta para a linha. */
   mostrarStatus?: boolean;
 }
 
-function DemandaRowImpl({ demanda: d, capacidades, onAbrir, mostrarStatus }: Props) {
+function DemandaRowImpl({ demanda: d, capacidades, sinais, onAbrir, mostrarStatus }: Props) {
   const responsavel = d.responsaveis[0];
 
   const meta = [
     mostrarStatus ? d.status.rotulo : null,
-    d.sistema?.nome ?? null,
+    sinais.sistema ? (d.sistema?.nome ?? null) : null,
     capacidades.tipo && d.tipo ? d.tipo.replace(/_/g, " ") : null,
-    d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
+    sinais.prioridade && d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
   ].filter(Boolean) as string[];
 
   return (
@@ -91,7 +97,7 @@ function DemandaRowImpl({ demanda: d, capacidades, onAbrir, mostrarStatus }: Pro
 
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="flex min-w-0 items-center gap-2">
-          {capacidades.etiquetas && d.etiquetas.length > 0 && (
+          {capacidades.etiquetas && sinais.etiquetas && d.etiquetas.length > 0 && (
             <span className="flex shrink-0 gap-0.5" aria-hidden>
               {d.etiquetas.slice(0, 3).map((e) => (
                 <span
@@ -117,8 +123,10 @@ function DemandaRowImpl({ demanda: d, capacidades, onAbrir, mostrarStatus }: Pro
         </span>
 
         <span className="ds-caption flex min-w-0 items-center gap-1.5 truncate text-muted-foreground">
-          <span className="tabular-nums">{d.referencia}</span>
-          {meta.length > 0 && <span aria-hidden>·</span>}
+          {/* O hash só aparece quando o título não traz um código próprio.
+              Dois identificadores competindo é pior que um só. */}
+          {sinais.referencia && <span className="tabular-nums">{d.referencia}</span>}
+          {sinais.referencia && meta.length > 0 && <span aria-hidden>·</span>}
           <span className="truncate">{meta.join(" · ")}</span>
         </span>
       </span>
@@ -145,11 +153,11 @@ function DemandaRowImpl({ demanda: d, capacidades, onAbrir, mostrarStatus }: Pro
           )}
         </span>
 
-        {capacidades.progresso && d.progresso && (
+        {capacidades.progresso && sinais.progresso && d.progresso && (
           <span className="hidden w-10 text-right tabular-nums md:inline">{d.progresso.percentual}%</span>
         )}
 
-        {(capacidades.prazo || capacidades.sla) && (
+        {sinais.prazo && (capacidades.prazo || capacidades.sla) && (
           <span className="hidden w-14 text-right tabular-nums md:inline" title="Prazo">
             {formatarData(d.prazo)}
           </span>

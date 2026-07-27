@@ -2,7 +2,7 @@ import { memo, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyPanel } from "@/design-system";
-import type { Capacidades, Grupo } from "@/domain/demand";
+import type { Capacidades, Grupo, SinaisUteis } from "@/domain/demand";
 import { DemandaRow } from "./DemandaRow";
 
 /**
@@ -17,6 +17,7 @@ import { DemandaRow } from "./DemandaRow";
 interface Props {
   grupos: Grupo[];
   capacidades: Capacidades;
+  sinais: SinaisUteis;
   onAbrir: (id: string) => void;
   mostrarStatusNaLinha?: boolean;
   vazio?: { titulo: string; descricao?: string };
@@ -25,11 +26,13 @@ interface Props {
 function Bloco({
   grupo,
   capacidades,
+  sinais,
   onAbrir,
   mostrarStatusNaLinha,
 }: {
   grupo: Grupo;
   capacidades: Capacidades;
+  sinais: SinaisUteis;
   onAbrir: (id: string) => void;
   mostrarStatusNaLinha?: boolean;
 }) {
@@ -66,6 +69,7 @@ function Bloco({
               key={d.id}
               demanda={d}
               capacidades={capacidades}
+              sinais={sinais}
               onAbrir={onAbrir}
               mostrarStatus={mostrarStatusNaLinha}
             />
@@ -76,7 +80,7 @@ function Bloco({
   );
 }
 
-function ListaLenteImpl({ grupos, capacidades, onAbrir, mostrarStatusNaLinha, vazio }: Props) {
+function ListaLenteImpl({ grupos, capacidades, sinais, onAbrir, mostrarStatusNaLinha, vazio }: Props) {
   if (grupos.length === 0) {
     return (
       <EmptyPanel
@@ -93,6 +97,7 @@ function ListaLenteImpl({ grupos, capacidades, onAbrir, mostrarStatusNaLinha, va
           key={g.id}
           grupo={g}
           capacidades={capacidades}
+          sinais={sinais}
           onAbrir={onAbrir}
           mostrarStatusNaLinha={mostrarStatusNaLinha}
         />

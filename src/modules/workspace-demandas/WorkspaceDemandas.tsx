@@ -9,6 +9,7 @@ import {
   buscar,
   contarFilas,
   resumir,
+  sinaisUteis,
   type FilaId,
   type LenteId,
 } from "@/domain/demand";
@@ -67,19 +68,21 @@ export default function WorkspaceDemandas() {
   const grupos = useMemo(() => agrupar(visiveis, lente), [visiveis, lente]);
   const resumo = useMemo(() => resumir(daFila), [daFila]);
 
-  // "A fonte suporta prazo" e "existe prazo preenchido" sao coisas diferentes,
-  // e so a segunda justifica desenhar a coluna. Sem isso, um projeto que nao
-  // usa prazo ganha uma coluna inteira de tracos.
+  // Dois filtros diferentes sobre o que desenhar:
+  //   capacidades — a FONTE sabe o que e isso? (SLA nao existe num quadro)
+  //   sinais      — isso separa uma demanda da outra AQUI? (se todas sao
+  //                 "Media", a palavra repetida 36 vezes vira textura)
+  // O segundo e calculado sobre o recorte visivel, entao muda com a fila.
   const capacidadesVisiveis = useMemo(() => {
     const temPrazo = demandas.some((d) => d.prazo !== null);
-    const temProgresso = demandas.some((d) => d.progresso !== null);
     return {
       ...capacidades,
       prazo: capacidades.prazo && temPrazo,
       sla: capacidades.sla && temPrazo,
-      progresso: capacidades.progresso && temProgresso,
     };
   }, [capacidades, demandas]);
+
+  const sinais = useMemo(() => sinaisUteis(visiveis), [visiveis]);
 
   // O detalhe tem endereço próprio. Era a mudança estrutural que faltava para
   // uma demanda poder ser colada num Slack ou num e-mail.
@@ -139,6 +142,7 @@ export default function WorkspaceDemandas() {
               <ListaLente
                 grupos={grupos}
                 capacidades={capacidadesVisiveis}
+                sinais={sinais}
                 onAbrir={abrir}
                 mostrarStatusNaLinha={lente !== "lista"}
                 vazio={{
