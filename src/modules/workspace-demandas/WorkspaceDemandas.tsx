@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, PanelRightClose, PanelRightOpen, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
+import { cn } from "@/lib/utils";
 import { useAcoesDemanda, useDemandas, type Escopo } from "@/modules/demand-access";
 import {
   agrupar,
@@ -13,30 +15,38 @@ import {
   type FilaId,
   type LenteId,
 } from "@/domain/demand";
-import { CabecalhoProjeto } from "./components/CabecalhoProjeto";
-import { FilaBar, LenteBar, isFilaId, isLenteId } from "./components/Barras";
+import { ContextoDoProjeto } from "./components/ContextoDoProjeto";
+import { BarraDeTrabalho, isFilaId, isLenteId } from "./components/BarraDeTrabalho";
 import { ListaLente } from "./components/ListaLente";
 import { BoardLente } from "./components/BoardLente";
 import { GanttLente } from "./components/GanttLente";
 import { Copiloto } from "./components/Copiloto";
 
 /**
- * FEATURE 027 (reescrita) — Workspace de Demandas.
+ * FEATURE 027 — Workspace de Demandas.
  *
- * Este componente não sabe de onde vêm os dados.
- *
- * Ele monta um `Escopo`, chama `useDemandas` e recebe `Demanda[]`. Não importa
- * `useAtividadesBoard`, não importa `useDemands`, não conhece `AtividadeCard`
- * nem `Demand`, e não sabe o que é uma coluna de quadro. Abandonar
- * `atividades_cards` amanhã é editar `resolverFonte.ts` — este arquivo não
- * muda uma linha.
+ * Este componente não sabe de onde vêm os dados. Ele monta um `Escopo`, chama
+ * `useDemandas` e recebe `Demanda[]`. Abandonar `atividades_cards` amanhã é
+ * editar `resolverFonte.ts` — este arquivo não muda uma linha.
  *
  * A tela é `fila × lente`:
  *   a FILA recorta quais demandas (`aplicarFila`)
  *   a LENTE decide como agrupar (`agrupar`)
  * As cinco visualizações não são cinco telas: são o mesmo conjunto com dois
- * parâmetros na URL. As duas barras ficam fixas em todas elas — inclusive no
- * Board, que antes trocava a moldura inteira.
+ * parâmetros na URL.
+ *
+ * ONDA 2 — A MOLDURA
+ * Havia cinco faixas horizontais antes do primeiro cartão, somando 266px. Duas
+ * eram duplicatas (as abas do shell repetiam a sidebar; o breadcrumb dizia o
+ * que o nome do projeto diz melhor) e uma era um cartaz permanente para um
+ * texto que se lê uma vez. Agora são duas faixas de 40px:
+ *
+ *   header global  →  projeto ⌄ · progresso · sem dono · em risco   [⌘K] [✦]
+ *   barra          →  filas · lentes · filtro
+ *
+ * O contexto do projeto sobe para o header por um slot (`useContextoDeHeader`),
+ * não por portal de DOM: provider e slot vivem na mesma árvore React, então a
+ * ordem de foco e a leitura de tela continuam corretas.
  */
 export default function WorkspaceDemandas() {
   const navigate = useNavigate();
@@ -44,6 +54,7 @@ export default function WorkspaceDemandas() {
   const { projetoId } = useParams<{ projetoId: string }>();
   const [params, setParams] = useSearchParams();
   const [busca, setBusca] = useState("");
+  const [copiloto, setCopiloto] = useState(true);
 
   const escopo: Escopo = useMemo(
     () => (projetoId ? { tipo: "projeto", projetoId } : { tipo: "global" }),
@@ -72,14 +83,9 @@ export default function WorkspaceDemandas() {
   //   capacidades — a FONTE sabe o que e isso? (SLA nao existe num quadro)
   //   sinais      — isso separa uma demanda da outra AQUI? (se todas sao
   //                 "Media", a palavra repetida 36 vezes vira textura)
-  // O segundo e calculado sobre o recorte visivel, entao muda com a fila.
   const capacidadesVisiveis = useMemo(() => {
     const temPrazo = demandas.some((d) => d.prazo !== null);
-    return {
-      ...capacidades,
-      prazo: capacidades.prazo && temPrazo,
-      sla: capacidades.sla && temPrazo,
-    };
+    return { ...capacidades, prazo: capacidades.prazo && temPrazo, sla: capacidades.sla && temPrazo };
   }, [capacidades, demandas]);
 
   const sinais = useMemo(() => sinaisUteis(visiveis), [visiveis]);
@@ -87,6 +93,29 @@ export default function WorkspaceDemandas() {
   // O detalhe tem endereço próprio. Era a mudança estrutural que faltava para
   // uma demanda poder ser colada num Slack ou num e-mail.
   const abrir = (id: string) => navigate(`/demandas/${id}${projetoId ? `?projeto=${projetoId}` : ""}`);
+
+  useContextoDeHeader(
+    projeto ? (
+      <>
+        <ContextoDoProjeto projeto={projeto} resumo={resumo} onFila={(f) => trocar("fila", f)} />
+        <button
+          type="button"
+          onClick={() => setCopiloto((v) => !v)}
+          aria-label={copiloto ? "Ocultar copiloto" : "Mostrar copiloto"}
+          className={cn(
+            "ml-auto hidden shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs xl:inline-flex",
+            "transition-colors duration-fast ease-standard",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+            copiloto ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Sparkles className="size-3.5" aria-hidden />
+          {copiloto ? <PanelRightClose className="size-3.5" /> : <PanelRightOpen className="size-3.5" />}
+        </button>
+      </>
+    ) : null,
+    [projeto, resumo, copiloto],
+  );
 
   if (carregando && demandas.length === 0) {
     return (
@@ -108,15 +137,10 @@ export default function WorkspaceDemandas() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {projeto && (
-        <CabecalhoProjeto
-          projeto={projeto}
-          resumo={resumo}
-          onFila={(f) => trocar("fila", f)}
-        />
-      )}
-      <FilaBar fila={fila} onFila={(f) => trocar("fila", f)} contagens={contagens} />
-      <LenteBar
+      <BarraDeTrabalho
+        fila={fila}
+        onFila={(f) => trocar("fila", f)}
+        contagens={contagens}
         lente={lente}
         onLente={(l) => trocar("lente", l)}
         busca={busca}
@@ -126,7 +150,15 @@ export default function WorkspaceDemandas() {
       />
 
       <div className="min-h-0 flex-1 overflow-auto">
-        <div className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-0 px-5 py-6 md:px-8 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-8">
+        <div
+          className={cn(
+            // Sem largura maxima e com respiro minimo: numa tela de 2560px o
+            // antigo max-w-[1400px] deixava 1160px de cinza dos dois lados
+            // enquanto o board rolava na horizontal.
+            "grid w-full grid-cols-1 gap-0 px-3 py-3 md:px-4",
+            copiloto && "xl:grid-cols-[minmax(0,1fr)_17rem] xl:gap-4",
+          )}
+        >
           <div className="min-w-0">
             {lente === "board" ? (
               <BoardLente
@@ -154,7 +186,7 @@ export default function WorkspaceDemandas() {
             )}
           </div>
 
-          <Copiloto demandas={daFila} resumo={resumo} onAbrir={abrir} className="hidden xl:block" />
+          {copiloto && <Copiloto demandas={daFila} resumo={resumo} onAbrir={abrir} className="hidden xl:block" />}
         </div>
       </div>
     </div>

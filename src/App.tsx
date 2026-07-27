@@ -9,6 +9,12 @@ function RedirectLegacySolicitacao() {
 }
 
 /** FEATURE 026.2 — Alterna entre a nova experiência (flag ON) e a legada. */
+/** Um link antigo de quadro vira o mesmo trabalho, na lente de board. */
+function RedirecionaQuadroParaProjeto() {
+  const { boardId } = useParams<{ boardId: string }>();
+  return <Navigate to={`/workspace/demandas/${boardId}?lente=board`} replace />;
+}
+
 function UxRoute({ on, off }: { on: ReactElement; off: ReactElement }) {
   return <UxRewriteGate enabled={on} disabled={off} />;
 }
@@ -285,10 +291,10 @@ const AppRoutes = () => {
             path="/atividades"
             element={
               <ProtectedRoute role="developer">
-                <UxRoute
-                  on={<Navigate to="/workspace/demandas?view=board" replace />}
-                  off={<Atividades />}
-                />
+                {/* "Atividades" e "quadro" eram o vocabulario da importacao
+                    do Trello. O destino continua existindo; o nome dele agora
+                    e Projetos, e o Board virou uma das cinco lentes. */}
+                <UxRoute on={<Navigate to="/workspace/demandas" replace />} off={<Atividades />} />
               </ProtectedRoute>
             }
           />
@@ -304,7 +310,20 @@ const AppRoutes = () => {
             }
           />
           <Route path="/atividades/importar" element={<ProtectedRoute role="developer"><ImportarQuadro /></ProtectedRoute>} />
-          <Route path="/atividades/:boardId" element={<ProtectedRoute role="developer"><AtividadesBoard /></ProtectedRoute>} />
+          {/* O Board deixou de ser o objeto central: e uma visualizacao entre
+              cinco. Um link antigo para o quadro chega no projeto, ja na lente
+              de board — o usuario ve o que esperava ver, dentro da moldura
+              nova. `AtividadesBoard` segue atendendo quem tem a flag desligada,
+              porque ainda cobre funcoes que a lente nao cobre (fundo, membros,
+              limite de WIP, arquivar coluna). */}
+          <Route
+            path="/atividades/:boardId"
+            element={
+              <ProtectedRoute role="developer">
+                <UxRoute on={<RedirecionaQuadroParaProjeto />} off={<AtividadesBoard />} />
+              </ProtectedRoute>
+            }
+          />
 
 
           <Route path="/observabilidade-ia" element={<ProtectedRoute role="developer"><ObservabilidadeIA /></ProtectedRoute>} />

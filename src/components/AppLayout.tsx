@@ -26,10 +26,14 @@ import blocoLogo from "@/assets/bloco-logo.png";
 import { SidebarGroupsNav } from "@/components/sidebar/SidebarGroupsNav";
 import { SidebarBreadcrumb } from "@/components/sidebar/SidebarBreadcrumb";
 import { BuscaGlobal } from "@/components/shell/BuscaGlobal";
+import {
+  HeaderContexto,
+  HeaderContextoProvider,
+  useHeaderTemContexto,
+} from "@/components/shell/HeaderContexto";
 import { builderGroups } from "@/components/sidebar/navGroups";
 import { fromUnifiedNav } from "@/components/sidebar/fromUnifiedNav";
 import { getNavigation } from "@/modules/navigation";
-import { CopilotDock } from "@/modules/copilot/CopilotDock";
 import { useEcossistemaAutoSync } from "@/modules/ecossistema";
 import { attachGlobalErrorHandlers } from "@/modules/errors";
 
@@ -168,7 +172,18 @@ export default function AppLayout() {
     }
   };
 
+  /**
+   * Telas que cuidam da própria moldura não levam o respiro do layout.
+   *
+   * O `p-8` global é certo para uma página de formulário e errado para um
+   * board: ele afasta as colunas da borda, some com uma coluna inteira na
+   * rolagem horizontal e cria uma margem cinza que não separa nada. Quem
+   * desenha a própria barra sabe onde quer o respiro.
+   */
+  const molduraPropria = pathname.startsWith("/workspace");
+
   return (
+    <HeaderContextoProvider>
     <div className="min-h-screen flex">
       {isMobile && mobileOpen && (
         <div
@@ -346,8 +361,11 @@ export default function AppLayout() {
         {/* Header desktop: breadcrumb automático + trigger de sidebar */}
         <header className="surface-glass hidden md:flex sticky top-0 z-30 h-10 items-center gap-3 border-b px-5">
           {sidebarHidden && <span className="w-6" aria-hidden="true" />}
-          <div className="flex-1 min-w-0 text-xs">
-            <SidebarBreadcrumb groups={groups} />
+          {/* Uma faixa só. Quando a página tem contexto próprio — o projeto
+              aberto, seus números — ele ocupa este espaço no lugar do
+              breadcrumb, que diria a mesma coisa com menos precisão. */}
+          <div className="flex min-w-0 flex-1 items-center gap-3 text-xs">
+            <HeaderContextoSlotOuBreadcrumb groups={groups} />
           </div>
           {/* FEATURE 028 — o gatilho visível da paleta. Sem ele, tirar 56 itens
               do menu seria esconder as telas; com ele, é trocar navegação por
@@ -405,12 +423,23 @@ export default function AppLayout() {
             </Button>
           </div>
         </header>
-        <div className="w-full min-w-0 p-4 md:p-8">
+        <div className={cn("w-full min-w-0", molduraPropria ? "" : "p-4 md:p-8")}>
           <OnboardingTour />
           <Outlet />
         </div>
-        <CopilotDock />
       </main>
     </div>
+    </HeaderContextoProvider>
   );
+}
+
+/**
+ * O breadcrumb é o padrão; o contexto da página tem precedência.
+ *
+ * Componente separado porque só um filho do provider consegue ler a pilha —
+ * o `AppLayout` é quem monta o provider e não enxerga o próprio contexto.
+ */
+function HeaderContextoSlotOuBreadcrumb({ groups }: { groups: Parameters<typeof SidebarBreadcrumb>[0]["groups"] }) {
+  const temContexto = useHeaderTemContexto();
+  return temContexto ? <HeaderContexto /> : <SidebarBreadcrumb groups={groups} />;
 }

@@ -4,5 +4,4 @@
  * Toda a experiência é gated pela feature flag `ux.rewrite`.
  */
 export { WorkspaceShell } from "./WorkspaceShell";
-export { WorkspaceCopilotPanel } from "./WorkspaceCopilotPanel";
 export { UxRewriteGate } from "@/modules/portal-unified/UxRewriteGate";

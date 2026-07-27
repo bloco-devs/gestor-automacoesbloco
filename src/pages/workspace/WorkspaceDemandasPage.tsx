@@ -2,15 +2,22 @@ import { lazy, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { WorkspaceShell } from "@/modules/workspace-unified";
-import { SeletorDeProjeto } from "@/modules/workspace-demandas/components/SeletorDeProjeto";
+import { SelecaoDeProjetos } from "@/modules/workspace-demandas/components/SelecaoDeProjetos";
 
 const WorkspaceDemandas = lazy(() => import("@/modules/workspace-demandas/WorkspaceDemandas"));
 
 /**
- * /workspace/demandas
+ * O fluxo, em duas rotas: **Demandas → Projeto → Lente**.
  *
- *   sem :projetoId  → entra no projeto se houver só um; senão, mostra o seletor
- *   com :projetoId  → o workspace, com as cinco lentes sobre o mesmo conjunto
+ *   /workspace/demandas             → a seleção de projetos
+ *   /workspace/demandas/:projetoId  → as cinco lentes sobre o mesmo conjunto
+ *
+ * Antes havia um atalho: com um único projeto, a seleção se pulava sozinha.
+ * Ele saiu de propósito. Pular a etapa esconde que "projeto" é um nível real
+ * do produto — e o dia em que aparece o segundo projeto, o usuário descobre um
+ * nível de navegação que ele nunca soube que existia.
+ *
+ * A troca rápida de projeto continua a um clique, no `⌄` do header.
  */
 export default function WorkspaceDemandasPage() {
   const { projetoId } = useParams<{ projetoId: string }>();
@@ -25,7 +32,7 @@ export default function WorkspaceDemandasPage() {
           </div>
         }
       >
-        {projetoId ? <WorkspaceDemandas /> : <SeletorDeProjeto />}
+        {projetoId ? <WorkspaceDemandas /> : <SelecaoDeProjetos />}
       </Suspense>
     </WorkspaceShell>
   );

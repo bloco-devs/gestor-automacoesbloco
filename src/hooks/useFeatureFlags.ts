@@ -15,7 +15,12 @@ export interface FeatureFlagDef {
 }
 
 export const ALL_FLAGS: FeatureFlagDef[] = [
-  { key: "copilot-dock", label: "AI Copilot (dock flutuante)", description: "Assistente contextual em qualquer tela.", defaultValue: true },
+  // Desligado por padrão desde a Onda 2. Havia tres coisas chamadas "Copilot"
+  // na mesma tela — este dock de chat, o painel lateral do shell e o painel
+  // analitico de Demandas. Dois deles disputavam a lateral direita enquanto o
+  // terceiro flutuava por cima. O que sobrou e o analitico, porque a IA aqui
+  // deve aparecer como analise da fila, nao como caixa de conversa.
+  { key: "copilot-dock", label: "AI Copilot (dock flutuante)", description: "Assistente contextual em qualquer tela.", defaultValue: false },
   { key: "compact-density", label: "Densidade compacta", description: "Reduz paddings em listas e cards.", defaultValue: false },
   { key: "beta-analytics", label: "Analytics beta", description: "Visualizações experimentais em /admin/analytics.", defaultValue: false },
   { key: "keyboard-hints", label: "Atalhos visíveis", description: "Mostra dicas de teclado nos botões.", defaultValue: false },

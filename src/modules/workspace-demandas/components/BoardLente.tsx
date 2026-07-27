@@ -123,7 +123,7 @@ function Cartao({
       }}
       aria-label={sobreposicao ? undefined : `Abrir demanda ${d.titulo}`}
       className={cn(
-        "surface-raised rounded-lg px-2.5 py-2 outline-none",
+        "surface-raised rounded-md px-2 py-1.5 outline-none",
         arrastavel ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         "focus-visible:ring-2 focus-visible:ring-ring/50",
         isDragging && !sobreposicao && "opacity-30",
@@ -181,7 +181,7 @@ function ColunaRecolhida({ grupo, onExpandir }: { grupo: Grupo; onExpandir: () =
       onClick={onExpandir}
       aria-label={`Mostrar ${grupo.rotulo}, ${grupo.itens.length} demandas`}
       className={cn(
-        "surface-well flex max-h-[calc(100vh-16rem)] min-h-[16rem] w-11 shrink-0 flex-col items-center gap-2 rounded-xl py-3",
+        "surface-well flex max-h-[calc(100vh-8rem)] min-h-[16rem] w-11 shrink-0 flex-col items-center gap-2 rounded-lg py-3",
         "text-muted-foreground transition-colors duration-base ease-standard",
         "hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         isOver && "ring-2 ring-primary/50",
@@ -217,7 +217,7 @@ function Coluna({
     <section
       ref={setNodeRef}
       className={cn(
-        "surface-well flex max-h-[calc(100vh-16rem)] min-h-[16rem] w-[17rem] shrink-0 flex-col rounded-xl p-2",
+        "surface-well flex max-h-[calc(100vh-8rem)] min-h-[16rem] w-[16rem] shrink-0 flex-col rounded-lg p-1.5",
         "transition-[box-shadow,background-color] duration-base ease-standard",
         isOver && "ring-2 ring-primary/50",
       )}
@@ -237,7 +237,7 @@ function Coluna({
           </button>
         )}
       </header>
-      <div className="flex-1 space-y-2 overflow-y-auto px-0.5 pb-1">
+      <div className="flex-1 space-y-1.5 overflow-y-auto px-0.5 pb-1">
         {grupo.itens.map((d) => (
           <Cartao
             key={d.id}
@@ -315,7 +315,7 @@ function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMov
 
   return (
     <DndContext sensors={sensores} onDragStart={aoIniciar} onDragEnd={aoTerminar} onDragCancel={() => setArrastando(null)}>
-      <div className="flex gap-3 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-2">
         {grupos.map((g) =>
           recolhidas.has(g.id) ? (
             <ColunaRecolhida key={g.id} grupo={g} onExpandir={() => alternar(g.id)} />

@@ -82,7 +82,7 @@ function DemandaRowImpl({ demanda: d, capacidades, sinais, onAbrir, mostrarStatu
       onClick={() => onAbrir(d.id)}
       aria-label={`Abrir demanda ${d.titulo}`}
       className={cn(
-        "group grid w-full grid-cols-[3px_1fr_auto] items-center gap-3 rounded-md py-2 pr-2",
+        "group grid w-full grid-cols-[3px_1fr_auto] items-center gap-3 rounded-md py-1.5 pr-2",
         "text-left transition-colors duration-fast ease-standard hover:bg-muted/40",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         d.concluida && "opacity-55",

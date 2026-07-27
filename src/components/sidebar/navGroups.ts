@@ -12,6 +12,7 @@ import {
   Headphones,
   Inbox,
   Layers,
+  FolderKanban,
   KanbanSquare,
   LayoutDashboard,
   LifeBuoy,
@@ -68,7 +69,10 @@ export const devGroups: NavGroup[] = [
       { to: "/trabalho/inbox", label: "Inbox", icon: Inbox },
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { label: "Solicitações", icon: ListChecks, matchPrefix: "/solicitacoes", children: solicitacoesChildren },
-      { to: "/atividades", label: "Atividades", icon: KanbanSquare },
+      // "Atividades" era o nome que veio com a importacao do Trello, e o icone
+      // de kanban ensinava que o objeto e o quadro. O destino e o mesmo; o
+      // nome agora e o do conceito de produto.
+      { to: "/workspace/demandas", label: "Projetos", icon: FolderKanban },
     ],
   },
   {

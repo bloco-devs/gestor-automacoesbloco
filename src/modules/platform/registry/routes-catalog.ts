@@ -109,6 +109,23 @@ function dasLentes(): NavItem[] {
 }
 
 /** As filas — recortes, não rotas. Mesmo raciocínio das lentes. */
+function dosProjetos(): NavItem[] {
+  return [
+    {
+      id: "nav:projetos",
+      title: "Projetos",
+      description: "Escolher em qual projeto trabalhar",
+      route: "/workspace/demandas",
+      category: "Trabalho" as NavCategory,
+      // "quadro" e "atividades" continuam como palavras-chave: o vocabulario
+      // saiu da interface, mas nao da cabeca de quem usava o sistema antes.
+      // Busca serve intencao, e a intencao ainda se chama pelo nome velho.
+      keywords: ["projetos", "quadros", "atividades", "boards", "trocar de projeto"],
+      permissions: ["developer", "administrador"],
+    },
+  ];
+}
+
 function dasFilas(): NavItem[] {
   const filas: Array<{ id: string; titulo: string; termos: string[] }> = [
     { id: "minhas", titulo: "Minhas demandas", termos: ["minhas", "atribuídas", "meu"] },
@@ -132,7 +149,7 @@ function dasFilas(): NavItem[] {
  * no menu e no admin-shell, entra uma vez só.
  */
 export function catalogoDeRotas(): NavItem[] {
-  const todos = [...dosPerfis(), ...dasFilas(), ...dasLentes(), ...doAdminShell()];
+  const todos = [...dosPerfis(), ...dosProjetos(), ...dasFilas(), ...dasLentes(), ...doAdminShell()];
   const porRota = new Map<string, NavItem>();
   for (const item of todos) {
     if (!porRota.has(item.route)) porRota.set(item.route, item);

@@ -1,102 +1,37 @@
-import { useState, type ReactNode } from "react";
-import { NavLink } from "react-router-dom";
-import { Home, ListTodo, Wrench, Terminal, Sparkles, PanelRightClose, PanelRightOpen } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { WorkspaceCopilotPanel } from "./WorkspaceCopilotPanel";
-
-const TABS = [
-  { to: "/workspace", label: "Hoje", icon: Home, end: true },
-  { to: "/workspace/demandas", label: "Demandas", icon: ListTodo },
-  { to: "/workspace/builder", label: "Builder", icon: Wrench },
-  { to: "/workspace/devtools", label: "DevTools", icon: Terminal },
-];
-
-const LS_COPILOT = "workspace-unified:copilot:v1";
-
-function readBool(fallback: boolean): boolean {
-  if (typeof window === "undefined") return fallback;
-  const v = window.localStorage.getItem(LS_COPILOT);
-  return v == null ? fallback : v === "1";
-}
+import type { ReactNode } from "react";
 
 /**
- * Shell único do Workspace Unificado (FEATURE 026.3).
- * Header + tabs de topo + slot central + painel Copilot lateral togglável.
+ * Shell do Workspace.
+ *
+ * O QUE ELE DEIXOU DE FAZER — e por quê
+ *
+ * 1. A barra de abas `Hoje · Demandas · Builder · DevTools`.
+ *    Ela repetia, com os mesmos rótulos e os mesmos ícones, os quatro
+ *    primeiros itens da sidebar — que fica 200px à esquerda, sempre visível.
+ *    Eram 44px de altura gastos para mostrar ao usuário uma segunda cópia do
+ *    menu. Navegação duplicada não é redundância útil: é uma pergunta a mais
+ *    ("são a mesma coisa?") e um lugar a mais para divergirem.
+ *
+ * 2. O `WorkspaceCopilotPanel` de 340–380px.
+ *    Era o segundo painel lateral. Em tela larga ele dividia a direita com o
+ *    Copiloto analítico de Demandas, e ainda havia o dock flutuante por cima.
+ *    Três coisas com o mesmo nome garantem que se clique na errada.
+ *
+ * O que sobrou é o mínimo honesto: uma caixa que ocupa a altura disponível
+ * abaixo do header global e entrega tudo para a página. Manter o componente
+ * (em vez de apagá-lo) preserva esse contrato de altura, do qual as quatro
+ * páginas dependem para não criar rolagem dupla.
  */
 export function WorkspaceShell({
   children,
-  hideCopilot = false,
 }: {
   children: ReactNode;
+  /** @deprecated O painel lateral saiu; a prop fica para não quebrar chamadas. */
   hideCopilot?: boolean;
 }) {
-  const [copilotOpen, setCopilotOpen] = useState<boolean>(() => readBool(true));
-
-  const toggle = () => {
-    setCopilotOpen((v) => {
-      const next = !v;
-      if (typeof window !== "undefined")
-        window.localStorage.setItem(LS_COPILOT, next ? "1" : "0");
-      return next;
-    });
-  };
-
   return (
-    <div className="flex h-[calc(100vh-var(--app-header-h,3.5rem))] w-full flex-col">
-      <header className="flex items-center gap-2 border-b border-border bg-card/40 px-3 py-1.5">
-        <nav aria-label="Workspace" className="flex items-center gap-1">
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            return (
-              <NavLink
-                key={t.to}
-                to={t.to}
-                end={t.end}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition",
-                    isActive
-                      ? "bg-muted font-medium text-foreground"
-                      : "text-muted-foreground hover:text-foreground",
-                  )
-                }
-              >
-                <Icon className="size-4" aria-hidden />
-                {t.label}
-              </NavLink>
-            );
-          })}
-        </nav>
-        <div className="ml-auto flex items-center gap-1">
-          {!hideCopilot && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggle}
-              aria-label={copilotOpen ? "Ocultar Copilot" : "Mostrar Copilot"}
-              className="gap-1.5"
-            >
-              <Sparkles className="size-4" aria-hidden />
-              <span className="hidden md:inline">Copilot</span>
-              {copilotOpen ? (
-                <PanelRightClose className="size-4" />
-              ) : (
-                <PanelRightOpen className="size-4" />
-              )}
-            </Button>
-          )}
-        </div>
-      </header>
-
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1fr_auto]">
-        <main className="min-h-0 min-w-0 overflow-hidden">{children}</main>
-        {!hideCopilot && copilotOpen && (
-          <div className="hidden min-h-0 lg:block lg:w-[340px] xl:w-[380px]">
-            <WorkspaceCopilotPanel />
-          </div>
-        )}
-      </div>
+    <div className="flex h-[calc(100vh-var(--app-header-h,2.5rem))] w-full min-h-0 flex-col">
+      <main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
     </div>
   );
 }
