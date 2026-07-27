@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Columns3, GanttChart, List, Timer, Clock, Search, X } from "lucide-react";
+import { Columns3, GanttChart, Timer, Clock, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -26,8 +26,7 @@ import { FILAS, type FilaId, type LenteId } from "@/domain/demand";
  *   repetiria o número que já está na aba da fila selecionada.
  */
 
-export const LENTES: { id: LenteId; rotulo: string; icone: typeof List; ajuda: string }[] = [
-  { id: "lista", rotulo: "Lista", icone: List, ajuda: "Lista — agrupada por status" },
+export const LENTES: { id: LenteId; rotulo: string; icone: typeof Columns3; ajuda: string }[] = [
   { id: "board", rotulo: "Board", icone: Columns3, ajuda: "Board — colunas, com arrastar e soltar" },
   { id: "sprint", rotulo: "Sprint", icone: Timer, ajuda: "Sprint — agrupada por janela de entrega" },
   { id: "timeline", rotulo: "Timeline", icone: Clock, ajuda: "Timeline — agrupada por última movimentação" },

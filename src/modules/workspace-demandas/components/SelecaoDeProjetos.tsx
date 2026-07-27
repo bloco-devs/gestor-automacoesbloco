@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Search, Star, Users } from "lucide-react";
+import { Inbox, Loader2, Search, Star, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { EmptyPanel } from "@/design-system";
 import { cn } from "@/lib/utils";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
-import { useProjetos, type ProjetoNaLista } from "@/modules/demand-access";
+import { INBOX_ID, useDemandas, useProjetos, type Escopo, type ProjetoNaLista } from "@/modules/demand-access";
 
 /**
  * A seleção de projetos — `Demandas → Projeto → Lente`.
@@ -87,10 +87,66 @@ function Linha({ projeto: p, onAbrir }: { projeto: ProjetoNaLista; onAbrir: (id:
   );
 }
 
+/**
+ * A Inbox fica ACIMA dos projetos, e separada por uma linha mais forte.
+ *
+ * Não é um projeto — é a etapa anterior a existir um. Colocá-la no meio da
+ * lista, ordenada junto com os outros, ensinaria a ideia errada: que
+ * "aguardando classificação" é um lugar onde o trabalho mora, e não um lugar
+ * de passagem. Em cima e destacada, ela lê como caixa de entrada de e-mail:
+ * o primeiro lugar que se olha, e que se espera esvaziar.
+ */
+function LinhaDaInbox({ aguardando, onAbrir }: { aguardando: number; onAbrir: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onAbrir}
+      className={cn(
+        "group flex w-full items-center gap-3 border-b-2 border-border px-3 py-2.5 text-left",
+        "transition-colors duration-fast ease-standard hover:bg-muted/40",
+        "focus:outline-none focus-visible:bg-muted/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50",
+      )}
+    >
+      <span
+        aria-hidden
+        className="flex size-5 shrink-0 items-center justify-center rounded-[6px] border border-border/60 bg-muted"
+      >
+        <Inbox className="size-3 text-muted-foreground" />
+      </span>
+
+      <span className="flex min-w-0 flex-1 items-baseline gap-2">
+        <span className="truncate text-[13px] font-medium">Inbox</span>
+        <span className="ds-caption hidden truncate text-muted-foreground lg:inline">
+          Demandas que ainda não foram classificadas em um projeto
+        </span>
+      </span>
+
+      <span className="ds-caption flex shrink-0 items-center gap-4 text-muted-foreground">
+        <span className="w-32 text-right">
+          {aguardando > 0 ? (
+            <>
+              <span className="tabular-nums text-foreground">{aguardando}</span> aguardando
+            </>
+          ) : (
+            <span className="text-muted-foreground/60">vazia</span>
+          )}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+const ESCOPO_GLOBAL: Escopo = { tipo: "global" };
+
 export function SelecaoDeProjetos() {
   const navigate = useNavigate();
   const { projetos, carregando, erro } = useProjetos();
+  // A contagem da Inbox vem pela mesma porta que todo o resto — esta tela
+  // continua sem saber que existe tabela.
+  const { demandas: naInbox } = useDemandas(ESCOPO_GLOBAL);
   const [busca, setBusca] = useState("");
+
+  const aguardando = useMemo(() => naInbox.filter((d) => !d.concluida).length, [naInbox]);
 
   const visiveis = useMemo(() => {
     const t = busca.trim().toLowerCase();
@@ -152,6 +208,14 @@ export function SelecaoDeProjetos() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
+        {/* Fora do filtro de busca de propósito: a Inbox é um destino fixo,
+            não um projeto que se procura pelo nome. */}
+        {!busca && (
+          <LinhaDaInbox
+            aguardando={aguardando}
+            onAbrir={() => navigate(`/workspace/demandas/${INBOX_ID}`)}
+          />
+        )}
         {visiveis.length === 0 ? (
           <div className="px-4 py-10 md:px-6">
             <EmptyPanel

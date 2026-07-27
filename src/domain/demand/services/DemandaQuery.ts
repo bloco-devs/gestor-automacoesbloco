@@ -125,7 +125,15 @@ export function ordenarPorAtencao(demandas: Demanda[]): Demanda[] {
 // Lentes — o que muda é só o critério de corte
 // ---------------------------------------------------------------------------
 
-export type LenteId = "lista" | "board" | "sprint" | "timeline" | "gantt";
+/**
+ * As lentes.
+ *
+ * "Lista" saiu: ela agrupava por status exatamente como o Board, mudando só
+ * a forma de desenhar o mesmo agrupamento. Duas entradas para a mesma
+ * pergunta obrigam a escolher sem ter critério — e o custo disso é pago em
+ * toda sessão, por todo usuário. O Board passa a ser a visão por status.
+ */
+export type LenteId = "board" | "sprint" | "timeline" | "gantt";
 
 export interface Grupo {
   id: string;
@@ -275,7 +283,6 @@ function agruparBruto(demandas: Demanda[], lente: LenteId): Grupo[] {
       return agruparPorJanela(demandas);
     case "timeline":
       return agruparPorAtividade(demandas);
-    case "lista":
     case "board":
     case "gantt":
     default:

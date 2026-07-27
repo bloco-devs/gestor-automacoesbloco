@@ -88,3 +88,25 @@ export interface AcoesDemanda {
   podeAtribuir: boolean;
   executando: boolean;
 }
+
+/**
+ * A Inbox — onde a demanda nasce antes de pertencer a um projeto.
+ *
+ * O fluxo é: Assistente → Inbox → Triagem → Projeto → Desenvolvimento.
+ * Quem relata um problema não sabe (nem deveria saber) em que projeto ele
+ * cai; classificar é trabalho de quem recebe. Até isso acontecer, a demanda
+ * precisa de um lugar visível — senão ela existe no banco e não existe na
+ * tela, que foi exatamente o que aconteceu.
+ *
+ * O id é uma palavra reservada, não um uuid: a Inbox não é um projeto, é a
+ * ausência de um. Reservar a palavra evita que um projeto de verdade chamado
+ * "inbox" colida com a rota (nenhum board tem id textual).
+ *
+ * NÃO CONFUNDIR com o "Inbox" que saiu do menu — aquele era a central do
+ * fluxo antigo de Solicitações, que não existe mais.
+ */
+export const INBOX_ID = "inbox";
+
+export function ehInbox(projetoId: string | null | undefined): boolean {
+  return projetoId === INBOX_ID;
+}

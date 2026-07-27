@@ -16,4 +16,5 @@ export { useAnexos, type AnexoExibivel } from "./useAnexos";
 export { useConhecimento } from "./useConhecimento";
 export { usePublicarArtigo } from "./usePublicarArtigo";
 export type { Escopo, EstadoDemandas, AcoesDemanda, ProjetoAtual, EtapaDaFonte } from "./types";
+export { INBOX_ID, ehInbox } from "./types";
 export type { ProjetoNaLista } from "./useProjetos";

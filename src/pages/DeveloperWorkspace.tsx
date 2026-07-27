@@ -53,7 +53,7 @@ export default function DeveloperWorkspace() {
   // diferentes com o mesmo nome, e apareciam como dois blocos "BACKLOG"
   // seguidos — parecia dado duplicado.
   const grupos = useMemo(
-    () => unirGruposHomonimos(agrupar(filtradas, "lista")),
+    () => unirGruposHomonimos(agrupar(filtradas, "board")),
     [filtradas],
   );
   const sinais = useMemo(() => sinaisUteis(filtradas), [filtradas]);

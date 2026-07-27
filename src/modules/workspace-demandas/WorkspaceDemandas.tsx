@@ -4,7 +4,7 @@ import { Loader2, PanelRightClose, PanelRightOpen, Sparkles } from "lucide-react
 import { useAuth } from "@/hooks/useAuth";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
 import { cn } from "@/lib/utils";
-import { useAcoesDemanda, useDemandas, type Escopo } from "@/modules/demand-access";
+import { useAcoesDemanda, useDemandas, ehInbox, type Escopo } from "@/modules/demand-access";
 import {
   agrupar,
   aplicarFila,
@@ -16,6 +16,7 @@ import {
   type LenteId,
 } from "@/domain/demand";
 import { ContextoDoProjeto } from "./components/ContextoDoProjeto";
+import { ContextoDaInbox } from "./components/ContextoDaInbox";
 import { BarraDeTrabalho, isFilaId, isLenteId } from "./components/BarraDeTrabalho";
 import { ListaLente } from "./components/ListaLente";
 import { BoardLente } from "./components/BoardLente";
@@ -56,12 +57,17 @@ export default function WorkspaceDemandas() {
   const [busca, setBusca] = useState("");
   const [copiloto, setCopiloto] = useState(true);
 
+  // A Inbox é a fila de quem ainda não foi classificado. Ela mora na mesma
+  // rota dos projetos porque, para quem navega, é um destino irmão — mas o
+  // escopo é global: não há projeto, e é exatamente esse o ponto.
+  const naInbox = ehInbox(projetoId);
+
   const escopo: Escopo = useMemo(
-    () => (projetoId ? { tipo: "projeto", projetoId } : { tipo: "global" }),
-    [projetoId],
+    () => (projetoId && !naInbox ? { tipo: "projeto", projetoId } : { tipo: "global" }),
+    [projetoId, naInbox],
   );
 
-  const lente: LenteId = isLenteId(params.get("lente")) ? (params.get("lente") as LenteId) : "lista";
+  const lente: LenteId = isLenteId(params.get("lente")) ? (params.get("lente") as LenteId) : "board";
   const fila: FilaId = isFilaId(params.get("fila")) ? (params.get("fila") as FilaId) : "todas";
 
   const trocar = (chave: "lente" | "fila", valor: string) => {
@@ -92,10 +98,36 @@ export default function WorkspaceDemandas() {
 
   // O detalhe tem endereço próprio. Era a mudança estrutural que faltava para
   // uma demanda poder ser colada num Slack ou num e-mail.
-  const abrir = (id: string) => navigate(`/demandas/${id}${projetoId ? `?projeto=${projetoId}` : ""}`);
+  const abrir = (id: string) =>
+    navigate(`/demandas/${id}${projetoId && !naInbox ? `?projeto=${projetoId}` : ""}`);
+
+  // A Inbox não tem projeto para descrever, mas precisa dizer onde a pessoa
+  // está e quanto trabalho aguarda classificação — senão o header cai no
+  // breadcrumb genérico e a tela parece a mesma dos projetos.
+  const contextoInbox = (
+    <>
+      <ContextoDaInbox aguardando={resumo.abertas} />
+      <button
+        type="button"
+        onClick={() => setCopiloto((v) => !v)}
+        aria-label={copiloto ? "Ocultar copiloto" : "Mostrar copiloto"}
+        className={cn(
+          "ml-auto hidden shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs xl:inline-flex",
+          "transition-colors duration-fast ease-standard",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          copiloto ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+        )}
+      >
+        <Sparkles className="size-3.5" aria-hidden />
+        {copiloto ? <PanelRightClose className="size-3.5" /> : <PanelRightOpen className="size-3.5" />}
+      </button>
+    </>
+  );
 
   useContextoDeHeader(
-    projeto ? (
+    naInbox ? (
+      contextoInbox
+    ) : projeto ? (
       <>
         <ContextoDoProjeto projeto={projeto} resumo={resumo} onFila={(f) => trocar("fila", f)} />
         <button
@@ -115,11 +147,13 @@ export default function WorkspaceDemandas() {
       </>
     ) : null,
     [
+      naInbox,
       projeto?.id,
       projeto?.nome,
       projeto?.descricao,
       projeto?.capaUrl,
       projeto?.cor,
+      resumo.abertas,
       resumo.total,
       resumo.concluidas,
       resumo.semResponsavel,
@@ -190,7 +224,7 @@ export default function WorkspaceDemandas() {
                 capacidades={capacidadesVisiveis}
                 sinais={sinais}
                 onAbrir={abrir}
-                mostrarStatusNaLinha={lente !== "lista"}
+                mostrarStatusNaLinha
                 vazio={{
                   titulo: busca ? "Nenhuma demanda encontrada" : "Nada nesta fila",
                   descricao: busca ? "Tente outro termo ou limpe o filtro." : undefined,

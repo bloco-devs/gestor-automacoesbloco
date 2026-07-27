@@ -1,10 +1,10 @@
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, ChevronDown, LayoutGrid } from "lucide-react";
+import { Check, ChevronDown, Inbox, LayoutGrid } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { Resumo } from "@/domain/demand";
-import { useProjetos, type ProjetoAtual } from "@/modules/demand-access";
+import { INBOX_ID, useProjetos, type ProjetoAtual } from "@/modules/demand-access";
 
 /**
  * O contexto do projeto — agora dentro do header global de 40px.
@@ -62,7 +62,21 @@ function ContextoDoProjetoImpl({ projeto, resumo, onFila }: Props) {
           <ChevronDown className="size-3 shrink-0 text-muted-foreground" aria-hidden />
         </PopoverTrigger>
         <PopoverContent align="start" className="w-64 p-1">
-          <p className="ds-caption px-2 py-1.5 text-muted-foreground">Trocar de projeto</p>
+          <p className="ds-caption px-2 py-1.5 text-muted-foreground">Ir para</p>
+          {/* A Inbox aparece aqui pelo mesmo motivo que aparece na seleção:
+              para quem navega ela é um destino irmão dos projetos. */}
+          <button
+            type="button"
+            onClick={() => navigate(`/workspace/demandas/${INBOX_ID}`)}
+            className={cn(
+              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px]",
+              "transition-colors hover:bg-muted focus:outline-none focus-visible:bg-muted",
+            )}
+          >
+            <Check className="size-3.5 shrink-0 opacity-0" aria-hidden />
+            <Inbox className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">Inbox</span>
+          </button>
           {projetos.map((p) => {
             const atual = p.id === projeto.id;
             return (
