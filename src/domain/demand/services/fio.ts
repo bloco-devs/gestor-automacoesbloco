@@ -14,6 +14,12 @@ import type { Pessoa } from "../types";
  * sobrevive é a que muda o comportamento de quem lê:
  *   FALA      alguém disse algo — pede leitura e pode pedir resposta
  *   MUDANÇA   algo mudou de estado — informa, não pede nada
+ *   ANEXO     alguém trouxe evidência — informa, mas vale abrir
+ *
+ * Anexo é seu próprio tipo, e não uma mudança, porque a ação que ele pede é
+ * diferente: "moveu para testes" se lê e se esquece; "mandou print do erro" se
+ * lê e se abre. Um fio que trata os dois igual esconde a evidência dentro do
+ * ruído administrativo — que é exatamente onde ela some hoje.
  *
  * A IA É UM PARTICIPANTE, NÃO UM PAINEL
  * Uma resposta da IA é uma `Fala` com `autor.ia = true`. Ela entra no mesmo
@@ -22,7 +28,7 @@ import type { Pessoa } from "../types";
  * chatbot acoplado ao produto; estando no fio, ela é uma colega que respondeu.
  */
 
-export type TipoDeEvento = "fala" | "mudanca";
+export type TipoDeEvento = "fala" | "mudanca" | "anexo";
 
 export interface AutorDoEvento extends Pessoa {
   /** Marca de origem. Não muda o peso da mensagem, só como ela é identificada. */
@@ -34,8 +40,10 @@ export interface Evento {
   tipo: TipoDeEvento;
   autor: AutorDoEvento | null;
   em: string;
-  /** Para `fala`: o texto. Para `mudanca`: a frase já legível. */
+  /** Para `fala`: o texto. Para `mudanca` e `anexo`: a frase já legível. */
   texto: string;
+  /** Só em `anexo`: permite abrir o arquivo direto do fio. */
+  anexoId?: string;
   /**
    * Nota interna: visível para a equipe, não para quem abriu a demanda.
    * Sempre `false` em `mudanca`.
@@ -124,7 +132,8 @@ export function participantes(eventos: Evento[]): Pessoa[] {
  * demanda nova.
  */
 export function diasSemFala(eventos: Evento[], agora = Date.now()): number | null {
-  const falas = eventos.filter((e) => e.tipo === "fala");
+  // Anexo conta como sinal de vida: quem manda um print está participando.
+  const falas = eventos.filter((e) => e.tipo === "fala" || e.tipo === "anexo");
   if (falas.length === 0) return null;
   const ultima = falas.reduce((max, e) => (new Date(e.em) > new Date(max.em) ? e : max), falas[0]);
   return Math.floor((agora - new Date(ultima.em).getTime()) / (24 * 60 * 60 * 1000));

@@ -35,9 +35,30 @@ function rotuloDe(valor: string): string {
   );
 }
 
+/** Um anexo já classificado, como o `useAnexos` devolve. */
+export interface AnexoNoFio {
+  id: string;
+  nome: string;
+  genero: string;
+  em: string;
+  autorId: string | null;
+}
+
 export function useFioDaDemanda(
   demandaId: string | null,
-  opcoes: { habilitado: boolean; pessoas: Map<string, Pessoa>; internasVisiveis: boolean },
+  opcoes: {
+    habilitado: boolean;
+    pessoas: Map<string, Pessoa>;
+    internasVisiveis: boolean;
+    /**
+     * Os anexos entram no MESMO fio, e não numa aba própria.
+     *
+     * Separar em telas obriga a pessoa a cruzar duas cronologias na cabeça
+     * para descobrir se o print veio antes ou depois da pergunta — e essa
+     * ordem quase sempre é a explicação.
+     */
+    anexos?: AnexoNoFio[];
+  },
 ) {
   const qc = useQueryClient();
   const { habilitado, pessoas } = opcoes;
@@ -81,8 +102,20 @@ export function useFioDaDemanda(
       interna: false,
     }));
 
-    return [...falas, ...mudancas];
-  }, [comentariosQ.data, auditoriaQ.data, pessoas]);
+    const enviosDeAnexo: Evento[] = (opcoes.anexos ?? []).map((a) => ({
+      id: `x:${a.id}`,
+      tipo: "anexo" as const,
+      autor: a.autorId
+        ? { ...(pessoas.get(a.autorId) ?? { id: a.autorId, nome: "Alguém", avatarUrl: null }), ia: false }
+        : null,
+      em: a.em,
+      texto: a.nome,
+      anexoId: a.id,
+      interna: false,
+    }));
+
+    return [...falas, ...mudancas, ...enviosDeAnexo];
+  }, [comentariosQ.data, auditoriaQ.data, pessoas, opcoes.anexos]);
 
   const comentar = useCallback(
     async (texto: string, interna: boolean) => {

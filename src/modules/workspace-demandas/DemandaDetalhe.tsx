@@ -7,6 +7,7 @@ import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
 import { cn } from "@/lib/utils";
 import {
   useAcoesDemanda,
+  useAnexos,
   useChecklist,
   useDemanda,
   useFioDaDemanda,
@@ -26,6 +27,7 @@ import {
 import { Contexto } from "./demanda/Contexto";
 import { Progresso } from "./demanda/Progresso";
 import { Checklist } from "./demanda/Checklist";
+import { Anexos } from "./demanda/Anexos";
 import { Fio } from "./demanda/Fio";
 import { CopilotoDaDemanda } from "./demanda/CopilotoDaDemanda";
 
@@ -88,10 +90,13 @@ export default function DemandaDetalhe() {
   // ela mora aqui porque é permissão, não domínio.
   const daEquipe = user?.role === "developer" || user?.role === "administrador";
 
+  const anexos = useAnexos(id ?? null, capacidades.comentarios);
+
   const fio = useFioDaDemanda(id ?? null, {
     habilitado: capacidades.comentarios,
     pessoas,
     internasVisiveis: daEquipe,
+    anexos: anexos.anexos,
   });
 
   const eventos = useMemo(() => montarFio(fio.eventos, daEquipe), [fio.eventos, daEquipe]);
@@ -106,9 +111,9 @@ export default function DemandaDetalhe() {
   const briefing = useMemo(
     () =>
       demanda
-        ? montarBriefing(demanda, eventos, capacidades, demanda.autor?.id ?? null)
-        : { oQuePedem: "", jaTentado: [], travando: [], porOndeComecar: "" },
-    [demanda, eventos, capacidades],
+        ? montarBriefing(demanda, eventos, capacidades, demanda.autor?.id ?? null, anexos.anexos)
+        : { oQuePedem: "", anexos: null, jaTentado: [], travando: [], porOndeComecar: "" },
+    [demanda, eventos, capacidades, anexos.anexos],
   );
 
   /**
@@ -265,6 +270,13 @@ export default function DemandaDetalhe() {
           capacidades={capacidades}
           eventos={eventos}
           checklist={
+            <>
+            <Anexos
+              anexos={anexos.anexos}
+              podeAnexar={anexos.podeAnexar}
+              enviando={anexos.enviando}
+              onEnviar={(arquivos) => void anexos.enviar(arquivos)}
+            />
             <Checklist
               itens={checklist.itens}
               feitos={checklist.feitos}
@@ -274,6 +286,7 @@ export default function DemandaDetalhe() {
               onAcrescentar={(texto) => void checklist.acrescentar(texto)}
               onRemover={(itemId) => void checklist.remover(itemId)}
             />
+            </>
           }
           className="min-h-0 overflow-y-auto border-b border-border/60 lg:border-b-0 lg:border-r"
         />

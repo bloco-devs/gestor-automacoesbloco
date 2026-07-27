@@ -41,6 +41,8 @@ function BriefingImpl({ briefing: b, falas }: Props) {
     >
       <Secao rotulo="Pedem">{b.oQuePedem}</Secao>
 
+      {b.anexos && <Secao rotulo="Anexado">{b.anexos}</Secao>}
+
       {b.jaTentado.length > 0 && (
         <Secao rotulo="Já foi dito">
           <ul className="space-y-0.5">

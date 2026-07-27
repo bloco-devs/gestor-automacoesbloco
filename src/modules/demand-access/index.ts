@@ -11,5 +11,6 @@ export { useProjetos } from "./useProjetos";
 export { useCriarDemanda } from "./useCriarDemanda";
 export { useFioDaDemanda } from "./useFioDaDemanda";
 export { useChecklist, type ItemDaLista } from "./useChecklist";
+export { useAnexos, type AnexoExibivel } from "./useAnexos";
 export type { Escopo, EstadoDemandas, AcoesDemanda, ProjetoAtual, EtapaDaFonte } from "./types";
 export type { ProjetoNaLista } from "./useProjetos";

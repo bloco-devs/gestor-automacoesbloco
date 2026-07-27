@@ -241,3 +241,48 @@ describe("briefing de 30 segundos", () => {
     expect(cobrar && "rascunho" in cobrar && cobrar.rascunho.length).toBeLessThan(160);
   });
 });
+
+/**
+ * Anexo no fio.
+ *
+ * A pergunta que isto responde é de ordem: o print veio antes ou depois da
+ * pergunta? Numa aba separada de anexos, descobrir isso exige cruzar duas
+ * cronologias de cabeça — e essa ordem quase sempre é a explicação.
+ */
+describe("anexos no fio", () => {
+  function anexo(id: string, em: string, autorId: string, nome: string): Evento {
+    return {
+      id,
+      tipo: "anexo",
+      autor: { id: autorId, nome: autorId, avatarUrl: null, ia: false },
+      em,
+      texto: nome,
+      anexoId: id,
+      interna: false,
+    };
+  }
+
+  it("entra na mesma cronologia das falas e das mudanças", () => {
+    const fio = montarFio(
+      [
+        fala("pergunta", "2026-03-01", "dev"),
+        anexo("print", "2026-03-02", "quem-abriu", "erro.png"),
+        fala("resposta", "2026-03-03", "dev"),
+      ],
+      true,
+    );
+    expect(fio.map((e) => e.id)).toEqual(["pergunta", "print", "resposta"]);
+  });
+
+  it("anexo conta como sinal de vida — quem manda print está participando", () => {
+    // Sem isto, uma demanda em que só se trocam evidências apareceria como
+    // abandonada, e o copiloto sugeriria cobrar quem está colaborando.
+    const agora = new Date("2026-03-10").getTime();
+    expect(diasSemFala([anexo("a", "2026-03-08", "dev", "log.txt")], agora)).toBe(2);
+  });
+
+  it("anexo não move a vez — mandar arquivo não é responder", () => {
+    const eventos = [fala("a", "2026-03-01", "quem-abriu"), anexo("b", "2026-03-02", "dev", "print.png")];
+    expect(deQuemEAVez(eventos, "quem-abriu")).toBe("equipe");
+  });
+});

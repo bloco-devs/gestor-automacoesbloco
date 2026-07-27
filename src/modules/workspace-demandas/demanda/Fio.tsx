@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Loader2, Lock, Sparkles } from "lucide-react";
+import { Loader2, Lock, Paperclip, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,6 +58,32 @@ function Mudanca({ evento }: { evento: Evento }) {
   );
 }
 
+/**
+ * Anexo no fio.
+ *
+ * Mais alto que uma mudança e mais baixo que uma fala: ele não pede leitura
+ * como um texto, mas pede clique — e um clique só acontece se o item for
+ * visível o bastante para ser notado enquanto se rola.
+ */
+function Anexo({ evento, onAbrir }: { evento: Evento; onAbrir?: (anexoId: string) => void }) {
+  return (
+    <li className="flex items-center gap-2 py-1.5 pl-9 text-[12px]">
+      <Paperclip className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+      <span className="text-muted-foreground">{evento.autor?.nome ?? "Alguém"} anexou</span>
+      <button
+        type="button"
+        onClick={() => evento.anexoId && onAbrir?.(evento.anexoId)}
+        className="min-w-0 truncate text-foreground underline-offset-2 transition-colors hover:text-primary hover:underline focus:outline-none focus-visible:underline"
+      >
+        {evento.texto}
+      </button>
+      <time className="ml-auto shrink-0 tabular-nums text-muted-foreground" dateTime={evento.em}>
+        {quando(evento.em)}
+      </time>
+    </li>
+  );
+}
+
 function Fala({ evento }: { evento: Evento }) {
   const ia = evento.autor?.ia ?? false;
   return (
@@ -105,10 +131,11 @@ interface Props {
   /** Só a equipe escreve nota interna; o solicitante nem vê a opção. */
   podeNotaInterna: boolean;
   onComentar: (texto: string, interna: boolean) => Promise<void>;
+  onAbrirAnexo?: (anexoId: string) => void;
   vazio: string;
 }
 
-function FioImpl({ eventos, briefing, podeComentar, podeNotaInterna, onComentar, vazio }: Props) {
+function FioImpl({ eventos, briefing, podeComentar, podeNotaInterna, onComentar, onAbrirAnexo, vazio }: Props) {
   const [texto, setTexto] = useState("");
   const [interna, setInterna] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -132,7 +159,11 @@ function FioImpl({ eventos, briefing, podeComentar, podeNotaInterna, onComentar,
         <Briefing briefing={briefing} falas={eventos.filter((e) => e.tipo === "fala").length} />
         <ol>
         {eventos.length === 0 && <li className="py-8 text-center text-[13px] text-muted-foreground">{vazio}</li>}
-        {eventos.map((e) => (e.tipo === "fala" ? <Fala key={e.id} evento={e} /> : <Mudanca key={e.id} evento={e} />))}
+        {eventos.map((e) => {
+          if (e.tipo === "fala") return <Fala key={e.id} evento={e} />;
+          if (e.tipo === "anexo") return <Anexo key={e.id} evento={e} onAbrir={onAbrirAnexo} />;
+          return <Mudanca key={e.id} evento={e} />;
+        })}
         </ol>
       </div>
 
