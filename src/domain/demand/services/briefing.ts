@@ -1,6 +1,7 @@
 import type { Capacidades, Demanda } from "../types";
 import { deQuemEAVez, diasSemFala, type Evento } from "./fio";
 import { resumirAnexos, type Anexo } from "./anexos";
+import { resumirRelacionados, type Relacionado } from "./conhecimento";
 
 /**
  * O briefing de 30 segundos.
@@ -32,6 +33,8 @@ export interface Briefing {
   oQuePedem: string;
   /** "2 imagens, 1 log" — ou `null` quando não há nada anexado. */
   anexos: string | null;
+  /** "1 artigo, 2 demandas parecidas" — a resposta de "existe documentação?". */
+  jaExiste: string | null;
   /** O que a equipe já disse ou fez. Vazio quando ninguém tocou. */
   jaTentado: string[];
   /** O que impede de andar agora. Vazio quando nada impede. */
@@ -54,6 +57,7 @@ export function montarBriefing(
   capacidades: Capacidades,
   solicitanteId: string | null,
   anexos: Anexo[] = [],
+  relacionados: Relacionado[] = [],
 ): Briefing {
   const falas = eventos.filter((e) => e.tipo === "fala");
   const vez = deQuemEAVez(eventos, solicitanteId);
@@ -99,11 +103,20 @@ export function montarBriefing(
     // Anexo antes de mensagem: um print explica em dois segundos o que três
     // parágrafos tentam descrever.
     if (jaTentado.length === 0 && anexos.length > 0) return "Abrir o anexo — ele costuma explicar antes do texto.";
+    // Antes de escrever a primeira resposta, ver se alguém já resolveu isso.
+    if (jaTentado.length === 0 && relacionados.length > 0) return "Ler o que já existe antes de responder.";
     if (jaTentado.length === 0) return "Ler o pedido e dar o primeiro retorno.";
     return "Continuar de onde a última mensagem parou.";
   })();
 
-  return { oQuePedem, anexos: resumirAnexos(anexos), jaTentado, travando, porOndeComecar };
+  return {
+    oQuePedem,
+    anexos: resumirAnexos(anexos),
+    jaExiste: resumirRelacionados(relacionados),
+    jaTentado,
+    travando,
+    porOndeComecar,
+  };
 }
 
 /**

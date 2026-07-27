@@ -13,5 +13,6 @@ export * from "./services/fio";
 export * from "./services/briefing";
 export * from "./services/progressao";
 export * from "./services/anexos";
+export * from "./services/conhecimento";
 export { fromAtividades, CAPACIDADES_ATIVIDADES, type EntradaAtividades } from "./mappers/fromAtividades";
 export { fromDemands, CAPACIDADES_DEMANDS, type EntradaDemands } from "./mappers/fromDemands";

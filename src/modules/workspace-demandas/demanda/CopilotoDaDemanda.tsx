@@ -6,8 +6,8 @@ import {
   RISCO_ROTULO,
   deQuemEAVez,
   diasSemFala,
-  semelhantes,
   type AcaoSugerida,
+  type Relacionado,
   type Capacidades,
   type Demanda,
   type Evento,
@@ -23,7 +23,7 @@ import {
  *
  *   O que está acontecendo?      risco, prazo, silêncio
  *   De quem é a vez?             a causa nº 1 de demanda parada
- *   Existe algo semelhante?      duplicidade e reaproveitamento
+ *   Já se sabe algo disso?       demanda parecida, solução anterior, artigo
  *   Qual o próximo passo?        uma ação, não uma lista
  *   Quem deveria assumir?        quando não há responsável
  *
@@ -47,14 +47,29 @@ interface Props {
   demanda: Demanda;
   eventos: Evento[];
   capacidades: Capacidades;
-  universo: Demanda[];
+  /**
+   * O que já existe sobre este problema, com o motivo de cada item.
+   *
+   * O motivo não é enfeite: uma lista de links produz a sensação de resultado
+   * de busca — trabalho que ainda vai ter. "Mesmo sistema, fala de exportação"
+   * produz a sensação de que alguém já pesquisou. É a diferença inteira.
+   */
+  relacionados: Relacionado[];
   acoes: AcaoSugerida[];
-  onAbrir: (id: string) => void;
+  /** Recebe a rota de destino, não um id: o relacionado pode não ser demanda. */
+  onAbrir: (destino: string) => void;
   /** Cada ação é executada pela porta de escrita; este painel só dispara. */
   onAcao: (acao: AcaoSugerida) => void;
   executando: boolean;
   className?: string;
 }
+
+/** O gênero vira palavra, porque ícone sozinho não diz o que a coisa é. */
+const ETIQUETA: Record<Relacionado["genero"], string> = {
+  demanda: "Demanda parecida",
+  solucao: "Solução anterior",
+  artigo: "Artigo",
+};
 
 function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
@@ -69,7 +84,7 @@ function CopilotoDaDemandaImpl({
   demanda: d,
   eventos,
   capacidades,
-  universo,
+  relacionados,
   acoes,
   onAbrir,
   onAcao,
@@ -78,7 +93,7 @@ function CopilotoDaDemandaImpl({
 }: Props) {
   const silencio = diasSemFala(eventos);
   const vez = deQuemEAVez(eventos, d.autor?.id ?? null);
-  const parecidas = semelhantes(d, universo, 3);
+  const parecidas = relacionados;
 
   /**
    * O próximo passo é UM. Uma lista de sugestões é uma decisão adiada — quem
@@ -91,7 +106,7 @@ function CopilotoDaDemandaImpl({
     if (capacidades.sla && d.sla?.estado === "estourado") return "O prazo já passou. Avisar quem abriu.";
     if (vez === "equipe") return "Responder — quem abriu está esperando.";
     if (silencio !== null && silencio >= 7) return `Sem uma palavra há ${silencio} dias. Dar um sinal de vida.`;
-    if (parecidas.length > 0) return "Conferir as parecidas antes de trabalhar em duplicidade.";
+    if (parecidas.length > 0) return "Conferir o que já existe antes de começar do zero.";
     return "Seguir. Nada está bloqueando.";
   })();
 
@@ -136,18 +151,20 @@ function CopilotoDaDemandaImpl({
       )}
 
       {parecidas.length > 0 && (
-        <Bloco titulo="Parecidas">
-          <ul className="space-y-1.5">
-            {parecidas.map((p) => (
-              <li key={p.id}>
+        <Bloco titulo="Já se sabe disso">
+          <ul className="space-y-2">
+            {parecidas.map((r) => (
+              <li key={`${r.genero}:${r.id}`}>
                 <button
                   type="button"
-                  onClick={() => onAbrir(p.id)}
-                  className="text-left transition-colors hover:text-primary focus:outline-none focus-visible:underline"
+                  onClick={() => onAbrir(r.destino)}
+                  className="text-left leading-snug transition-colors hover:text-primary focus:outline-none focus-visible:underline"
                 >
-                  {p.titulo}
+                  {r.titulo}
                 </button>
-                <span className="block text-[12px] text-muted-foreground">{p.status.rotulo}</span>
+                <span className="mt-0.5 block text-[12px] leading-tight text-muted-foreground">
+                  {ETIQUETA[r.genero]} · {r.porque}
+                </span>
               </li>
             ))}
           </ul>

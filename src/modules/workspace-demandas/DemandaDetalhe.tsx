@@ -9,6 +9,7 @@ import {
   useAcoesDemanda,
   useAnexos,
   useChecklist,
+  useConhecimento,
   useDemanda,
   useFioDaDemanda,
   type Escopo,
@@ -102,6 +103,7 @@ export default function DemandaDetalhe() {
   const eventos = useMemo(() => montarFio(fio.eventos, daEquipe), [fio.eventos, daEquipe]);
   const acoesDemanda = useAcoesDemanda(escopo);
   const checklist = useChecklist(id ?? null, capacidades.progresso && capacidades.comentarios);
+  const conhecimento = useConhecimento(demanda ?? null, demandas, !!demanda);
 
   const progressao = useMemo(
     () => (demanda ? montarProgressao(demanda, eventos, etapas) : null),
@@ -111,9 +113,16 @@ export default function DemandaDetalhe() {
   const briefing = useMemo(
     () =>
       demanda
-        ? montarBriefing(demanda, eventos, capacidades, demanda.autor?.id ?? null, anexos.anexos)
-        : { oQuePedem: "", anexos: null, jaTentado: [], travando: [], porOndeComecar: "" },
-    [demanda, eventos, capacidades, anexos.anexos],
+        ? montarBriefing(
+            demanda,
+            eventos,
+            capacidades,
+            demanda.autor?.id ?? null,
+            anexos.anexos,
+            conhecimento.relacionados,
+          )
+        : { oQuePedem: "", anexos: null, jaExiste: null, jaTentado: [], travando: [], porOndeComecar: "" },
+    [demanda, eventos, capacidades, anexos.anexos, conhecimento.relacionados],
   );
 
   /**
@@ -313,10 +322,14 @@ export default function DemandaDetalhe() {
           demanda={d}
           eventos={eventos}
           capacidades={capacidades}
-          universo={demandas}
+          relacionados={conhecimento.relacionados}
           acoes={acoes}
-          onAbrir={(outroId) =>
-            navigate(`/demandas/${outroId}${projetoId ? `?projeto=${projetoId}` : ""}`)
+          onAbrir={(destino) =>
+            destino.startsWith("http")
+              ? window.open(destino, "_blank", "noopener,noreferrer")
+              : navigate(
+                  destino.startsWith("/demandas/") && projetoId ? `${destino}?projeto=${projetoId}` : destino,
+                )
           }
           onAcao={(a) => void executarAcao(a)}
           executando={acoesDemanda.executando}
