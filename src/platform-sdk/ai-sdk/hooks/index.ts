@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { stableSnapshot } from "@/lib/stable-snapshot";
 import { aiExtensionRegistry } from "../registry";
 import { collectAiSdkDiagnostics, type AiSdkDiagnostics } from "../diagnostics";
 
+const getAiExtensionsSnapshot = stableSnapshot(() => aiExtensionRegistry.listAll());
+
+function subscribeAiRegistry(listener: () => void) {
+  return aiExtensionRegistry.subscribe(listener);
+}
+
 export function useAiExtensions() {
-  const [snap, setSnap] = useState(() => aiExtensionRegistry.listAll());
-  useEffect(
-    () => aiExtensionRegistry.subscribe(() => setSnap(aiExtensionRegistry.listAll())),
-    []
-  );
-  return snap;
+  return useSyncExternalStore(subscribeAiRegistry, getAiExtensionsSnapshot, getAiExtensionsSnapshot);
 }
 
 export function useAiSdkDiagnostics(intervalMs = 2000): AiSdkDiagnostics {
