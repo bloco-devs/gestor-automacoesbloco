@@ -179,8 +179,12 @@ export default function AppLayout() {
    * board: ele afasta as colunas da borda, some com uma coluna inteira na
    * rolagem horizontal e cria uma margem cinza que não separa nada. Quem
    * desenha a própria barra sabe onde quer o respiro.
+   *
+   * `/demandas/:id` entrou pelo mesmo motivo: são três colunas de altura
+   * cheia, e um respiro externo de 32px transformaria a página numa caixa
+   * flutuando dentro de outra.
    */
-  const molduraPropria = pathname.startsWith("/workspace");
+  const molduraPropria = pathname.startsWith("/workspace") || pathname.startsWith("/demandas/");
 
   return (
     <HeaderContextoProvider>

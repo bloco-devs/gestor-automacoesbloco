@@ -1,222 +1,228 @@
 import { useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useDemanda, type Escopo } from "@/modules/demand-access";
+import { useAuth } from "@/hooks/useAuth";
+import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
+import { cn } from "@/lib/utils";
+import { useDemanda, useFioDaDemanda, type Escopo } from "@/modules/demand-access";
 import {
-  COMPLEXIDADE_ROTULO,
   PRIORIDADE_ROTULO,
   RISCO_ROTULO,
   TIPO_ROTULO,
-  type Capacidades,
-  type Demanda,
+  montarFio,
+  type Pessoa,
 } from "@/domain/demand";
+import { Contexto } from "./demanda/Contexto";
+import { Fio } from "./demanda/Fio";
+import { CopilotoDaDemanda } from "./demanda/CopilotoDaDemanda";
 
 /**
- * `/demandas/:id` — a demanda ganha endereço próprio.
+ * `/demandas/:id` — a página mais importante do sistema.
  *
- * ESTA É A MUDANÇA ESTRUTURAL, NÃO A VISUAL.
- * Até aqui o detalhe vivia dentro de `<Dialog>`: não tinha URL, não dava para
- * colar um link no Slack, não abria em nova aba e não voltava com o botão de
- * voltar. Num Help Desk, o link do ticket é a unidade de comunicação da empresa
- * — sem ele o produto não é um Help Desk.
+ * O QUE ELA É
+ * O ponto único de colaboração entre solicitante, desenvolvedor, gestor e IA.
+ * Tudo relacionado a uma demanda acontece aqui: ninguém precisa navegar entre
+ * páginas para entender o andamento.
  *
- * O layout aqui é deliberadamente simples: as três colunas do Zendesk
- * (contexto | conversa | copiloto) vêm na etapa de redesign. O que esta rota
- * garante é que, quando vierem, elas terão onde morar — e que a conversa e a
- * auditoria possam ser plugadas sem mexer em navegação de novo.
+ * POR QUE PÁGINA, E NUNCA MODAL OU DRAWER
+ * O link de um chamado é a unidade de comunicação de uma empresa — ele é colado
+ * em conversa, encaminhado por e-mail, aberto em nova aba. Modal não tem URL,
+ * drawer não sobrevive a um refresh, e nenhum dos dois volta com o botão de
+ * voltar. Um Help Desk cujo ticket não tem endereço não é um Help Desk.
  *
- * Como todo o resto do módulo, este componente só conhece `Demanda`.
+ * AS TRÊS COLUNAS
+ *   ESQUERDA   o retrato: quem, o quê, quando, com quem
+ *   CENTRO     o filme: a conversa, com a IA como mais um participante
+ *   DIREITA    a conclusão: risco, de quem é a vez, parecidas, próximo passo
+ *
+ * O centro é o mais largo de propósito. Num sistema de chamado, a coluna que
+ * cresce é aquela em que se trabalha — e trabalhar aqui é ler e responder.
+ *
+ * O QUE ACONTECE QUANDO A FONTE NÃO TEM CONVERSA
+ * Uma demanda vinda de um projeto importado não tem comentários nem auditoria:
+ * a tabela não guarda isso. `capacidades` diz, e a coluna do centro explica em
+ * uma frase em vez de mostrar um vazio que se leria como "ninguém falou".
  */
-
-function iniciais(nome: string): string {
-  return nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
-}
-
-function Propriedade({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-baseline gap-3 py-1.5">
-      <dt className="ds-caption w-28 shrink-0 text-muted-foreground">{rotulo}</dt>
-      <dd className="ds-caption min-w-0 flex-1">{children}</dd>
-    </div>
-  );
-}
-
-function Propriedades({ demanda: d, capacidades }: { demanda: Demanda; capacidades: Capacidades }) {
-  return (
-    <dl className="divide-y divide-border/40">
-      <Propriedade rotulo="Status">{d.status.rotulo}</Propriedade>
-      <Propriedade rotulo="Responsável">
-        {d.responsaveis.length > 0 ? (
-          <span className="flex flex-wrap items-center gap-2">
-            {d.responsaveis.map((p) => (
-              <span key={p.id} className="inline-flex items-center gap-1.5">
-                <Avatar className="size-5">
-                  {p.avatarUrl && <AvatarImage src={p.avatarUrl} alt={p.nome} />}
-                  <AvatarFallback className="bg-muted text-[9px]">{iniciais(p.nome)}</AvatarFallback>
-                </Avatar>
-                {p.nome}
-              </span>
-            ))}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">Sem responsável</span>
-        )}
-      </Propriedade>
-
-      <Propriedade rotulo="Prioridade">
-        {d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : <span className="text-muted-foreground">—</span>}
-      </Propriedade>
-
-      {/* Campos que só existem quando a fonte os tem. Numa fonte sem tipo, a
-          linha não aparece — em vez de mostrar um traço, que seria lido como
-          "não preenchido" quando na verdade é "não existe aqui". */}
-      {capacidades.tipo && (
-        <Propriedade rotulo="Tipo">
-          {d.tipo ? TIPO_ROTULO[d.tipo] : <span className="text-muted-foreground">—</span>}
-        </Propriedade>
-      )}
-      {capacidades.complexidade && (
-        <Propriedade rotulo="Complexidade">
-          {d.complexidade ? COMPLEXIDADE_ROTULO[d.complexidade] : <span className="text-muted-foreground">—</span>}
-        </Propriedade>
-      )}
-
-      <Propriedade rotulo="Sistema">
-        {d.sistema?.nome ?? <span className="text-muted-foreground">—</span>}
-      </Propriedade>
-
-      {(capacidades.prazo || capacidades.sla) && (
-        <Propriedade rotulo="Prazo">
-          {d.prazo ? new Date(d.prazo).toLocaleDateString("pt-BR") : <span className="text-muted-foreground">—</span>}
-        </Propriedade>
-      )}
-
-      {capacidades.sla && d.sla && (
-        <Propriedade rotulo="SLA">
-          {d.sla.estado.replace(/_/g, " ")}
-          {d.sla.venceEm && ` · vence ${new Date(d.sla.venceEm).toLocaleDateString("pt-BR")}`}
-        </Propriedade>
-      )}
-
-      {capacidades.progresso && d.progresso && (
-        <Propriedade rotulo="Progresso">
-          {d.progresso.feitos}/{d.progresso.total} · {d.progresso.percentual}%
-        </Propriedade>
-      )}
-
-      {capacidades.etiquetas && d.etiquetas.length > 0 && (
-        <Propriedade rotulo="Etiquetas">
-          <span className="flex flex-wrap gap-1.5">
-            {d.etiquetas.map((e) => (
-              <span key={e.id} className="inline-flex items-center gap-1">
-                <span
-                  className="size-2 rounded-full"
-                  style={{ backgroundColor: e.cor ?? undefined }}
-                  aria-hidden
-                />
-                {e.nome}
-              </span>
-            ))}
-          </span>
-        </Propriedade>
-      )}
-
-      <Propriedade rotulo="Aberta em">
-        {new Date(d.criadaEm).toLocaleDateString("pt-BR")}
-        {d.autor && ` por ${d.autor.nome}`}
-      </Propriedade>
-      <Propriedade rotulo="Movimentada">
-        {d.diasParada < 1 ? "hoje" : `há ${d.diasParada} dia${d.diasParada === 1 ? "" : "s"}`}
-      </Propriedade>
-    </dl>
-  );
-}
-
 export default function DemandaDetalhe() {
-  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const projetoId = params.get("projeto");
 
   const escopo: Escopo = useMemo(
-    () => ({ tipo: "demanda", demandaId: id ?? "", projetoId: projetoId ?? undefined }),
-    [id, projetoId],
+    () => (projetoId ? { tipo: "projeto", projetoId } : { tipo: "global" }),
+    [projetoId],
   );
 
-  const { demanda, capacidades, carregando } = useDemanda(escopo, id ?? null);
+  const { demanda, demandas, capacidades, carregando, erro } = useDemanda(escopo, id ?? null);
 
-  if (carregando && !demanda) {
+  /**
+   * Os autores dos eventos vêm como id. Quem sabe traduzir id em pessoa é a
+   * lista que já foi carregada — evita uma consulta a mais e garante que o
+   * nome no fio é o mesmo nome da lista.
+   */
+  const pessoas = useMemo(() => {
+    const m = new Map<string, Pessoa>();
+    for (const d of demandas) {
+      for (const p of d.responsaveis) m.set(p.id, p);
+      if (d.autor) m.set(d.autor.id, d.autor);
+    }
+    return m;
+  }, [demandas]);
+
+  // Quem abriu não vê nota interna. É a única regra de visibilidade do fio, e
+  // ela mora aqui porque é permissão, não domínio.
+  const daEquipe = user?.role === "developer" || user?.role === "administrador";
+
+  const fio = useFioDaDemanda(id ?? null, {
+    habilitado: capacidades.comentarios,
+    pessoas,
+    internasVisiveis: daEquipe,
+  });
+
+  const eventos = useMemo(() => montarFio(fio.eventos, daEquipe), [fio.eventos, daEquipe]);
+
+  useContextoDeHeader(
+    demanda ? (
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="shrink-0 tabular-nums text-[12px] text-muted-foreground">{demanda.referencia}</span>
+        <span className="truncate text-[13px] font-medium">{demanda.titulo}</span>
+      </span>
+    ) : null,
+    [demanda],
+  );
+
+  if (carregando) {
     return (
       <div className="flex h-full items-center justify-center py-24" role="status" aria-live="polite">
         <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
-        <span className="sr-only">Carregando demanda…</span>
+        <span className="sr-only">Carregando a demanda…</span>
       </div>
     );
   }
 
-  if (!demanda) {
+  if (erro || !demanda) {
     return (
-      <div className="mx-auto max-w-2xl px-5 py-16 text-center">
-        <p className="ds-body-strong">Demanda não encontrada</p>
-        <p className="ds-caption mt-1 text-muted-foreground">
-          Ela pode ter sido removida, ou pertence a outro projeto.
+      <div className="mx-auto max-w-2xl px-5 py-12" role="alert">
+        <p className="text-[15px] font-medium text-destructive">
+          {erro ? "Não foi possível carregar a demanda" : "Demanda não encontrada"}
         </p>
-        <Button variant="outline" size="sm" className="mt-5" onClick={() => navigate(-1)}>
+        {erro && <p className="mt-1 text-[13px] text-muted-foreground">{erro.message}</p>}
+        <Button variant="ghost" size="sm" className="mt-4 gap-1.5" onClick={() => navigate(-1)}>
+          <ArrowLeft className="size-3.5" aria-hidden />
           Voltar
         </Button>
       </div>
     );
   }
 
-  return (
-    <article className="mx-auto w-full max-w-4xl px-5 py-6 md:px-8">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="ds-caption -ml-1 mb-5 inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 text-muted-foreground transition-colors duration-fast hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-      >
-        <ArrowLeft className="size-3.5" aria-hidden />
-        Voltar
-      </button>
+  const d = demanda;
 
-      <header className="space-y-2">
-        <div className="ds-caption flex items-center gap-2 text-muted-foreground">
-          <span className="tabular-nums">{demanda.referencia}</span>
-          <span aria-hidden>·</span>
-          <span>{demanda.status.rotulo}</span>
-          {demanda.risco && (
-            <>
-              <span aria-hidden>·</span>
-              <span className="text-warning">{RISCO_ROTULO[demanda.risco]}</span>
-            </>
-          )}
-          {capacidades.ia && demanda.ia && (
-            <Sparkles className="size-3.5 text-primary" aria-label="Atendida pela IA" />
-          )}
+  /**
+   * A tira de identidade: tipo · sistema · prioridade · SLA · IA.
+   *
+   * É a linha que o usuário lê antes de tudo, e por isso ela só mostra o que
+   * distingue esta demanda. Cada item desaparece quando a fonte não sabe
+   * respondê-lo — ausência é mais honesta que um traço.
+   */
+  const identidade = [
+    capacidades.tipo && d.tipo ? TIPO_ROTULO[d.tipo] : null,
+    d.sistema?.nome ?? null,
+    d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
+  ].filter(Boolean) as string[];
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <header className="shrink-0 border-b border-border/60 px-5 py-3">
+        <div className="flex items-start gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mt-0.5 size-6 shrink-0"
+            onClick={() => navigate(-1)}
+            aria-label="Voltar"
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+          </Button>
+          <div className="min-w-0 flex-1">
+            <h1 className="flex min-w-0 items-baseline gap-2">
+              <span className="shrink-0 text-[13px] tabular-nums text-muted-foreground">{d.referencia}</span>
+              <span className={cn("text-[17px] font-medium leading-snug", d.concluida && "line-through")}>
+                {d.titulo}
+              </span>
+            </h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted-foreground">
+              {identidade.map((item, i) => (
+                <span key={item} className="flex items-center gap-2">
+                  {i > 0 && <span aria-hidden>·</span>}
+                  {item}
+                </span>
+              ))}
+              {capacidades.sla && d.sla?.venceEm && (
+                <span className="flex items-center gap-2">
+                  <span aria-hidden>·</span>
+                  <span className={cn(d.sla.estado === "estourado" && "text-destructive")}>
+                    SLA {new Date(d.sla.venceEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                  </span>
+                </span>
+              )}
+              {d.risco && (
+                <span className="flex items-center gap-1.5">
+                  <span aria-hidden>·</span>
+                  <span aria-hidden className="size-1.5 rounded-full bg-destructive" />
+                  <span className="text-foreground">{RISCO_ROTULO[d.risco]}</span>
+                </span>
+              )}
+              {capacidades.ia && d.ia && (
+                <span className="flex items-center gap-1.5 text-primary">
+                  <span aria-hidden>·</span>
+                  <Sparkles className="size-3" aria-hidden />
+                  {d.ia.respondeuSozinha ? "respondida pela IA" : "com apoio da IA"}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-        <h1 className="ds-h1">{demanda.titulo}</h1>
       </header>
 
-      {demanda.descricao && (
-        <section className="mt-6">
-          <p className="ds-body whitespace-pre-wrap text-foreground/90">{demanda.descricao}</p>
-        </section>
-      )}
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)_17rem]">
+        <Contexto
+          demanda={d}
+          capacidades={capacidades}
+          eventos={eventos}
+          className="min-h-0 overflow-y-auto border-b border-border/60 lg:border-b-0 lg:border-r"
+        />
 
-      <section className="mt-8">
-        <h2 className="ds-label mb-1 text-muted-foreground">Propriedades</h2>
-        <Propriedades demanda={demanda} capacidades={capacidades} />
-      </section>
+        <main className="min-h-0 min-w-0">
+          {capacidades.comentarios ? (
+            <Fio
+              eventos={eventos}
+              podeComentar={fio.podeComentar}
+              podeNotaInterna={daEquipe}
+              onComentar={fio.comentar}
+              vazio="Ninguém falou nada ainda. Escreva a primeira mensagem."
+            />
+          ) : (
+            <div className="px-5 py-8 text-[13px] leading-relaxed text-muted-foreground">
+              Esta demanda veio de um projeto importado, que não guarda conversa nem histórico. Demandas criadas
+              pelo assistente têm o fio completo.
+            </div>
+          )}
+        </main>
 
-      {/*
-        Aqui entram, na etapa de redesign:
-          coluna esquerda  histórico e workflow (demand_audit_logs)
-          coluna central   conversa (demand_comments) com a resposta da IA no fio
-          coluna direita   copiloto contextual da demanda
-        Nenhuma delas exige tocar em rota de novo — só em layout.
-      */}
-    </article>
+        <CopilotoDaDemanda
+          demanda={d}
+          eventos={eventos}
+          capacidades={capacidades}
+          universo={demandas}
+          onAbrir={(outroId) =>
+            navigate(`/demandas/${outroId}${projetoId ? `?projeto=${projetoId}` : ""}`)
+          }
+          className="hidden xl:flex"
+        />
+      </div>
+    </div>
   );
 }
