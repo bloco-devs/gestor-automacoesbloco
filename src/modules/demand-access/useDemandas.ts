@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAtividadesBoard, atividadesKeys } from "@/hooks/useAtividadesBoard";
 import { countAnexosByBoard } from "@/lib/atividadesAnexos";
-import { getBoardResumo } from "@/lib/atividadesBoards";
+import { getBoardResumo, getCoverDisplayUrl } from "@/lib/atividadesBoards";
 import { useDemands, useDemandProfiles } from "@/modules/demands";
 import { listSolucoes } from "@/lib/supabaseData";
 import {
@@ -56,6 +56,19 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
     staleTime: 30_000,
   });
 
+  // `coverUrl` do resumo e um CAMINHO no storage, nao uma URL — renderizar o
+  // valor cru da uma imagem quebrada. `getCoverDisplayUrl` assina o caminho (ou
+  // devolve a URL como esta, se ja for uma). Resolver aqui, e nao na UI, e o
+  // mesmo principio do resto da camada: a tela nao pode saber que existe bucket.
+  const capaPath = projetoQ.data?.coverUrl ?? null;
+  const capaQ = useQuery({
+    queryKey: ["atividades", "board-capa", capaPath],
+    queryFn: () => getCoverDisplayUrl(capaPath),
+    enabled: !!capaPath,
+    // O link assinado vale 7 dias; renovar antes disso e desperdicio.
+    staleTime: 6 * 24 * 60 * 60 * 1000,
+  });
+
   // ---- fonte: demands -----------------------------------------------------
   const demandsQ = useDemands();
   const demandsList = useMemo(() => demandsQ.data ?? [], [demandsQ.data]);
@@ -81,7 +94,7 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
       });
       const r = projetoQ.data;
       const projeto: ProjetoAtual | null = r
-        ? { id: r.id, nome: r.nome, descricao: r.descricao, cor: r.cor, capaUrl: r.coverUrl }
+        ? { id: r.id, nome: r.nome, descricao: r.descricao, cor: r.cor, capaUrl: capaQ.data ?? null }
         : null;
 
       return {
@@ -124,6 +137,7 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
     board.loading,
     anexosQ.data,
     projetoQ.data,
+    capaQ.data,
     demandsList,
     demandsQ.isLoading,
     demandsQ.error,

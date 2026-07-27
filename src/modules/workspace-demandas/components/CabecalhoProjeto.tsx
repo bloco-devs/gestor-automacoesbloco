@@ -48,10 +48,15 @@ function CabecalhoProjetoImpl({ projeto, resumo, onFila }: Props) {
             papéis de parede em gradiente herdados do Trello. */}
         <span
           aria-hidden
-          className="mt-0.5 size-8 shrink-0 overflow-hidden rounded-[8px] border border-border/60 bg-muted"
+          className="mt-0.5 flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-border/60 bg-muted text-[13px] font-medium text-muted-foreground"
           style={!projeto.capaUrl && projeto.cor ? { backgroundColor: projeto.cor } : undefined}
         >
-          {projeto.capaUrl ? <img src={projeto.capaUrl} alt="" className="size-full object-cover" /> : null}
+          {projeto.capaUrl ? (
+            <img src={projeto.capaUrl} alt="" className="size-full object-cover" />
+          ) : (
+            // Sem capa, a inicial identifica melhor que um quadrado vazio.
+            projeto.nome.trim().charAt(0).toUpperCase()
+          )}
         </span>
 
         <div className="min-w-0 flex-1">
