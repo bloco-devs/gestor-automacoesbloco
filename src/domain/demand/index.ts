@@ -10,5 +10,6 @@ export * from "./services/risco";
 export * from "./services/DemandaQuery";
 export * from "./services/novaDemanda";
 export * from "./services/fio";
+export * from "./services/briefing";
 export { fromAtividades, CAPACIDADES_ATIVIDADES, type EntradaAtividades } from "./mappers/fromAtividades";
 export { fromDemands, CAPACIDADES_DEMANDS, type EntradaDemands } from "./mappers/fromDemands";

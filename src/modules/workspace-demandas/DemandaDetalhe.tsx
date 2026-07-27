@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
 import { cn } from "@/lib/utils";
-import { useDemanda, useFioDaDemanda, type Escopo } from "@/modules/demand-access";
+import { useAcoesDemanda, useDemanda, useFioDaDemanda, type Escopo } from "@/modules/demand-access";
 import {
   PRIORIDADE_ROTULO,
   RISCO_ROTULO,
   TIPO_ROTULO,
+  acoesSugeridas,
+  montarBriefing,
   montarFio,
+  type AcaoSugerida,
   type Pessoa,
 } from "@/domain/demand";
 import { Contexto } from "./demanda/Contexto";
@@ -83,6 +86,51 @@ export default function DemandaDetalhe() {
   });
 
   const eventos = useMemo(() => montarFio(fio.eventos, daEquipe), [fio.eventos, daEquipe]);
+  const acoesDemanda = useAcoesDemanda(escopo);
+
+  const briefing = useMemo(
+    () =>
+      demanda
+        ? montarBriefing(demanda, eventos, capacidades, demanda.autor?.id ?? null)
+        : { oQuePedem: "", jaTentado: [], travando: [], porOndeComecar: "" },
+    [demanda, eventos, capacidades],
+  );
+
+  /**
+   * As sugestões só aparecem para quem pode agir sobre elas. Oferecer "assumir"
+   * a quem não tem permissão é prometer um botão que vai falhar — e o preço de
+   * uma sugestão que falha é a pessoa parar de acreditar nas outras.
+   */
+  const acoes = useMemo<AcaoSugerida[]>(
+    () => (demanda && daEquipe ? acoesSugeridas(demanda, eventos, demanda.autor?.id ?? null) : []),
+    [demanda, eventos, daEquipe],
+  );
+
+  /**
+   * Executar a sugestão. Cada caso cai numa ação que já existia — nenhuma
+   * capacidade nova foi criada aqui, só o atalho para ela.
+   *
+   * `cobrar` grava a mensagem pronta; `responder` apenas leva o foco para o
+   * campo, porque escrever a resposta por alguém é o tipo de automação que
+   * quem recebe percebe na primeira linha e passa a ignorar.
+   */
+  const executarAcao = async (acao: AcaoSugerida) => {
+    if (!demanda || !user) return;
+    switch (acao.tipo) {
+      case "atribuir":
+        await acoesDemanda.atribuir({ demandaId: demanda.id, pessoaId: user.id });
+        break;
+      case "cobrar":
+        await fio.comentar(acao.rascunho, false);
+        break;
+      case "responder":
+        document.querySelector<HTMLTextAreaElement>("[data-fio-resposta]")?.focus();
+        break;
+      case "concluir":
+        await acoesDemanda.mover({ demandaId: demanda.id, statusId: "concluido" });
+        break;
+    }
+  };
 
   useContextoDeHeader(
     demanda ? (
@@ -199,6 +247,7 @@ export default function DemandaDetalhe() {
           {capacidades.comentarios ? (
             <Fio
               eventos={eventos}
+              briefing={briefing}
               podeComentar={fio.podeComentar}
               podeNotaInterna={daEquipe}
               onComentar={fio.comentar}
@@ -217,9 +266,12 @@ export default function DemandaDetalhe() {
           eventos={eventos}
           capacidades={capacidades}
           universo={demandas}
+          acoes={acoes}
           onAbrir={(outroId) =>
             navigate(`/demandas/${outroId}${projetoId ? `?projeto=${projetoId}` : ""}`)
           }
+          onAcao={(a) => void executarAcao(a)}
+          executando={acoesDemanda.executando}
           className="hidden xl:flex"
         />
       </div>

@@ -1,11 +1,13 @@
 import { memo } from "react";
 import { Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   RISCO_ROTULO,
   deQuemEAVez,
   diasSemFala,
   semelhantes,
+  type AcaoSugerida,
   type Capacidades,
   type Demanda,
   type Evento,
@@ -25,6 +27,14 @@ import {
  *   Qual o próximo passo?        uma ação, não uma lista
  *   Quem deveria assumir?        quando não há responsável
  *
+ * INFORMAR NÃO É PROPOR
+ * "Esta demanda está parada há 5 dias" devolve o problema para o humano
+ * resolver — é o que quase todo dashboard faz, e é por isso que quase todo
+ * dashboard é ignorado. Aqui o diagnóstico vem com o passo seguinte junto, no
+ * mesmo lugar, a um clique. Nenhuma dessas ações é nova: todas já existem na
+ * porta de escrita. O copiloto não ganha poder, ganha oportunidade — ele
+ * oferece a ação no instante em que a pessoa entendeu o porquê.
+ *
  * TUDO AQUI É DERIVADO, NÃO GERADO
  * Nenhum bloco depende de o modelo de IA responder. São regras sobre os dados
  * que já existem — por isso o painel nunca fica vazio, nunca fica carregando e
@@ -38,7 +48,11 @@ interface Props {
   eventos: Evento[];
   capacidades: Capacidades;
   universo: Demanda[];
+  acoes: AcaoSugerida[];
   onAbrir: (id: string) => void;
+  /** Cada ação é executada pela porta de escrita; este painel só dispara. */
+  onAcao: (acao: AcaoSugerida) => void;
+  executando: boolean;
   className?: string;
 }
 
@@ -51,7 +65,17 @@ function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode
   );
 }
 
-function CopilotoDaDemandaImpl({ demanda: d, eventos, capacidades, universo, onAbrir, className }: Props) {
+function CopilotoDaDemandaImpl({
+  demanda: d,
+  eventos,
+  capacidades,
+  universo,
+  acoes,
+  onAbrir,
+  onAcao,
+  executando,
+  className,
+}: Props) {
   const silencio = diasSemFala(eventos);
   const vez = deQuemEAVez(eventos, d.autor?.id ?? null);
   const parecidas = semelhantes(d, universo, 3);
@@ -132,6 +156,24 @@ function CopilotoDaDemandaImpl({ demanda: d, eventos, capacidades, universo, onA
 
       <Bloco titulo="Próximo passo">
         <p>{proximoPasso}</p>
+        {acoes.length > 0 && (
+          <div className="mt-2 flex flex-col gap-1.5">
+            {acoes.map((a) => (
+              <div key={a.tipo}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={executando}
+                  onClick={() => onAcao(a)}
+                  className="h-7 w-full justify-start text-[12px]"
+                >
+                  {a.rotulo}
+                </Button>
+                <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{a.motivo}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </Bloco>
 
       {!d.concluida && d.responsaveis.length === 0 && (

@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
+  acoesSugeridas,
+  montarBriefing,
   autorIa,
   deQuemEAVez,
   diasSemFala,
@@ -136,5 +138,106 @@ describe("auditoria vira frase", () => {
 
   it("campo desconhecido não quebra a tela", () => {
     expect(frasePara("update", "algum_campo_novo", "a", "b", rotulo)).toBe("alterou algum campo novo");
+  });
+});
+
+/**
+ * O briefing e as ações.
+ *
+ * A métrica declarada é: o desenvolvedor entende tudo em menos de trinta
+ * segundos. Numa demanda com quarenta mensagens isso só é possível se alguém
+ * responder as quatro perguntas antes da leitura. Estes testes protegem a
+ * ordem de precedência dessas respostas — porque "por onde começar" errado é
+ * pior que "por onde começar" ausente: ele manda a pessoa para o lugar errado
+ * com confiança.
+ */
+describe("briefing de 30 segundos", () => {
+  const capacidades = {
+    sla: true, ia: true, tipo: true, complexidade: true, auditoria: true,
+    comentarios: true, progresso: true, etiquetas: true, prazo: true,
+  };
+
+  function demandaBase(patch: Record<string, unknown> = {}) {
+    return {
+      id: "d1", referencia: "#d1", titulo: "Exportação falha",
+      descricao: "O relatório do financeiro não exporta em volumes grandes.",
+      status: { id: "and", rotulo: "Em andamento", categoria: "andamento" as const, ordem: 1 },
+      prioridade: "alta" as const, tipo: "bug" as const, complexidade: "media" as const,
+      sistema: null, responsaveis: [{ id: "dev", nome: "Dev", avatarUrl: null }],
+      autor: { id: "quem-abriu", nome: "Ana", avatarUrl: null },
+      criadaEm: "2026-03-01", atualizadaEm: "2026-03-10", diasParada: 2,
+      prazo: null, sla: null, ia: null, progresso: null, comentarios: null,
+      anexos: null, etiquetas: [], concluida: false, risco: null, fonte: "demands" as const,
+      ...patch,
+    };
+  }
+
+  it("sem responsável, começar é assumir — antes de qualquer outra coisa", () => {
+    const b = montarBriefing(
+      demandaBase({ responsaveis: [] }) as never,
+      [fala("a", "2026-03-02", "quem-abriu")],
+      capacidades as never,
+      "quem-abriu",
+    );
+    expect(b.porOndeComecar).toMatch(/assumir|atribuir/i);
+    expect(b.travando).toContain("Ninguém assumiu.");
+  });
+
+  it("com a bola na equipe, começar é responder", () => {
+    const b = montarBriefing(
+      demandaBase() as never,
+      [fala("a", "2026-03-02", "dev"), fala("b", "2026-03-05", "quem-abriu")],
+      capacidades as never,
+      "quem-abriu",
+    );
+    expect(b.porOndeComecar).toMatch(/responder/i);
+  });
+
+  it("'já foi dito' traz só falas da equipe — não repetir pergunta já feita", () => {
+    const b = montarBriefing(
+      demandaBase() as never,
+      [fala("a", "2026-03-02", "quem-abriu"), fala("b", "2026-03-03", "dev")],
+      capacidades as never,
+      "quem-abriu",
+    );
+    expect(b.jaTentado).toHaveLength(1);
+    expect(b.jaTentado[0]).toContain("texto b");
+  });
+
+  it("demanda concluída não tem nada travando nem por onde começar", () => {
+    const b = montarBriefing(
+      demandaBase({ concluida: true }) as never,
+      [fala("a", "2026-03-02", "quem-abriu")],
+      capacidades as never,
+      "quem-abriu",
+    );
+    expect(b.travando).toEqual([]);
+    expect(b.porOndeComecar).toMatch(/nada/i);
+  });
+
+  it("propõe cobrar só quando o silêncio é do lado de quem abriu", () => {
+    const agora = "2026-03-20";
+    const semResposta = [fala("a", "2026-03-01", "quem-abriu"), fala("b", "2026-03-02", "dev")];
+    const acoes = acoesSugeridas(demandaBase({ atualizadaEm: agora }) as never, semResposta, "quem-abriu");
+    expect(acoes.map((a) => a.tipo)).toContain("cobrar");
+
+    const bolaNaEquipe = [fala("a", "2026-03-01", "dev"), fala("b", "2026-03-02", "quem-abriu")];
+    const outras = acoesSugeridas(demandaBase() as never, bolaNaEquipe, "quem-abriu");
+    expect(outras.map((a) => a.tipo)).not.toContain("cobrar");
+  });
+
+  it("demanda concluída não recebe sugestão de ação", () => {
+    expect(acoesSugeridas(demandaBase({ concluida: true }) as never, [], "quem-abriu")).toEqual([]);
+  });
+
+  it("o rascunho de cobrança é uma mensagem curta, não um texto automático longo", () => {
+    const acoes = acoesSugeridas(
+      demandaBase() as never,
+      [fala("a", "2026-03-01", "quem-abriu"), fala("b", "2026-03-02", "dev")],
+      "quem-abriu",
+    );
+    const cobrar = acoes.find((a) => a.tipo === "cobrar");
+    // Mensagem automática longa é percebida na primeira linha e ignorada.
+    expect(cobrar && "rascunho" in cobrar && cobrar.rascunho.length).toBeLessThan(160);
   });
 });

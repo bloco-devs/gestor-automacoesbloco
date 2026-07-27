@@ -4,7 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import type { Evento } from "@/domain/demand";
+import type { Briefing as DadosDoBriefing, Evento } from "@/domain/demand";
+import { Briefing } from "./Briefing";
 
 /**
  * A conversa — o centro da tela.
@@ -98,6 +99,8 @@ function Fala({ evento }: { evento: Evento }) {
 
 interface Props {
   eventos: Evento[];
+  /** O resumo de 30 segundos. Ele aparece antes da primeira mensagem. */
+  briefing: DadosDoBriefing;
   podeComentar: boolean;
   /** Só a equipe escreve nota interna; o solicitante nem vê a opção. */
   podeNotaInterna: boolean;
@@ -105,7 +108,7 @@ interface Props {
   vazio: string;
 }
 
-function FioImpl({ eventos, podeComentar, podeNotaInterna, onComentar, vazio }: Props) {
+function FioImpl({ eventos, briefing, podeComentar, podeNotaInterna, onComentar, vazio }: Props) {
   const [texto, setTexto] = useState("");
   const [interna, setInterna] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -125,10 +128,13 @@ function FioImpl({ eventos, podeComentar, podeNotaInterna, onComentar, vazio }: 
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <ol className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
+        <Briefing briefing={briefing} falas={eventos.filter((e) => e.tipo === "fala").length} />
+        <ol>
         {eventos.length === 0 && <li className="py-8 text-center text-[13px] text-muted-foreground">{vazio}</li>}
         {eventos.map((e) => (e.tipo === "fala" ? <Fala key={e.id} evento={e} /> : <Mudanca key={e.id} evento={e} />))}
-      </ol>
+        </ol>
+      </div>
 
       {podeComentar && (
         <div className="shrink-0 border-t border-border/60 px-5 py-3">
@@ -143,6 +149,7 @@ function FioImpl({ eventos, podeComentar, podeNotaInterna, onComentar, vazio }: 
                 void enviar();
               }
             }}
+            data-fio-resposta
             placeholder={interna ? "Nota visível só para a equipe…" : "Escreva uma resposta…"}
             aria-label="Escrever no fio da demanda"
             className="min-h-[68px] resize-none border-border/60 text-[13px]"
