@@ -49,7 +49,7 @@ export default function SLAPolicies() {
   return (
     <div className="p-4 md:p-6 space-y-4">
       <header>
-        <h1 className="text-2xl font-brand font-bold">Configuração de SLA</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Configuração de SLA</h1>
         <p className="text-sm text-muted-foreground">
           Ajuste o tempo de resolução (em horas) por prioridade. Novas demandas usarão automaticamente estes valores.
         </p>

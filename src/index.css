@@ -77,7 +77,7 @@
     --card: 40 10% 97%;                 /* cartão um tom acima do bg */
     --card-foreground: 0 0% 5%;
 
-    --popover: 40 10% 98%;
+    --popover: 40 10% 99%;              /* flutua acima do card — precisa se destacar dele também */
     --popover-foreground: 0 0% 5%;
 
     --primary: 47 100% 55%;             /* amarelo Bloco (mais saturado p/ contraste no claro) */
@@ -104,13 +104,13 @@
     --info: 210 70% 45%;
     --info-foreground: 40 8% 96%;
 
-    --border: 30 8% 85%;
-    --input: 30 8% 85%;
+    --border: 30 9% 82%;                /* um pouco mais presente contra o card mais claro */
+    --input: 30 9% 82%;
     --ring: 47 100% 55%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 40 10% 95%;
+    --sidebar-background: 40 9% 94%;    /* degrau próprio: entre o fundo e o card, não em cima de nenhum dos dois */
     --sidebar-foreground: 0 0% 12%;
     --sidebar-primary: 47 100% 55%;
     --sidebar-primary-foreground: 0 0% 5%;
@@ -143,14 +143,26 @@
   }
 
   .dark {
-    /* ===== DARK — base preto profundo (#0C0C0C) + areia/amarelo ===== */
-    --background: 0 0% 5%;              /* #0C0C0C */
+    /* ===== DARK — DS 4.0: abandona o preto absoluto =====
+     * A versão anterior empilhava fundo/card/popover/sidebar entre 5% e 8%
+     * de luminosidade — perto demais para o olho distinguir onde um painel
+     * termina e outro começa, e a sombra (calculada em preto puro) não tinha
+     * contraste nenhum pra aparecer sobre um fundo já quase preto.
+     *
+     * A escada agora tem degraus reais — cada superfície precisa ser
+     * distinguível da vizinha sem depender só da borda:
+     *   sidebar (5,5%) < fundo (7%) < card (11%) < muted (13%) < popover (14%)
+     * Um leve matiz quente (hue 30, baixa saturação) no lugar de cinza puro
+     * — a mesma família de cor da marca (areia/marrom), só que escura o
+     * bastante pra ler como "quase preto" sem ser preto de verdade.
+     */
+    --background: 30 4% 7%;
     --foreground: 40 8% 89%;            /* #E5E3DF */
 
-    --card: 0 0% 7%;
+    --card: 30 4% 11%;
     --card-foreground: 40 8% 89%;
 
-    --popover: 0 0% 8%;
+    --popover: 30 4% 14%;
     --popover-foreground: 40 8% 89%;
 
     --primary: 47 100% 68%;             /* #FFDA5B */
@@ -159,8 +171,8 @@
     --secondary: 24 13% 49%;            /* #8B796D */
     --secondary-foreground: 40 8% 95%;
 
-    --muted: 0 0% 12%;
-    --muted-foreground: 24 8% 65%;
+    --muted: 30 4% 13%;
+    --muted-foreground: 24 8% 68%;
 
     --accent: 47 100% 68%;
     --accent-foreground: 0 0% 8%;
@@ -177,20 +189,20 @@
     --info: 210 70% 60%;
     --info-foreground: 0 0% 8%;
 
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
+    --border: 30 4% 19%;
+    --input: 30 4% 19%;
     --ring: 47 100% 68%;
 
-    --sidebar-background: 0 0% 6%;
+    --sidebar-background: 30 5% 5.5%;   /* recua atrás do conteúdo — mais escuro que o fundo, não igual */
     --sidebar-foreground: 40 8% 80%;
     --sidebar-primary: 47 100% 68%;
     --sidebar-primary-foreground: 0 0% 8%;
-    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent: 30 4% 10%;
     --sidebar-accent-foreground: 40 8% 89%;
-    --sidebar-border: 0 0% 14%;
+    --sidebar-border: 30 4% 15%;
     --sidebar-ring: 47 100% 68%;
 
-    --surface-2: 0 0% 9%;
+    --surface-2: 30 4% 10%;
 
     /* DS 3.1 — no escuro a sombra sozinha some, então a profundidade vem da
      * combinação sombra + fio de luz na borda superior. */
@@ -203,18 +215,23 @@
   }
 }
 
-/* ===== DS 3.0 — Tipografia oficial =====
+/* ===== DS 4.0 — Tipografia oficial =====
  * A hierarquia é carregada por peso + tamanho + cor, nunca por bordas ou caixas.
  * Escala mais contida (referências: Linear, Vercel, GitHub): títulos menores,
  * corpo com mais entrelinha para leitura, labels discretos.
- * Os nomes das classes são os mesmos do DS 2.0 — nenhum consumidor precisa mudar.
+ * Geist é a fonte de toda a interface — título e corpo falam com a mesma
+ * voz. NewBlackTypeface (a fonte da marca) fica reservada para branding real:
+ * logo, telas institucionais. Um heading de tela comum nunca mais usa a
+ * fonte de marca — é isso que fazia o sistema parecer um projeto pequeno.
+ * Os nomes das classes são os mesmos das versões anteriores — nenhum
+ * consumidor precisa mudar.
  */
 @layer utilities {
-  .ds-display    { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 2rem;      line-height: 2.5rem;  font-weight: 600; letter-spacing: -0.025em; }
-  .ds-h1         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.375rem;  line-height: 1.875rem;font-weight: 600; letter-spacing: -0.02em; }
-  .ds-h2         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.0625rem; line-height: 1.5rem;  font-weight: 600; letter-spacing: -0.012em; }
-  .ds-h3         { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 0.9375rem; line-height: 1.375rem;font-weight: 600; letter-spacing: -0.008em; }
-  .ds-card-title { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 0.875rem;  line-height: 1.25rem; font-weight: 600; letter-spacing: -0.005em; }
+  .ds-display    { font-family: 'Geist Sans', ui-sans-serif, system-ui, sans-serif; font-size: 2rem;      line-height: 2.5rem;  font-weight: 600; letter-spacing: -0.025em; }
+  .ds-h1         { font-family: 'Geist Sans', ui-sans-serif, system-ui, sans-serif; font-size: 1.375rem;  line-height: 1.875rem;font-weight: 600; letter-spacing: -0.02em; }
+  .ds-h2         { font-family: 'Geist Sans', ui-sans-serif, system-ui, sans-serif; font-size: 1.0625rem; line-height: 1.5rem;  font-weight: 600; letter-spacing: -0.012em; }
+  .ds-h3         { font-family: 'Geist Sans', ui-sans-serif, system-ui, sans-serif; font-size: 0.9375rem; line-height: 1.375rem;font-weight: 600; letter-spacing: -0.008em; }
+  .ds-card-title { font-family: 'Geist Sans', ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem;  line-height: 1.25rem; font-weight: 600; letter-spacing: -0.005em; }
   .ds-body       { font-size: 0.875rem;  line-height: 1.375rem; font-weight: 400; }
   .ds-body-strong{ font-size: 0.875rem;  line-height: 1.375rem; font-weight: 500; }
   .ds-caption    { font-size: 0.8125rem; line-height: 1.125rem; font-weight: 400; }
@@ -222,7 +239,7 @@
   .ds-helper     { font-size: 0.8125rem; line-height: 1.125rem; font-weight: 400; color: hsl(var(--muted-foreground)); }
 
   /* Valor numérico de KPI — número grande, tabular, sem competir com o título. */
-  .ds-metric     { font-family: 'NewBlackTypeface', system-ui, sans-serif; font-size: 1.75rem; line-height: 2.125rem; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .ds-metric     { font-family: 'Geist Sans', ui-sans-serif, system-ui, sans-serif; font-size: 1.75rem; line-height: 2.125rem; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 }
 
 @layer base {
@@ -236,6 +253,7 @@
     overflow-x: hidden;
   }
   body {
+    font-family: 'Geist Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
   }

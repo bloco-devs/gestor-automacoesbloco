@@ -1003,7 +1003,7 @@ function DiagramaInner() {
     <div className="-m-4 md:-m-8 h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]">
       <div className="px-4 md:px-8 py-3 border-b border-border bg-background flex items-start justify-between gap-4 flex-wrap">
         <div className="flex-1 min-w-[260px]">
-          <h1 className="text-xl md:text-2xl font-brand font-bold">Diagrama de Soluções</h1>
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Diagrama de Soluções</h1>
           <p className="text-xs text-muted-foreground">
             Conecte as laterais das Soluções para indicar fluxo de dados (origem → destino). Duplo clique em uma seta
             para nomear o dado trafegado. Clique no chip para detalhar as colunas. Arraste a linha para ajustar a curva

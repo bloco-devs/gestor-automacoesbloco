@@ -71,6 +71,12 @@ export default {
         },
       },
       fontFamily: {
+        // DS 4.0 — Geist é a fonte da interface (títulos e corpo). A stack de
+        // fallback é a mesma que o navegador já usaria sem custom font, então
+        // uma falha de carregamento não muda a hierarquia, só a "voz".
+        sans: ['Geist Sans', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        // Reservada para branding real — logo, telas institucionais. Nunca
+        // para heading de tela comum (ver DS 4.0 em index.css).
         brand: ['NewBlackTypeface', 'system-ui', 'sans-serif'],
       },
       borderRadius: {

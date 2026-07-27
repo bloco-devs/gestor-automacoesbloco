@@ -124,7 +124,7 @@ export default function WebhooksAdmin() {
     <div className="p-4 md:p-6 space-y-4">
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-brand font-bold">Webhooks & Integrações</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Webhooks & Integrações</h1>
           <p className="text-sm text-muted-foreground">
             Envie eventos deste sistema para n8n, Slack, WhatsApp ou qualquer endpoint HTTP.
           </p>

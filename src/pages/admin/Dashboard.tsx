@@ -13,7 +13,7 @@ export default function AdminDashboard() {
   return (
     <div className="p-4 md:p-6 space-y-6">
       <header>
-        <h1 className="text-2xl font-brand font-bold">Dashboard da Operação</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard da Operação</h1>
         <p className="text-sm text-muted-foreground">
           Visão executiva das demandas, cumprimento de SLA e performance por status/prioridade.
         </p>
