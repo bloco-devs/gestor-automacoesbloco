@@ -10,7 +10,7 @@
  * shallow-equal, mantendo a referência estável.
  */
 
-function shallowEqual(a: unknown, b: unknown): boolean {
+export function structuralEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
   if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
 
@@ -21,7 +21,7 @@ function shallowEqual(a: unknown, b: unknown): boolean {
   if (aArr && bArr) {
     if (a.length !== (b as unknown[]).length) return false;
     for (let i = 0; i < a.length; i++) {
-      if (!Object.is(a[i], (b as unknown[])[i])) return false;
+      if (!structuralEqual(a[i], (b as unknown[])[i])) return false;
     }
     return true;
   }
@@ -30,7 +30,7 @@ function shallowEqual(a: unknown, b: unknown): boolean {
   const kb = Object.keys(b as Record<string, unknown>);
   if (ka.length !== kb.length) return false;
   for (const k of ka) {
-    if (!Object.is((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])) {
+    if (!structuralEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])) {
       return false;
     }
   }
@@ -42,11 +42,11 @@ export function stableSnapshot<T>(fn: () => T): () => T {
   let initialized = false;
   return () => {
     const next = fn();
-    if (initialized && shallowEqual(last, next)) return last;
+    if (initialized && structuralEqual(last, next)) return last;
     last = next;
     initialized = true;
     return next;
   };
 }
 
-export { shallowEqual };
+export { structuralEqual as shallowEqual };
