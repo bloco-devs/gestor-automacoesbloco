@@ -23,7 +23,7 @@ import {
 
 const rotulo = (v: string) => ({ a_fazer: "A Fazer", em_desenvolvimento: "Em Desenvolvimento", alta: "Alta" })[v] ?? v;
 
-function fala(id: string, em: string, autorId: string | null, interna = false, ia = false): Evento {
+function fala(id: string, em: string, autorId: string | null = null, interna = false, ia = false): Evento {
   return {
     id,
     tipo: "fala",
