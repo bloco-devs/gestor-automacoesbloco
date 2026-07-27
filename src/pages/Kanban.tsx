@@ -9,7 +9,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { AlertTriangle, Calendar, User } from "lucide-react";
+import { AlertTriangle, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 import { listSolicitacoes, updateSolicitacao } from "@/lib/supabaseData";
@@ -119,13 +119,20 @@ export default function Kanban() {
     }
   }
 
+  const total = items.length;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Pipeline Kanban</h1>
-        <p className="text-sm text-muted-foreground">
-          Arraste os cartões entre as colunas para atualizar o status.
-        </p>
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Pipeline Kanban</h1>
+          <p className="text-sm text-muted-foreground">
+            Arraste os cartões entre as colunas para atualizar o status.
+          </p>
+        </div>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {total} {total === 1 ? "demanda" : "demandas"}
+        </span>
       </div>
 
       {error && (
@@ -142,7 +149,7 @@ export default function Kanban() {
       )}
 
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        <div className="-mx-1 flex min-h-0 flex-1 gap-3 overflow-x-auto px-1 pb-3">
           {STAGES.map((stage) => (
             <Column key={stage.id} stage={stage} items={grouped[stage.id]} loading={loading} />
           ))}
@@ -155,42 +162,53 @@ export default function Kanban() {
 function Column({ stage, items, loading }: { stage: Stage; items: Solicitacao[]; loading: boolean }) {
   const { isOver, setNodeRef } = useDroppable({ id: stage.id });
   return (
-    <div
+    <section
       ref={setNodeRef}
+      aria-label={stage.label}
       className={cn(
-        "rounded-lg border bg-card p-3 flex flex-col min-h-[300px] transition-colors",
-        isOver ? "border-accent bg-accent/5" : "border-border",
+        "flex w-[280px] shrink-0 flex-col rounded-xl border bg-muted/40 transition-colors",
+        isOver ? "border-accent bg-accent/5" : "border-border/70",
       )}
     >
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "size-2 rounded-full",
-              stage.accent ? "bg-accent" : "bg-muted-foreground/60",
-            )}
-            aria-hidden
-          />
-          <h3 className="text-sm font-medium">{stage.label}</h3>
-          <FieldHelp>{STAGE_HELP[stage.id]}</FieldHelp>
-        </div>
-        <span className="text-xs text-muted-foreground tabular-nums">
+      <header className="flex items-center gap-2 border-b border-border/60 px-3 py-2.5">
+        <span
+          className={cn(
+            "size-1.5 shrink-0 rounded-full",
+            stage.accent ? "bg-accent" : "bg-muted-foreground/50",
+          )}
+          aria-hidden
+        />
+        <h3 className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {stage.label}
+        </h3>
+        <FieldHelp className="shrink-0">{STAGE_HELP[stage.id]}</FieldHelp>
+        <span className="shrink-0 rounded-full bg-background px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
           {items.length}
         </span>
-      </div>
-      <div className="space-y-2 flex-1">
+      </header>
+
+      <div className="flex min-h-[220px] flex-1 flex-col gap-2 overflow-y-auto p-2">
         {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full" />
-          ))
+          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)
         ) : items.length === 0 ? (
-          <div className="text-xs text-muted-foreground text-center py-6">Nenhum cartão</div>
+          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-border/60 py-8">
+            <span className="text-xs text-muted-foreground">Nenhum cartão</span>
+          </div>
         ) : (
           items.map((s) => <KanbanCard key={s.id} item={s} />)
         )}
       </div>
-    </div>
+    </section>
   );
+}
+
+function initials(nome: string) {
+  return nome
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 function KanbanCard({ item }: { item: Solicitacao }) {
@@ -207,7 +225,7 @@ function KanbanCard({ item }: { item: Solicitacao }) {
   });
 
   return (
-    <div
+    <article
       ref={setNodeRef}
       style={style}
       {...listeners}
@@ -226,41 +244,41 @@ function KanbanCard({ item }: { item: Solicitacao }) {
       role="link"
       tabIndex={0}
       className={cn(
-        "group rounded-md border border-border bg-background p-3 cursor-grab active:cursor-grabbing transition-shadow hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        isDragging && "shadow-lg opacity-80",
+        "group cursor-grab rounded-lg border border-border/70 bg-card p-3 shadow-sm transition-all active:cursor-grabbing",
+        "hover:border-accent/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        isDragging && "rotate-1 opacity-80 shadow-lg",
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-medium leading-snug line-clamp-2 group-hover:text-accent transition-colors">
-          {item.titulo}
-        </span>
-        <div className="flex items-center gap-1 shrink-0">
-          <ScorePill score={item.score} />
-        </div>
-      </div>
+      <p className="line-clamp-2 text-sm font-medium leading-snug text-card-foreground transition-colors group-hover:text-accent">
+        {item.titulo}
+      </p>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <User className="size-3" />
-          <span className="truncate max-w-[120px]">{item.solicitanteNome}</span>
-        </span>
-        <span className="flex items-center gap-1">
-          <Calendar className="size-3" />
-          {data}
-        </span>
-      </div>
-
-      <div className="mt-2">
-        <Badge
-          variant="outline"
-          className="text-[10px] py-0 px-1.5 h-5 font-normal"
-        >
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-normal">
           {freqLabel(item.frequencia)}
         </Badge>
-        <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground/80">
+        <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
           {STATUS_LABEL[item.status]}
-        </span>
+        </Badge>
       </div>
-    </div>
+
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/60 pt-2">
+        <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+          <span
+            className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-[9px] font-semibold uppercase text-muted-foreground"
+            title={item.solicitanteNome}
+            aria-hidden
+          >
+            {initials(item.solicitanteNome) || "?"}
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-1">
+            <CalendarDays className="size-3.5" aria-hidden />
+            {data}
+          </span>
+        </div>
+        <ScorePill score={item.score} />
+      </div>
+    </article>
   );
 }
+
