@@ -4,9 +4,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { shallowEqual } from "@/lib/stable-snapshot";
 
 /**
  * O slot de contexto do header global.
@@ -75,13 +77,32 @@ let proximoId = 1;
 export function useContextoDeHeader(node: ReactNode, deps: unknown[]) {
   const ctx = useContext(Ctx);
   const id = useMemo(() => proximoId++, []);
+  const ctxRef = useRef(ctx);
+  const nodeRef = useRef(node);
+  const depsRef = useRef<unknown[] | null>(null);
+  const registradoRef = useRef(false);
+
+  ctxRef.current = ctx;
+  nodeRef.current = node;
 
   useEffect(() => {
-    if (!ctx) return;
-    ctx.registrar(id, node);
-    return () => ctx.remover(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, ...deps]);
+    const atual = ctxRef.current;
+    if (!atual) return;
+
+    const depsMudaram = !depsRef.current || !shallowEqual(depsRef.current, deps);
+    if (!registradoRef.current || depsMudaram) {
+      depsRef.current = deps.slice();
+      registradoRef.current = true;
+      atual.registrar(id, nodeRef.current);
+    }
+  });
+
+  useEffect(
+    () => () => {
+      ctxRef.current?.remover(id);
+    },
+    [id],
+  );
 }
 
 /** Onde o contexto aparece. Devolve `null` quando nenhuma página preencheu. */
