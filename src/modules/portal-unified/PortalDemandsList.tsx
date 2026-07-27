@@ -65,8 +65,14 @@ export function PortalDemandsList() {
             const s = humanizeStatus(d.status);
             return (
               <li key={d.id}>
+                {/* Estas linhas vêm de `useDemands` (tabela `demands`), mas
+                    apontavam para /solicitacao/:id — a tela do fluxo antigo,
+                    que consulta a tabela `solicitacoes`. Com um id de
+                    `demands` a busca não achava nada e o solicitante via
+                    "Solicitação não encontrada" ao clicar na própria demanda.
+                    O destino certo é a página da demanda. */}
                 <Link
-                  to={`/solicitacao/${d.id}`}
+                  to={`/demandas/${d.id}`}
                   className="flex items-center gap-3 px-4 py-3 transition hover:bg-muted/50"
                 >
                   <span className={`size-2 rounded-full ${s.dot}`} aria-hidden />

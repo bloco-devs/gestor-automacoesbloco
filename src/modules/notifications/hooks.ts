@@ -25,8 +25,18 @@ export function useNotifications() {
     supabase.auth.getUser().then(({ data }) => {
       uid = data.user?.id;
       if (!uid) return;
+      // O nome do canal precisa ser único POR INSTÂNCIA do hook, não por
+      // usuário: supabase-js guarda os canais num cache por nome, então dois
+      // componentes montados ao mesmo tempo (o AppLayout renderiza o
+      // NotificationsDrawer duas vezes — uma no shell mobile, outra no
+      // desktop) recebiam o MESMO objeto de canal. O segundo chamava `.on()`
+      // num canal que o primeiro já tinha dado `.subscribe()`, e o supabase
+      // rejeita isso: "cannot add postgres_changes callbacks after
+      // subscribe()". O erro subia como promise não tratada e o segundo
+      // drawer ficava sem realtime — notificação só aparecia recarregando.
+      // `useDemands` já usava randomUUID pelo mesmo motivo.
       channel = supabase
-        .channel(`notifications-${uid}`)
+        .channel(`notifications-${uid}-${crypto.randomUUID()}`)
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },

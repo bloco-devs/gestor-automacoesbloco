@@ -2,7 +2,15 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTodasAsDemandas } from "@/modules/demand-access";
-import { FILAS, type FilaId, aplicarFila, contarFilas, agrupar, sinaisUteis } from "@/domain/demand";
+import {
+  FILAS,
+  type FilaId,
+  aplicarFila,
+  contarFilas,
+  agrupar,
+  sinaisUteis,
+  unirGruposHomonimos,
+} from "@/domain/demand";
 import { ListaLente } from "@/modules/workspace-demandas/components/ListaLente";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -40,7 +48,14 @@ export default function DeveloperWorkspace() {
     () => aplicarFila(demandas, fila, user?.id ?? null),
     [demandas, fila, user?.id],
   );
-  const grupos = useMemo(() => agrupar(filtradas, "lista"), [filtradas]);
+  // `unirGruposHomonimos` porque esta tela soma duas fontes: a coluna
+  // "Backlog" de um quadro e o status "backlog" de `demands` são status
+  // diferentes com o mesmo nome, e apareciam como dois blocos "BACKLOG"
+  // seguidos — parecia dado duplicado.
+  const grupos = useMemo(
+    () => unirGruposHomonimos(agrupar(filtradas, "lista")),
+    [filtradas],
+  );
   const sinais = useMemo(() => sinaisUteis(filtradas), [filtradas]);
 
   function selecionarFila(f: FilaId) {

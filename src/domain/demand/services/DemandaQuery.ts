@@ -150,6 +150,41 @@ const ORDEM_CATEGORIA: Record<StatusCategoria, number> = {
   concluida: 3,
 };
 
+/**
+ * Funde grupos que o usuário lê como sendo o mesmo.
+ *
+ * POR QUE ISSO PRECISA EXISTIR
+ * `agruparPorStatus` agrupa por `status.id`, e tem que ser assim: no Board, o
+ * id do grupo É o id da coluna, e é ele que o drag-and-drop usa como destino.
+ * Fundir por rótulo lá quebraria o arrastar.
+ *
+ * Só que uma tela que soma FONTES diferentes (a fila "Hoje" mostra cards de
+ * quadro e demandas do Help Desk juntos) recebe dois status distintos com o
+ * mesmo nome — a coluna "Backlog" de um quadro tem um UUID, o status
+ * "backlog" de `demands` é uma string do enum. Aparecem então dois blocos
+ * "BACKLOG" seguidos na tela, e a pessoa acha que é bug de dado.
+ *
+ * Esta função é o remendo honesto: quem soma fontes chama isso depois de
+ * agrupar; quem trabalha dentro de uma fonte só (Board) não chama, e nada
+ * muda para ele.
+ */
+export function unirGruposHomonimos(grupos: Grupo[]): Grupo[] {
+  const porRotulo = new Map<string, Grupo>();
+  for (const g of grupos) {
+    const chave = g.rotulo.trim().toLocaleLowerCase("pt-BR");
+    const existente = porRotulo.get(chave);
+    if (!existente) {
+      porRotulo.set(chave, { ...g, itens: [...g.itens] });
+      continue;
+    }
+    existente.itens.push(...g.itens);
+    // Só continua "concluído" se as duas metades eram. Um bloco recolhido por
+    // engano esconde trabalho em aberto — o erro mais caro dos dois.
+    existente.concluido = existente.concluido === true && g.concluido === true;
+  }
+  return [...porRotulo.values()].map((g) => ({ ...g, itens: ordenarPorAtencao(g.itens) }));
+}
+
 /** Lista e Board: agrupa por status, na ordem da esteira. */
 export function agruparPorStatus(demandas: Demanda[]): Grupo[] {
   const mapa = new Map<string, Grupo & { ordem: number; categoria: StatusCategoria }>();
