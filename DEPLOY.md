@@ -53,14 +53,18 @@ O que sobra para André é o push, a migração e o uso real.
 | Capa do projeto | `d0d487e` | 26/07 | sim |
 | Sinais que não distinguem nada | `5c20cf5` | 26/07 | sim |
 | Board: sinal repetido e coluna concluída recolhida | `4a010b5` | 27/07 | sim |
+| Fatia 1 — UI: workspace e tela da demanda (11 commits) | `1989e9c`* | 27/07 | sim — validado por André via prints (seleção de projetos, barra fila+lente, board sem herança do Trello, tela em 3 colunas) |
+
+\* commit de topo após o `git am` local; os 11 commits individuais estão no patch `deploy-1-ui-VALIDADO.patch`.
 
 ## Pendente
 
 | Fatia | Patch | Migração | Risco |
 |---|---|---|---|
-| 1 — UI: workspace e tela da demanda | `deploy-1-ui-VALIDADO.patch` | não | baixo — só front-end |
+| 4 — Hoje soma atividades + demands | `deploy-4-hoje-VALIDADO.patch` | não | baixo — só front-end, tela isolada |
 | 2 — Infra de IA | `deploy-2-infra-de-ia.patch` | `20260727120000` | **alto** — muda o modelo padrão |
 | 3 — Fluxo do assistente | `deploy-3-fluxo-do-assistente.patch` | `20260727150000` | alto — muda o que é gravado |
+| 5 — Remover Inbox/Pipeline Kanban do menu | ainda não gerado | não | baixo — só depois da limpeza de dados abaixo |
 
 ### Roteiro — fatia 1
 
@@ -73,6 +77,33 @@ Sem migração. Publicar e conferir:
 - Anexar um print e vê-lo sem baixar.
 
 Dá errado se: alguma lente não renderiza, ou o cabeçalho some ao trocar de lente.
+
+**Confirmado.** Achados à parte, fora do escopo desta fatia: "Hoje" aparecia
+vazio (tela nunca migrada para o modelo de Demanda — vira fatia 4) e
+"Inbox"/"Pipeline Kanban" mostravam dado de teste do fluxo antigo de
+Solicitações (vira limpeza de dado + fatia 5).
+
+### Roteiro — fatia 4
+
+Sem migração. Publicar e conferir:
+
+- Abrir "Hoje": a fila "Todas" mostra as demandas reais (as mesmas que
+  aparecem dentro do projeto "Plano de Ajustes").
+- Trocar para "Minhas": só aparecem demandas com você como responsável.
+- Clicar numa demanda: abre `/demandas/:id` (página cheia, com URL própria),
+  nunca um preview embutido.
+
+Dá errado se: a lista continuar vazia (sinal de que alguma das seis consultas
+— cards/colunas/labels/personas/responsáveis/soluções — está falhando
+silenciosamente) ou se abrir a demanda errada ao clicar.
+
+### Limpeza de dado — Solicitações legado (sem código, sem migração)
+
+Rodar `limpar-solicitacoes-legado.sql` no SQL Editor do Supabase. Apaga todo o
+conteúdo de teste do fluxo antigo (`solicitacoes` e as tabelas que dependem
+dela). Não é reversível — é a limpeza combinada para começar o sistema do
+zero. Depois de rodado, "Inbox" e "Pipeline Kanban" devem aparecer vazios até
+a fatia 5 tirar os dois do menu.
 
 ### Roteiro — fatia 2
 
@@ -113,3 +144,5 @@ que alguma lacuna exigida não está sendo perguntada, e a demanda trava.
   estruturação com regras parecidas mas não idênticas: vão divergir.
 - Busca de semelhantes ainda usa LLM. Sai com embeddings + pgvector.
 - `listDemands()` sem paginação: carrega todas as demandas da organização.
+- Inbox e Pipeline Kanban (fluxo de `solicitacoes`) seguem no menu depois da
+  limpeza de dado — remover é a fatia 5, decidida mas ainda não gerada.
