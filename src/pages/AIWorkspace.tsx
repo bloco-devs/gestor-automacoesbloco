@@ -10,7 +10,7 @@ import { ChatContainer } from "@/components/ai-workspace/ChatContainer";
 import { ConversationInput } from "@/components/ai-workspace/ConversationInput";
 import { ConversationHeader } from "@/components/ai-workspace/ConversationHeader";
 import { ConversationFooter } from "@/components/ai-workspace/ConversationFooter";
-import { PreviewPanel } from "@/components/ai-workspace/PreviewPanel";
+import { PreviewDaDemanda } from "@/modules/helpdesk";
 import { ConfirmDialog } from "@/components/ai-workspace/ConfirmDialog";
 import { KnowledgeSuggestions } from "@/modules/knowledge";
 import { Loader2 } from "lucide-react";
@@ -27,6 +27,7 @@ export default function AIWorkspace() {
     maxUserTurns,
     preview,
     previewScore,
+    demandaDoPreview,
     setoresDisponiveis,
     sistemas,
     sendMessage,
@@ -115,18 +116,18 @@ export default function AIWorkspace() {
         </div>
       )}
 
-      {showPreview && preview && (
-        <PreviewPanel
-          preview={preview}
-          score={previewScore}
-          setores={setoresDisponiveis}
-          sistemas={sistemas}
-          onChange={updatePreview}
-          onConfirm={confirmSubmit}
-          onCancel={handleReset}
-          onBackToChat={goBackToChat}
-          submitting={phase === "submitting"}
-        />
+      {showPreview && demandaDoPreview && (
+        <PreviewDaDemanda
+            nova={demandaDoPreview}
+            sistemaNome={
+              demandaDoPreview.sistemaId
+                ? sistemas.find((s) => s.id === demandaDoPreview.sistemaId)?.nome ?? null
+                : null
+            }
+            onConfirmar={confirmSubmit}
+            onVoltarParaConversa={goBackToChat}
+            enviando={submitting}
+          />
       )}
 
       <ConfirmDialog

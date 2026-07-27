@@ -8,7 +8,7 @@ import { KnowledgeSuggestions } from "@/modules/knowledge";
 import { ChatContainer } from "@/components/ai-workspace/ChatContainer";
 import { ConversationInput } from "@/components/ai-workspace/ConversationInput";
 import { ConversationFooter } from "@/components/ai-workspace/ConversationFooter";
-import { PreviewPanel } from "@/components/ai-workspace/PreviewPanel";
+import { PreviewDaDemanda } from "@/modules/helpdesk";
 import { ThinkingSteps } from "@/components/portal/ThinkingSteps";
 import { RichConfirmation } from "@/components/portal/RichConfirmation";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +28,7 @@ export function PortalQuickCreate() {
     maxUserTurns,
     preview,
     previewScore,
+    demandaDoPreview,
     setoresDisponiveis,
     sistemas,
     sendMessage,
@@ -76,17 +77,17 @@ export function PortalQuickCreate() {
             <ConversationFooter turnsUsed={userTurns} maxTurns={maxUserTurns} phase={phase} />
           </>
         )}
-        {showPreview && preview && !submitting && (
-          <PreviewPanel
-            preview={preview}
-            score={previewScore}
-            setores={setoresDisponiveis}
-            sistemas={sistemas}
-            onChange={updatePreview}
-            onConfirm={confirmSubmit}
-            onCancel={reset}
-            onBackToChat={goBackToChat}
-            submitting={false}
+        {showPreview && demandaDoPreview && !submitting && (
+          <PreviewDaDemanda
+            nova={demandaDoPreview}
+            sistemaNome={
+              demandaDoPreview.sistemaId
+                ? sistemas.find((s) => s.id === demandaDoPreview.sistemaId)?.nome ?? null
+                : null
+            }
+            onConfirmar={confirmSubmit}
+            onVoltarParaConversa={goBackToChat}
+            enviando={submitting}
           />
         )}
         {submitting && preview && (

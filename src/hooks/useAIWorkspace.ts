@@ -4,7 +4,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useSetoresNomes } from "@/hooks/useSetores";
 import { useEcossistemaSistemas } from "@/hooks/useEcossistemaSistemas";
-import { createSolicitacao, salvarMatchEcossistema } from "@/lib/supabaseData";
+import { salvarMatchEcossistema } from "@/lib/supabaseData";
+import { useCriarDemanda } from "@/modules/demand-access";
+import {
+  complexidadeDeEscala,
+  criteriosMinimos,
+  prioridadeDeScore,
+  tipoDeClassificacao,
+  type NovaDemanda,
+} from "@/domain/demand";
 import { computeScoreSolicitante } from "@/lib/scoreV2";
 import type { TipoDemanda } from "@/lib/types";
 import { TIPO_DEMANDA_LABEL } from "@/lib/types";
@@ -57,6 +65,7 @@ export function prioridadeLabel(score: number): string {
 
 export function useAIWorkspace() {
   const navigate = useNavigate();
+  const { criar } = useCriarDemanda();
   const { user } = useAuth();
   const { toast } = useToast();
   const setoresDisponiveis = useSetoresNomes();
@@ -173,51 +182,79 @@ export function useAIWorkspace() {
     setPreview((p) => (p ? { ...p, ...patch } : p));
   }, []);
 
+  /**
+   * A demanda que a conversa produziu, no formato do domínio.
+   *
+   * Fica fora do `confirmSubmit` para que o preview possa mostrar exatamente
+   * o que vai ser criado. Preview que mostra uma coisa e grava outra é pior
+   * que não ter preview.
+   */
+  const demandaDoPreview = useMemo<NovaDemanda | null>(() => {
+    if (!preview) return null;
+    const criterios = criteriosMinimos(
+      preview.titulo,
+      // A conversa ainda não devolve critérios estruturados; quando devolver,
+      // basta trocar esta linha. Até lá o piso garante que nasçam com algum.
+      [],
+    );
+    return {
+      titulo: preview.titulo,
+      resumo: preview.descricao,
+      descricaoTecnica: preview.justificativa ?? "",
+      tipo: tipoDeClassificacao(preview.tipoDemanda, `${preview.titulo} ${preview.descricao}`),
+      complexidade: complexidadeDeEscala(preview.complexidadeDev),
+      prioridade: prioridadeDeScore(previewScore),
+      sistemaId: preview.sistemaAlvoSlug,
+      criteriosDeAceite: criterios,
+      origemIa: true,
+      confianca: preview.intent?.confidence ?? 0.5,
+    };
+  }, [preview, previewScore]);
+
+  /**
+   * Confirmar cria uma DEMANDA, não uma solicitação.
+   *
+   * Antes havia duas esteiras: a conversa gerava uma `solicitacao`, e alguém
+   * depois a transformava em demanda. Essa segunda etapa era triagem manual —
+   * exatamente o que a IA existe para eliminar. E a tabela de solicitações não
+   * é lida por nenhuma lente do Workspace, então o desenvolvedor nunca via o
+   * que a IA tinha produzido.
+   *
+   * Agora o usuário confirma e o trabalho aparece na fila de quem vai fazer.
+   */
   const confirmSubmit = useCallback(async () => {
-    if (!preview || !user) return;
-    if (!preview.setor) {
-      toast({ title: "Setor obrigatório", description: "Selecione o setor no preview.", variant: "destructive" });
-      return;
-    }
+    if (!demandaDoPreview || !user) return;
     setPhase("submitting");
     try {
-      const nova = await createSolicitacao({
-        titulo: preview.titulo,
-        descricao: preview.descricao,
-        softwares: preview.sistemaAlvoSlug
-          ? [sistemas.find((s) => s.id === preview.sistemaAlvoSlug)?.nome ?? preview.sistemaAlvoSlug]
-          : [],
-        frequencia: preview.frequencia,
-        dificuldade: preview.dificuldade,
-        retorno: preview.retorno,
-        setor: preview.setor,
-        solicitanteId: user.id,
-        solicitanteNome: user.nome,
-        email: user.email,
-        tipoDemanda: preview.tipoDemanda,
-        sistemaAlvoSlug: preview.sistemaAlvoSlug,
-      });
+      const { id } = await criar(demandaDoPreview);
+
+      // O casamento com o ecossistema continua acontecendo, em segundo plano:
+      // ele enriquece o contexto e nunca deve segurar a confirmação de quem
+      // acabou de descrever um problema.
       void (async () => {
         const candidatos = await aiOrchestrator.matchEcossistema({
-          titulo: preview.titulo,
-          descricao: preview.descricao,
-          tipo_demanda: preview.tipoDemanda,
-          sistema_alvo_slug: preview.sistemaAlvoSlug,
+          titulo: demandaDoPreview.titulo,
+          descricao: demandaDoPreview.resumo,
+          tipo_demanda: preview?.tipoDemanda ?? null,
+          sistema_alvo_slug: demandaDoPreview.sistemaId,
         });
         if (candidatos.length) {
           try {
-            await salvarMatchEcossistema(nova.id, candidatos as never);
+            await salvarMatchEcossistema(id, candidatos as never);
           } catch { /* silencioso */ }
         }
       })();
-      toast({ title: "Solicitação registrada", description: "Você poderá acompanhar em Minhas Solicitações." });
-      navigate("/minhas-solicitacoes");
+
+      toast({ title: "Demanda criada", description: "Você pode acompanhar o andamento por aqui." });
+      // Vai para a demanda, não para uma lista: a pessoa acabou de descrever
+      // um problema e quer ver o que virou disso.
+      navigate(`/demandas/${id}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro ao salvar";
-      toast({ title: "Falha ao criar solicitação", description: msg, variant: "destructive" });
+      toast({ title: "Falha ao criar a demanda", description: msg, variant: "destructive" });
       setPhase("preview");
     }
-  }, [navigate, preview, sistemas, toast, user]);
+  }, [criar, demandaDoPreview, navigate, preview, toast, user]);
 
   return {
     phase,
@@ -227,6 +264,7 @@ export function useAIWorkspace() {
     maxUserTurns: MAX_USER_TURNS,
     preview,
     previewScore,
+    demandaDoPreview,
     setoresDisponiveis,
     sistemas,
     sendMessage,
