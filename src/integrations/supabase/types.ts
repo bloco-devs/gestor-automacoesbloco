@@ -1306,6 +1306,60 @@ export type Database = {
           },
         ]
       }
+      formularios_ciclo1: {
+        Row: {
+          ator: string
+          id: string
+          n_respondidas: number | null
+          n_total: number | null
+          respondido_em: string
+          respostas: Json
+          user_agent: string | null
+          versao: string
+        }
+        Insert: {
+          ator: string
+          id?: string
+          n_respondidas?: number | null
+          n_total?: number | null
+          respondido_em?: string
+          respostas: Json
+          user_agent?: string | null
+          versao?: string
+        }
+        Update: {
+          ator?: string
+          id?: string
+          n_respondidas?: number | null
+          n_total?: number | null
+          respondido_em?: string
+          respostas?: Json
+          user_agent?: string | null
+          versao?: string
+        }
+        Relationships: []
+      }
+      formularios_ciclo1_paginas: {
+        Row: {
+          atualizado_em: string
+          html: string
+          meta: Json | null
+          slug: string
+        }
+        Insert: {
+          atualizado_em?: string
+          html: string
+          meta?: Json | null
+          slug: string
+        }
+        Update: {
+          atualizado_em?: string
+          html?: string
+          meta?: Json | null
+          slug?: string
+        }
+        Relationships: []
+      }
       ia_uso_log: {
         Row: {
           acao: string | null
