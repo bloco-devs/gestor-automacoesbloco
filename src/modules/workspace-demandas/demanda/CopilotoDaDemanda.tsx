@@ -1,7 +1,8 @@
 import { memo } from "react";
-import { Sparkles } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Blink } from "@/components/blink/Blink";
 import {
   RISCO_ROTULO,
   deQuemEAVez,
@@ -122,7 +123,7 @@ function CopilotoDaDemandaImpl({
       className={cn("flex min-h-0 flex-col overflow-y-auto border-l border-border/60", className)}
     >
       <header className="flex items-center gap-2 border-b border-border/50 px-4 py-2.5">
-        <Sparkles className="size-3.5 shrink-0 text-primary" aria-hidden />
+        <Blink className="size-5 shrink-0" aria-hidden />
         <span className="text-[13px] font-medium">Copiloto</span>
       </header>
 

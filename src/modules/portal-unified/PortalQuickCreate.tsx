@@ -1,5 +1,5 @@
 import { useRef, useState, type KeyboardEvent } from "react";
-import { Loader2, SendHorizontal, Sparkles } from "lucide-react";
+import { Loader2, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAIWorkspace } from "@/hooks/useAIWorkspace";
@@ -13,6 +13,7 @@ import { ThinkingSteps } from "@/components/portal/ThinkingSteps";
 import { RichConfirmation } from "@/components/portal/RichConfirmation";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Blink } from "@/components/blink/Blink";
 
 /**
  * PortalQuickCreate — Campo unificado de nova demanda.
@@ -117,7 +118,8 @@ export function PortalQuickCreate() {
         />
         <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/60 pt-3">
           <p className="hidden text-xs text-muted-foreground sm:block">
-            <Sparkles className="mr-1 inline size-3" /> A IA sugere soluções enquanto você digita.
+            <Blink className="mr-1.5 inline size-4 align-text-bottom" /> O Blink sugere soluções
+            enquanto você digita.
           </p>
           <Button
             type="button"

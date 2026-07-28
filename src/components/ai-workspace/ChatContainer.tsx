@@ -79,7 +79,11 @@ export const ChatContainer = memo(function ChatContainer({ messages, thinking }:
       >
         {messages.length === 0 && !thinking && <EmptyConversation />}
         {messages.map((m, i) => (
-          <ConversationMessage key={i} message={m} />
+          <ConversationMessage
+            key={i}
+            message={m}
+            vivo={m.role === "assistant" && i === messages.length - 1}
+          />
         ))}
         {thinking && (
           <div className="flex">

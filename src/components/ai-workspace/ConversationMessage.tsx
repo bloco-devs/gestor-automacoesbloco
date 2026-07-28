@@ -6,6 +6,16 @@ import type { ChatMsg } from "@/hooks/useAIWorkspace";
 
 interface Props {
   message: ChatMsg;
+  /**
+   * Só a fala mais recente ganha o Blink em movimento.
+   *
+   * Animar todos os avatares faria uma conversa longa virar uma parede de
+   * cabeças flutuando, cada uma no seu tempo — e o olho persegue movimento
+   * antes de ler texto. Mexer só o último é o que a palavra "interagindo"
+   * quer dizer: ele reage ao que acabou de acontecer, não fica performando
+   * o histórico inteiro.
+   */
+  vivo?: boolean;
 }
 
 /**
@@ -29,15 +39,19 @@ function iniciaisDe(nome: string | undefined): string {
     .join("");
 }
 
-export const ConversationMessage = memo(function ConversationMessage({ message }: Props) {
+export const ConversationMessage = memo(function ConversationMessage({ message, vivo }: Props) {
   const { user } = useAuth();
   const isUser = message.role === "user";
 
   return (
     <div className={cn("flex gap-3", isUser ? "justify-end" : "justify-start")}>
       {!isUser && (
-        <span className="mt-1 flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted/60">
-          <Blink className="size-7" />
+        // Mesmo diâmetro da foto de quem está do outro lado: dois
+        // interlocutores com pesos visuais diferentes fazem um parecer
+        // secundário. O Blink ocupa o círculo inteiro, sem moldura — a foto
+        // da pessoa também não tem.
+        <span className="mt-1 size-9 shrink-0 overflow-hidden rounded-full bg-muted/50">
+          <Blink className="size-full" animado={vivo} />
         </span>
       )}
       <div
@@ -51,7 +65,7 @@ export const ConversationMessage = memo(function ConversationMessage({ message }
         {message.content}
       </div>
       {isUser && (
-        <span className="mt-1 size-8 shrink-0 overflow-hidden rounded-full">
+        <span className="mt-1 size-9 shrink-0 overflow-hidden rounded-full">
           {user?.avatarUrl ? (
             <img src={user.avatarUrl} alt={user.nome} className="size-full object-cover" />
           ) : (

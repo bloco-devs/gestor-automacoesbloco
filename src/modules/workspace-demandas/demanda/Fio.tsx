@@ -1,11 +1,12 @@
 import { memo, useState } from "react";
-import { Loader2, Lock, Paperclip, Sparkles } from "lucide-react";
+import { Loader2, Lock, Paperclip } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { Briefing as DadosDoBriefing, Evento } from "@/domain/demand";
 import { Briefing } from "./Briefing";
+import { Blink } from "@/components/blink/Blink";
 
 /**
  * A conversa — o centro da tela.
@@ -89,11 +90,11 @@ function Fala({ evento }: { evento: Evento }) {
   return (
     <li className={cn("flex gap-3 py-3", evento.interna && "rounded-md bg-warning/5 px-2 -mx-2")}>
       {ia ? (
-        <span
-          className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10"
-          aria-label="Assistente"
-        >
-          <Sparkles className="size-3.5 text-primary" aria-hidden />
+        /* Quem fala no fio tem rosto: as pessoas têm avatar, e o Blink
+           tinha um ícone de brilho. Um símbolo abstrato ao lado de fotos faz
+           a IA parecer um carimbo do sistema, não um participante. */
+        <span className="mt-0.5 size-7 shrink-0 overflow-hidden rounded-full bg-muted/50" aria-label="Blink">
+          <Blink className="size-full" />
         </span>
       ) : (
         <Avatar className="mt-0.5 size-7 shrink-0">
