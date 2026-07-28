@@ -109,10 +109,32 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
       };
     }
 
+    /**
+     * DOIS ERROS DE TIPO QUE SE ESCONDIAM UM ATRÁS DO OUTRO
+     *
+     * 1. `getProfilesByIds` devolve um `Map`, e aqui se fazia
+     *    `Object.entries(...)` nele. Um Map não tem propriedades próprias
+     *    enumeráveis: o resultado era SEMPRE um array vazio. Ou seja, este
+     *    laço nunca executou uma única vez desde que foi escrito.
+     *
+     *    O efeito ia longe: `responsaveis` e `autor` nasciam vazios em toda
+     *    demanda da fila global. A tela mostrava "Responsável: Ninguém ainda"
+     *    logo abaixo do fio dizendo "fulano assumiu a demanda", e o painel
+     *    concordava com o campo errado. Parecia dado divergente entre três
+     *    lugares; era o mesmo dado, perdido na tradução.
+     *
+     * 2. O perfil expõe `avatar_url` (com sublinhado), e o cast pedia
+     *    `avatarUrl`. Mesmo com o laço rodando, a foto viria nula sempre —
+     *    um `as` mentindo sobre a forma do objeto, que o compilador aceita
+     *    justamente por ser uma afirmação, não uma verificação.
+     */
     const pessoasPorId = new Map<string, Pessoa>();
-    for (const [id, perfil] of Object.entries(perfisQ.data ?? {})) {
-      const p = perfil as { nome?: string; avatarUrl?: string | null } | undefined;
-      pessoasPorId.set(id, { id, nome: p?.nome ?? "—", avatarUrl: p?.avatarUrl ?? null });
+    for (const [id, perfil] of perfisQ.data ?? new Map()) {
+      pessoasPorId.set(id, {
+        id,
+        nome: perfil?.nome ?? "—",
+        avatarUrl: perfil?.avatar_url ?? null,
+      });
     }
 
     const sistemasPorId = new Map<string, Sistema>();

@@ -77,11 +77,22 @@ const ETIQUETA: Record<Relacionado["genero"], string> = {
   artigo: "Artigo",
 };
 
+/**
+ * O painel eram seis blocos separados por 12px e uma linha fina — na prática,
+ * um texto corrido de assuntos diferentes. Cada bloco responde a uma pergunta
+ * distinta ("o que está acontecendo", "de quem é a vez", "próximo passo"), e
+ * sem intervalo entre elas a pessoa lê tudo como um parágrafo só.
+ *
+ * Mais ar em volta, e o título com peso próprio para funcionar como âncora de
+ * varredura — é por ele que se acha a seção certa sem ler as outras.
+ */
 function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <section className="border-b border-border/50 px-4 py-3 last:border-b-0">
-      <h3 className="text-[11px] uppercase tracking-wide text-muted-foreground">{titulo}</h3>
-      <div className="mt-1.5 text-[13px] leading-relaxed">{children}</div>
+    <section className="border-b border-border/50 px-4 py-4 last:border-b-0">
+      <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/90">
+        {titulo}
+      </h3>
+      <div className="mt-2 text-[13px] leading-relaxed">{children}</div>
     </section>
   );
 }
@@ -190,8 +201,13 @@ function CopilotoDaDemandaImpl({
 
       <Bloco titulo="Próximo passo">
         <p>{proximoPasso}</p>
+        {/* Cada ação vem com o motivo dela logo abaixo. Com 2px entre os dois
+            e 6px entre um par e o seguinte, botão e explicação da ação de
+            baixo ficavam mais perto do que botão e sua própria explicação — o
+            agrupamento visual dizia o contrário do significado. Agora o par
+            respira junto e se separa do vizinho. */}
         {acoes.length > 0 && (
-          <div className="mt-2 flex flex-col gap-1.5">
+          <div className="mt-3 flex flex-col gap-3">
             {acoes.map((a) => (
               <div key={a.tipo}>
                 <Button
@@ -199,11 +215,11 @@ function CopilotoDaDemandaImpl({
                   size="sm"
                   disabled={executando}
                   onClick={() => onAcao(a)}
-                  className="h-7 w-full justify-start text-[12px]"
+                  className="h-8 w-full justify-start text-[12px]"
                 >
                   {a.rotulo}
                 </Button>
-                <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{a.motivo}</p>
+                <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">{a.motivo}</p>
               </div>
             ))}
           </div>

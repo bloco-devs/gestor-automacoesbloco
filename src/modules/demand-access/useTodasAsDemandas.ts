@@ -98,10 +98,15 @@ export function useTodasAsDemandas(): EstadoTodasAsDemandas {
       solucoes: solucoesQ.data ?? [],
     });
 
+    // Mesmo defeito de `useDemandas`, herdado por cópia: `Map` percorrido com
+    // `Object.entries` nunca rende nada, e o perfil expõe `avatar_url`.
     const pessoasPorId = new Map<string, Pessoa>();
-    for (const [id, perfil] of Object.entries(perfisQ.data ?? {})) {
-      const p = perfil as { nome?: string; avatarUrl?: string | null } | undefined;
-      pessoasPorId.set(id, { id, nome: p?.nome ?? "—", avatarUrl: p?.avatarUrl ?? null });
+    for (const [id, perfil] of perfisQ.data ?? new Map()) {
+      pessoasPorId.set(id, {
+        id,
+        nome: perfil?.nome ?? "—",
+        avatarUrl: perfil?.avatar_url ?? null,
+      });
     }
     const sistemasPorId = new Map<string, Sistema>();
     for (const s of solucoesQ.data ?? []) sistemasPorId.set(s.id, { id: s.id, nome: s.titulo });

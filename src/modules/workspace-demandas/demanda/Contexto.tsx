@@ -34,11 +34,26 @@ function data(iso: string | null): string | null {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+/**
+ * RÓTULO E VALOR PRECISAM PESAR DIFERENTE
+ *
+ * Antes os dois vinham quase no mesmo tom e tamanho, empilhados a cada 6px.
+ * O olho lia uma parede cinza e tinha que percorrer item por item para achar
+ * "Responsável" — quando a informação que importa é sempre a da direita.
+ *
+ * Agora o rótulo recua (menor, mais claro, em caixa alta discreta) e o valor
+ * ganha o peso do texto normal. A leitura passa a ser vertical pela coluna
+ * dos valores, com os rótulos servindo de referência quando se procura algo
+ * específico. Mais respiro entre linhas para os valores longos (nomes
+ * completos, datas por extenso) não colarem no de baixo.
+ */
 function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-baseline gap-2 py-1.5">
-      <dt className="w-24 shrink-0 text-[12px] text-muted-foreground">{rotulo}</dt>
-      <dd className="min-w-0 flex-1 text-[13px]">{children}</dd>
+    <div className="flex items-baseline gap-3 py-2">
+      <dt className="w-[5.5rem] shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground/80">
+        {rotulo}
+      </dt>
+      <dd className="min-w-0 flex-1 text-[13px] leading-snug text-foreground">{children}</dd>
     </div>
   );
 }
@@ -78,7 +93,7 @@ function ContextoImpl({
   return (
     <aside aria-label="Contexto da demanda" className={className}>
       {checklist}
-      <dl className="px-4 py-3">
+      <dl className="px-4 py-2">
         <Linha rotulo="Status">{d.status.rotulo}</Linha>
         {capacidades.tipo && d.tipo && <Linha rotulo="Tipo">{TIPO_ROTULO[d.tipo]}</Linha>}
         {d.prioridade && <Linha rotulo="Prioridade">{PRIORIDADE_ROTULO[d.prioridade]}</Linha>}
