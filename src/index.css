@@ -390,6 +390,35 @@
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
+/* ============================================================
+   Rolagem discreta — some quando ninguém está rolando
+   ------------------------------------------------------------
+   No board, a barra horizontal fica sempre visível (no macOS
+   depende da preferência do sistema) e corta a tela ao meio com
+   um traço cinza que não é conteúdo nem moldura: é mobília. Aqui
+   ela só aparece quando o ponteiro está sobre a área rolável ou
+   quando o teclado tem foco dentro dela — nos dois casos a pessoa
+   está de fato navegando aquele eixo.
+
+   Não é `display: none`: esconder a barra de vez tira a única
+   pista de que há mais conteúdo à direita. Ela continua existindo,
+   só espera ser necessária.
+   ============================================================ */
+.rolagem-discreta {
+  scrollbar-color: transparent transparent;
+}
+.rolagem-discreta::-webkit-scrollbar-thumb {
+  background-color: transparent;
+}
+.rolagem-discreta:hover,
+.rolagem-discreta:focus-within {
+  scrollbar-color: hsl(var(--foreground) / 0.22) transparent;
+}
+.rolagem-discreta:hover::-webkit-scrollbar-thumb,
+.rolagem-discreta:focus-within::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--foreground) / 0.18);
+}
+
 /* Some overlays/menus should stay clean */
 [data-radix-scroll-area-viewport]::-webkit-scrollbar {
   width: 8px;

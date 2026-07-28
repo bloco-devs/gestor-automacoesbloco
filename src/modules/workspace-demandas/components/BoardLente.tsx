@@ -276,7 +276,24 @@ function Coluna({
           />
         ))}
         {grupo.itens.length === 0 && (
-          <p className="ds-caption px-2 py-6 text-center text-muted-foreground/70">Vazio</p>
+          /* A palavra "Vazio" repetida em cada coluna vazia vira um coro de
+             ruído — quatro rótulos dizendo o que a ausência de cartão já diz.
+             A área tracejada informa a mesma coisa em silêncio, e ainda mostra
+             onde se pode soltar. O texto só aparece quando há um cartão na
+             mão, que é o único momento em que ele ajuda. */
+          <div
+            aria-hidden
+            className={cn(
+              "mx-0.5 mt-1 rounded-lg border border-dashed transition-colors duration-fast",
+              isOver
+                ? "border-primary/60 bg-primary/5 py-6"
+                : "border-border/50 py-6",
+            )}
+          >
+            {isOver && (
+              <p className="ds-caption text-center text-muted-foreground">Soltar aqui</p>
+            )}
+          </div>
         )}
       </div>
     </section>
@@ -374,7 +391,7 @@ function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMov
 
   return (
     <DndContext sensors={sensores} onDragStart={aoIniciar} onDragEnd={aoTerminar} onDragCancel={() => setArrastando(null)}>
-      <div className="flex gap-4 overflow-x-auto pb-2">
+      <div className="rolagem-discreta flex gap-4 overflow-x-auto pb-2">
         {colunas.map((g) =>
           recolhidas.has(g.id) ? (
             <ColunaRecolhida key={g.id} grupo={g} onExpandir={() => alternar(g.id)} />

@@ -216,7 +216,7 @@ export default function AppLayout() {
         <aside
           aria-label="Navegação principal"
           className={cn(
-            "flex-col border-sidebar-border/70 bg-sidebar shrink-0",
+            "group/sidebar flex-col border-sidebar-border/70 bg-sidebar shrink-0",
             isMobile
               ? "fixed inset-y-0 left-0 z-50 w-72 flex border-r shadow-elev-3"
               : "hidden md:flex relative border-r",
@@ -399,13 +399,20 @@ export default function AppLayout() {
             aria-label={isMobile ? "Fechar menu" : mini ? "Expandir barra lateral" : "Recolher barra lateral"}
             aria-expanded={isMobile ? undefined : !mini}
             className={cn(
-              "absolute z-10 items-center justify-center rounded transition-colors flex",
-              "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+              // Era um ícone de 20px com 40% de opacidade encostado na borda:
+              // um controle que a pessoa só encontra por acidente. Agora tem
+              // alvo de 28px, aparece de leve no hover da barra e ganha
+              // contorno ao ser focado pelo teclado — o mesmo botão, achável.
+              "absolute z-10 flex items-center justify-center rounded-md",
+              "text-muted-foreground/50 opacity-0 transition-all duration-fast ease-standard",
+              "group-hover/sidebar:opacity-100 focus-visible:opacity-100",
+              "hover:bg-muted/70 hover:text-foreground",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
               isMobile
-                ? "top-3 right-3 size-8"
+                ? "top-3 right-3 size-8 opacity-100"
                 : mini
-                  ? "bottom-2 left-1/2 -translate-x-1/2 size-6 text-muted-foreground/50"
-                  : "top-2 right-1 size-5 text-muted-foreground/40",
+                  ? "bottom-2 left-1/2 size-7 -translate-x-1/2"
+                  : "top-3 right-2 size-7",
             )}
           >
             {isMobile ? (

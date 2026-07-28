@@ -17,10 +17,25 @@ import { cn } from "@/lib/utils";
 
 const LS_FILA = "hoje:fila:v1";
 
+/**
+ * A TELA CHAMA "HOJE" — ENTÃO ELA NÃO ABRE COM TUDO
+ *
+ * Abrindo em "Todas", a primeira coisa que aparecia eram 79 demandas: o
+ * backlog somado de todos os projetos, ordenado por status, com trabalho de
+ * duas semanas atrás no topo. Isso é um arquivo, não um dia. A pessoa
+ * precisava filtrar para chegar ao próprio trabalho — ou seja, a tela abria
+ * errada por padrão e cobrava um clique para ficar certa.
+ *
+ * "Minhas" é a resposta à pergunta que o nome da tela faz. As outras filas
+ * continuam a um clique, e a escolha é lembrada — quem prefere ver tudo só
+ * precisa dizer isso uma vez.
+ */
+const FILA_PADRAO: FilaId = "minhas";
+
 function lerFilaSalva(): FilaId {
-  if (typeof window === "undefined") return "todas";
+  if (typeof window === "undefined") return FILA_PADRAO;
   const v = window.localStorage.getItem(LS_FILA);
-  return FILAS.some((f) => f.id === v) ? (v as FilaId) : "todas";
+  return FILAS.some((f) => f.id === v) ? (v as FilaId) : FILA_PADRAO;
 }
 
 /**
@@ -112,11 +127,18 @@ export default function DeveloperWorkspace() {
             sinais={sinais}
             onAbrir={abrir}
             vazio={{
-              titulo: fila === "todas" ? "Nada por aqui ainda" : "Nada nesta fila",
+              titulo:
+                fila === "minhas"
+                  ? "Nada atribuído a você"
+                  : fila === "todas"
+                    ? "Nada por aqui ainda"
+                    : "Nada nesta fila",
               descricao:
-                fila === "todas"
-                  ? "Nenhuma demanda em nenhum projeto no momento."
-                  : "Troque de fila ou espere novas demandas chegarem.",
+                fila === "minhas"
+                  ? "Veja \u201cNão atribuídas\u201d para assumir algo, ou \u201cEm risco\u201d para o que está travado."
+                  : fila === "todas"
+                    ? "Nenhuma demanda em nenhum projeto no momento."
+                    : "Troque de fila ou espere novas demandas chegarem.",
             }}
           />
         )}

@@ -36,7 +36,10 @@ function Bloco({
   onAbrir: (id: string) => void;
   mostrarStatusNaLinha?: boolean;
 }) {
-  const [aberto, setAberto] = useState(true);
+  // Trabalho terminado começa recolhido — o mesmo critério do board. Num
+  // recorte com 26 concluídas e 4 em aberto, deixar tudo expandido faz o que
+  // importa nascer abaixo da dobra.
+  const [aberto, setAberto] = useState(!grupo.concluido);
   const painelId = `grupo-${grupo.id}`;
 
   return (
