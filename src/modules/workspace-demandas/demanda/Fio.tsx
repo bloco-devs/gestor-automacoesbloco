@@ -136,7 +136,7 @@ interface Props {
    *
    * Aqui ele é o que sempre foi: a primeira fala.
    */
-  pedido?: { texto: string; autor: AutorDoEvento | null; em: string } | null;
+  pedido?: { texto: string; autor: Evento["autor"]; em: string } | null;
   /** O resumo de 30 segundos. Ele aparece antes da primeira mensagem. */
   briefing: DadosDoBriefing;
   podeComentar: boolean;
