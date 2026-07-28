@@ -143,8 +143,16 @@ function Cartao({
       }}
       aria-label={sobreposicao ? undefined : `Abrir demanda ${d.titulo}`}
       className={cn(
-        "rounded-md border border-border/60 bg-card px-2 py-1.5 outline-none",
-        "transition-colors duration-fast ease-standard hover:border-border hover:bg-muted/40",
+        // PROFUNDIDADE POR SUPERFÍCIE, NÃO POR SOMBRA
+        // O cartão era um retângulo de borda fina sobre um fundo quase igual —
+        // num board com seis colunas, a tela lia como uma grade de linhas, não
+        // como objetos que se pega e move. Agora ele tem superfície própria e
+        // sobe de leve no hover: a sombra só aparece quando o cursor está nele,
+        // que é quando ele de fato pode ser pego.
+        "rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
+        "shadow-[0_1px_2px_hsl(var(--foreground)/0.04)]",
+        "transition-[background-color,border-color,box-shadow,transform] duration-fast ease-standard",
+        "hover:-translate-y-px hover:border-border hover:shadow-elev-2",
         arrastavel ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         "focus-visible:ring-2 focus-visible:ring-ring/50",
         isDragging && !sobreposicao && "opacity-40",
@@ -157,7 +165,12 @@ function Cartao({
       <div className="flex items-start gap-2">
         <span
           aria-hidden
-          className={cn("mt-0.5 h-8 w-[3px] shrink-0 rounded-full", d.risco ? COR_RISCO[d.risco] : "bg-transparent")}
+          className={cn(
+            // Ancorada no topo e do tamanho do título: ela marca a linha que
+            // importa, em vez de flutuar ao lado de um bloco de altura variável.
+            "mt-0.5 h-9 w-1 shrink-0 rounded-full",
+            d.risco ? COR_RISCO[d.risco] : "bg-transparent",
+          )}
           title={d.risco ? RISCO_ROTULO[d.risco] : undefined}
         />
         <div className="min-w-0 flex-1">
@@ -246,7 +259,19 @@ function Coluna({
         // que deixava o board mais curto que a área disponível. O resultado era
         // a barra de rolagem horizontal aparecendo no meio da tela, com um vazio
         // enorme embaixo dela.
-        "flex h-full min-h-[16rem] w-[15rem] shrink-0 flex-col rounded-md",
+        // COLUNA ELÁSTICA — o fim do "grid vazio"
+        // Com largura fixa de 15rem, seis colunas ocupavam 90rem: numa tela de
+        // 1440px sobrava um terço de cinza à direita, e o board parecia um
+        // formulário mal centralizado. Agora ela cresce para dividir o espaço
+        // disponível e para de crescer aos 22rem — acima disso o cartão fica
+        // largo demais e o título ganha uma linha de 90 caracteres, que é pior
+        // de ler que duas curtas.
+        //
+        // `basis-60` é o piso: quando as colunas não couberem, elas param de
+        // encolher e o board rola na horizontal, que é o comportamento certo
+        // para uma esteira longa.
+        "flex h-full min-h-[16rem] flex-1 basis-60 flex-col rounded-lg",
+        "min-w-[15rem] max-w-[22rem]",
         "transition-colors duration-base ease-standard",
         // O alvo de drop se anuncia por fundo, não por anel: anel em volta de
         // uma coluna sem corpo desenharia uma caixa que não existe.
@@ -254,11 +279,16 @@ function Coluna({
       )}
       aria-label={`${grupo.rotulo}, ${grupo.itens.length} demandas`}
     >
-      <header className="mb-2 flex items-center gap-2 border-b border-border/60 px-1 pb-1.5">
+      {/* A contagem vira pastilha em vez de número solto: ela é um dado
+          diferente do nome da coluna, e sem forma própria os dois se leem como
+          uma frase só ("BACKLOG 8"). */}
+      <header className="mb-2 flex items-center gap-2 border-b border-border/60 px-1.5 pb-2">
         <h2 className="truncate text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
           {grupo.rotulo}
         </h2>
-        <span className="text-[12px] tabular-nums text-muted-foreground/70">{grupo.itens.length}</span>
+        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+          {grupo.itens.length}
+        </span>
         {onRecolher && (
           <button
             type="button"
@@ -270,7 +300,7 @@ function Coluna({
           </button>
         )}
       </header>
-      <div className="flex-1 space-y-1 overflow-y-auto px-0.5 pb-1">
+      <div className="rolagem-discreta flex-1 space-y-2 overflow-y-auto px-1 pb-2">
         {grupo.itens.map((d) => (
           <Cartao
             key={d.id}
@@ -439,7 +469,7 @@ function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMov
       </div>
       <DragOverlay dropAnimation={null}>
         {arrastando ? (
-          <div className="w-[15rem]">
+          <div className="w-[17rem]">
             <Cartao demanda={arrastando} capacidades={capacidades} sinais={sinais} arrastavel sobreposicao />
           </div>
         ) : null}
