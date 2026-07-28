@@ -243,19 +243,24 @@ function SidebarNavItem({
         title={mini ? undefined : item.label}
         className={({ isActive }) =>
           cn(
-            "group relative flex items-center rounded-md text-[13px] leading-5 min-w-0",
-            "transition-colors duration-fast ease-standard",
+            "group relative flex min-w-0 items-center rounded-lg text-[13px] leading-5",
+            // Cor E transform na transição: o item afunda 1px ao ser pressionado,
+            // que é o retorno tátil que separa um botão de um link decorado.
+            "transition-[background-color,color] duration-fast ease-standard active:translate-y-px",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
             // Recolhida, o alvo é um quadrado centrado pelo próprio eixo. Antes
             // ele herdava o alinhamento do container e ficava fora do centro por
             // alguns pixels — e um menu inteiro desalinhado lê-se como descuido
             // antes de qualquer outra coisa.
-            mini ? "mx-auto size-9 justify-center" : "gap-2.5 px-2 py-1.5",
+            mini ? "mx-auto size-9 justify-center" : "h-8 gap-2.5 px-2.5",
             isActive
-              ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+              ? // O ativo ganha superfície cheia e texto em peso médio. Antes o
+                // contraste vinha só de um fundo a 100% de um tom quase igual ao
+                // da barra — bastava o monitor estar mal calibrado para sumir.
+                "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
               : cn(
-                  "hover:bg-sidebar-accent/50",
-                  dim ? "text-sidebar-foreground/60" : "text-sidebar-foreground/85",
+                  "hover:bg-sidebar-accent/60",
+                  dim ? "text-sidebar-foreground/55" : "text-sidebar-foreground/80",
                 ),
           )
         }
@@ -263,16 +268,22 @@ function SidebarNavItem({
       >
         {({ isActive }: { isActive: boolean }) => (
           <>
-            {isActive && (
+            {/* A barra fica FORA da caixa do item (-left-2), encostada na borda
+                da barra lateral. Dentro dela, competia com o próprio fundo do
+                item ativo e virava um detalhe redundante; encostada na borda,
+                é o sinal que a visão periférica capta sem foco direto. */}
+            {isActive && !mini && (
               <span
                 aria-hidden
-                className={cn(
-                  "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-primary",
-                  mini && "left-0",
-                )}
+                className="absolute -left-2 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-primary"
               />
             )}
-            <Icon className={cn("size-4 shrink-0", isActive ? "opacity-100" : "opacity-70")} />
+            <Icon
+              className={cn(
+                "size-[17px] shrink-0 transition-opacity duration-fast",
+                isActive ? "opacity-100" : "opacity-60 group-hover:opacity-90",
+              )}
+            />
             {!mini && <span className="truncate flex-1">{item.label}</span>}
           </>
         )}

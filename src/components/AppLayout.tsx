@@ -36,7 +36,7 @@ import { attachGlobalErrorHandlers } from "@/modules/errors";
 
 const SIDEBAR_MIN = 176;
 const SIDEBAR_MAX = 480;
-const SIDEBAR_DEFAULT = 208;
+const SIDEBAR_DEFAULT = 224;
 const SIDEBAR_STORAGE_KEY = "app:sidebarWidth";
 const SIDEBAR_MINI_KEY = "app:sidebarMini";
 const SIDEBAR_MINI_WIDTH = 56;
@@ -202,7 +202,7 @@ export default function AppLayout() {
 
   return (
     <HeaderContextoProvider>
-    <div className="min-h-screen flex">
+    <div className="flex h-screen overflow-hidden bg-sidebar">
       {isMobile && mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 md:hidden"
@@ -216,15 +216,19 @@ export default function AppLayout() {
           className={cn(
             "group/sidebar flex-col border-sidebar-border/70 bg-sidebar shrink-0",
             isMobile
-              ? "fixed inset-y-0 left-0 z-50 w-72 flex border-r shadow-elev-3"
-              : "hidden md:flex relative border-r",
+              ? "fixed inset-y-0 left-0 z-50 flex w-72 border-r shadow-elev-3"
+              : "relative hidden md:flex",
           )}
           style={isMobile ? undefined : { width: mini ? SIDEBAR_MINI_WIDTH : sidebarWidth }}
         >
+          {/* Alinhado com a altura do header do conteúdo (h-11 + margem), para
+              que logo e breadcrumb fiquem na mesma linha de base. Cabeçalhos
+              desalinhados por poucos pixels são o tipo de coisa que ninguém
+              nomeia e todo mundo sente. */}
           <div
             className={cn(
-              "flex items-center min-w-0 py-4",
-              mini && !isMobile ? "justify-center px-0" : "gap-2.5 px-4",
+              "flex h-[3.125rem] shrink-0 items-center min-w-0",
+              mini && !isMobile ? "justify-center px-0" : "gap-2.5 px-3.5",
             )}
           >
             <img
@@ -254,8 +258,8 @@ export default function AppLayout() {
           */}
           <nav
             className={cn(
-              "min-h-0 shrink overflow-y-auto py-1",
-              mini && !isMobile ? "px-2" : "px-2.5",
+              "min-h-0 shrink space-y-0.5 overflow-y-auto py-1",
+              mini && !isMobile ? "px-2" : "px-3",
             )}
             aria-label="Menu"
           >
@@ -319,9 +323,18 @@ export default function AppLayout() {
         </aside>
       )}
 
-      <main className="flex-1 min-w-0 relative">
+      {/* O conteúdo flutua sobre a barra: superfície própria, canto arredondado
+          do lado que encosta nela, e um fio de borda. É o que transforma o
+          vazio da lateral em moldura da janela em vez de painel sem conteúdo. */}
+      <main
+        className={cn(
+          "relative min-w-0 flex-1 overflow-hidden",
+          "md:my-1.5 md:mr-1.5 md:rounded-xl md:border md:border-border/70 md:bg-background",
+          "md:shadow-elev-1",
+        )}
+      >
         {/* Header desktop: breadcrumb automático + trigger de sidebar */}
-        <header className="surface-glass hidden md:flex sticky top-0 z-30 h-10 items-center gap-3 border-b px-5">
+        <header className="surface-glass sticky top-0 z-30 hidden h-11 items-center gap-3 border-b border-border/60 px-4 md:flex">
           {/* Uma faixa só. Quando a página tem contexto próprio — o projeto
               aberto, seus números — ele ocupa este espaço no lugar do
               breadcrumb, que diria a mesma coisa com menos precisão. */}
