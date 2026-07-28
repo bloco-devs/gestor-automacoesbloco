@@ -126,6 +126,17 @@ function Fala({ evento }: { evento: Evento }) {
 
 interface Props {
   eventos: Evento[];
+  /**
+   * O pedido original, como quem abriu escreveu.
+   *
+   * Ele vivia num painel à parte, no fim da coluna de detalhes — abaixo de
+   * onze campos. Era o texto mais importante da tela, no lugar de menor
+   * prioridade visual, e obrigava a cruzar duas leituras para entender uma
+   * conversa que começava pela metade.
+   *
+   * Aqui ele é o que sempre foi: a primeira fala.
+   */
+  pedido?: { texto: string; autor: AutorDoEvento | null; em: string } | null;
   /** O resumo de 30 segundos. Ele aparece antes da primeira mensagem. */
   briefing: DadosDoBriefing;
   podeComentar: boolean;
@@ -136,7 +147,7 @@ interface Props {
   vazio: string;
 }
 
-function FioImpl({ eventos, briefing, podeComentar, podeNotaInterna, onComentar, onAbrirAnexo, vazio }: Props) {
+function FioImpl({ eventos, pedido, briefing, podeComentar, podeNotaInterna, onComentar, onAbrirAnexo, vazio }: Props) {
   const [texto, setTexto] = useState("");
   const [interna, setInterna] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -159,7 +170,21 @@ function FioImpl({ eventos, briefing, podeComentar, podeNotaInterna, onComentar,
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
         <Briefing briefing={briefing} falas={eventos.filter((e) => e.tipo === "fala").length} />
         <ol>
-        {eventos.length === 0 && <li className="py-8 text-center text-[13px] text-muted-foreground">{vazio}</li>}
+        {pedido && (
+          <Fala
+            evento={{
+              id: "pedido-original",
+              tipo: "fala",
+              autor: pedido.autor,
+              em: pedido.em,
+              texto: pedido.texto,
+              interna: false,
+            }}
+          />
+        )}
+        {eventos.length === 0 && !pedido && (
+          <li className="py-8 text-center text-[13px] text-muted-foreground">{vazio}</li>
+        )}
         {eventos.map((e) => {
           if (e.tipo === "fala") return <Fala key={e.id} evento={e} />;
           if (e.tipo === "anexo") return <Anexo key={e.id} evento={e} onAbrir={onAbrirAnexo} />;

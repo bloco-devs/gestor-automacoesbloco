@@ -2,8 +2,6 @@ import { memo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   COMPLEXIDADE_ROTULO,
-  PRIORIDADE_ROTULO,
-  TIPO_ROTULO,
   participantes,
   type Capacidades,
   type Demanda,
@@ -78,25 +76,31 @@ function ContextoImpl({
   demanda: d,
   capacidades,
   eventos,
-  checklist,
   className,
 }: {
   demanda: Demanda;
   capacidades: Capacidades;
   eventos: Evento[];
-  /** A definição de pronto vem antes dos metadados: ela é o trabalho. */
-  checklist?: React.ReactNode;
   className?: string;
 }) {
   const gente = participantes(eventos);
 
   return (
-    <aside aria-label="Contexto da demanda" className={className}>
-      {checklist}
+    <aside aria-label="Detalhes da demanda" className={className}>
+      {/*
+        O QUE SAIU DAQUI, E POR QUE
+        Status, Tipo e Prioridade apareciam neste painel E no cabeçalho da
+        tela. Não era redundância útil: era a mesma informação em dois lugares,
+        ensinando a pessoa a não confiar em nenhum dos dois quando eles
+        divergissem — e eles divergiram.
+
+        A descrição saiu para o fio. Ela é literalmente o que o solicitante
+        disse; ficar num painel à parte obrigava a cruzar duas leituras para
+        entender uma conversa que começava pela metade.
+
+        Sobrou o que de fato é consulta: quem, quando, onde.
+      */}
       <dl className="px-4 py-2">
-        <Linha rotulo="Status">{d.status.rotulo}</Linha>
-        {capacidades.tipo && d.tipo && <Linha rotulo="Tipo">{TIPO_ROTULO[d.tipo]}</Linha>}
-        {d.prioridade && <Linha rotulo="Prioridade">{PRIORIDADE_ROTULO[d.prioridade]}</Linha>}
         {capacidades.complexidade && d.complexidade && (
           <Linha rotulo="Complexidade">{COMPLEXIDADE_ROTULO[d.complexidade]}</Linha>
         )}
@@ -136,12 +140,6 @@ function ContextoImpl({
         )}
       </dl>
 
-      {d.descricao && (
-        <div className="border-t border-border/50 px-4 py-3">
-          <h3 className="text-[11px] uppercase tracking-wide text-muted-foreground">Descrição</h3>
-          <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed">{d.descricao}</p>
-        </div>
-      )}
     </aside>
   );
 }

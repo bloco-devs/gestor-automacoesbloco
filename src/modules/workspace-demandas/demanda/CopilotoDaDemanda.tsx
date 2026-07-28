@@ -138,6 +138,44 @@ function CopilotoDaDemandaImpl({
         <span className="text-[13px] font-medium">Blink</span>
       </header>
 
+      {/*
+        A RECOMENDAÇÃO VEM PRIMEIRO, E COM PESO
+        Antes ela era o quarto de cinco blocos idênticos — para chegar nela,
+        a pessoa lia diagnóstico, vez e relacionados. Um copiloto que faz você
+        ler três parágrafos antes de dizer o que fazer é um relatório.
+
+        Agora é a primeira coisa da coluna, sobre superfície própria e com a
+        ação a um clique. O diagnóstico continua existindo logo abaixo, mas
+        como apoio à decisão — que é o papel dele.
+      */}
+      <section className="border-b border-border/50 bg-muted/30 px-4 py-3.5">
+        <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Próximo passo
+        </h3>
+        <p className="mt-1.5 text-[14px] font-medium leading-snug text-foreground">{proximoPasso}</p>
+
+        {/* Cada ação vem com o motivo dela logo abaixo — o par respira junto e
+            se separa do vizinho, senão o agrupamento visual diz o contrário do
+            significado. */}
+        {acoes.length > 0 && (
+          <div className="mt-3 flex flex-col gap-3">
+            {acoes.map((a) => (
+              <div key={a.tipo}>
+                <Button
+                  size="sm"
+                  disabled={executando}
+                  onClick={() => onAcao(a)}
+                  className="h-8 w-full justify-start text-[12px]"
+                >
+                  {a.rotulo}
+                </Button>
+                <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">{a.motivo}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       <Bloco titulo="O que está acontecendo">
         {d.concluida ? (
           <div className="space-y-2">
@@ -199,32 +237,6 @@ function CopilotoDaDemandaImpl({
         </Bloco>
       )}
 
-      <Bloco titulo="Próximo passo">
-        <p>{proximoPasso}</p>
-        {/* Cada ação vem com o motivo dela logo abaixo. Com 2px entre os dois
-            e 6px entre um par e o seguinte, botão e explicação da ação de
-            baixo ficavam mais perto do que botão e sua própria explicação — o
-            agrupamento visual dizia o contrário do significado. Agora o par
-            respira junto e se separa do vizinho. */}
-        {acoes.length > 0 && (
-          <div className="mt-3 flex flex-col gap-3">
-            {acoes.map((a) => (
-              <div key={a.tipo}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={executando}
-                  onClick={() => onAcao(a)}
-                  className="h-8 w-full justify-start text-[12px]"
-                >
-                  {a.rotulo}
-                </Button>
-                <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">{a.motivo}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </Bloco>
 
       {!d.concluida && d.responsaveis.length === 0 && (
         <Bloco titulo="Quem poderia assumir">

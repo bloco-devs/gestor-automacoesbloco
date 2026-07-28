@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, PanelRightClose, PanelRightOpen, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
@@ -29,6 +29,8 @@ import {
   type Pessoa,
 } from "@/domain/demand";
 import { Contexto } from "./demanda/Contexto";
+import { Secao } from "./demanda/Secao";
+import { Blink } from "@/components/blink/Blink";
 import { Progresso } from "./demanda/Progresso";
 import { Checklist } from "./demanda/Checklist";
 import { Anexos } from "./demanda/Anexos";
@@ -110,6 +112,24 @@ export default function DemandaDetalhe() {
   const conhecimento = useConhecimento(demanda ?? null, demandas, !!demanda);
   const { publicar } = usePublicarArtigo();
   const [rascunhoAberto, setRascunhoAberto] = useState(false);
+
+  /**
+   * O painel recolhe, e a escolha é lembrada.
+   *
+   * Aberto por padrão porque é onde mora a recomendação — esconder isso do
+   * primeiro segundo tiraria justamente o que puxa a ação. Mas quem está
+   * conduzindo uma conversa longa quer a largura toda, e não deveria pagar
+   * essa escolha de novo a cada demanda que abre.
+   */
+  const [painel, setPainel] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return window.localStorage.getItem("demanda:painel") !== "0";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("demanda:painel", painel ? "1" : "0");
+  }, [painel]);
 
   /**
    * O rascunho de artigo, montado da demanda resolvida.
@@ -207,12 +227,30 @@ export default function DemandaDetalhe() {
 
   useContextoDeHeader(
     demanda ? (
-      <span className="flex min-w-0 items-center gap-2">
-        <span className="shrink-0 tabular-nums text-[12px] text-muted-foreground">{demanda.referencia}</span>
-        <span className="truncate text-[13px] font-medium">{demanda.titulo}</span>
-      </span>
+      <>
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="shrink-0 tabular-nums text-[12px] text-muted-foreground">{demanda.referencia}</span>
+          <span className="truncate text-[13px] font-medium">{demanda.titulo}</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => setPainel((v) => !v)}
+          aria-label={painel ? "Ocultar o painel do Blink" : "Mostrar o painel do Blink"}
+          aria-pressed={painel}
+          title={painel ? "Ocultar o painel" : "Mostrar o painel"}
+          className={cn(
+            "ml-auto hidden shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs lg:inline-flex",
+            "transition-colors duration-fast ease-standard",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+            painel ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Blink className="size-4" aria-hidden />
+          {painel ? <PanelRightClose className="size-3.5" /> : <PanelRightOpen className="size-3.5" />}
+        </button>
+      </>
     ) : null,
-    [demanda?.id, demanda?.referencia, demanda?.titulo],
+    [demanda?.id, demanda?.referencia, demanda?.titulo, painel],
   );
 
   if (carregando) {
@@ -311,37 +349,33 @@ export default function DemandaDetalhe() {
         {progressao && <Progresso progressao={progressao} className="mt-2.5 pl-9" />}
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)_17rem]">
-        <Contexto
-          demanda={d}
-          capacidades={capacidades}
-          eventos={eventos}
-          checklist={
-            <>
-            <Anexos
-              anexos={anexos.anexos}
-              podeAnexar={anexos.podeAnexar}
-              enviando={anexos.enviando}
-              onEnviar={(arquivos) => void anexos.enviar(arquivos)}
-            />
-            <Checklist
-              itens={checklist.itens}
-              feitos={checklist.feitos}
-              total={checklist.total}
-              podeEditar={daEquipe && capacidades.progresso}
-              onMarcar={(itemId, feito) => void checklist.marcar(itemId, feito)}
-              onAcrescentar={(texto) => void checklist.acrescentar(texto)}
-              onRemover={(itemId) => void checklist.remover(itemId)}
-            />
-            </>
-          }
-          className="min-h-0 overflow-y-auto border-b border-border/60 lg:border-b-0 lg:border-r"
-        />
+      {/*
+        DUAS COLUNAS, NÃO TRÊS
+        Eram `15rem | resto | 17rem` — 512px fixos de moldura. Num notebook de
+        1440px, a conversa ficava com menos da metade da tela numa página cujo
+        assunto É a conversa. A coluna de detalhes deixou de existir como
+        coluna: virou uma seção dentro do painel da direita, fechada por
+        padrão.
 
+        O painel recolhe. Aberto por padrão, porque é onde mora a recomendação
+        do Blink — a resposta a "o que faço agora". Mas some com um clique
+        quando a pessoa só quer conversar, e a escolha é lembrada.
+      */}
+      <div
+        className={cn(
+          "grid min-h-0 flex-1 grid-cols-1",
+          painel ? "lg:grid-cols-[minmax(0,1fr)_20rem]" : "lg:grid-cols-1",
+        )}
+      >
         <main className="min-h-0 min-w-0">
           {capacidades.comentarios ? (
             <Fio
               eventos={eventos}
+              pedido={
+                d.descricao
+                  ? { texto: d.descricao, autor: d.autor ? { ...d.autor, ia: false } : null, em: d.criadaEm }
+                  : null
+              }
               briefing={briefing}
               podeComentar={fio.podeComentar}
               podeNotaInterna={daEquipe}
@@ -356,6 +390,8 @@ export default function DemandaDetalhe() {
           )}
         </main>
 
+        {painel && (
+        <div className="flex min-h-0 flex-col overflow-y-auto rolagem-discreta border-l border-border/60">
         <CopilotoDaDemanda
           demanda={d}
           eventos={eventos}
@@ -372,8 +408,40 @@ export default function DemandaDetalhe() {
           onAcao={(a) => void executarAcao(a)}
           onGerarArtigo={d.concluida && rascunho ? () => setRascunhoAberto(true) : undefined}
           executando={acoesDemanda.executando}
-          className="hidden xl:flex"
+          className="border-l-0"
         />
+
+        {/* Critérios e anexos ficam VISÍVEIS quando existem — não são consulta.
+            O critério é o contrato do que significa "pronto"; o anexo costuma
+            explicar em dois segundos o que três parágrafos tentam descrever.
+            Esconder os dois atrás de um clique seria trocar excesso de
+            informação por excesso de cliques. */}
+        <Checklist
+          itens={checklist.itens}
+          feitos={checklist.feitos}
+          total={checklist.total}
+          podeEditar={daEquipe && capacidades.progresso}
+          onMarcar={(itemId, feito) => void checklist.marcar(itemId, feito)}
+          onAcrescentar={(texto) => void checklist.acrescentar(texto)}
+          onRemover={(itemId) => void checklist.remover(itemId)}
+        />
+
+        <Anexos
+          anexos={anexos.anexos}
+          podeAnexar={anexos.podeAnexar}
+          enviando={anexos.enviando}
+          onEnviar={(arquivos) => void anexos.enviar(arquivos)}
+        />
+
+        {/* A ÚNICA seção fechada. Quem, quando, sistema, etiquetas: dados que
+            se consulta uma vez por demanda e que não mudam o que fazer agora.
+            Uma seção só — não dez — porque trocar leitura por cliques não
+            reduz esforço, apenas o transfere. */}
+        <Secao id="detalhes" titulo="Detalhes">
+          <Contexto demanda={d} capacidades={capacidades} eventos={eventos} className="-mx-4" />
+        </Secao>
+        </div>
+        )}
       </div>
 
       {rascunho && (
