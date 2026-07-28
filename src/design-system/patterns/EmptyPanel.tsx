@@ -19,11 +19,32 @@ export interface EmptyPanelProps {
  */
 export function EmptyPanel({ icon: Icon, title, description, action, className }: EmptyPanelProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center gap-2 px-6 py-14 text-center", className)}>
-      {Icon ? <Icon className="size-5 text-muted-foreground/60" aria-hidden /> : null}
-      <div className="ds-body-strong">{title}</div>
-      {description ? <p className="ds-caption max-w-sm text-muted-foreground">{description}</p> : null}
-      {action ? <div className="pt-2">{action}</div> : null}
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center gap-3 px-6 py-16 text-center",
+        // A entrada suave existe por um motivo prático: o vazio quase sempre
+        // chega DEPOIS de um skeleton. Sem transição, o esqueleto some e o
+        // texto aparece no mesmo quadro — o olho lê como falha de renderização,
+        // não como resposta.
+        "animate-in fade-in duration-base",
+        className,
+      )}
+    >
+      {Icon ? (
+        // O ícone ganha um círculo de superfície. Solto, ele boiava no meio do
+        // branco e parecia um resto de layout; contido, vira um objeto
+        // deliberado — a diferença entre "não há nada" e "esqueceram algo aqui".
+        <span className="flex size-10 items-center justify-center rounded-full bg-muted/60">
+          <Icon className="size-[18px] text-muted-foreground/70" aria-hidden />
+        </span>
+      ) : null}
+      <div className="space-y-1">
+        <div className="ds-body-strong">{title}</div>
+        {description ? (
+          <p className="ds-caption mx-auto max-w-sm text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      {action ? <div className="pt-1">{action}</div> : null}
     </div>
   );
 }
