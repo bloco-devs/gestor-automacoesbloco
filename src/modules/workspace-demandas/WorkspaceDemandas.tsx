@@ -76,7 +76,7 @@ export default function WorkspaceDemandas() {
     setParams(proximo, { replace: true });
   };
 
-  const { demandas, projeto, capacidades, carregando, erro } = useDemandas(escopo);
+  const { demandas, projeto, etapas, capacidades, carregando, erro } = useDemandas(escopo);
   const acoes = useAcoesDemanda(escopo);
 
   const contagens = useMemo(() => contarFilas(demandas, user?.id ?? null), [demandas, user?.id]);
@@ -210,6 +210,7 @@ export default function WorkspaceDemandas() {
             {lente === "board" ? (
               <BoardLente
                 grupos={grupos}
+                etapas={etapas}
                 capacidades={capacidadesVisiveis}
                 sinais={sinais}
                 onAbrir={abrir}

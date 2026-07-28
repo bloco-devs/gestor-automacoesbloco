@@ -22,6 +22,7 @@ import {
   type Grupo,
   type SinaisUteis,
 } from "@/domain/demand";
+import type { EtapaDaFonte } from "@/modules/demand-access";
 
 /**
  * A lente de board.
@@ -289,9 +290,23 @@ interface Props {
   onAbrir: (id: string) => void;
   onMover: (params: { demandaId: string; statusId: string }) => void;
   podeMover: boolean;
+  /**
+   * Todas as etapas que a fonte conhece, na ordem da esteira.
+   *
+   * POR QUE ISSO PRECISOU EXISTIR
+   * O board era montado só a partir dos grupos — e grupo só nasce quando há
+   * demanda naquele status. Com uma demanda no backlog, aparecia UMA coluna,
+   * e não havia para onde arrastar: o quadro virava uma lista de um item só.
+   * Num projeto cheio o defeito ficava escondido, porque todas as colunas
+   * tinham gente.
+   *
+   * Uma esteira precisa mostrar o caminho inteiro, inclusive os trechos
+   * vazios — é o vazio que informa que ninguém está testando nada.
+   */
+  etapas?: EtapaDaFonte[];
 }
 
-function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMover }: Props) {
+function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMover, etapas }: Props) {
   const [arrastando, setArrastando] = useState<Demanda | null>(null);
   const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
   const [jaVistas, setJaVistas] = useState<Set<string>>(new Set());
@@ -315,7 +330,25 @@ function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMov
     return m;
   }, [grupos]);
 
-  if (grupos.length === 0) {
+  /**
+   * A esteira completa: cada etapa vira coluna, com ou sem cartão dentro.
+   * Sem `etapas` o comportamento é o de antes (só o que tem demanda), que é
+   * o certo para quem chama sem conhecer a lista de status.
+   */
+  const colunas = useMemo<Grupo[]>(() => {
+    if (!etapas || etapas.length === 0) return grupos;
+    const porStatus = new Map(grupos.map((g) => [g.id, g]));
+    const daEsteira = etapas.map(
+      (e) => porStatus.get(e.id) ?? { id: e.id, rotulo: e.rotulo, itens: [] },
+    );
+    // Um status fora da esteira (dado antigo, migração) não pode sumir da
+    // tela: some da esteira, some da conta, e ninguém procura o que não vê.
+    const conhecidos = new Set(etapas.map((e) => e.id));
+    const orfaos = grupos.filter((g) => !conhecidos.has(g.id));
+    return [...daEsteira, ...orfaos];
+  }, [etapas, grupos]);
+
+  if (colunas.length === 0) {
     return <EmptyPanel title="Sem colunas" description="Nenhuma demanda corresponde a esta fila." />;
   }
 
@@ -342,7 +375,7 @@ function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMov
   return (
     <DndContext sensors={sensores} onDragStart={aoIniciar} onDragEnd={aoTerminar} onDragCancel={() => setArrastando(null)}>
       <div className="flex gap-4 overflow-x-auto pb-2">
-        {grupos.map((g) =>
+        {colunas.map((g) =>
           recolhidas.has(g.id) ? (
             <ColunaRecolhida key={g.id} grupo={g} onExpandir={() => alternar(g.id)} />
           ) : (
