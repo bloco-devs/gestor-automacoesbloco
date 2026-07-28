@@ -391,6 +391,46 @@
   background: transparent;
 }
 /* ============================================================
+   Blink — as três animações que ele tem, e só elas
+   ------------------------------------------------------------
+   Flutuar, piscar os dois olhos, e piscar um só. Nada mais: um
+   assistente que se mexe o tempo todo compete com o texto que
+   ele mesmo escreveu, e a pessoa está ali para ler a resposta,
+   não para assistir ao mascote.
+
+   `prefers-reduced-motion` desliga tudo — para quem sente
+   desconforto com movimento, um rosto oscilando na lateral da
+   conversa é exatamente o tipo de coisa que atrapalha.
+   ============================================================ */
+@keyframes blink-flutuar {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1, 1); }
+  45% { transform: translateY(-10px) rotate(-2deg) scale(1.02, 0.98); }
+  55% { transform: translateY(-10px) rotate(2deg) scale(0.98, 1.02); }
+}
+@keyframes blink-piscar {
+  0%, 95%, 100% { transform: scaleY(1); }
+  97% { transform: scaleY(0.1); }
+}
+@keyframes blink-piscar-um {
+  0%, 48%, 100% { transform: scaleY(1); }
+  52% { transform: scaleY(0.1); }
+  56% { transform: scaleY(1); }
+  95% { transform: scaleY(1); }
+  97% { transform: scaleY(0.1); }
+}
+.blink-flutua { animation: blink-flutuar 2.8s ease-in-out infinite; }
+.blink-olho-e { animation: blink-piscar 5.5s ease-in-out infinite; }
+.blink-olho-d { animation: blink-piscar-um 5.5s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .blink-flutua,
+  .blink-olho-e,
+  .blink-olho-d {
+    animation: none;
+  }
+}
+
+/* ============================================================
    Rolagem discreta — some quando ninguém está rolando
    ------------------------------------------------------------
    No board, a barra horizontal fica sempre visível (no macOS

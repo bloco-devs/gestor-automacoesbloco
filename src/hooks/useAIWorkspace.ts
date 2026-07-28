@@ -191,6 +191,10 @@ export function useAIWorkspace() {
    */
   const demandaDoPreview = useMemo<NovaDemanda | null>(() => {
     if (!preview) return null;
+    const sistemaValidado =
+      preview.sistemaAlvoSlug && sistemas.some((s) => s.id === preview.sistemaAlvoSlug)
+        ? preview.sistemaAlvoSlug
+        : null;
     const criterios = criteriosMinimos(
       preview.titulo,
       // A conversa ainda não devolve critérios estruturados; quando devolver,
@@ -204,12 +208,22 @@ export function useAIWorkspace() {
       tipo: tipoDeClassificacao(preview.tipoDemanda, `${preview.titulo} ${preview.descricao}`),
       complexidade: complexidadeDeEscala(preview.complexidadeDev),
       prioridade: prioridadeDeScore(previewScore),
-      sistemaId: preview.sistemaAlvoSlug,
+      // `system_id` é uma coluna uuid. O app envia a lista de sistemas para o
+      // modelo e pede que ele devolva um id EXATO dessa lista — mas nada
+      // conferia a volta. Bastava o modelo devolver um nome, um slug
+      // inventado ou um id truncado para o INSERT falhar com 400, e o
+      // solicitante ficava sem conseguir criar a demanda. Uma alucinação que
+      // não suja o dado: impede o fluxo inteiro.
+      //
+      // A regra do projeto já era "a IA não inventa dado". Aqui ela ganha
+      // dente: só passa o que existe no catálogo; qualquer outra coisa vira
+      // null, e a demanda nasce sem sistema — que é a verdade.
+      sistemaId: sistemaValidado,
       criteriosDeAceite: criterios,
       origemIa: true,
       confianca: preview.intent?.confidence ?? 0.5,
     };
-  }, [preview, previewScore]);
+  }, [preview, previewScore, sistemas]);
 
   /**
    * Confirmar cria uma DEMANDA, não uma solicitação.
