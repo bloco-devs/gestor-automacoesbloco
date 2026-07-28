@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -174,21 +175,33 @@ export default function DemandaDetalhe() {
    * campo, porque escrever a resposta por alguém é o tipo de automação que
    * quem recebe percebe na primeira linha e passa a ignorar.
    */
+  /**
+   * Toda ação daqui escreve no banco, e escrita falha — por permissão, por
+   * rede, por regra. Antes, a falha morria numa promise rejeitada: o botão
+   * ficava inerte e a pessoa clicava de novo achando que não tinha clicado.
+   * Ação que não avisa quando falha é pior que ação que não existe.
+   */
   const executarAcao = async (acao: AcaoSugerida) => {
     if (!demanda || !user) return;
-    switch (acao.tipo) {
-      case "atribuir":
-        await acoesDemanda.atribuir({ demandaId: demanda.id, pessoaId: user.id });
-        break;
-      case "cobrar":
-        await fio.comentar(acao.rascunho, false);
-        break;
-      case "responder":
-        document.querySelector<HTMLTextAreaElement>("[data-fio-resposta]")?.focus();
-        break;
-      case "concluir":
-        await acoesDemanda.concluir({ demandaId: demanda.id });
-        break;
+    try {
+      switch (acao.tipo) {
+        case "atribuir":
+          await acoesDemanda.atribuir({ demandaId: demanda.id, pessoaId: user.id });
+          toast.success("Demanda atribuída a você.");
+          break;
+        case "cobrar":
+          await fio.comentar(acao.rascunho, false);
+          break;
+        case "responder":
+          document.querySelector<HTMLTextAreaElement>("[data-fio-resposta]")?.focus();
+          break;
+        case "concluir":
+          await acoesDemanda.concluir({ demandaId: demanda.id });
+          toast.success("Demanda concluída.");
+          break;
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível concluir a ação.");
     }
   };
 

@@ -80,11 +80,20 @@ export async function updateDemandStatus(id: string, status: DemandStatus): Prom
     .maybeSingle();
   const from_status = (prev as { status?: DemandStatus } | null)?.status ?? null;
 
-  const { error } = await supabase
+  // Mesma armadilha de `assignDemand`: RLS negando um UPDATE devolve sucesso
+  // com zero linhas. Sem esta checagem, mover uma demanda de status falharia
+  // em silêncio e a coluna voltaria sozinha no próximo refetch.
+  const { data, error } = await supabase
     .from("demands" as never)
     .update({ status } as never)
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
   if (error) throw error;
+  if (!data || (data as unknown[]).length === 0) {
+    throw new Error(
+      "Não foi possível mover esta demanda. Você pode não ter permissão para alterá-la.",
+    );
+  }
   void dispatchWebhookEvent("demand.status_changed", {
     id,
     from_status,
@@ -93,12 +102,28 @@ export async function updateDemandStatus(id: string, status: DemandStatus): Prom
   });
 }
 
+/**
+ * POR QUE ESTE UPDATE CONFERE QUANTAS LINHAS MUDOU
+ *
+ * Um UPDATE barrado por RLS não devolve erro: o Postgres simplesmente não
+ * enxerga a linha, atualiza zero registros e responde sucesso. Foi assim que
+ * "Assumir" ficou um botão morto — sem erro no console, sem toast, sem nada
+ * para investigar. O `.select()` transforma esse silêncio em fato: se
+ * nenhuma linha voltou, a escrita não aconteceu, e isso precisa subir como
+ * erro para a interface poder dizer alguma coisa.
+ */
 export async function assignDemand(id: string, assigned_to: string | null): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("demands" as never)
     .update({ assigned_to } as never)
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
   if (error) throw error;
+  if (!data || (data as unknown[]).length === 0) {
+    throw new Error(
+      "Não foi possível atribuir esta demanda. Você pode não ter permissão para alterá-la.",
+    );
+  }
   void dispatchWebhookEvent("demand.assigned", { id, assigned_to });
 }
 
