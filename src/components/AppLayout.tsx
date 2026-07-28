@@ -2,13 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Compass,
-  HelpCircle,
-  Settings2,
   LogOut,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
-  Repeat,
   X,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -25,6 +22,7 @@ import blocoLogo from "@/assets/bloco-logo.png";
 import { SidebarGroupsNav } from "@/components/sidebar/SidebarGroupsNav";
 import { SidebarBreadcrumb } from "@/components/sidebar/SidebarBreadcrumb";
 import { BuscaGlobal } from "@/components/shell/BuscaGlobal";
+import { MenuDaConta } from "@/components/shell/MenuDaConta";
 import {
   HeaderContexto,
   HeaderContextoProvider,
@@ -256,123 +254,6 @@ export default function AppLayout() {
               mini={mini && !isMobile}
             />
           </nav>
-          <div className={cn("border-t border-sidebar-border/70", mini && !isMobile ? "p-1.5 pb-9" : "p-2.5")}>
-            <button
-              type="button"
-              onClick={() => navigate("/perfil")}
-              className={cn(
-                "w-full flex items-center mb-2 min-w-0 rounded-md hover:bg-sidebar-accent/60 transition-colors text-left",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-                mini && !isMobile ? "justify-center px-0 py-1.5" : "gap-2 px-2 py-1.5",
-              )}
-              title={mini && !isMobile ? `${user?.nome ?? "Perfil"} — ${roleLabel}` : "Editar meu perfil"}
-            >
-              <span className="relative shrink-0">
-                {user?.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.nome}
-                    className="size-8 rounded-full object-cover ring-1 ring-white"
-                  />
-                ) : (
-                  <span className="size-8 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center text-xs font-semibold">
-                    {(user?.nome || "?")
-                      .split(/\s+/)
-                      .filter(Boolean)
-                      .slice(0, 2)
-                      .map((p) => p[0]?.toUpperCase())
-                      .join("")}
-                  </span>
-                )}
-              </span>
-              {(!mini || isMobile) && (
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium truncate">{user?.nome}</span>
-                  <span className="block text-xs text-muted-foreground truncate">{roleLabel}</span>
-                </span>
-              )}
-            </button>
-            {/* Recolhida, as ações empilham: seis ícones lado a lado em 56px
-                viram alvos pequenos demais para acertar. */}
-            <div
-              className={cn(
-                "rounded-lg bg-sidebar-accent/40 px-1 py-1",
-                mini && !isMobile
-                  ? "flex flex-col items-center gap-0.5"
-                  : "flex items-center justify-between gap-1",
-              )}
-            >
-              {/* Havia DOIS sinos aqui, lado a lado, com contagens que podiam
-                  divergir: `NotificacoesBell` lia a tabela `notificacoes` (do
-                  fluxo antigo de Solicitações) e levava para /solicitacoes/:id,
-                  rota que não existe mais; `NotificationsDrawer` lê
-                  `notifications`, que é onde o sistema grava hoje. Dois sinos
-                  discordando é pior que nenhum: nenhum dos dois merece
-                  confiança. Ficou o que aponta para a demanda de verdade. */}
-              <span data-tour="nav-notificacoes" className="inline-flex">
-                <NotificationsDrawer />
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                data-tour="nav-tour"
-                onClick={startTour}
-                title="Refazer tour"
-                aria-label="Refazer tour"
-              >
-                <Compass className="size-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                data-tour="nav-ajuda"
-                onClick={() => navigate("/ajuda")}
-                title="Ajuda"
-                aria-label="Ajuda"
-              >
-                <HelpCircle className="size-4" />
-              </Button>
-              {isDeveloperEffective && (
-                // O grupo "Admin" de 6 itens virou este único acesso. O /admin
-                // continua sendo o índice completo das ~56 páginas, e o ⌘K
-                // alcança qualquer uma delas direto.
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate("/admin")}
-                  title="Administração"
-                  aria-label="Administração"
-                >
-                  <Settings2 className="size-4" />
-                </Button>
-              )}
-              <ThemeToggle />
-              {isDual && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate("/escolher-perfil")}
-                  title="Trocar perfil"
-                  aria-label="Trocar perfil"
-                >
-                  <Repeat className="size-4" />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  signOut();
-                  navigate("/auth");
-                }}
-                title="Sair"
-                aria-label="Sair"
-              >
-                <LogOut className="size-4" />
-              </Button>
-            </div>
-          </div>
-
           {/* Recolhida, a largura é fixa — não há o que arrastar. */}
           {!mini && (
             <div
@@ -439,6 +320,10 @@ export default function AppLayout() {
               do menu seria esconder as telas; com ele, é trocar navegação por
               busca, que é a ferramenta certa para acesso por intenção. */}
           <BuscaGlobal />
+          {/* A conta vive aqui, não no pé do menu: a barra lateral responde
+              "para onde eu vou", o header responde "quem eu sou e o que faço
+              com esta sessão". São perguntas diferentes. */}
+          <MenuDaConta ehDaEquipe={isDeveloperEffective} aoRefazerTour={startTour} />
         </header>
 
         {/* Header mobile */}

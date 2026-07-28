@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Loader2, Lock, Paperclip } from "lucide-react";
+import { Loader2, Lock, LockOpen, Paperclip, SendHorizontal } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -169,40 +169,107 @@ function FioImpl({ eventos, briefing, podeComentar, podeNotaInterna, onComentar,
       </div>
 
       {podeComentar && (
+        /**
+         * O COMPOSITOR PARECE UM CAMPO DE CONVERSA, NÃO UM FORMULÁRIO
+         *
+         * Antes: uma caixa de texto retangular e, abaixo dela, um botão, uma
+         * caixinha de seleção e um atalho — quatro elementos soltos numa
+         * fileira, cada um com peso próprio. Lia-se como formulário de
+         * cadastro, e formulário passa a impressão de que responder custa
+         * trabalho. Numa tela cujo objetivo é fazer as pessoas conversarem,
+         * essa impressão é cara.
+         *
+         * Agora tudo vive dentro de uma única superfície arredondada, com o
+         * enviar como botão circular no canto — a forma que qualquer pessoa
+         * reconhece de mensageiro. O contorno acende quando o campo tem foco,
+         * então a área ativa é evidente sem precisar de rótulo.
+         *
+         * A nota interna vira um botão de alternância em vez de checkbox, e
+         * pinta o campo inteiro de âmbar quando ligada. Mandar para o cliente
+         * o que era para ficar entre a equipe é o erro mais caro possível
+         * aqui — ele precisa ser visível o tempo todo, não a partir de um
+         * quadradinho de 14px.
+         */
         <div className="shrink-0 border-t border-border/60 px-5 py-3">
-          <Textarea
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            onKeyDown={(e) => {
-              // Enviar com ⌘/Ctrl+Enter. Enter puro quebra linha, porque
-              // resposta de chamado quase sempre tem mais de um parágrafo.
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                e.preventDefault();
-                void enviar();
-              }
-            }}
-            data-fio-resposta
-            placeholder={interna ? "Nota visível só para a equipe…" : "Escreva uma resposta…"}
-            aria-label="Escrever no fio da demanda"
-            className="min-h-[68px] resize-none border-border/60 text-[13px]"
-          />
-          <div className="mt-2 flex items-center gap-2">
-            <Button size="sm" onClick={() => void enviar()} disabled={!texto.trim() || enviando} className="gap-2">
-              {enviando && <Loader2 className="size-3.5 animate-spin" aria-hidden />}
-              Responder
-            </Button>
-            {podeNotaInterna && (
-              <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={interna}
-                  onChange={(e) => setInterna(e.target.checked)}
-                  className="size-3.5 accent-current"
-                />
-                Nota interna
-              </label>
+          <div
+            className={cn(
+              "rounded-2xl border bg-background transition-colors duration-fast",
+              "focus-within:border-ring/60 focus-within:ring-2 focus-within:ring-ring/15",
+              interna ? "border-warning/50 bg-warning/5" : "border-border/70",
             )}
-            <span className="ml-auto text-[11px] text-muted-foreground/70">⌘↵ envia</span>
+          >
+            <Textarea
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              onKeyDown={(e) => {
+                // Enviar com ⌘/Ctrl+Enter. Enter puro quebra linha, porque
+                // resposta de chamado quase sempre tem mais de um parágrafo.
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  void enviar();
+                }
+              }}
+              data-fio-resposta
+              placeholder={interna ? "Nota visível só para a equipe…" : "Escreva uma resposta…"}
+              aria-label="Escrever no fio da demanda"
+              className={cn(
+                "min-h-[52px] resize-none border-0 bg-transparent px-4 pt-3 text-[13px] leading-relaxed",
+                "shadow-none focus-visible:ring-0 focus-visible:ring-offset-0",
+              )}
+            />
+
+            <div className="flex items-center gap-2 px-2.5 pb-2.5 pt-0.5">
+              {podeNotaInterna && (
+                <button
+                  type="button"
+                  onClick={() => setInterna((v) => !v)}
+                  aria-pressed={interna}
+                  title={
+                    interna
+                      ? "Esta nota fica só para a equipe"
+                      : "Marcar como nota interna — quem abriu não vê"
+                  }
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] transition-colors",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                    interna
+                      ? "bg-warning/15 text-warning-foreground ring-1 ring-warning/40"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  )}
+                >
+                  {interna ? (
+                    <Lock className="size-3" aria-hidden />
+                  ) : (
+                    <LockOpen className="size-3" aria-hidden />
+                  )}
+                  {interna ? "Só para a equipe" : "Nota interna"}
+                </button>
+              )}
+
+              <span className="ml-auto hidden text-[11px] text-muted-foreground/60 sm:inline">
+                ⌘↵ envia
+              </span>
+
+              <button
+                type="button"
+                onClick={() => void enviar()}
+                disabled={!texto.trim() || enviando}
+                aria-label={interna ? "Salvar nota interna" : "Responder"}
+                className={cn(
+                  "inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-all duration-fast",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  texto.trim() && !enviando
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "bg-muted text-muted-foreground/50",
+                )}
+              >
+                {enviando ? (
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                ) : (
+                  <SendHorizontal className="size-3.5" aria-hidden />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
