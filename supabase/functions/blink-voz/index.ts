@@ -27,6 +27,9 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 
 const TETO_DE_CARACTERES = 600;
 
+const MODELO = Deno.env.get("BLINK_VOZ_MODELO") ?? "openai/gpt-4o-mini-tts-2025-12-15";
+const VOZ = Deno.env.get("BLINK_VOZ") ?? "shimmer";
+
 const INSTRUCAO_DE_VOZ = [
   "Fale em português do Brasil.",
   "Tom calmo, pausado e acolhedor, como alguém que tem tempo para ouvir.",
@@ -90,16 +93,37 @@ Deno.serve(async (req) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "openai/gpt-4o-mini-tts",
+      // O slug do OpenRouter inclui a data da versão — `openai/gpt-4o-mini-tts`
+      // (sem ela) não existe, e é o "Model not found" que a própria
+      // documentação lista como erro mais comum. Fica em variável de ambiente
+      // porque a data avança: trocar de versão vira mudar um secret, não
+      // publicar código.
+      model: MODELO,
       input: recortado,
-      voice: "shimmer",
-      instructions: INSTRUCAO_DE_VOZ,
+      voice: VOZ,
       response_format: "mp3",
+      // `instructions` NÃO é parâmetro de topo aqui. No OpenRouter, opções
+      // específicas do provedor viajam dentro de `provider.options`, e só as
+      // do provedor efetivamente escolhido são repassadas. No topo, ela era
+      // silenciosamente descartada — o áudio sairia, mas sem o tom pedido.
+      provider: {
+        options: {
+          openai: { instructions: INSTRUCAO_DE_VOZ },
+        },
+      },
     }),
   });
 
   if (!resp.ok) {
     const detalhe = await resp.text();
+    // Sem isto, um 502 no navegador não diz nada e a investigação começa do
+    // zero. O log do provedor é a única pista de qual parâmetro ele recusou.
+    console.error("[blink-voz] OpenRouter recusou", {
+      status: resp.status,
+      modelo: MODELO,
+      voz: VOZ,
+      detalhe: detalhe.slice(0, 500),
+    });
     return new Response(
       JSON.stringify({ error: `Falha ao gerar a voz (${resp.status})`, detalhe }),
       { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
