@@ -83,7 +83,7 @@ export const LiveSuggestions = memo(function LiveSuggestions({
         {items.map((it) => (
           <li key={it.id}>
             <Link
-              to={`/solicitacao/${it.id}`}
+              to={`/demandas/${it.id}`}
               className="block rounded-lg border border-transparent bg-background/60 p-3 text-sm transition hover:border-border hover:bg-background"
             >
               <div className="font-medium text-foreground">{it.titulo}</div>
