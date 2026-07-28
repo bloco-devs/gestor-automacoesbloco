@@ -7,6 +7,11 @@ verify_jwt = true
 [functions.assistente-demanda]
 verify_jwt = true
 
+# A voz do Blink. Exige login como todas as outras: sem isso, qualquer pessoa
+# na internet poderia gerar áudio na conta da empresa.
+[functions.blink-voz]
+verify_jwt = true
+
 [functions.triagem-demanda]
 verify_jwt = true
 
