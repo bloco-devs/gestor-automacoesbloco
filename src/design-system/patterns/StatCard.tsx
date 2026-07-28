@@ -47,7 +47,7 @@ export const StatCard = memo(function StatCard({
   return (
     <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
       <div className="flex items-center gap-1.5 text-muted-foreground">
-        {Icon ? <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden /> : null}
+        {Icon ? <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden /> : null}
         <span className="ds-label truncate">{label}</span>
       </div>
       <div className={cn("ds-metric", TONE[tone])}>{value}</div>

@@ -241,7 +241,7 @@ function NodeInner({ node, breakpoint, selectedId, onSelect, onDropInto, onDragN
           ) : (
             items.map((it, i) => (
               <div key={i} className="flex gap-3 items-start">
-                <div className="mt-1 h-2 w-2 rounded-full bg-primary" />
+                <div className="mt-1 size-2 rounded-full bg-primary" />
                 <div>
                   <p className="text-sm">{it.title}</p>
                   {it.when ? <p className="ds-caption text-muted-foreground">{it.when}</p> : null}

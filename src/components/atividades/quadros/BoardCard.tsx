@@ -114,7 +114,7 @@ export function BoardCard({ board, onToggleFavorito, hrefBase = "/atividades" }:
         ) : null}
         {board.arquivado ? (
           <span className="absolute top-2 right-2 text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-background/80 text-muted-foreground flex items-center gap-1 z-10">
-            <Archive className="h-3 w-3" />
+            <Archive className="size-3" />
             Arquivado
           </span>
         ) : null}
@@ -134,7 +134,7 @@ export function BoardCard({ board, onToggleFavorito, hrefBase = "/atividades" }:
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0"
+            className="size-7 shrink-0"
             onClick={(e) => {
               e.preventDefault();
               onToggleFavorito(board);
@@ -142,7 +142,7 @@ export function BoardCard({ board, onToggleFavorito, hrefBase = "/atividades" }:
             aria-label={board.favorito ? "Desfavoritar" : "Favoritar"}
           >
             <Star
-              className={`h-4 w-4 ${board.favorito ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`}
+              className={`size-4 ${board.favorito ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`}
             />
           </Button>
         </div>
@@ -154,11 +154,11 @@ export function BoardCard({ board, onToggleFavorito, hrefBase = "/atividades" }:
         <div className="mt-auto flex items-center justify-between gap-2 text-[11px] text-muted-foreground pt-2">
           <div className="flex items-center gap-2.5">
             <span className="flex items-center gap-1" title="Cards abertos / total">
-              <Layers className="h-3 w-3" />
+              <Layers className="size-3" />
               {board.cardsAbertos}/{board.totalCards}
             </span>
             <span className="flex items-center gap-1" title="Membros">
-              <Users className="h-3 w-3" />
+              <Users className="size-3" />
               {board.totalMembros}
             </span>
           </div>

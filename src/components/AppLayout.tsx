@@ -272,10 +272,10 @@ export default function AppLayout() {
                   <img
                     src={user.avatarUrl}
                     alt={user.nome}
-                    className="h-8 w-8 rounded-full object-cover ring-1 ring-white"
+                    className="size-8 rounded-full object-cover ring-1 ring-white"
                   />
                 ) : (
-                  <span className="h-8 w-8 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center text-xs font-semibold">
+                  <span className="size-8 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center text-xs font-semibold">
                     {(user?.nome || "?")
                       .split(/\s+/)
                       .filter(Boolean)

@@ -42,10 +42,10 @@ export default function AuditCenterPage() {
       <PageHeader
         title="Audit Center"
         subtitle="Trilha unificada de eventos. Sem alterar backend — buffer local."
-        icon={<FileWarning className="h-6 w-6" />}
+        icon={<FileWarning className="size-6" />}
         actions={
           <Button variant="outline" size="sm" onClick={exportCsv} disabled={!filtered.length}>
-            <Download className="mr-1 h-4 w-4" /> CSV
+            <Download className="mr-1 size-4" /> CSV
           </Button>
         }
       />

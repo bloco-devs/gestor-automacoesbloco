@@ -20,7 +20,7 @@ export function StepOrigem({ value }: Props) {
         >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Trello className="h-4 w-4" /> Trello
+              <Trello className="size-4" /> Trello
             </CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground">

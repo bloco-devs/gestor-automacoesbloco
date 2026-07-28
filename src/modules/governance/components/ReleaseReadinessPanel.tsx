@@ -25,7 +25,7 @@ export const ReleaseReadinessPanel = memo(function ReleaseReadinessPanel() {
             const Icon = ICONS[it.status];
             return (
               <div key={it.id} className="flex items-start gap-2 text-sm">
-                <Icon className={`mt-0.5 h-4 w-4 ${TONE[it.status]}`} aria-hidden />
+                <Icon className={`mt-0.5 size-4 ${TONE[it.status]}`} aria-hidden />
                 <div className="min-w-0">
                   <div className="font-medium text-foreground">{it.label}</div>
                   {it.detail && <div className="text-xs text-muted-foreground">{it.detail}</div>}

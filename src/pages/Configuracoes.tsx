@@ -502,10 +502,10 @@ function AcessosPanel({ currentUserId }: { currentUserId: string }) {
                             className="h-8"
                             disabled={isBusy}
                           />
-                          <Button size="icon" variant="ghost" className="h-8 w-8" disabled={isBusy} onClick={() => handleSaveNome(account)} title="Salvar">
+                          <Button size="icon" variant="ghost" className="size-8" disabled={isBusy} onClick={() => handleSaveNome(account)} title="Salvar">
                             {isBusy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4 text-emerald-600" />}
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8" disabled={isBusy} onClick={() => setEditingEmail(null)} title="Cancelar">
+                          <Button size="icon" variant="ghost" className="size-8" disabled={isBusy} onClick={() => setEditingEmail(null)} title="Cancelar">
                             <X className="size-4" />
                           </Button>
                         </div>

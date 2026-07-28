@@ -117,7 +117,7 @@ export default function MeuPerfil() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20 ring-2 ring-white shadow">
+            <Avatar className="size-20 ring-2 ring-white shadow">
               {avatarUrl && <AvatarImage src={avatarUrl} alt={user.nome} />}
               <AvatarFallback className="bg-slate-200 text-slate-800 text-lg">
                 {initials(user.nome)}

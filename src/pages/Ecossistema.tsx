@@ -52,7 +52,7 @@ export default function EcossistemaPage() {
       <Section>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-[220px] flex-1 max-w-md">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar sistema…" className="pl-8" />
           </div>
           <Button size="sm" variant={grupo === null ? "default" : "outline"} onClick={() => setGrupo(null)}>Todos</Button>
@@ -78,7 +78,7 @@ export default function EcossistemaPage() {
                 <Button asChild variant="ghost" size="sm" className="w-full justify-between px-2 mt-1">
                   <a href={`/diagrama?sistema=${encodeURIComponent(s.id)}`}>
                     Ver no diagrama
-                    <ExternalLink className="h-3 w-3" aria-hidden />
+                    <ExternalLink className="size-3" aria-hidden />
                   </a>
                 </Button>
               </CardContent>

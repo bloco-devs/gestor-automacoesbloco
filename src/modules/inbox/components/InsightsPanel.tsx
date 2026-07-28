@@ -31,7 +31,7 @@ function InsightsPanel({ insights }: Props) {
             const Icon = S.icon;
             return (
               <li key={i.id} className="flex items-start gap-2 ds-caption">
-                <Icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", S.tone)} aria-hidden />
+                <Icon className={cn("mt-0.5 size-3.5 shrink-0", S.tone)} aria-hidden />
                 <span className="text-muted-foreground">{i.message}</span>
               </li>
             );

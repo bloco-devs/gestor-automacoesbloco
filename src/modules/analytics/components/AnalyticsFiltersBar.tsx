@@ -181,15 +181,15 @@ export function AnalyticsFiltersBar({
 
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading} aria-label="Atualizar">
-          <RefreshCw className={"mr-2 h-4 w-4" + (loading ? " animate-spin" : "")} aria-hidden />
+          <RefreshCw className={"mr-2 size-4" + (loading ? " animate-spin" : "")} aria-hidden />
           Atualizar
         </Button>
         <Button variant="outline" size="sm" onClick={onExport} aria-label="Exportar CSV">
-          <Download className="mr-2 h-4 w-4" aria-hidden />
+          <Download className="mr-2 size-4" aria-hidden />
           CSV
         </Button>
         <Button variant="outline" size="sm" onClick={onPrint} aria-label="Imprimir">
-          <Printer className="mr-2 h-4 w-4" aria-hidden />
+          <Printer className="mr-2 size-4" aria-hidden />
           Imprimir
         </Button>
       </div>

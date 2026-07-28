@@ -26,7 +26,7 @@ export const EcossistemaSaudeCard = memo(function EcossistemaSaudeCard() {
       <header className="flex items-start justify-between gap-3">
         <div>
           <h3 className="ds-h3 flex items-center gap-2">
-            <Network className="h-4 w-4 text-primary" aria-hidden />
+            <Network className="size-4 text-primary" aria-hidden />
             Saúde do Ecossistema
           </h3>
           <p className="ds-caption text-muted-foreground">

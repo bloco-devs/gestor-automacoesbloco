@@ -33,7 +33,7 @@ export default function ErrorCenterPage() {
       <PageHeader
         title="Error Center"
         subtitle={`${events.length} eventos capturados (ring buffer, últimos 500).`}
-        icon={<Bug className="h-6 w-6" />}
+        icon={<Bug className="size-6" />}
         actions={
           <Button variant="outline" size="sm" onClick={clearErrors} disabled={!events.length}>
             Limpar buffer

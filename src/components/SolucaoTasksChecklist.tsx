@@ -163,7 +163,7 @@ export function SolucaoTasksChecklist({ solucaoId }: { solucaoId: string }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 opacity-0 group-hover:opacity-100"
+              className="size-7 opacity-0 group-hover:opacity-100"
               onClick={() => handleDelete(t.id)}
               aria-label="Remover task"
             >
@@ -199,7 +199,7 @@ export function SolucaoTasksChecklist({ solucaoId }: { solucaoId: string }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="size-8"
                 onClick={() => {
                   setAdding(false);
                   setNovoTitulo("");

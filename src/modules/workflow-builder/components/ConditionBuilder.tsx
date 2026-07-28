@@ -82,8 +82,8 @@ function ConditionRow({ node, onUpdate, onRemove }: { node: Condition; onUpdate:
           onChange={(e) => onUpdate({ ...node, value: e.target.value })}
         />
       )}
-      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 ml-auto" onClick={onRemove}>
-        <Trash2 className="h-3.5 w-3.5" />
+      <Button type="button" variant="ghost" size="icon" className="size-8 ml-auto" onClick={onRemove}>
+        <Trash2 className="size-3.5" />
       </Button>
     </div>
   );
@@ -97,7 +97,7 @@ function GroupNode({ node, root, onChange, depth = 0 }: { node: ConditionGroup; 
     <div className={`rounded-md border ${depth === 0 ? "border-transparent p-0" : "border-dashed border-border/70 p-2 bg-muted/30"} space-y-2`}>
       {depth > 0 && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <GitBranch className="h-3.5 w-3.5" />
+          <GitBranch className="size-3.5" />
           <Select value={node.op} onValueChange={(v) => onChange(replaceNode(root, node.id, (n) => (n.kind === "group" ? { ...n, op: v as GroupOp } : n)) as ConditionGroup)}>
             <SelectTrigger className="h-7 w-24"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -120,10 +120,10 @@ function GroupNode({ node, root, onChange, depth = 0 }: { node: ConditionGroup; 
       ))}
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="outline" size="sm" onClick={() => onChange(addChild(root, node.id, makeCondition()))}>
-          <Plus className="h-3.5 w-3.5 mr-1" /> Condição
+          <Plus className="size-3.5 mr-1" /> Condição
         </Button>
         <Button type="button" variant="outline" size="sm" onClick={() => onChange(addChild(root, node.id, makeGroup("AND")))}>
-          <GitBranch className="h-3.5 w-3.5 mr-1" /> Grupo
+          <GitBranch className="size-3.5 mr-1" /> Grupo
         </Button>
       </div>
     </div>

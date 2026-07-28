@@ -201,7 +201,7 @@ export default function SaudePage() {
         subtitle="Status de todas as camadas da plataforma em tempo real."
         actions={
           <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
-            <RefreshCw className={"mr-2 h-4 w-4" + (loading ? " animate-spin" : "")} aria-hidden />
+            <RefreshCw className={"mr-2 size-4" + (loading ? " animate-spin" : "")} aria-hidden />
             Atualizar
           </Button>
         }
@@ -224,7 +224,7 @@ export default function SaudePage() {
               <Card key={l.key} className="surface-1">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
+                    <Icon className="size-4 text-muted-foreground" aria-hidden />
                     {l.label}
                   </CardTitle>
                   <Badge variant="outline" className={toneBadge(l.tone)}>{l.status}</Badge>
@@ -238,7 +238,7 @@ export default function SaudePage() {
         </div>
         {refreshedAt && (
           <p className="pt-3 text-xs text-muted-foreground flex items-center gap-1">
-            <Gauge className="h-3 w-3" aria-hidden />
+            <Gauge className="size-3" aria-hidden />
             Atualizado {refreshedAt.toLocaleTimeString("pt-BR")} · auto-refresh 60s
           </p>
         )}

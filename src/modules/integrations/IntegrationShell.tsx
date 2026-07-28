@@ -28,7 +28,7 @@ export const IntegrationShell = memo(function IntegrationShell({
       <PageHeader
         title={title}
         subtitle={description}
-        icon={<Plug className="h-6 w-6" />}
+        icon={<Plug className="size-6" />}
         actions={actions}
       />
       <nav aria-label="Integration Hub" className="flex flex-wrap gap-1 rounded-lg border bg-card p-1">

@@ -25,7 +25,7 @@ export function CriticalItems({
     <Card className="h-full">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <AlertTriangle className="h-4 w-4 text-warning" aria-hidden />
+          <AlertTriangle className="size-4 text-warning" aria-hidden />
           Fila inteligente
         </CardTitle>
       </CardHeader>
@@ -62,7 +62,7 @@ export function CriticalItems({
                       </div>
                     </div>
                     <span className="text-xs font-mono text-muted-foreground">{it.score}</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+                    <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
                   </Link>
                 </li>
               );

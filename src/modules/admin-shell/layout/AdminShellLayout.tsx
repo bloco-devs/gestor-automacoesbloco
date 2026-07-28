@@ -25,7 +25,7 @@ function AdminShellLayoutImpl({ children }: Props) {
           <Sheet open={openDrawer} onOpenChange={setOpenDrawer}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menu administrativo">
-                <Menu className="h-4 w-4" />
+                <Menu className="size-4" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-72">

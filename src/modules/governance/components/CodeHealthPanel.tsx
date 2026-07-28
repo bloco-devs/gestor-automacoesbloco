@@ -22,10 +22,10 @@ export const CodeHealthPanel = memo(function CodeHealthPanel() {
               <div key={f.id} className="flex items-start gap-2">
                 <Icon className={
                   f.severity === "error"
-                    ? "mt-0.5 h-4 w-4 text-destructive"
+                    ? "mt-0.5 size-4 text-destructive"
                     : f.severity === "warn"
-                    ? "mt-0.5 h-4 w-4 text-warning"
-                    : "mt-0.5 h-4 w-4 text-muted-foreground"
+                    ? "mt-0.5 size-4 text-warning"
+                    : "mt-0.5 size-4 text-muted-foreground"
                 } aria-hidden />
                 <span className="min-w-0">
                   <span className="text-foreground">{f.message}</span>

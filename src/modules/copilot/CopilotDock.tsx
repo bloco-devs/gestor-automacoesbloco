@@ -101,7 +101,7 @@ export function CopilotDock() {
         className="fixed bottom-6 right-6 z-40 rounded-full shadow-lg gap-2"
         aria-label="Abrir AI Copilot"
       >
-        <Sparkles className="h-4 w-4" aria-hidden />
+        <Sparkles className="size-4" aria-hidden />
         Copilot
       </Button>
     );
@@ -118,17 +118,17 @@ export function CopilotDock() {
       aria-label="AI Copilot"
     >
       <header className="flex items-center gap-2 border-b p-3 bg-muted/30">
-        <Bot className="h-4 w-4 text-primary" aria-hidden />
+        <Bot className="size-4 text-primary" aria-hidden />
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold leading-none">Copilot</div>
           <div className="text-[11px] text-muted-foreground truncate mt-0.5">{location.pathname}</div>
         </div>
-        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setMinimized((m) => !m)}
+        <Button size="icon" variant="ghost" className="size-7" onClick={() => setMinimized((m) => !m)}
           aria-label={minimized ? "Expandir" : "Minimizar"}>
-          {minimized ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {minimized ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
         </Button>
-        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setOpen(false)} aria-label="Fechar">
-          <X className="h-4 w-4" />
+        <Button size="icon" variant="ghost" className="size-7" onClick={() => setOpen(false)} aria-label="Fechar">
+          <X className="size-4" />
         </Button>
       </header>
 
@@ -170,7 +170,7 @@ export function CopilotDock() {
               ))}
               {loading && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                  <Loader2 className="size-3 animate-spin" aria-hidden />
                   Pensando…
                 </div>
               )}
@@ -199,7 +199,7 @@ export function CopilotDock() {
               disabled={loading}
             />
             <Button type="submit" size="icon" disabled={loading || !input.trim()} aria-label="Enviar">
-              <Send className="h-4 w-4" />
+              <Send className="size-4" />
             </Button>
           </form>
         </>

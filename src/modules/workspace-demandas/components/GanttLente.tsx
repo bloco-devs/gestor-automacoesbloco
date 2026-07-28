@@ -113,7 +113,7 @@ function GanttLenteImpl({ demandas, onAbrir }: Props) {
                     <span className="relative h-5">
                       <span
                         className={cn(
-                          "absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full transition-[height] duration-fast group-hover:h-2.5",
+                          "absolute top-1/2 size-2 -translate-y-1/2 rounded-full transition-[height] duration-fast group-hover:h-2.5",
                           d.concluida ? "bg-success/50" : d.risco ? COR_RISCO[d.risco] : "bg-foreground/35",
                         )}
                         style={{ left: `${Math.max(0, Math.min(pos, 99))}%` }}

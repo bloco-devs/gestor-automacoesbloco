@@ -38,11 +38,11 @@ function TaskCard({ item }: Props) {
           <Badge key={t}>{t}</Badge>
         ))}
         <span className="inline-flex items-center gap-1">
-          <Clock className="h-3.5 w-3.5" aria-hidden />
+          <Clock className="size-3.5" aria-hidden />
           {formatDaysAgo(item.updatedAt)}
         </span>
         <span className="inline-flex items-center gap-1">
-          <User className="h-3.5 w-3.5" aria-hidden />
+          <User className="size-3.5" aria-hidden />
           {item.responsibleName ?? item.requesterName}
         </span>
       </div>

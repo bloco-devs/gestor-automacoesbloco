@@ -32,8 +32,8 @@ export default function DependencyExplorer() {
       description="Grafo vivo entre módulos, plugins e SDKs. Exporta Mermaid."
       actions={
         <>
-          <Button variant="outline" size="sm" onClick={copy}><Copy className="h-3 w-3 mr-1" /> Copiar</Button>
-          <Button variant="outline" size="sm" onClick={download}><Download className="h-3 w-3 mr-1" /> Baixar .mmd</Button>
+          <Button variant="outline" size="sm" onClick={copy}><Copy className="size-3 mr-1" /> Copiar</Button>
+          <Button variant="outline" size="sm" onClick={download}><Download className="size-3 mr-1" /> Baixar .mmd</Button>
         </>
       }
     >

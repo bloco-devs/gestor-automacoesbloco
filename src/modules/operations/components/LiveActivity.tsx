@@ -26,7 +26,7 @@ export function LiveActivity({
     <Card className="h-full">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Activity className="h-4 w-4" aria-hidden />
+          <Activity className="size-4" aria-hidden />
           Atividade recente
         </CardTitle>
       </CardHeader>

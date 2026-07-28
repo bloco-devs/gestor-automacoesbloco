@@ -23,7 +23,7 @@ export function TeamWorkload({
     <Card className="h-full">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Users className="h-4 w-4" aria-hidden />
+          <Users className="size-4" aria-hidden />
           Equipe · carga atual
         </CardTitle>
       </CardHeader>
@@ -37,7 +37,7 @@ export function TeamWorkload({
               const pct = Math.round((w.active_count / max) * 100);
               return (
                 <li key={w.user_id} className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="size-8">
                     {p?.avatar_url ? <AvatarImage src={p.avatar_url} alt="" /> : null}
                     <AvatarFallback>{initials(p?.nome ?? w.nome, p?.email ?? w.email)}</AvatarFallback>
                   </Avatar>

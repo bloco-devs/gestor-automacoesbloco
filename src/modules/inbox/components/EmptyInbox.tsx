@@ -8,7 +8,7 @@ interface Props {
 function EmptyInbox({ message = "Sua Inbox está limpa. Bom trabalho!" }: Props) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-      <Inbox className="h-5 w-5 text-muted-foreground/60" aria-hidden />
+      <Inbox className="size-5 text-muted-foreground/60" aria-hidden />
       <p className="ds-caption text-muted-foreground">{message}</p>
     </div>
   );

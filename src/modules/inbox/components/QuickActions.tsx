@@ -27,7 +27,7 @@ function QuickActions() {
                 to={a.to}
                 className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-5 text-foreground/85 transition-colors duration-fast ease-standard hover:bg-muted/50 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
               >
-                <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 {a.label}
               </Link>
             </li>

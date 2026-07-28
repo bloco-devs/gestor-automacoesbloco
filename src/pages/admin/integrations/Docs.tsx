@@ -37,7 +37,7 @@ export default function DeveloperDocs() {
             <ul className="space-y-2 text-sm">
               {items.map((d) => (
                 <li key={d.path} className="flex items-start gap-2">
-                  <FileText className="h-3 w-3 mt-1 shrink-0 text-muted-foreground" />
+                  <FileText className="size-3 mt-1 shrink-0 text-muted-foreground" />
                   <div className="min-w-0">
                     <div className="font-medium truncate">{d.title}</div>
                     <div className="ds-caption text-muted-foreground truncate">{d.summary}</div>

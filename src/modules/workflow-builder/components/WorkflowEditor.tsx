@@ -61,7 +61,7 @@ export function WorkflowEditor({ initial }: Props) {
           <Badge variant="outline">Versão {wf.version}</Badge>
           <Button variant="outline" onClick={() => nav("/admin/workflows")}>Cancelar</Button>
           <Button onClick={onSave}>
-            <Save className="h-4 w-4 mr-1" /> Salvar
+            <Save className="size-4 mr-1" /> Salvar
           </Button>
         </div>
       </div>
@@ -69,7 +69,7 @@ export function WorkflowEditor({ initial }: Props) {
       {errors.length > 0 && (
         <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning-foreground">
           <div className="flex items-center gap-2 font-medium">
-            <AlertCircle className="h-4 w-4" /> Ajustes pendentes
+            <AlertCircle className="size-4" /> Ajustes pendentes
           </div>
           <ul className="list-disc list-inside text-xs mt-1">
             {errors.slice(0, 5).map((e, i) => (<li key={i}>{e.message}</li>))}
@@ -155,7 +155,7 @@ export function WorkflowEditor({ initial }: Props) {
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() => nav("/admin/workflows")}>Cancelar</Button>
-        <Button onClick={onSave}><Save className="h-4 w-4 mr-1" /> Salvar workflow</Button>
+        <Button onClick={onSave}><Save className="size-4 mr-1" /> Salvar workflow</Button>
       </div>
     </div>
   );

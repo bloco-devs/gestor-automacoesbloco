@@ -34,7 +34,7 @@ export default function SessionsCenterPage() {
       <PageHeader
         title="Session Center"
         subtitle="Sessão ativa do usuário — visão somente leitura no navegador atual."
-        icon={<Users className="h-6 w-6" />}
+        icon={<Users className="size-6" />}
       />
 
       <KpiRow>

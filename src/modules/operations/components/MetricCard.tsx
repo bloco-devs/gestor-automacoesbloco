@@ -25,7 +25,7 @@ export function MetricCard({ label, value, hint, icon: Icon, tone = "default", c
       <CardContent className={cn("flex flex-col gap-1", compact ? "p-3" : "p-4")}>
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
-          {Icon ? <Icon className={cn("h-4 w-4", TONE[tone])} aria-hidden /> : null}
+          {Icon ? <Icon className={cn("size-4", TONE[tone])} aria-hidden /> : null}
         </div>
         <span className={cn("font-semibold", compact ? "text-xl" : "text-2xl", TONE[tone])}>{value}</span>
         {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}

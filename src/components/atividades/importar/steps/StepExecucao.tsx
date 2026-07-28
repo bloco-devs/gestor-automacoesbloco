@@ -48,12 +48,12 @@ export function StepExecucao({
   const status = job?.status ?? "queued";
 
   const statusStyles: Record<string, { icon: JSX.Element; text: string; tone: string }> = {
-    success: { icon: <CheckCircle2 className="h-5 w-5 text-emerald-600" />, text: "Concluído com sucesso", tone: "text-emerald-700" },
-    partial: { icon: <AlertTriangle className="h-5 w-5 text-amber-600" />, text: "Concluído com avisos", tone: "text-amber-700" },
-    failed: { icon: <XCircle className="h-5 w-5 text-destructive" />, text: "Falhou", tone: "text-destructive" },
-    cancelled: { icon: <XCircle className="h-5 w-5 text-muted-foreground" />, text: "Cancelado", tone: "text-muted-foreground" },
-    running: { icon: <Loader2 className="h-5 w-5 text-primary animate-spin" />, text: "Em execução", tone: "text-primary" },
-    queued: { icon: <AlertTriangle className="h-5 w-5 text-muted-foreground" />, text: "Na fila", tone: "text-muted-foreground" },
+    success: { icon: <CheckCircle2 className="size-5 text-emerald-600" />, text: "Concluído com sucesso", tone: "text-emerald-700" },
+    partial: { icon: <AlertTriangle className="size-5 text-amber-600" />, text: "Concluído com avisos", tone: "text-amber-700" },
+    failed: { icon: <XCircle className="size-5 text-destructive" />, text: "Falhou", tone: "text-destructive" },
+    cancelled: { icon: <XCircle className="size-5 text-muted-foreground" />, text: "Cancelado", tone: "text-muted-foreground" },
+    running: { icon: <Loader2 className="size-5 text-primary animate-spin" />, text: "Em execução", tone: "text-primary" },
+    queued: { icon: <AlertTriangle className="size-5 text-muted-foreground" />, text: "Na fila", tone: "text-muted-foreground" },
   };
   const s = statusStyles[status] ?? statusStyles.queued;
 
@@ -105,7 +105,7 @@ export function StepExecucao({
             externa é registrada em <code>atividades_import_entities</code> para evitar duplicação.
           </p>
           <Button onClick={onExecuteReal}>
-            <PlayCircle className="h-4 w-4 mr-1.5" /> Executar importação definitiva
+            <PlayCircle className="size-4 mr-1.5" /> Executar importação definitiva
           </Button>
         </div>
       ) : null}
@@ -113,7 +113,7 @@ export function StepExecucao({
       {realRunning ? (
         <div className="border rounded-md p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
             <span className="font-medium">Importando…</span>
             <span className="text-muted-foreground">{phase}</span>
           </div>
@@ -127,7 +127,7 @@ export function StepExecucao({
 
       {realError ? (
         <div className="border border-destructive/40 bg-destructive/5 rounded-md p-3 flex items-start gap-2">
-          <XCircle className="h-4 w-4 text-destructive mt-0.5" />
+          <XCircle className="size-4 text-destructive mt-0.5" />
           <div className="text-sm text-destructive">{realError}</div>
         </div>
       ) : null}
@@ -137,7 +137,7 @@ export function StepExecucao({
           {warnings.length > 0 ? (
             <div className="border rounded-md p-3 space-y-1">
               <div className="text-xs font-semibold uppercase text-amber-600 flex items-center gap-1">
-                <AlertTriangle className="h-3.5 w-3.5" /> Avisos ({warnings.length})
+                <AlertTriangle className="size-3.5" /> Avisos ({warnings.length})
               </div>
               <ul className="text-xs space-y-0.5 max-h-32 overflow-auto">
                 {warnings.slice(0, 20).map((w, i) => (
@@ -149,7 +149,7 @@ export function StepExecucao({
           {errors.length > 0 ? (
             <div className="border border-destructive/40 rounded-md p-3 space-y-1">
               <div className="text-xs font-semibold uppercase text-destructive flex items-center gap-1">
-                <XCircle className="h-3.5 w-3.5" /> Erros ({errors.length})
+                <XCircle className="size-3.5" /> Erros ({errors.length})
               </div>
               <ul className="text-xs space-y-0.5 max-h-32 overflow-auto">
                 {errors.slice(0, 20).map((e, i) => (
@@ -162,7 +162,7 @@ export function StepExecucao({
           {realBoardId ? (
             <Button asChild size="sm">
               <Link to={`/atividades/${realBoardId}`}>
-                <ExternalLink className="h-4 w-4 mr-1.5" /> Abrir quadro importado
+                <ExternalLink className="size-4 mr-1.5" /> Abrir quadro importado
               </Link>
             </Button>
           ) : null}
@@ -175,7 +175,7 @@ export function StepExecucao({
           size="sm"
           onClick={() => downloadReportJson(realReport ?? report!, `import-${(realJob?.id ?? job?.id) ?? "job"}.json`)}
         >
-          <Download className="h-4 w-4 mr-1.5" />
+          <Download className="size-4 mr-1.5" />
           Baixar relatório JSON
         </Button>
       ) : (

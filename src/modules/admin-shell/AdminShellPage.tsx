@@ -42,7 +42,7 @@ export default function AdminShellPage() {
                         to={item.href}
                         className="group flex items-center gap-3 rounded-md px-2 py-2.5 outline-none transition-colors duration-fast ease-standard hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring/50"
                       >
-                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                        <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                         <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
                           <span className="ds-body-strong flex items-center gap-2 truncate">
                             {item.label}
@@ -51,7 +51,7 @@ export default function AdminShellPage() {
                           <span className="ds-caption truncate text-muted-foreground">{item.description}</span>
                         </div>
                         <ChevronRight
-                          className="h-4 w-4 shrink-0 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/70"
+                          className="size-4 shrink-0 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/70"
                           aria-hidden
                         />
                       </Link>

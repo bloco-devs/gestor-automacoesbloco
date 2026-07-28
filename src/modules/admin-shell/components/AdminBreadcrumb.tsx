@@ -16,13 +16,13 @@ export function AdminBreadcrumb({ active }: Props) {
       </Link>
       {group && (
         <>
-          <ChevronRight className="h-3 w-3" aria-hidden />
+          <ChevronRight className="size-3" aria-hidden />
           <span>{group.label}</span>
         </>
       )}
       {active && (
         <>
-          <ChevronRight className="h-3 w-3" aria-hidden />
+          <ChevronRight className="size-3" aria-hidden />
           <span className="text-foreground">{active.label}</span>
         </>
       )}

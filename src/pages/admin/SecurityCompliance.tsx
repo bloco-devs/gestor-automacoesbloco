@@ -44,7 +44,7 @@ function SecurityCompliancePageImpl() {
 
   return (
     <PageShell>
-      <PageHeader title="Compliance Center" subtitle="LGPD · ISO 27001 · OWASP · SOC 2 · NIST." icon={<FileWarning className="h-6 w-6" aria-hidden />} />
+      <PageHeader title="Compliance Center" subtitle="LGPD · ISO 27001 · OWASP · SOC 2 · NIST." icon={<FileWarning className="size-6" aria-hidden />} />
 
       <KpiRow>
         <StatCard label="Média geral" value={`${avg}%`} tone={avg >= 85 ? "success" : "warning"} />

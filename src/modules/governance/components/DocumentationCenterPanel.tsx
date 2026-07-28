@@ -23,7 +23,7 @@ export const DocumentationCenterPanel = memo(function DocumentationCenterPanel()
           <Card key={g.id} className="surface-1">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm">
-                <FileText className="h-4 w-4 text-primary" aria-hidden />
+                <FileText className="size-4 text-primary" aria-hidden />
                 {g.label}
                 <Badge variant="secondary" className="ml-auto text-[10px]">{g.items.length}</Badge>
               </CardTitle>

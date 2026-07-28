@@ -15,7 +15,7 @@ export default function PerformanceCenterPage() {
       <PageHeader
         title="Performance Center"
         subtitle="Latência agregada por camada. Amostras em memória, sem polling."
-        icon={<Gauge className="h-6 w-6" />}
+        icon={<Gauge className="size-6" />}
       />
 
       <KpiRow>

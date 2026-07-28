@@ -38,7 +38,7 @@ function SecurityPoliciesPageImpl() {
 
   return (
     <PageShell>
-      <PageHeader title="Policy Center" subtitle="Cadastro client-side de políticas de segurança (preparado para Supabase)." icon={<ShieldCheck className="h-6 w-6" aria-hidden />} />
+      <PageHeader title="Policy Center" subtitle="Cadastro client-side de políticas de segurança (preparado para Supabase)." icon={<ShieldCheck className="size-6" aria-hidden />} />
 
       <Section title="Nova política">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -77,7 +77,7 @@ function SecurityPoliciesPageImpl() {
                   <div className="ds-caption text-muted-foreground mt-1">Atualizada em {new Date(p.updatedAt).toLocaleDateString()}</div>
                 </div>
                 <Button variant="ghost" size="icon" aria-label="Remover política" onClick={() => removePolicy(p.id)}>
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="size-4" />
                 </Button>
               </div>
             ))}

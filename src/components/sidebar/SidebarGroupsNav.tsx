@@ -246,7 +246,7 @@ function SidebarNavItem({
             "group relative flex items-center rounded-md text-[13px] leading-5 min-w-0",
             "transition-colors duration-fast ease-standard",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-            mini ? "h-9 w-9 justify-center" : "gap-2.5 px-2 py-1.5",
+            mini ? "size-9 justify-center" : "gap-2.5 px-2 py-1.5",
             isActive
               ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
               : cn(

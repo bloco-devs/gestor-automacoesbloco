@@ -119,7 +119,7 @@ export function CommandPalette() {
                   value={`recent ${c.title}`}
                   onSelect={() => runCommand(c.id)}
                 >
-                  {c.icon ? <c.icon className="mr-2 h-4 w-4" aria-hidden /> : null}
+                  {c.icon ? <c.icon className="mr-2 size-4" aria-hidden /> : null}
                   <span>{c.title}</span>
                   {c.shortcut ? (
                     <kbd className="ml-auto text-[10px] text-muted-foreground">
@@ -142,7 +142,7 @@ export function CommandPalette() {
                   value={`${e.label} ${e.description ?? ""} ${(e.keywords ?? []).join(" ")}`}
                   onSelect={() => handleEntity(e)}
                 >
-                  {e.icon ? <e.icon className="mr-2 h-4 w-4" aria-hidden /> : null}
+                  {e.icon ? <e.icon className="mr-2 size-4" aria-hidden /> : null}
                   <div className="flex flex-col">
                     <span>{e.label}</span>
                     {e.description ? (
@@ -164,7 +164,7 @@ export function CommandPalette() {
                 value={`${c.title} ${c.description ?? ""} ${(c.keywords ?? []).join(" ")}`}
                 onSelect={() => runCommand(c.id)}
               >
-                {c.icon ? <c.icon className="mr-2 h-4 w-4" aria-hidden /> : null}
+                {c.icon ? <c.icon className="mr-2 size-4" aria-hidden /> : null}
                 <div className="flex flex-col">
                   <span>{c.title}</span>
                   {c.description ? (

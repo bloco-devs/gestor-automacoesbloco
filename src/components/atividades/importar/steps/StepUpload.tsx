@@ -20,14 +20,14 @@ export function StepUpload({ file, onFile, invalidReason }: Props) {
         onClick={() => inputRef.current?.click()}
         className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary hover:bg-muted/30 transition"
       >
-        <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+        <Upload className="size-8 mx-auto text-muted-foreground mb-2" />
         {file ? (
           <div className="space-y-1">
             <div className="flex items-center justify-center gap-2 text-sm font-medium">
               {file.name.toLowerCase().endsWith(".zip") ? (
-                <FileArchive className="h-4 w-4" />
+                <FileArchive className="size-4" />
               ) : (
-                <FileJson className="h-4 w-4" />
+                <FileJson className="size-4" />
               )}
               {file.name}
             </div>

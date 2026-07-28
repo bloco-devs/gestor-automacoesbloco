@@ -23,7 +23,7 @@ export function WorkflowsOpsCard() {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Workflow className="h-4 w-4 text-primary" />
+          <Workflow className="size-4 text-primary" />
           Workflows
         </CardTitle>
       </CardHeader>

@@ -130,7 +130,7 @@ export function NovoQuadroDialog({ open, onOpenChange, submitting, onSubmit }: P
                     type="button"
                     onClick={() => setCor(c)}
                     aria-label={`Cor ${c}`}
-                    className={`h-6 w-6 rounded-md border-2 transition ${
+                    className={`size-6 rounded-md border-2 transition ${
                       cor === c ? "border-foreground" : "border-transparent"
                     }`}
                     style={{ backgroundColor: c }}
@@ -146,7 +146,7 @@ export function NovoQuadroDialog({ open, onOpenChange, submitting, onSubmit }: P
                     key={i}
                     type="button"
                     onClick={() => setIcone(i)}
-                    className={`h-7 w-7 rounded-md border text-sm ${
+                    className={`size-7 rounded-md border text-sm ${
                       icone === i ? "border-foreground bg-accent" : "border-border"
                     }`}
                   >
@@ -179,7 +179,7 @@ export function NovoQuadroDialog({ open, onOpenChange, submitting, onSubmit }: P
               type="checkbox"
               checked={favoritar}
               onChange={(e) => setFavoritar(e.target.checked)}
-              className="h-4 w-4 rounded border-input"
+              className="size-4 rounded border-input"
             />
             Adicionar aos favoritos
           </label>

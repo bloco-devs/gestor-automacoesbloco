@@ -691,7 +691,7 @@ export default function SolicitacaoDetail() {
                         </div>
                         <div className="flex items-center gap-2">
                           {s.link && (
-                            <Button asChild variant="outline" size="icon" className="h-8 w-8" title="Abrir link">
+                            <Button asChild variant="outline" size="icon" className="size-8" title="Abrir link">
                               <a href={/^https?:\/\//i.test(s.link) ? s.link : `https://${s.link}`} target="_blank" rel="noopener noreferrer" aria-label="Abrir link da solução">
                                 <ExternalLink className="size-4" />
                               </a>
@@ -699,12 +699,12 @@ export default function SolicitacaoDetail() {
                           )}
                           {canManageSolucoes && !isDev && s.createdBy === user?.id && (
                             <>
-                              <Button variant="outline" size="icon" className="h-8 w-8" title="Editar" onClick={() => openEditarSolucao(s)}>
+                              <Button variant="outline" size="icon" className="size-8" title="Editar" onClick={() => openEditarSolucao(s)}>
                                 <Pencil className="size-4" />
                               </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button variant="outline" size="icon" className="h-8 w-8" title="Excluir">
+                                  <Button variant="outline" size="icon" className="size-8" title="Excluir">
                                     <Trash2 className="size-4" />
                                   </Button>
                                 </AlertDialogTrigger>

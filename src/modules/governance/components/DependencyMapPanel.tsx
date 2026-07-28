@@ -21,7 +21,7 @@ export const DependencyMapPanel = memo(function DependencyMapPanel() {
                     {byId.get(id)?.label ?? id}
                   </div>
                   {i < MAIN_CHAIN.length - 1 && (
-                    <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                    <ArrowDown className="size-3.5 text-muted-foreground" aria-hidden />
                   )}
                 </li>
               ))}

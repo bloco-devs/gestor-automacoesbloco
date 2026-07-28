@@ -41,7 +41,7 @@ export default function WorkflowExecutionsPage() {
               <Card key={log.id}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Icon className={`h-4 w-4 ${meta.className}`} />
+                    <Icon className={`size-4 ${meta.className}`} />
                     {nameOf(log.workflow_id)}
                     <Badge variant="outline" className="text-[10px]">{meta.label}</Badge>
                     <span className="ml-auto text-xs text-muted-foreground font-normal">

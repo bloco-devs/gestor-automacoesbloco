@@ -85,7 +85,7 @@ export function AnalyticsPage() {
       <PageHeader
         title="Analytics"
         subtitle="Inteligência operacional sobre demandas, SLA, IA, workflows e knowledge."
-        icon={<BarChart3 className="h-6 w-6" aria-hidden />}
+        icon={<BarChart3 className="size-6" aria-hidden />}
       />
 
       <AnalyticsFiltersBar

@@ -41,7 +41,7 @@ export function DemandWorkflowsTab({ demandId }: Props) {
           <Card key={log.id} className="p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Icon className={`h-4 w-4 ${meta.className}`} />
+                <Icon className={`size-4 ${meta.className}`} />
                 <span className="font-medium text-sm">{nameOf(log.workflow_id)}</span>
                 <Badge variant="outline" className="text-[10px]">{meta.label}</Badge>
               </div>

@@ -43,7 +43,7 @@ function SecurityTimelinePageImpl() {
       <PageHeader
         title="Security Timeline"
         subtitle="Eventos unificados de Audit, Errors, Threats e Service Mesh."
-        icon={<Activity className="h-6 w-6" aria-hidden />}
+        icon={<Activity className="size-6" aria-hidden />}
         actions={
           <Button variant="outline" size="sm" onClick={() => downloadCsv(`timeline-${Date.now()}.csv`, timelineToCsv(filtered))}>
             Exportar CSV

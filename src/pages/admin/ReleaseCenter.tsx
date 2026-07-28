@@ -48,7 +48,7 @@ export default function ReleaseCenterPage() {
       <PageHeader
         title="Release Center"
         subtitle="Checklist consolidado de prontidão para produção."
-        icon={<Rocket className="h-6 w-6" />}
+        icon={<Rocket className="size-6" />}
       />
 
       <KpiRow>
@@ -64,9 +64,9 @@ export default function ReleaseCenterPage() {
           {checks.map((c) => (
             <li key={c.id} className="flex items-center gap-2 rounded-lg border bg-card p-3">
               {c.ok ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />
+                <CheckCircle2 className="size-4 text-emerald-500" aria-hidden />
               ) : (
-                <XCircle className="h-4 w-4 text-destructive" aria-hidden />
+                <XCircle className="size-4 text-destructive" aria-hidden />
               )}
               <span className="text-sm">{c.label}</span>
             </li>

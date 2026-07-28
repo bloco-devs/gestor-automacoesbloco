@@ -29,7 +29,7 @@ export const DeveloperShell = memo(function DeveloperShell({
       <PageHeader
         title={title}
         subtitle={description}
-        icon={<Code2 className="h-6 w-6" />}
+        icon={<Code2 className="size-6" />}
         actions={actions}
       />
       <nav

@@ -53,7 +53,7 @@ export default function SecretsCenterPage() {
       <PageHeader
         title="Secrets & Environment"
         subtitle="Somente leitura. Valores nunca são exibidos — apenas o status de configuração."
-        icon={<KeyRound className="h-6 w-6" />}
+        icon={<KeyRound className="size-6" />}
       />
 
       <Section>

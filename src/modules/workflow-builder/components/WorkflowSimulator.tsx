@@ -77,13 +77,13 @@ export function WorkflowSimulator({ workflow }: Props) {
       </div>
 
       <Button type="button" size="sm" onClick={() => setRan(true)}>
-        <Play className="h-3.5 w-3.5 mr-1" /> Simular
+        <Play className="size-3.5 mr-1" /> Simular
       </Button>
 
       {result && (
         <div className="rounded-md border border-border bg-card p-3 space-y-3">
           <div className={`flex items-center gap-2 text-sm font-medium ${result.matched ? "text-success" : "text-muted-foreground"}`}>
-            {result.matched ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+            {result.matched ? <CheckCircle2 className="size-4" /> : <XCircle className="size-4" />}
             {result.matched ? "Condições atendidas" : "Condições NÃO atendidas"}
           </div>
           <div className="text-xs text-muted-foreground">

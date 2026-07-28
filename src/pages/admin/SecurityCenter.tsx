@@ -41,7 +41,7 @@ export default function SecurityCenterPage() {
       <PageHeader
         title="Security Center"
         subtitle="Segurança · Compliance · LGPD · Auditoria · Integridade · Governança."
-        icon={<Shield className="h-6 w-6" aria-hidden />}
+        icon={<Shield className="size-6" aria-hidden />}
       />
 
       <KpiRow>
@@ -64,7 +64,7 @@ export default function SecurityCenterPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {NAV.map((n) => (
             <Link key={n.href} to={n.href} className="rounded-2xl border p-4 hover:bg-muted/40 transition-colors">
-              <div className="ds-h3 mb-1 flex items-center gap-2"><Shield className="h-4 w-4 text-primary" aria-hidden /> {n.label}</div>
+              <div className="ds-h3 mb-1 flex items-center gap-2"><Shield className="size-4 text-primary" aria-hidden /> {n.label}</div>
               <p className="ds-caption text-muted-foreground">{n.description}</p>
             </Link>
           ))}

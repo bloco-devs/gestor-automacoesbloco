@@ -37,7 +37,7 @@ function AdminSidebarImpl({ activeHref, onNavigate }: Props) {
                         active && "bg-muted font-medium text-foreground",
                       )}
                     >
-                      <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
+                      <Icon className="size-4 text-muted-foreground" aria-hidden />
                       <span className="truncate">{item.label}</span>
                       {item.status && (
                         <Badge variant="secondary" className="ml-auto text-[10px]">

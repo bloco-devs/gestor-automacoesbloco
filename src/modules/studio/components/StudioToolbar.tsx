@@ -23,33 +23,33 @@ function StudioToolbarInner({ viewport, canUndo, canRedo, onUndo, onRedo, onView
     <Toolbar className="border-b bg-background px-3 py-2">
       <div className="flex items-center gap-2">
         <Button size="icon" variant="ghost" onClick={onUndo} disabled={!canUndo} aria-label="Desfazer">
-          <Undo2 className="h-4 w-4" />
+          <Undo2 className="size-4" />
         </Button>
         <Button size="icon" variant="ghost" onClick={onRedo} disabled={!canRedo} aria-label="Refazer">
-          <Redo2 className="h-4 w-4" />
+          <Redo2 className="size-4" />
         </Button>
         <div className="h-6 w-px bg-border mx-1" />
         <div className="flex items-center gap-1">
           <Button size="icon" {...bp("sm")} onClick={() => onViewport({ breakpoint: "sm" })} aria-label="Mobile">
-            <Smartphone className="h-4 w-4" />
+            <Smartphone className="size-4" />
           </Button>
           <Button size="icon" {...bp("md")} onClick={() => onViewport({ breakpoint: "md" })} aria-label="Tablet">
-            <Tablet className="h-4 w-4" />
+            <Tablet className="size-4" />
           </Button>
           <Button size="icon" {...bp("lg")} onClick={() => onViewport({ breakpoint: "lg" })} aria-label="Desktop">
-            <Monitor className="h-4 w-4" />
+            <Monitor className="size-4" />
           </Button>
           <Button size="icon" {...bp("xl")} onClick={() => onViewport({ breakpoint: "xl" })} aria-label="Full">
-            <Monitor className={cn("h-4 w-4")} />
+            <Monitor className={cn("size-4")} />
           </Button>
         </div>
         <div className="h-6 w-px bg-border mx-1" />
         <div className="flex items-center gap-1">
           <Button size="icon" {...th("light")} onClick={() => onViewport({ theme: "light" })} aria-label="Tema claro">
-            <Sun className="h-4 w-4" />
+            <Sun className="size-4" />
           </Button>
           <Button size="icon" {...th("dark")} onClick={() => onViewport({ theme: "dark" })} aria-label="Tema escuro">
-            <Moon className="h-4 w-4" />
+            <Moon className="size-4" />
           </Button>
         </div>
         <div className="h-6 w-px bg-border mx-1" />
@@ -59,7 +59,7 @@ function StudioToolbarInner({ viewport, canUndo, canRedo, onUndo, onRedo, onView
           onClick={() => onViewport({ grid: !viewport.grid })}
           aria-label="Alternar grid"
         >
-          <Grid3x3 className="h-4 w-4" />
+          <Grid3x3 className="size-4" />
         </Button>
         <Button
           size="icon"
@@ -67,7 +67,7 @@ function StudioToolbarInner({ viewport, canUndo, canRedo, onUndo, onRedo, onView
           onClick={() => onViewport({ snap: !viewport.snap })}
           aria-label="Alternar snap"
         >
-          <Magnet className="h-4 w-4" />
+          <Magnet className="size-4" />
         </Button>
       </div>
       <div className="flex items-center gap-2">{right}</div>

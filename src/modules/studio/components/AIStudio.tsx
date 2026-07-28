@@ -67,7 +67,7 @@ function AIStudioInner({ onAppend }: Props) {
     <Section
       title={
         <span className="inline-flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" /> AI Studio
+          <Sparkles className="size-4 text-primary" /> AI Studio
         </span>
       }
       description="Templates prontos gerados a partir do catálogo do Studio. Nenhuma execução de IA sem confirmação."

@@ -16,7 +16,7 @@ export function AdminContextPanel({ active }: Props) {
       <Card className="surface-1">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm">
-            <Info className="h-4 w-4 text-primary" aria-hidden />
+            <Info className="size-4 text-primary" aria-hidden />
             {active ? active.label : "Administração"}
           </CardTitle>
         </CardHeader>
@@ -46,7 +46,7 @@ export function AdminContextPanel({ active }: Props) {
                     {active.related.map((r) => (
                       <li key={r.href}>
                         <Link to={r.href} className="inline-flex items-center gap-1 text-primary hover:underline">
-                          <ExternalLink className="h-3 w-3" aria-hidden />
+                          <ExternalLink className="size-3" aria-hidden />
                           {r.label}
                         </Link>
                       </li>

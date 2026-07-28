@@ -53,7 +53,7 @@ function StudioShellInner() {
       <PageHeader
         title="Platform Studio"
         subtitle="Ambiente low-code para montar aplicações a partir dos módulos existentes."
-        icon={<LayoutTemplate className="h-5 w-5" />}
+        icon={<LayoutTemplate className="size-5" />}
         actions={
           <div className="flex items-center gap-2">
             <Input

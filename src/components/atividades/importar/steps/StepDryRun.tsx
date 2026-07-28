@@ -51,7 +51,7 @@ export function StepDryRun({ running, onRun, onCancel, job, report, error }: Pro
       {running ? (
         <div className="border rounded-md p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
             <span className="font-medium">Analisando...</span>
             <span className="text-muted-foreground">{phase}</span>
           </div>
@@ -65,7 +65,7 @@ export function StepDryRun({ running, onRun, onCancel, job, report, error }: Pro
 
       {error ? (
         <div className="border border-destructive/40 bg-destructive/5 rounded-md p-3 flex items-start gap-2">
-          <XCircle className="h-4 w-4 text-destructive mt-0.5" />
+          <XCircle className="size-4 text-destructive mt-0.5" />
           <div className="text-sm text-destructive">{error}</div>
         </div>
       ) : null}
@@ -76,7 +76,7 @@ export function StepDryRun({ running, onRun, onCancel, job, report, error }: Pro
         return (
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-sm">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <CheckCircle2 className="size-4 text-emerald-600" />
             <span className="font-medium">Dry-run concluído</span>
             <span className="text-muted-foreground">em {report.duration_ms ?? 0} ms</span>
           </div>
@@ -88,7 +88,7 @@ export function StepDryRun({ running, onRun, onCancel, job, report, error }: Pro
           {warnings.length > 0 ? (
             <div className="border rounded-md p-3 space-y-1">
               <div className="text-xs font-semibold uppercase text-amber-600 flex items-center gap-1">
-                <AlertTriangle className="h-3.5 w-3.5" /> Avisos ({warnings.length})
+                <AlertTriangle className="size-3.5" /> Avisos ({warnings.length})
               </div>
               <ul className="text-xs space-y-0.5 max-h-32 overflow-auto">
                 {warnings.slice(0, 20).map((w, i) => (
@@ -101,7 +101,7 @@ export function StepDryRun({ running, onRun, onCancel, job, report, error }: Pro
           {errors.length > 0 ? (
             <div className="border border-destructive/40 rounded-md p-3 space-y-1">
               <div className="text-xs font-semibold uppercase text-destructive flex items-center gap-1">
-                <XCircle className="h-3.5 w-3.5" /> Erros ({errors.length})
+                <XCircle className="size-3.5" /> Erros ({errors.length})
               </div>
               <ul className="text-xs space-y-0.5 max-h-32 overflow-auto">
                 {errors.slice(0, 20).map((e, i) => (

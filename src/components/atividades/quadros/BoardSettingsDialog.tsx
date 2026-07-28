@@ -219,25 +219,25 @@ export function BoardSettingsDialog({ open, onOpenChange, board, onDeleted }: Pr
           <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col min-h-0">
             <TabsList className="mx-4 mt-3 justify-start flex-wrap h-auto">
               <TabsTrigger value="geral" className="gap-1.5">
-                <Palette className="h-3.5 w-3.5" /> Geral
+                <Palette className="size-3.5" /> Geral
               </TabsTrigger>
               <TabsTrigger value="membros" className="gap-1.5">
-                <Users className="h-3.5 w-3.5" /> Membros
+                <Users className="size-3.5" /> Membros
               </TabsTrigger>
               <TabsTrigger value="visibilidade" className="gap-1.5">
-                <Eye className="h-3.5 w-3.5" /> Visibilidade
+                <Eye className="size-3.5" /> Visibilidade
               </TabsTrigger>
               <TabsTrigger value="colunas" className="gap-1.5">
-                <ListTree className="h-3.5 w-3.5" /> Colunas
+                <ListTree className="size-3.5" /> Colunas
               </TabsTrigger>
               <TabsTrigger value="labels" className="gap-1.5">
-                <TagIcon className="h-3.5 w-3.5" /> Etiquetas
+                <TagIcon className="size-3.5" /> Etiquetas
               </TabsTrigger>
               <TabsTrigger value="historico" className="gap-1.5">
-                <HistoryIcon className="h-3.5 w-3.5" /> Histórico
+                <HistoryIcon className="size-3.5" /> Histórico
               </TabsTrigger>
               <TabsTrigger value="perigo" className="gap-1.5 text-destructive">
-                <Shield className="h-3.5 w-3.5" /> Zona de risco
+                <Shield className="size-3.5" /> Zona de risco
               </TabsTrigger>
             </TabsList>
 
@@ -452,7 +452,7 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
                   type="button"
                   onClick={() => setCor(c)}
                   aria-label={`Cor ${c}`}
-                  className={`h-7 w-7 rounded-md border-2 transition ${cor === c ? "border-foreground" : "border-transparent"}`}
+                  className={`size-7 rounded-md border-2 transition ${cor === c ? "border-foreground" : "border-transparent"}`}
                   style={{ backgroundColor: c }}
                 />
               ))}
@@ -466,7 +466,7 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
                   key={i}
                   type="button"
                   onClick={() => setIcone(i)}
-                  className={`h-8 w-8 rounded-md border text-base ${icone === i ? "border-foreground bg-accent" : "border-border"}`}
+                  className={`size-8 rounded-md border text-base ${icone === i ? "border-foreground bg-accent" : "border-border"}`}
                 >
                   {i}
                 </button>
@@ -484,7 +484,7 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
                 type="button"
                 onClick={() => setBackground(c)}
                 aria-label={c ? `Fundo ${c}` : "Sem fundo"}
-                className={`h-7 w-7 rounded-md border-2 transition grid place-items-center text-[10px] text-muted-foreground ${background === c ? "border-foreground" : "border-transparent"}`}
+                className={`size-7 rounded-md border-2 transition grid place-items-center text-[10px] text-muted-foreground ${background === c ? "border-foreground" : "border-transparent"}`}
                 style={{ backgroundColor: c || "transparent" }}
               >
                 {c ? "" : "—"}
@@ -501,7 +501,7 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
 
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
-            <ImageIcon className="h-3.5 w-3.5" /> Imagem de capa
+            <ImageIcon className="size-3.5" /> Imagem de capa
           </Label>
           <div className="flex flex-wrap items-center gap-2">
             <input
@@ -522,7 +522,7 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
               onClick={() => coverInputRef.current?.click()}
               disabled={!canAdmin || uploading}
             >
-              <Upload className="h-4 w-4" />
+              <Upload className="size-4" />
               {uploading ? "Enviando..." : coverUrl ? "Trocar imagem" : "Enviar imagem"}
             </Button>
             {coverUrl && (
@@ -534,7 +534,7 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
                 onClick={handleRemoveCover}
                 disabled={!canAdmin || uploading}
               >
-                <X className="h-4 w-4" /> Remover
+                <X className="size-4" /> Remover
               </Button>
             )}
           </div>
@@ -580,12 +580,12 @@ function GeralTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean }
           >
             {board.arquivado ? (
               <>
-                <ArchiveRestore className="h-4 w-4" />
+                <ArchiveRestore className="size-4" />
                 {archiving ? "Restaurando..." : "Restaurar quadro"}
               </>
             ) : (
               <>
-                <Archive className="h-4 w-4" />
+                <Archive className="size-4" />
                 {archiving ? "Arquivando..." : "Arquivar quadro"}
               </>
             )}
@@ -734,7 +734,7 @@ function MembrosTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
               size="sm"
               className="gap-1.5"
             >
-              <UserPlus className="h-4 w-4" />
+              <UserPlus className="size-4" />
               {busy === "add" ? "Adicionando..." : "Adicionar"}
             </Button>
           </div>
@@ -747,7 +747,7 @@ function MembrosTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
               disabled
               title="Envio de convites por e-mail chegará em uma próxima onda."
             >
-              <Mail className="h-4 w-4" /> Convidar por e-mail
+              <Mail className="size-4" /> Convidar por e-mail
             </Button>
             <span className="text-[11px] text-muted-foreground">
               Em breve — hoje o usuário precisa existir na plataforma.
@@ -758,7 +758,7 @@ function MembrosTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
 
 
       <div className="relative">
-        <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar membro..."
           className="pl-8"
@@ -784,7 +784,7 @@ function MembrosTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
             const disabled = busy === m.userId;
             return (
               <li key={m.userId} className="flex items-center gap-3 p-3">
-                <Avatar className="h-9 w-9">
+                <Avatar className="size-9">
                   {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.nome} />}
                   <AvatarFallback className="text-xs bg-slate-200 text-slate-800">{initials(m)}</AvatarFallback>
                 </Avatar>
@@ -825,7 +825,7 @@ function MembrosTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
                     disabled={disabled}
                     aria-label="Remover"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="size-4" />
                   </Button>
                 )}
               </li>
@@ -900,7 +900,7 @@ function VisibilidadeTab({
                 }`}
               >
                 <RadioGroupItem id={`vis-${k}`} value={k} className="mt-1" />
-                <Icon className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                <Icon className="size-4 mt-0.5 text-muted-foreground" />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium">{meta.label}</div>
                   <p className="text-xs text-muted-foreground">{meta.desc}</p>
@@ -1071,7 +1071,7 @@ function ColunasTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
             disabled={busy === "add" || !novo.trim()}
             className="gap-1.5"
           >
-            <Plus className="h-4 w-4" /> Adicionar
+            <Plus className="size-4" /> Adicionar
           </Button>
         </div>
       )}
@@ -1156,7 +1156,7 @@ function ColunasTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
                             title="Renomear"
                             disabled={busy === c.id}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="size-4" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -1165,7 +1165,7 @@ function ColunasTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
                             title="Duplicar"
                             disabled={busy === c.id}
                           >
-                            <Copy className="h-4 w-4" />
+                            <Copy className="size-4" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -1175,9 +1175,9 @@ function ColunasTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
                             disabled={busy === c.id}
                           >
                             {c.arquivada ? (
-                              <ArchiveRestore className="h-4 w-4" />
+                              <ArchiveRestore className="size-4" />
                             ) : (
-                              <Archive className="h-4 w-4" />
+                              <Archive className="size-4" />
                             )}
                           </Button>
                           <Button
@@ -1187,7 +1187,7 @@ function ColunasTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
                             title="Excluir"
                             disabled={busy === c.id}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="size-4" />
                           </Button>
                         </div>
                       )}
@@ -1200,7 +1200,7 @@ function ColunasTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean
         </DndContext>
       )}
       <p className="text-xs text-muted-foreground">
-        Arraste pelo ícone <GripVertical className="h-3 w-3 inline align-text-bottom" /> para
+        Arraste pelo ícone <GripVertical className="size-3 inline align-text-bottom" /> para
         reordenar. WIP limita o número de cards ativos por coluna.
       </p>
     </div>
@@ -1239,7 +1239,7 @@ function SortableColunaRow({
           {...attributes}
           {...listeners}
         >
-          <GripVertical className="h-4 w-4" />
+          <GripVertical className="size-4" />
         </button>
       )}
       {children}
@@ -1364,7 +1364,7 @@ function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean 
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar etiqueta..."
           className="pl-8"
@@ -1389,7 +1389,7 @@ function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean 
                   key={c}
                   type="button"
                   onClick={() => setNovo({ ...novo, cor: c })}
-                  className={`h-6 w-6 rounded border-2 ${novo.cor === c ? "border-foreground" : "border-transparent"}`}
+                  className={`size-6 rounded border-2 ${novo.cor === c ? "border-foreground" : "border-transparent"}`}
                   style={{ backgroundColor: c }}
                   aria-label={c}
                 />
@@ -1446,7 +1446,7 @@ function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean 
                               key={c}
                               type="button"
                               onClick={() => setEditing({ ...editing, cor: c })}
-                              className={`h-6 w-6 rounded border-2 ${editing.cor === c ? "border-foreground" : "border-transparent"}`}
+                              className={`size-6 rounded border-2 ${editing.cor === c ? "border-foreground" : "border-transparent"}`}
                               style={{ backgroundColor: c }}
                             />
                           ))}
@@ -1484,7 +1484,7 @@ function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean 
                               title={l.favorita ? "Remover dos favoritos" : "Marcar como favorita"}
                             >
                               <Star
-                                className={`h-4 w-4 ${l.favorita ? "fill-amber-400 text-amber-400" : ""}`}
+                                className={`size-4 ${l.favorita ? "fill-amber-400 text-amber-400" : ""}`}
                               />
                             </Button>
                             <Button
@@ -1495,7 +1495,7 @@ function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean 
                               }
                               disabled={busy === l.id}
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="size-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -1503,7 +1503,7 @@ function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean 
                               onClick={() => handleDelete(l)}
                               disabled={busy === l.id}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="size-4" />
                             </Button>
                           </>
                         )}
@@ -1518,7 +1518,7 @@ function LabelsTab({ board, canAdmin }: { board: BoardResumo; canAdmin: boolean 
       )}
       {!busca && canAdmin && (
         <p className="text-xs text-muted-foreground">
-          Arraste pelo ícone <GripVertical className="h-3 w-3 inline align-text-bottom" /> para
+          Arraste pelo ícone <GripVertical className="size-3 inline align-text-bottom" /> para
           reordenar. Favoritas aparecem primeiro nos menus.
         </p>
       )}
@@ -1558,7 +1558,7 @@ function SortableLabelRow({
           {...attributes}
           {...listeners}
         >
-          <GripVertical className="h-4 w-4" />
+          <GripVertical className="size-4" />
         </button>
       )}
       {children}
@@ -1635,7 +1635,7 @@ function HistoricoTab({ board }: { board: BoardResumo }) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar no histórico..."
             className="pl-8"
@@ -1644,7 +1644,7 @@ function HistoricoTab({ board }: { board: BoardResumo }) {
           />
         </div>
         <div className="flex items-center gap-1 flex-wrap">
-          <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1" />
+          <Filter className="size-3.5 text-muted-foreground mr-1" />
           {HIST_CATEGORIAS.map((c) => {
             const on = cats.has(c.id);
             return (
@@ -1690,7 +1690,7 @@ function HistoricoTab({ board }: { board: BoardResumo }) {
         <ol className="relative border-l ml-3 space-y-4">
           {filtered.map((h) => (
             <li key={h.id} className="ml-4 relative">
-              <span className="absolute -left-[22px] top-1.5 h-3 w-3 rounded-full bg-primary ring-4 ring-background" />
+              <span className="absolute -left-[22px] top-1.5 size-3 rounded-full bg-primary ring-4 ring-background" />
               <div className="text-sm">
                 <span className="font-medium">
                   {EVENTO_LABEL[h.evento] ?? h.evento}

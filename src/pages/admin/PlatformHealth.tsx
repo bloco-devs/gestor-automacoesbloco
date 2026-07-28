@@ -20,7 +20,7 @@ export default function PlatformHealthPage() {
       <PageHeader
         title="Platform Health"
         subtitle="Visão consolidada dos runtimes, performance e sistema."
-        icon={<Activity className="h-6 w-6" />}
+        icon={<Activity className="size-6" />}
       />
 
       <Section title="Runtime" description="Status somente leitura de cada camada da plataforma.">

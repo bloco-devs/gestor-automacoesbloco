@@ -72,14 +72,14 @@ export function ActionBuilder({ value, onChange }: Props) {
                 </SelectContent>
               </Select>
               <div className="ml-auto flex items-center gap-1">
-                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => move(a.id, -1)}>
-                  <ArrowUp className="h-3.5 w-3.5" />
+                <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => move(a.id, -1)}>
+                  <ArrowUp className="size-3.5" />
                 </Button>
-                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => move(a.id, 1)}>
-                  <ArrowDown className="h-3.5 w-3.5" />
+                <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => move(a.id, 1)}>
+                  <ArrowDown className="size-3.5" />
                 </Button>
-                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => remove(a.id)}>
-                  <Trash2 className="h-3.5 w-3.5" />
+                <Button type="button" variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => remove(a.id)}>
+                  <Trash2 className="size-3.5" />
                 </Button>
               </div>
             </div>
@@ -103,7 +103,7 @@ export function ActionBuilder({ value, onChange }: Props) {
         );
       })}
       <Button type="button" variant="outline" size="sm" onClick={add}>
-        <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar ação
+        <Plus className="size-3.5 mr-1" /> Adicionar ação
       </Button>
     </div>
   );

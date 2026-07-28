@@ -8,7 +8,7 @@ export default function BackupCenterPage() {
       <PageHeader
         title="Backup & Restore"
         subtitle="Monitoramento somente leitura. Restore executado somente pela infraestrutura Supabase."
-        icon={<HardDrive className="h-6 w-6" />}
+        icon={<HardDrive className="size-6" />}
       />
 
       <KpiRow>

@@ -68,7 +68,7 @@ export function StepDestino({ target, onChange }: Props) {
             {target.mode === "existing_board" ? (
               loading ? (
                 <div className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Carregando quadros...
+                  <Loader2 className="size-3 animate-spin" /> Carregando quadros...
                 </div>
               ) : boards.length === 0 ? (
                 <div className="text-xs text-muted-foreground">Nenhum quadro disponível.</div>

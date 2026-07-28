@@ -36,7 +36,7 @@ export default function SettingsCenterPage() {
       <PageHeader
         title="Config Center"
         subtitle="Configurações versionadas por categoria — editor JSON com histórico e rollback."
-        icon={<Cog className="h-6 w-6" />}
+        icon={<Cog className="size-6" />}
       />
 
       <Section title="Nova configuração">

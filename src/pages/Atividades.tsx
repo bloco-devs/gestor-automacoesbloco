@@ -153,11 +153,11 @@ export default function Atividades({ hrefBase = "/atividades" }: AtividadesProps
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => navigate("/atividades/importar")}>
-            <Download className="h-4 w-4 mr-1.5" />
+            <Download className="size-4 mr-1.5" />
             Importar projeto
           </Button>
           <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-1.5" />
+            <Plus className="size-4 mr-1.5" />
             Novo projeto
           </Button>
         </div>
@@ -166,7 +166,7 @@ export default function Atividades({ hrefBase = "/atividades" }: AtividadesProps
       {favoritos.length > 0 && tab === "recentes" && !busca ? (
         <section className="space-y-2">
           <h2 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider flex items-center gap-1.5">
-            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            <Star className="size-3.5 fill-amber-400 text-amber-400" />
             Favoritos
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -188,13 +188,13 @@ export default function Atividades({ hrefBase = "/atividades" }: AtividadesProps
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Icon className="h-3.5 w-3.5" />
+            <Icon className="size-3.5" />
             {label}
           </button>
         ))}
         <div className="ml-auto py-1.5 min-w-[200px]">
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
             <Input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
@@ -229,7 +229,7 @@ export default function Atividades({ hrefBase = "/atividades" }: AtividadesProps
           action={
             !busca && tab !== "arquivados" ? (
               <Button onClick={() => setDialogOpen(true)} size="sm">
-                <Plus className="h-4 w-4 mr-1.5" />
+                <Plus className="size-4 mr-1.5" />
                 Criar projeto
               </Button>
             ) : null

@@ -18,7 +18,7 @@ export const FeatureTimelinePanel = memo(function FeatureTimelinePanel() {
           <ol className="relative border-l pl-4">
             {FEATURE_TIMELINE.map((f) => (
               <li key={f.id} className="mb-3 last:mb-0">
-                <span className="absolute -left-1.5 h-3 w-3 rounded-full border bg-background" aria-hidden />
+                <span className="absolute -left-1.5 size-3 rounded-full border bg-background" aria-hidden />
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="font-mono text-xs text-muted-foreground">#{f.id}</span>
                   <span className="font-medium text-foreground">{f.name}</span>

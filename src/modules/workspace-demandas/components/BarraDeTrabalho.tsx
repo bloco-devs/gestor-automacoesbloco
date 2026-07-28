@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Columns3, GanttChart, Timer, Clock, Search, X } from "lucide-react";
+import { Activity, CalendarRange, Columns3, GanttChart, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -26,10 +26,26 @@ import { FILAS, type FilaId, type LenteId } from "@/domain/demand";
  *   repetiria o número que já está na aba da fila selecionada.
  */
 
+/**
+ * OS ÍCONES DAS LENTES PRECISAM SE DISTINGUIR ENTRE SI, NÃO SÓ FAZER SENTIDO
+ *
+ * Antes: Sprint usava `Timer` (cronômetro) e Timeline usava `Clock` (relógio).
+ * Isolado, cada um se justifica — os dois falam de tempo. Lado a lado, viram
+ * dois círculos com ponteiros: em 14px de altura, indistinguíveis. Um seletor
+ * de ícones só funciona se os ícones não se parecerem, e essa é uma exigência
+ * mais dura do que "combinar com o conceito".
+ *
+ * Agora cada lente tem uma silhueta própria — colunas, intervalo no
+ * calendário, curva de atividade, barras horizontais:
+ *   Board    colunas verticais       o que a lente literalmente desenha
+ *   Sprint   intervalo no calendário janela de entrega é um período, não um cronômetro
+ *   Timeline pulso de atividade      "o que se mexeu por último", não "que horas são"
+ *   Gantt    barras no tempo         a única que já estava certa
+ */
 export const LENTES: { id: LenteId; rotulo: string; icone: typeof Columns3; ajuda: string }[] = [
   { id: "board", rotulo: "Board", icone: Columns3, ajuda: "Board — colunas, com arrastar e soltar" },
-  { id: "sprint", rotulo: "Sprint", icone: Timer, ajuda: "Sprint — agrupada por janela de entrega" },
-  { id: "timeline", rotulo: "Timeline", icone: Clock, ajuda: "Timeline — agrupada por última movimentação" },
+  { id: "sprint", rotulo: "Sprint", icone: CalendarRange, ajuda: "Sprint — agrupada por janela de entrega" },
+  { id: "timeline", rotulo: "Timeline", icone: Activity, ajuda: "Timeline — agrupada por última movimentação" },
   { id: "gantt", rotulo: "Gantt", icone: GanttChart, ajuda: "Gantt — distribuição no calendário" },
 ];
 

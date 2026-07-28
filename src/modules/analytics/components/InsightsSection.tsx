@@ -49,7 +49,7 @@ export function InsightsSection({
             return (
               <Card key={i.id}>
                 <CardContent className="p-4 flex gap-3">
-                  <Icon className={`h-5 w-5 mt-0.5 shrink-0 ${toneClass(i.severity)}`} aria-hidden />
+                  <Icon className={`size-5 mt-0.5 shrink-0 ${toneClass(i.severity)}`} aria-hidden />
                   <div className="min-w-0">
                     <div className="ds-card-title">{i.title}</div>
                     <p className="ds-caption text-muted-foreground mt-1">{i.detail}</p>

@@ -34,7 +34,7 @@ export function IntegrityInline({ limit }: { limit?: number }) {
 function SecurityIntegrityPageImpl() {
   return (
     <PageShell>
-      <PageHeader title="Integrity Center" subtitle="Assinaturas, providers, versões e dependências." icon={<ShieldCheck className="h-6 w-6" aria-hidden />} />
+      <PageHeader title="Integrity Center" subtitle="Assinaturas, providers, versões e dependências." icon={<ShieldCheck className="size-6" aria-hidden />} />
       <Section title="Achados">
         <IntegrityInline />
       </Section>

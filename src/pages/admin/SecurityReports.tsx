@@ -7,7 +7,7 @@ import { REPORTS, downloadCsv } from "@/modules/security";
 function SecurityReportsPageImpl() {
   return (
     <PageShell>
-      <PageHeader title="Enterprise Reports" subtitle="Exportação CSV consolidada — Security, Compliance, Audit, Governance, Plugins, SDK, Mesh, Architecture, Timeline." icon={<FileCode2 className="h-6 w-6" aria-hidden />} />
+      <PageHeader title="Enterprise Reports" subtitle="Exportação CSV consolidada — Security, Compliance, Audit, Governance, Plugins, SDK, Mesh, Architecture, Timeline." icon={<FileCode2 className="size-6" aria-hidden />} />
       <Section title="Relatórios">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {REPORTS.map((r) => (

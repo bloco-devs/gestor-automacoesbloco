@@ -93,7 +93,7 @@ export default function AdminHub() {
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium flex items-center justify-between gap-2">
                         <span className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-primary" aria-hidden />
+                          <Icon className="size-4 text-primary" aria-hidden />
                           {it.label}
                         </span>
                         {it.badge && <Badge variant="secondary" className="text-[10px]">{it.badge}</Badge>}

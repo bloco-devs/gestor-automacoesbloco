@@ -44,7 +44,7 @@ export function TeamProductivity({ data }: { data: AnalyticsResult }) {
                     <tr key={r.user_id} className="border-t border-border/60">
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <Avatar className="h-7 w-7">
+                          <Avatar className="size-7">
                             {r.avatar_url ? <AvatarImage src={r.avatar_url} alt="" /> : null}
                             <AvatarFallback>
                               {(r.nome ?? r.email ?? "?").slice(0, 2).toUpperCase()}

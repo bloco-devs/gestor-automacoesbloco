@@ -298,7 +298,7 @@ export default function ImportarQuadro() {
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={() => navigate("/atividades")}>
-          <X className="h-4 w-4 mr-1.5" /> Sair
+          <X className="size-4 mr-1.5" /> Sair
         </Button>
       </div>
 
@@ -351,13 +351,13 @@ export default function ImportarQuadro() {
 
       <div className="flex items-center justify-between">
         <Button variant="outline" onClick={goPrev} disabled={step === 0}>
-          <ArrowLeft className="h-4 w-4 mr-1.5" /> Voltar
+          <ArrowLeft className="size-4 mr-1.5" /> Voltar
         </Button>
         {currentKey === "final" ? (
           <Button onClick={handleFinish}>Concluir</Button>
         ) : (
           <Button onClick={goNext} disabled={!canAdvance()}>
-            Avançar <ArrowRight className="h-4 w-4 ml-1.5" />
+            Avançar <ArrowRight className="size-4 ml-1.5" />
           </Button>
         )}
       </div>

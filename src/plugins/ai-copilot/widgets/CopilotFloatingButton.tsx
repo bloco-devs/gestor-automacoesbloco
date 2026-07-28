@@ -16,7 +16,7 @@ export default function CopilotFloatingButton() {
       className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs shadow-sm hover:bg-accent"
       aria-label="Abrir AI Copilot"
     >
-      <Sparkles className="h-3.5 w-3.5" aria-hidden />
+      <Sparkles className="size-3.5" aria-hidden />
       Copilot
     </button>
   );

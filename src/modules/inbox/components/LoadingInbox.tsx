@@ -8,7 +8,7 @@ function LoadingInbox() {
       role="status"
       aria-live="polite"
     >
-      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+      <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
       Carregando sua Inbox…
     </div>
   );

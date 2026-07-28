@@ -29,7 +29,7 @@ export function WorkflowList() {
           <p className="text-sm text-muted-foreground">Regras "quando isso acontecer, faça aquilo" — sem código.</p>
         </div>
         <Button onClick={() => nav("/admin/workflows/novo")}>
-          <Plus className="h-4 w-4 mr-1" /> Novo workflow
+          <Plus className="size-4 mr-1" /> Novo workflow
         </Button>
       </div>
 
@@ -68,23 +68,23 @@ export function WorkflowList() {
                     <TableCell className="text-xs text-muted-foreground">{new Date(wf.updated_at).toLocaleString("pt-BR")}</TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav(`/admin/workflows/${wf.id}`)}>
-                          <Eye className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="size-8" onClick={() => nav(`/admin/workflows/${wf.id}`)}>
+                          <Eye className="size-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav(`/admin/workflows/${wf.id}`)}>
-                          <Pencil className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="size-8" onClick={() => nav(`/admin/workflows/${wf.id}`)}>
+                          <Pencil className="size-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                        <Button variant="ghost" size="icon" className="size-8" onClick={() => {
                           const c = duplicate(wf.id);
                           if (c) toast.success("Workflow duplicado");
                         }}>
-                          <Copy className="h-4 w-4" />
+                          <Copy className="size-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => {
+                        <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => {
                           remove(wf.id);
                           toast.success("Workflow removido");
                         }}>
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="size-4" />
                         </Button>
                       </div>
                     </TableCell>

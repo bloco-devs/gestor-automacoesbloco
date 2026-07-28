@@ -32,7 +32,7 @@ function SecurityPermissionsPageImpl() {
 
   return (
     <PageShell>
-      <PageHeader title="Permission Explorer" subtitle="Roles, capabilities, plugins, extensões e agentes." icon={<Users className="h-6 w-6" aria-hidden />} />
+      <PageHeader title="Permission Explorer" subtitle="Roles, capabilities, plugins, extensões e agentes." icon={<Users className="size-6" aria-hidden />} />
       <Section title="Árvore de permissões">
         <Toolbar className="mb-3">
           <Input placeholder="Buscar" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm" />

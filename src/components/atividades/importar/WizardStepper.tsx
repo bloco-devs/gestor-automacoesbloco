@@ -22,7 +22,7 @@ export function WizardStepper({ steps, currentIndex, skipped }: Props) {
         return (
           <li key={s.key} className="flex items-center gap-2">
             <span
-              className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] font-medium border ${
+              className={`size-6 rounded-full flex items-center justify-center text-[11px] font-medium border ${
                 active
                   ? "border-primary bg-primary text-primary-foreground"
                   : done
@@ -32,7 +32,7 @@ export function WizardStepper({ steps, currentIndex, skipped }: Props) {
                       : "border-muted-foreground/30 bg-background text-muted-foreground"
               }`}
             >
-              {done ? <Check className="h-3.5 w-3.5" /> : i + 1}
+              {done ? <Check className="size-3.5" /> : i + 1}
             </span>
             <span
               className={`whitespace-nowrap ${

@@ -618,11 +618,11 @@ export default function AtividadesBoard() {
             aria-label="Voltar para lista de quadros"
             className="bg-background/70 backdrop-blur hover:bg-background/90"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
           </Button>
           {resumo?.cor ? (
             <div
-              className="h-8 w-8 rounded-lg shrink-0 shadow-sm ring-1 ring-background/60"
+              className="size-8 rounded-lg shrink-0 shadow-sm ring-1 ring-background/60"
               style={{ backgroundColor: resumo.cor }}
               aria-hidden
             />
@@ -632,28 +632,28 @@ export default function AtividadesBoard() {
               <h1 className="text-2xl font-bold truncate leading-tight tracking-tight text-foreground">{boardNome}</h1>
               {resumo ? (
                 <Badge variant="outline" className="gap-1 font-medium text-[10px] h-5 bg-background">
-                  <VisIcon className="h-3 w-3" />
+                  <VisIcon className="size-3" />
                   {VIS_LABEL[resumo.visibilidade]}
                 </Badge>
               ) : null}
               {resumo?.arquivado ? (
                 <Badge variant="secondary" className="gap-1 text-[10px] h-5">
-                  <Archive className="h-3 w-3" /> Arquivado
+                  <Archive className="size-3" /> Arquivado
                 </Badge>
               ) : null}
             </div>
             {resumo ? (
               <div className="mt-1 flex items-center gap-x-3 gap-y-1 text-xs text-foreground/80 flex-wrap">
                 <span className="inline-flex items-center gap-1 font-medium" title="Membros">
-                  <Users className="h-3 w-3" />
+                  <Users className="size-3" />
                   {membros.length}
                 </span>
                 <span className="inline-flex items-center gap-1 font-medium" title="Cards ativos">
-                  <Layers className="h-3 w-3" />
+                  <Layers className="size-3" />
                   {colunas.reduce((acc, c) => acc + (cardsByColuna[c.id]?.length ?? 0), 0)}
                 </span>
                 <span className="inline-flex items-center gap-1 font-medium" title="Última atividade">
-                  <Clock className="h-3 w-3" />
+                  <Clock className="size-3" />
                   {fmtRel(resumo.updatedAt)}
                 </span>
                 {resumo.descricao ? (
@@ -684,7 +684,7 @@ export default function AtividadesBoard() {
                   return (
                     <Tooltip key={m.userId}>
                       <TooltipTrigger asChild>
-                        <Avatar className="h-10 w-10 shadow-sm">
+                        <Avatar className="size-10 shadow-sm">
                           {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.nome || m.email} />}
                           <AvatarFallback className="text-xs bg-slate-200 text-slate-800">
                             {initials}
@@ -700,7 +700,7 @@ export default function AtividadesBoard() {
                   );
                 })}
                 {membros.length > 5 && (
-                  <Avatar className="h-10 w-10 shadow-sm">
+                  <Avatar className="size-10 shadow-sm">
                     <AvatarFallback className="text-xs bg-slate-200 text-slate-800">
                       +{membros.length - 5}
                     </AvatarFallback>
@@ -716,18 +716,18 @@ export default function AtividadesBoard() {
             aria-label={resumo?.favorito ? "Desfavoritar" : "Favoritar"}
           >
             <Star
-              className={`h-4 w-4 ${resumo?.favorito ? "fill-amber-400 text-amber-400" : ""}`}
+              className={`size-4 ${resumo?.favorito ? "fill-amber-400 text-amber-400" : ""}`}
             />
           </Button>
           <Button variant="ghost" size="sm" onClick={toggleArquivar}>
-            <Archive className="h-4 w-4 mr-1.5" />
+            <Archive className="size-4 mr-1.5" />
             {resumo?.arquivado ? "Restaurar" : "Arquivar"}
           </Button>
           {canAdmin && (
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm" aria-label="Alterar fundo do quadro">
-                <ImageIcon className="h-4 w-4 mr-1.5" />
+                <ImageIcon className="size-4 mr-1.5" />
                 Fundo
               </Button>
             </PopoverTrigger>
@@ -778,7 +778,7 @@ export default function AtividadesBoard() {
                       bgUploading && "opacity-50 pointer-events-none",
                     )}
                   >
-                    <ImageIcon className="h-3.5 w-3.5" />
+                    <ImageIcon className="size-3.5" />
                     {bgUploading ? "Enviando..." : "Enviar imagem"}
                   </span>
                 </label>
@@ -819,7 +819,7 @@ export default function AtividadesBoard() {
               onClick={() => setSettingsOpen(true)}
               aria-label="Configurações do quadro"
             >
-              <Settings className="h-4 w-4 mr-1.5" />
+              <Settings className="size-4 mr-1.5" />
               Configurações
             </Button>
           )}

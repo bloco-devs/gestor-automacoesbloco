@@ -39,7 +39,7 @@ function SecurityThreatsPageImpl() {
 
   return (
     <PageShell>
-      <PageHeader title="Threat Center" subtitle="Eventos suspeitos, falhas de auth, plugins rejeitados e capabilities negadas." icon={<Radar className="h-6 w-6" aria-hidden />} />
+      <PageHeader title="Threat Center" subtitle="Eventos suspeitos, falhas de auth, plugins rejeitados e capabilities negadas." icon={<Radar className="size-6" aria-hidden />} />
       <KpiRow>
         <StatCard label="Total" value={counts.total} icon={ShieldAlert} tone="neutral" />
         <StatCard label="Críticas" value={counts.critical} icon={ShieldAlert} tone="danger" />

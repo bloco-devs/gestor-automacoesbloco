@@ -58,7 +58,7 @@ export default function ObservabilityCenterPage() {
       <PageHeader
         title="Observability Center"
         subtitle="Traces, service mesh, plugins, IA, workflows e scores enterprise em tempo real."
-        icon={<Activity className="h-6 w-6" />}
+        icon={<Activity className="size-6" />}
       />
 
       <Section title="Enterprise Scores">

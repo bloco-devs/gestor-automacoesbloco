@@ -33,11 +33,11 @@ function PriorityCard({ item }: Props) {
         <StatusBadge status={item.status} />
         {item.system ? <Badge>{item.system}</Badge> : null}
         <span className="inline-flex items-center gap-1">
-          <User className="h-3.5 w-3.5" aria-hidden />
+          <User className="size-3.5" aria-hidden />
           {item.responsibleName ?? item.requesterName}
         </span>
         <span className="inline-flex items-center gap-1">
-          <Clock className="h-3.5 w-3.5" aria-hidden />
+          <Clock className="size-3.5" aria-hidden />
           parado {formatDaysAgo(item.updatedAt)}
         </span>
         {item.sla ? <span>SLA {new Date(item.sla).toLocaleDateString()}</span> : null}
@@ -49,7 +49,7 @@ function PriorityCard({ item }: Props) {
 
       <div className="mt-5">
         <Button size="sm" onClick={() => navigate(item.href)} aria-label={`Continuar em ${item.title}`}>
-          Continuar <ArrowRight className="ml-1 h-4 w-4" />
+          Continuar <ArrowRight className="ml-1 size-4" />
         </Button>
       </div>
     </Card>

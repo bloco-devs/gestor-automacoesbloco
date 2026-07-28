@@ -35,7 +35,7 @@ export const ArchitectureCatalogPanel = memo(function ArchitectureCatalogPanel()
           <Card key={g.id} className="surface-1">
             <CardHeader className="cursor-pointer pb-2" onClick={() => toggle(g.id)}>
               <CardTitle className="flex items-center gap-2 text-sm">
-                {open[g.id] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                {open[g.id] ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
                 {g.label}
                 <Badge variant="secondary" className="ml-auto text-[10px]">{g.items.length}</Badge>
               </CardTitle>

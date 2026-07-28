@@ -35,7 +35,7 @@ export function OperationsPage() {
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold flex items-center gap-2">
-            <Gauge className="h-6 w-6 text-primary" aria-hidden />
+            <Gauge className="size-6 text-primary" aria-hidden />
             {heading}
           </h1>
           <p className="text-sm text-muted-foreground">{subtitle}</p>

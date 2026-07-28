@@ -46,7 +46,7 @@ const CommandCenter = memo(function CommandCenter() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold md:text-3xl">
-            <CommandIcon className="h-6 w-6 text-primary" aria-hidden />
+            <CommandIcon className="size-6 text-primary" aria-hidden />
             Command Center
           </h1>
           <p className="text-sm text-muted-foreground">

@@ -24,7 +24,7 @@ export function AdminSearch() {
   return (
     <div ref={ref} className="relative w-full max-w-md">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <Input
           role="searchbox"
           aria-label="Pesquisa administrativa"
@@ -62,7 +62,7 @@ export function AdminSearch() {
                       }}
                       className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
                     >
-                      <Icon className="mt-0.5 h-4 w-4 text-muted-foreground" aria-hidden />
+                      <Icon className="mt-0.5 size-4 text-muted-foreground" aria-hidden />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium">{item.label}</span>
                         <span className="block truncate text-xs text-muted-foreground">

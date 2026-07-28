@@ -10,7 +10,7 @@ export function AdminQuickActions() {
         return (
           <Button key={a.id} asChild variant="outline" size="sm" className="h-8 gap-1.5">
             <Link to={a.href}>
-              <Icon className="h-3.5 w-3.5" aria-hidden />
+              <Icon className="size-3.5" aria-hidden />
               <span className="hidden sm:inline">{a.label}</span>
             </Link>
           </Button>

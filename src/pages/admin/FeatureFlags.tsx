@@ -25,7 +25,7 @@ export default function FeatureFlagsPage() {
       <PageHeader
         title="Feature Flags"
         subtitle="Ativação seletiva de funcionalidades. Nenhuma feature existente depende deste painel."
-        icon={<Flag className="h-6 w-6" />}
+        icon={<Flag className="size-6" />}
       />
 
       <Section title="Criar flag">
