@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import {
   PRIORIDADE_ROTULO,
   RISCO_ROTULO,
+  chegouAgora,
   type Capacidades,
   type Demanda,
   type SinaisUteis,
@@ -116,6 +117,12 @@ function DemandaRowImpl({ demanda: d, capacidades, sinais, onAbrir, mostrarStatu
               aria-label="Atendida pela IA"
               // A IA não tem botão nem rótulo: tem um símbolo, sempre no mesmo lugar.
             />
+          )}
+          {/* "Nova" vem antes do risco porque responde a outra pergunta: risco
+              diz o que pode dar errado, nova diz que ninguém viu ainda. Quando
+              as duas valem, a segunda é a que muda o que fazer agora. */}
+          {chegouAgora(d) && (
+            <span className="ds-caption shrink-0 font-medium text-primary">· Nova</span>
           )}
           {d.risco && (
             <span className="ds-caption shrink-0 text-muted-foreground">· {RISCO_ROTULO[d.risco]}</span>

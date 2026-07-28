@@ -108,12 +108,51 @@ export function buscar(demandas: Demanda[], termo: string): Demanda[] {
 
 const PESO_PRIORIDADE: Record<Prioridade, number> = { critica: 40, alta: 30, media: 20, baixa: 10 };
 
+/**
+ * Chegou e ninguém encostou.
+ *
+ * POR QUE ISSO PRECISA DE PESO PRÓPRIO
+ * A ordenação premiava dias parados. Uma demanda travada há quinze dias subia;
+ * uma que chegou hoje contribuía zero e afundava no meio da lista — que é
+ * exatamente onde ninguém olha. Só que "parada há quinze dias" é um problema
+ * que todo mundo já conhece, enquanto "chegou agora e ninguém viu" é uma
+ * pessoa esperando o primeiro sinal de que o pedido dela existe.
+ *
+ * No vocabulário de help desk, isto é tempo até a primeira resposta — a
+ * métrica que mais pesa na percepção de quem abriu o chamado, e a única que
+ * a ordenação anterior ignorava por completo.
+ *
+ * A janela é o dia corrente, não 24h corridas: quem abre o sistema de manhã
+ * quer ver o que chegou "hoje", não o que chegou nas últimas 24 horas.
+ */
+export function chegouAgora(d: Demanda, agora = Date.now()): boolean {
+  if (d.concluida) return false;
+  // Já tem dono: alguém viu. Deixa de ser espera e vira trabalho em curso.
+  if (d.responsaveis.length > 0) return false;
+  const criada = new Date(d.criadaEm);
+  const hoje = new Date(agora);
+  return (
+    criada.getFullYear() === hoje.getFullYear() &&
+    criada.getMonth() === hoje.getMonth() &&
+    criada.getDate() === hoje.getDate()
+  );
+}
+
+/**
+ * Onde 250 se encaixa na escala: acima de "parada" (200), abaixo de
+ * "SLA em atenção" (300). Um pedido recém-chegado sem dono importa mais que
+ * um item que o time já sabe que travou, e menos que um prazo prestes a
+ * estourar. Números maiores fariam toda demanda nova encobrir atrasos reais.
+ */
+const PESO_CHEGOU_AGORA = 250;
+
 /** Maior = precisa de você antes. Concluídas vão para o fim. */
-export function pesoDeAtencao(d: Demanda): number {
+export function pesoDeAtencao(d: Demanda, agora = Date.now()): number {
   if (d.concluida) return -1;
   let peso = d.risco ? RISCO_SEVERIDADE[d.risco] : 0;
   if (d.prioridade) peso += PESO_PRIORIDADE[d.prioridade];
   peso += Math.min(d.diasParada, 60) / 10;
+  if (chegouAgora(d, agora)) peso += PESO_CHEGOU_AGORA;
   return peso;
 }
 
