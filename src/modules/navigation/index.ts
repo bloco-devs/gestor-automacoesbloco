@@ -5,5 +5,4 @@
 export type { NavigationAlias, NavigationGroup, NavigationItem, NavigationProfile, NavigationSchema } from "./types";
 export { getNavigation, listAliases, listProfiles } from "./registry";
 export { resolveRoute, resolveProfile, findItem } from "./resolver";
-export { UnifiedSidebar } from "./UnifiedSidebar";
 export { ProductGlossary, LEGACY_TERMS, normalizeTerm } from "./glossary";

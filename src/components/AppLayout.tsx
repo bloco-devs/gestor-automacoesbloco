@@ -15,7 +15,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
-import { NotificacoesBell } from "@/components/NotificacoesBell";
 import { NotificationsDrawer } from "@/components/NotificationsDrawer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -41,6 +40,8 @@ const SIDEBAR_MIN = 176;
 const SIDEBAR_MAX = 480;
 const SIDEBAR_DEFAULT = 208;
 const SIDEBAR_STORAGE_KEY = "app:sidebarWidth";
+const SIDEBAR_MINI_KEY = "app:sidebarMini";
+const SIDEBAR_MINI_WIDTH = 56;
 
 export default function AppLayout() {
   const { user, signOut, isDual } = useAuth();
@@ -81,16 +82,34 @@ export default function AppLayout() {
         ? "Builder"
         : "Solicitante";
 
+  /**
+   * FAIXA DE ÍCONES — o meio-termo que faltava.
+   *
+   * Antes só havia dois estados: 208px de menu, ou nenhum menu (`sidebarHidden`).
+   * Quem precisava de largura para o conteúdo perdia a navegação inteira e
+   * passava a depender do ⌘K para tudo. A faixa de 56px devolve o espaço sem
+   * cobrar o preço: os destinos continuam clicáveis, com o rótulo no tooltip.
+   */
+  const [mini, setMini] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    // Quem tinha a barra escondida herda o modo recolhido: o estado "sem menu
+    // nenhum" deixou de existir, e ninguém pode ficar preso nele.
+    const antigo = window.localStorage.getItem("app:sidebarHidden") === "1";
+    if (antigo) window.localStorage.removeItem("app:sidebarHidden");
+    return antigo || window.localStorage.getItem(SIDEBAR_MINI_KEY) === "1";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(SIDEBAR_MINI_KEY, mini ? "1" : "0");
+  }, [mini]);
+
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     if (typeof window === "undefined") return SIDEBAR_DEFAULT;
     const stored = Number(window.localStorage.getItem(SIDEBAR_STORAGE_KEY));
     return Number.isFinite(stored) && stored >= SIDEBAR_MIN && stored <= SIDEBAR_MAX
       ? stored
       : SIDEBAR_DEFAULT;
-  });
-  const [sidebarHidden, setSidebarHidden] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("app:sidebarHidden") === "1";
   });
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -100,10 +119,7 @@ export default function AppLayout() {
     if (isMobile) setMobileOpen(false);
   }, [pathname, isMobile]);
   useEffect(() => {
-    window.localStorage.setItem("app:sidebarHidden", sidebarHidden ? "1" : "0");
-  }, [sidebarHidden]);
-  useEffect(() => {
-    const onToggle = () => setSidebarHidden((v) => !v);
+    const onToggle = () => setMini((v) => !v);
     window.addEventListener("platform:toggle-sidebar", onToggle);
     return () => window.removeEventListener("platform:toggle-sidebar", onToggle);
   }, []);
@@ -196,7 +212,7 @@ export default function AppLayout() {
           aria-hidden="true"
         />
       )}
-      {(isMobile ? mobileOpen : !sidebarHidden) && (
+      {(isMobile ? mobileOpen : true) && (
         <aside
           aria-label="Navegação principal"
           className={cn(
@@ -205,31 +221,51 @@ export default function AppLayout() {
               ? "fixed inset-y-0 left-0 z-50 w-72 flex border-r shadow-elev-3"
               : "hidden md:flex relative border-r",
           )}
-          style={isMobile ? undefined : { width: sidebarWidth }}
+          style={isMobile ? undefined : { width: mini ? SIDEBAR_MINI_WIDTH : sidebarWidth }}
         >
-          <div className="px-4 py-4 flex items-center gap-2.5 min-w-0">
+          <div
+            className={cn(
+              "flex items-center min-w-0 py-4",
+              mini && !isMobile ? "justify-center px-0" : "gap-2.5 px-4",
+            )}
+          >
             <img
               src={blocoLogo}
               alt="Bloco Construções"
               className="size-7 rounded-md object-cover shrink-0"
             />
-            <div className="min-w-0">
-              <div className="text-[13px] font-brand font-semibold tracking-tight truncate">Gestor de Automações</div>
-            </div>
+            {(!mini || isMobile) && (
+              <div className="min-w-0">
+                <div className="text-[13px] font-brand font-semibold tracking-tight truncate">
+                  Gestor de Automações
+                </div>
+              </div>
+            )}
           </div>
-          <nav className="flex-1 space-y-4 overflow-y-auto px-2.5 py-2" aria-label="Menu">
+          <nav
+            className={cn(
+              "flex-1 overflow-y-auto py-2",
+              mini && !isMobile ? "px-2" : "px-2.5",
+            )}
+            aria-label="Menu"
+          >
             <SidebarGroupsNav
               groups={groups}
               isDeveloper={isDeveloper}
               pendingEvalCount={pendingEvalCount}
+              mini={mini && !isMobile}
             />
           </nav>
-          <div className="p-2.5 border-t border-sidebar-border/70">
+          <div className={cn("border-t border-sidebar-border/70", mini && !isMobile ? "p-1.5 pb-9" : "p-2.5")}>
             <button
               type="button"
               onClick={() => navigate("/perfil")}
-              className="w-full flex items-center gap-2 px-2 py-1.5 mb-2 min-w-0 rounded-md hover:bg-sidebar-accent/60 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-              title="Editar meu perfil"
+              className={cn(
+                "w-full flex items-center mb-2 min-w-0 rounded-md hover:bg-sidebar-accent/60 transition-colors text-left",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+                mini && !isMobile ? "justify-center px-0 py-1.5" : "gap-2 px-2 py-1.5",
+              )}
+              title={mini && !isMobile ? `${user?.nome ?? "Perfil"} — ${roleLabel}` : "Editar meu perfil"}
             >
               <span className="relative shrink-0">
                 {user?.avatarUrl ? (
@@ -249,16 +285,33 @@ export default function AppLayout() {
                   </span>
                 )}
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium truncate">{user?.nome}</span>
-                <span className="block text-xs text-muted-foreground truncate">{roleLabel}</span>
-              </span>
+              {(!mini || isMobile) && (
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium truncate">{user?.nome}</span>
+                  <span className="block text-xs text-muted-foreground truncate">{roleLabel}</span>
+                </span>
+              )}
             </button>
-            <div className="flex items-center justify-between gap-1 rounded-lg bg-sidebar-accent/40 px-1 py-1">
+            {/* Recolhida, as ações empilham: seis ícones lado a lado em 56px
+                viram alvos pequenos demais para acertar. */}
+            <div
+              className={cn(
+                "rounded-lg bg-sidebar-accent/40 px-1 py-1",
+                mini && !isMobile
+                  ? "flex flex-col items-center gap-0.5"
+                  : "flex items-center justify-between gap-1",
+              )}
+            >
+              {/* Havia DOIS sinos aqui, lado a lado, com contagens que podiam
+                  divergir: `NotificacoesBell` lia a tabela `notificacoes` (do
+                  fluxo antigo de Solicitações) e levava para /solicitacoes/:id,
+                  rota que não existe mais; `NotificationsDrawer` lê
+                  `notifications`, que é onde o sistema grava hoje. Dois sinos
+                  discordando é pior que nenhum: nenhum dos dois merece
+                  confiança. Ficou o que aponta para a demanda de verdade. */}
               <span data-tour="nav-notificacoes" className="inline-flex">
-                <NotificacoesBell />
+                <NotificationsDrawer />
               </span>
-              <NotificationsDrawer />
               <Button
                 variant="ghost"
                 size="icon"
@@ -320,51 +373,55 @@ export default function AppLayout() {
             </div>
           </div>
 
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Redimensionar barra lateral"
-            tabIndex={0}
-            onPointerDown={startDrag}
-            onKeyDown={onResizerKeyDown}
-            onDoubleClick={() => setSidebarWidth(SIDEBAR_DEFAULT)}
-            className="hidden md:block absolute top-0 right-0 h-full w-1.5 -mr-0.5 cursor-col-resize bg-transparent hover:bg-accent/40 active:bg-accent/60 transition-colors focus-visible:outline-none focus-visible:bg-accent/60"
-            title="Arraste para redimensionar (duplo clique para resetar)"
-          />
+          {/* Recolhida, a largura é fixa — não há o que arrastar. */}
+          {!mini && (
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Redimensionar barra lateral"
+              tabIndex={0}
+              onPointerDown={startDrag}
+              onKeyDown={onResizerKeyDown}
+              onDoubleClick={() => setSidebarWidth(SIDEBAR_DEFAULT)}
+              className="hidden md:block absolute top-0 right-0 h-full w-1.5 -mr-0.5 cursor-col-resize bg-transparent hover:bg-accent/40 active:bg-accent/60 transition-colors focus-visible:outline-none focus-visible:bg-accent/60"
+              title="Arraste para redimensionar (duplo clique para resetar)"
+            />
+          )}
 
+          {/* Um botão, dois estados — completa ou recolhida. O terceiro estado
+              ("sem menu nenhum") saiu: ele resolvia o mesmo problema que a
+              faixa de ícones resolve melhor, e três estados de menu é um a
+              mais do que alguém consegue prever antes de clicar. */}
           <button
             type="button"
-            onClick={() => (isMobile ? setMobileOpen(false) : setSidebarHidden(true))}
-            title={isMobile ? "Fechar menu" : "Esconder barra lateral"}
-            aria-label={isMobile ? "Fechar menu" : "Esconder barra lateral"}
+            onClick={() => (isMobile ? setMobileOpen(false) : setMini((v) => !v))}
+            title={isMobile ? "Fechar menu" : mini ? "Expandir barra lateral" : "Recolher barra lateral"}
+            aria-label={isMobile ? "Fechar menu" : mini ? "Expandir barra lateral" : "Recolher barra lateral"}
+            aria-expanded={isMobile ? undefined : !mini}
             className={cn(
-              "absolute z-10 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors flex",
+              "absolute z-10 items-center justify-center rounded transition-colors flex",
+              "text-muted-foreground hover:text-foreground hover:bg-muted/60",
               isMobile
                 ? "top-3 right-3 size-8"
-                : "top-2 right-1 size-5 text-muted-foreground/40",
+                : mini
+                  ? "bottom-2 left-1/2 -translate-x-1/2 size-6 text-muted-foreground/50"
+                  : "top-2 right-1 size-5 text-muted-foreground/40",
             )}
           >
-            {isMobile ? <X className="size-4" /> : <PanelLeftClose className="size-3.5" />}
+            {isMobile ? (
+              <X className="size-4" />
+            ) : mini ? (
+              <PanelLeftOpen className="size-3.5" />
+            ) : (
+              <PanelLeftClose className="size-3.5" />
+            )}
           </button>
         </aside>
       )}
 
       <main className="flex-1 min-w-0 relative">
-        {sidebarHidden && (
-          <button
-            type="button"
-            onClick={() => setSidebarHidden(false)}
-            title="Mostrar barra lateral"
-            aria-label="Mostrar barra lateral"
-            className="hidden md:flex fixed top-2 left-2 z-40 items-center justify-center size-7 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 transition-colors"
-          >
-            <PanelLeftOpen className="size-3.5" />
-          </button>
-        )}
-
         {/* Header desktop: breadcrumb automático + trigger de sidebar */}
         <header className="surface-glass hidden md:flex sticky top-0 z-30 h-10 items-center gap-3 border-b px-5">
-          {sidebarHidden && <span className="w-6" aria-hidden="true" />}
           {/* Uma faixa só. Quando a página tem contexto próprio — o projeto
               aberto, seus números — ele ocupa este espaço no lugar do
               breadcrumb, que diria a mesma coisa com menos precisão. */}
@@ -401,9 +458,8 @@ export default function AppLayout() {
           </div>
           <div className="flex items-center gap-1">
             <span data-tour="nav-notificacoes" className="inline-flex">
-              <NotificacoesBell />
+              <NotificationsDrawer />
             </span>
-            <NotificationsDrawer />
             <Button
               variant="ghost"
               size="icon"

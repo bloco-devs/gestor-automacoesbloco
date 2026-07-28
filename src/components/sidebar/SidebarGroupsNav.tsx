@@ -3,6 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { findActive, type NavGroup, type NavItem } from "./navGroups";
 
 const GROUP_STORAGE_PREFIX = "ds2:sidebar:";
@@ -47,14 +48,27 @@ interface Props {
   groups: NavGroup[];
   isDeveloper: boolean;
   pendingEvalCount: number;
+  /** Faixa de ícones: só o ícone aparece, o rótulo vira tooltip. */
+  mini?: boolean;
 }
 
-function SidebarGroupsNavImpl({ groups, isDeveloper, pendingEvalCount }: Props) {
+function SidebarGroupsNavImpl({ groups, isDeveloper, pendingEvalCount, mini }: Props) {
   const { pathname } = useLocation();
   const active = useMemo(() => findActive(groups, pathname), [groups, pathname]);
 
+  /**
+   * CABEÇALHO DE GRUPO SÓ EXISTE QUANDO HÁ MAIS DE UM GRUPO
+   *
+   * Com um grupo só — que é o caso do Workspace hoje — o cabeçalho "WORKSPACE"
+   * gastava uma linha para nomear a única coisa que existe, e ainda oferecia
+   * um botão que recolhe o menu inteiro. Recolher tudo não é um estado que
+   * alguém queira: é a navegação desaparecendo sem que ela tenha ido para
+   * lugar nenhum. Rótulo que não distingue nada é ruído.
+   */
+  const comCabecalho = groups.length > 1;
+
   return (
-    <div className="space-y-4">
+    <div className={mini ? "space-y-1" : "space-y-4"}>
       {groups.map((group) => (
         <SidebarGroupBlock
           key={group.id}
@@ -62,6 +76,8 @@ function SidebarGroupsNavImpl({ groups, isDeveloper, pendingEvalCount }: Props) 
           activeGroupId={active?.group.id ?? null}
           isDeveloper={isDeveloper}
           pendingEvalCount={pendingEvalCount}
+          comCabecalho={comCabecalho}
+          mini={mini}
         />
       ))}
     </div>
@@ -75,11 +91,15 @@ function SidebarGroupBlock({
   activeGroupId,
   isDeveloper,
   pendingEvalCount,
+  comCabecalho,
+  mini,
 }: {
   group: NavGroup;
   activeGroupId: string | null;
   isDeveloper: boolean;
   pendingEvalCount: number;
+  comCabecalho: boolean;
+  mini?: boolean;
 }) {
   const isActiveGroup = activeGroupId === group.id;
   const [open, setOpen] = useState<boolean>(() => {
@@ -102,6 +122,23 @@ function SidebarGroupBlock({
 
   const GroupIcon = group.icon;
   const contentId = `sidebar-group-${group.id}`;
+
+  // Sem cabeçalho, o grupo é só a lista — e não há o que recolher.
+  if (!comCabecalho) {
+    return (
+      <div className={mini ? "space-y-1" : "space-y-0.5"}>
+        {group.items.map((item) => (
+          <SidebarNavItem
+            key={item.label}
+            item={item}
+            isDeveloper={isDeveloper}
+            pendingEvalCount={pendingEvalCount}
+            mini={mini}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -145,6 +182,7 @@ function SidebarGroupBlock({
                 isDeveloper={isDeveloper}
                 pendingEvalCount={pendingEvalCount}
                 dim={!isActiveGroup}
+                mini={mini}
               />
             ))}
           </div>
@@ -159,11 +197,13 @@ function SidebarNavItem({
   isDeveloper,
   pendingEvalCount,
   dim,
+  mini,
 }: {
   item: NavItem;
   isDeveloper: boolean;
   pendingEvalCount: number;
   dim?: boolean;
+  mini?: boolean;
 }) {
   const { pathname } = useLocation();
   const hasChildren = !!item.children?.length;
@@ -186,14 +226,27 @@ function SidebarNavItem({
   const Icon = item.icon;
 
   if (!hasChildren) {
-    return (
+    /**
+     * O ITEM ATIVO GANHA UMA BARRA, NÃO SÓ UM FUNDO
+     *
+     * Fundo sutil sozinho obriga a comparar dois tons para descobrir onde se
+     * está — uma tarefa que exige olhar direto para o menu. A barra na borda
+     * é lida pela visão periférica: você sabe onde está sem tirar os olhos do
+     * conteúdo. O ícone também perde a transparência quando ativo, porque
+     * meio-tom é o que o olho lê como "desligado".
+     */
+    const link = (
       <NavLink
         to={item.to!}
         end
         {...(dataTour ? { "data-tour": dataTour } : {})}
+        title={mini ? undefined : item.label}
         className={({ isActive }) =>
           cn(
-            "flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[13px] leading-5 transition-colors duration-fast ease-standard min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+            "group relative flex items-center rounded-md text-[13px] leading-5 min-w-0",
+            "transition-colors duration-fast ease-standard",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+            mini ? "h-9 w-9 justify-center" : "gap-2.5 px-2 py-1.5",
             isActive
               ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
               : cn(
@@ -204,9 +257,34 @@ function SidebarNavItem({
         }
         aria-current={pathname === item.to ? "page" : undefined}
       >
-        <Icon className="size-4 shrink-0 opacity-80" />
-        <span className="truncate flex-1">{item.label}</span>
+        {({ isActive }: { isActive: boolean }) => (
+          <>
+            {isActive && (
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-primary",
+                  mini && "left-0",
+                )}
+              />
+            )}
+            <Icon className={cn("size-4 shrink-0", isActive ? "opacity-100" : "opacity-70")} />
+            {!mini && <span className="truncate flex-1">{item.label}</span>}
+          </>
+        )}
       </NavLink>
+    );
+
+    // Recolhida, o rótulo não cabe — mas ele não pode sumir, senão o menu vira
+    // uma coluna de símbolos que só quem já decorou consegue usar.
+    if (!mini) return link;
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        <TooltipContent side="right" sideOffset={8}>
+          {item.label}
+        </TooltipContent>
+      </Tooltip>
     );
   }
 
