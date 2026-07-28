@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listComments, listAuditLogs, createComment } from "@/modules/demands/timeline-service";
+import { getProfilesByIds } from "@/modules/demands/service";
 import { STATUS_COLUMNS, PRIORITY_META } from "@/modules/demands/types";
 import { autorIa, frasePara, type Evento } from "@/domain/demand";
 import type { Pessoa } from "@/domain/demand";
@@ -75,6 +76,45 @@ export function useFioDaDemanda(
     queryFn: () => listAuditLogs(demandaId as string),
   });
 
+  /**
+   * QUEM FALOU, MAS NÃO É AUTOR NEM RESPONSÁVEL
+   *
+   * O mapa `pessoas` que chega por parâmetro é montado a partir das demandas
+   * já carregadas — ou seja, cobre quem abriu e quem é responsável. Quem só
+   * passou para comentar (um segundo desenvolvedor, um gestor) não está lá, e
+   * aparecia como "Alguém" no fio.
+   *
+   * Aqui buscamos exatamente os que faltam, e só eles: a consulta não sai se
+   * o mapa recebido já explica todo mundo.
+   */
+  const idsDesconhecidos = useMemo(() => {
+    const ids = new Set<string>();
+    for (const c of comentariosQ.data ?? []) {
+      if (c.user_id && !pessoas.has(c.user_id)) ids.add(c.user_id);
+    }
+    for (const a of auditoriaQ.data ?? []) {
+      if (a.user_id && !pessoas.has(a.user_id)) ids.add(a.user_id);
+    }
+    return Array.from(ids).sort();
+  }, [comentariosQ.data, auditoriaQ.data, pessoas]);
+
+  const faltantesQ = useQuery({
+    queryKey: ["perfis-do-fio", idsDesconhecidos.join(",")],
+    enabled: idsDesconhecidos.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => getProfilesByIds(idsDesconhecidos),
+  });
+
+  /** O mapa recebido, completado com quem só aparece no fio. */
+  const todasAsPessoas = useMemo(() => {
+    if (!faltantesQ.data || faltantesQ.data.size === 0) return pessoas;
+    const m = new Map(pessoas);
+    for (const [id, p] of faltantesQ.data) {
+      m.set(id, { id, nome: p.nome ?? "Alguém", avatarUrl: p.avatar_url ?? null });
+    }
+    return m;
+  }, [pessoas, faltantesQ.data]);
+
   const eventos = useMemo<Evento[]>(() => {
     const falas: Evento[] = (comentariosQ.data ?? []).map((c) => ({
       id: `c:${c.id}`,
@@ -84,7 +124,7 @@ export function useFioDaDemanda(
       autor: c.is_ai
         ? autorIa()
         : c.user_id
-          ? { ...(pessoas.get(c.user_id) ?? { id: c.user_id, nome: "Alguém", avatarUrl: null }), ia: false }
+          ? { ...(todasAsPessoas.get(c.user_id) ?? { id: c.user_id, nome: "Alguém", avatarUrl: null }), ia: false }
           : null,
       em: c.created_at,
       texto: c.content,
@@ -95,7 +135,7 @@ export function useFioDaDemanda(
       id: `a:${a.id}`,
       tipo: "mudanca" as const,
       autor: a.user_id
-        ? { ...(pessoas.get(a.user_id) ?? { id: a.user_id, nome: "Alguém", avatarUrl: null }), ia: false }
+        ? { ...(todasAsPessoas.get(a.user_id) ?? { id: a.user_id, nome: "Alguém", avatarUrl: null }), ia: false }
         : null,
       em: a.created_at,
       texto: frasePara(a.action, a.field_name, a.old_value, a.new_value, rotuloDe),
@@ -106,7 +146,7 @@ export function useFioDaDemanda(
       id: `x:${a.id}`,
       tipo: "anexo" as const,
       autor: a.autorId
-        ? { ...(pessoas.get(a.autorId) ?? { id: a.autorId, nome: "Alguém", avatarUrl: null }), ia: false }
+        ? { ...(todasAsPessoas.get(a.autorId) ?? { id: a.autorId, nome: "Alguém", avatarUrl: null }), ia: false }
         : null,
       em: a.em,
       texto: a.nome,
@@ -115,7 +155,7 @@ export function useFioDaDemanda(
     }));
 
     return [...falas, ...mudancas, ...enviosDeAnexo];
-  }, [comentariosQ.data, auditoriaQ.data, pessoas, opcoes.anexos]);
+  }, [comentariosQ.data, auditoriaQ.data, todasAsPessoas, opcoes.anexos]);
 
   const comentar = useCallback(
     async (texto: string, interna: boolean) => {
