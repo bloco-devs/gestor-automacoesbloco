@@ -70,6 +70,15 @@ export const ChatContainer = memo(function ChatContainer({ messages, thinking }:
         </div>
       )}
 
+      {/* A falha da voz não pode derrubar a conversa — o texto continua lá,
+          que é a informação. Mas também não pode sumir: sem aviso, a pessoa
+          fica esperando um áudio que nunca vem. */}
+      {voz.erro && (
+        <p className="text-right text-xs text-muted-foreground">
+          A voz não está disponível agora. {voz.erro}
+        </p>
+      )}
+
       <div
         ref={scrollRef}
         className="max-h-[52vh] min-h-[220px] space-y-4 overflow-y-auto rounded-2xl border border-border/60 bg-background/40 p-4"

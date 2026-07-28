@@ -29,6 +29,15 @@ export function useVozDoBlink() {
     return window.localStorage.getItem(CHAVE) === "1";
   });
   const [falando, setFalando] = useState(false);
+  /**
+   * O ERRO PRECISA CHEGAR A ALGUÉM
+   *
+   * A primeira versão engolia a falha em silêncio: a voz não saía e nada na
+   * tela dizia por quê. Diagnosticar exigiu abrir o log da função no
+   * Supabase — trabalho de quem construiu o sistema, não de quem usa.
+   * Guardar o motivo aqui permite mostrá-lo onde a pessoa está olhando.
+   */
+  const [erro, setErro] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
 
@@ -76,6 +85,7 @@ export function useVozDoBlink() {
     async (texto: string) => {
       if (!ligada || !disponivel || !texto.trim()) return;
       parar();
+      setErro(null);
       setFalando(true);
       try {
         const { data, error } = await supabase.functions.invoke("blink-voz", {
@@ -96,12 +106,13 @@ export function useVozDoBlink() {
         // por algum motivo não existir, falhar em silêncio é o certo: a
         // resposta escrita já está na tela, e ela é a informação.
         await audio.play().catch(() => parar());
-      } catch {
+      } catch (e) {
+        setErro(e instanceof Error ? e.message : "Não foi possível gerar a voz.");
         parar();
       }
     },
     [ligada, disponivel, parar],
   );
 
-  return { disponivel, ligada, falando, alternar, falar, parar };
+  return { disponivel, ligada, falando, erro, alternar, falar, parar };
 }
