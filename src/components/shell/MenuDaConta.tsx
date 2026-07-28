@@ -95,13 +95,13 @@ export function MenuDaConta({ className, ehDaEquipe, aoRefazerTour }: Props) {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem onSelect={() => navigate("/perfil")} className="gap-2 text-[13px]">
+          <DropdownMenuItem onSelect={() => navigate("/perfil")} className="menu-item-animado gap-2 text-[13px]">
             <UserRound className="size-3.5" aria-hidden />
             Meu perfil
           </DropdownMenuItem>
 
           {ehDaEquipe && (
-            <DropdownMenuItem onSelect={() => navigate("/admin")} className="gap-2 text-[13px]">
+            <DropdownMenuItem onSelect={() => navigate("/admin")} className="menu-item-animado gap-2 text-[13px]">
               <Settings2 className="size-3.5" aria-hidden />
               Administração
             </DropdownMenuItem>
@@ -110,7 +110,7 @@ export function MenuDaConta({ className, ehDaEquipe, aoRefazerTour }: Props) {
           {isDual && (
             <DropdownMenuItem
               onSelect={() => navigate("/escolher-perfil")}
-              className="gap-2 text-[13px]"
+              className="menu-item-animado gap-2 text-[13px]"
             >
               <Repeat className="size-3.5" aria-hidden />
               Trocar de perfil
@@ -120,12 +120,12 @@ export function MenuDaConta({ className, ehDaEquipe, aoRefazerTour }: Props) {
           <DropdownMenuSeparator />
 
           {aoRefazerTour && (
-            <DropdownMenuItem onSelect={() => aoRefazerTour()} className="gap-2 text-[13px]">
+            <DropdownMenuItem onSelect={() => aoRefazerTour()} className="menu-item-animado gap-2 text-[13px]">
               <Compass className="size-3.5" aria-hidden />
               Refazer o tour
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem onSelect={() => navigate("/ajuda")} className="gap-2 text-[13px]">
+          <DropdownMenuItem onSelect={() => navigate("/ajuda")} className="menu-item-animado gap-2 text-[13px]">
             <HelpCircle className="size-3.5" aria-hidden />
             Ajuda
           </DropdownMenuItem>
@@ -136,7 +136,7 @@ export function MenuDaConta({ className, ehDaEquipe, aoRefazerTour }: Props) {
               signOut();
               navigate("/auth");
             }}
-            className="gap-2 text-[13px] text-destructive focus:text-destructive"
+            className="menu-item-animado menu-item-animado--destrutivo gap-2 text-[13px] text-destructive focus:text-destructive"
           >
             <LogOut className="size-3.5" aria-hidden />
             Sair

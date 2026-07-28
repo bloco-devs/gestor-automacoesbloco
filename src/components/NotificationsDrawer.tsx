@@ -54,8 +54,13 @@ export function NotificationsDrawer() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
-          <Bell className="size-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("sino-botao relative rounded-full", unread > 0 && "sino-botao--nao-lido")}
+          aria-label="Notificações"
+        >
+          <Bell className="sino-icone size-[18px]" />
           {unread > 0 && (
             <Badge
               variant="destructive"
@@ -108,7 +113,8 @@ export function NotificationsDrawer() {
                 <li
                   key={n.id}
                   className={cn(
-                    "group/noti px-3 py-2.5 cursor-pointer border-l-2 hover:bg-muted/50 transition-colors",
+                    "notificacao-item group/noti px-3 py-2.5 cursor-pointer border-l-2 hover:bg-muted/50 transition-colors",
+                    n.read && "notificacao-item--lida",
                     TYPE_STYLES[n.type],
                     !n.read && "bg-muted/30",
                   )}

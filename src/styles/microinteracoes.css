@@ -1,0 +1,145 @@
+/* ============================================================
+   Microinterações — sino, badge e menu
+   ------------------------------------------------------------
+   O critério aqui é um só: a animação existe para CONFIRMAR
+   alguma coisa que aconteceu, nunca para chamar atenção sozinha.
+   Sino que balança quando você vai clicar confirma que ele é
+   clicável; ícone que gira sem parar enquanto o mouse passa por
+   perto não confirma nada — compete com o texto ao lado.
+
+   Todas as durações ficam entre 150ms e 900ms, e a única acima
+   de 250ms é o toque do sino, que imita um movimento físico e
+   ficaria falso mais rápido que isso.
+   ============================================================ */
+
+.sino-botao {
+  position: relative;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 120ms ease;
+}
+
+.sino-botao:hover .sino-icone {
+  animation: sino-toca 900ms both;
+}
+
+/* Afunda ao clicar: o retorno tátil que separa um botão de um ícone. */
+.sino-botao:active {
+  transform: scale(0.92);
+}
+
+/* Só pulsa quando há algo NÃO lido. Pulsar sempre viraria papel de
+   parede, e papel de parede ninguém vê. */
+.sino-botao--nao-lido {
+  animation: sino-pulsa 2s ease-in-out infinite;
+}
+
+@keyframes sino-toca {
+  0%,
+  100% {
+    transform-origin: top center;
+  }
+  15% {
+    transform: rotate(10deg);
+  }
+  30% {
+    transform: rotate(-10deg);
+  }
+  45% {
+    transform: rotate(5deg);
+  }
+  60% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+@keyframes sino-pulsa {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px hsl(var(--primary) / 0);
+  }
+}
+
+/* Sair da lista com um gesto, não com um sumiço.
+   Item que desaparece instantaneamente deixa dúvida sobre o que foi
+   removido — o deslize para a direita mostra qual saiu. */
+.notificacao-item {
+  transition:
+    transform 200ms ease,
+    opacity 200ms ease;
+}
+
+.notificacao-item--saindo {
+  transform: translateX(60%);
+  opacity: 0;
+}
+
+.notificacao-item--lida {
+  opacity: 0.65;
+}
+
+/* ------------------------------------------------------------
+   Menu suspenso: a barra à esquerda e o deslize de 2px
+   O item se desloca ao ser percorrido, e uma barra fina aparece
+   na borda. É o mesmo vocabulário do item ativo da barra lateral
+   — a mesma ideia de "você está aqui", aplicada ao percurso.
+   ------------------------------------------------------------ */
+.menu-item-animado {
+  position: relative;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    padding-left 200ms ease;
+}
+
+.menu-item-animado::before {
+  content: "";
+  position: absolute;
+  top: 22%;
+  left: 0.35rem;
+  width: 2px;
+  height: 56%;
+  border-radius: 2px;
+  background-color: hsl(var(--foreground) / 0.35);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.menu-item-animado:hover,
+.menu-item-animado:focus-visible,
+.menu-item-animado[data-highlighted] {
+  padding-left: 1rem;
+}
+
+.menu-item-animado:hover::before,
+.menu-item-animado:focus-visible::before,
+.menu-item-animado[data-highlighted]::before {
+  opacity: 1;
+}
+
+/* Item que destrói algo herda a barra na cor do destruir. */
+.menu-item-animado--destrutivo::before {
+  background-color: hsl(var(--destructive) / 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sino-botao,
+  .sino-botao--nao-lido,
+  .sino-icone,
+  .notificacao-item,
+  .menu-item-animado,
+  .menu-item-animado::before {
+    transition: none;
+    animation: none !important;
+  }
+  .sino-botao:active {
+    transform: none;
+  }
+}
