@@ -191,10 +191,23 @@ export function useAIWorkspace() {
    */
   const demandaDoPreview = useMemo<NovaDemanda | null>(() => {
     if (!preview) return null;
-    const sistemaValidado =
-      preview.sistemaAlvoSlug && sistemas.some((s) => s.id === preview.sistemaAlvoSlug)
-        ? preview.sistemaAlvoSlug
-        : null;
+    /**
+     * DOIS CATÁLOGOS DE SISTEMA, E ELES NÃO SE MISTURAM
+     *
+     * `useEcossistemaSistemas` devolve os sistemas do ecossistema, e o `id`
+     * ali é um SLUG (o próprio tipo diz: `id: string; // slug`). Já
+     * `demands.system_id` é uma coluna `uuid`, que aponta para o catálogo de
+     * soluções — outra tabela, outro identificador.
+     *
+     * Na correção anterior eu validei o retorno da IA contra o catálogo do
+     * ecossistema e, ao passar, gravei o slug em `system_id`. A validação
+     * funcionou e o insert continuou falhando com 22P02 (sintaxe inválida
+     * para uuid) — porque o problema nunca foi a IA inventar valor: era eu
+     * mandando o valor certo para a coluna errada.
+     *
+     * A ligação com o ecossistema não se perde: ela já é gravada à parte,
+     * logo abaixo, por `salvarMatchEcossistema`. Esse é o lugar dela.
+     */
     const criterios = criteriosMinimos(
       preview.titulo,
       // A conversa ainda não devolve critérios estruturados; quando devolver,
@@ -218,12 +231,12 @@ export function useAIWorkspace() {
       // A regra do projeto já era "a IA não inventa dado". Aqui ela ganha
       // dente: só passa o que existe no catálogo; qualquer outra coisa vira
       // null, e a demanda nasce sem sistema — que é a verdade.
-      sistemaId: sistemaValidado,
+      sistemaId: null,
       criteriosDeAceite: criterios,
       origemIa: true,
       confianca: preview.intent?.confidence ?? 0.5,
     };
-  }, [preview, previewScore, sistemas]);
+  }, [preview, previewScore]);
 
   /**
    * Confirmar cria uma DEMANDA, não uma solicitação.
@@ -250,7 +263,10 @@ export function useAIWorkspace() {
           titulo: demandaDoPreview.titulo,
           descricao: demandaDoPreview.resumo,
           tipo_demanda: preview?.tipoDemanda ?? null,
-          sistema_alvo_slug: demandaDoPreview.sistemaId,
+          // O slug vem do preview, não de `demandaDoPreview.sistemaId` — este
+          // é sempre nulo agora, e mandá-lo aqui apagaria a pista que faz o
+          // casamento com o ecossistema funcionar.
+          sistema_alvo_slug: preview?.sistemaAlvoSlug ?? null,
         });
         if (candidatos.length) {
           try {
