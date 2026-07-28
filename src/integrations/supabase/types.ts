@@ -2587,6 +2587,7 @@ export type Database = {
         Returns: boolean
       }
       is_allowed_user: { Args: never; Returns: boolean }
+      is_equipe: { Args: never; Returns: boolean }
       knowledge_search: {
         Args: { _limit?: number; _q: string }
         Returns: {
