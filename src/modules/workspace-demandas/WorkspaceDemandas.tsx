@@ -216,6 +216,14 @@ export default function WorkspaceDemandas() {
                 onAbrir={abrir}
                 onMover={({ demandaId, statusId }) => void acoes.mover({ demandaId, statusId })}
                 podeMover={acoes.podeMover}
+                vazio={{
+                  titulo: busca ? "Nenhuma demanda encontrada" : "Nada nesta fila",
+                  descricao: busca
+                    ? "Tente outro termo ou limpe o filtro."
+                    : fila === "minhas"
+                      ? "Nada atribuído a você aqui. Veja “Todas” ou “Não atribuídas”."
+                      : "Troque de fila para ver outro recorte.",
+                }}
               />
             ) : lente === "gantt" ? (
               <GanttLente demandas={visiveis} onAbrir={abrir} />

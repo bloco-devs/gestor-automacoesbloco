@@ -15,7 +15,12 @@ import { ListaLente } from "@/modules/workspace-demandas/components/ListaLente";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-const LS_FILA = "hoje:fila:v1";
+// v2: a chave subiu de versão junto com a mudança de padrão. Quem já tinha
+// "todas" gravado continuaria abrindo com o backlog inteiro — a escolha
+// salva venceria um padrão que a pessoa nunca chegou a ver. Subir a versão
+// dá a todo mundo uma primeira impressão da tela nova; quem preferir "todas"
+// escolhe de novo, e aí sim fica gravado.
+const LS_FILA = "hoje:fila:v2";
 
 /**
  * A TELA CHAMA "HOJE" — ENTÃO ELA NÃO ABRE COM TUDO

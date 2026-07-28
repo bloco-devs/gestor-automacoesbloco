@@ -307,6 +307,8 @@ interface Props {
   onAbrir: (id: string) => void;
   onMover: (params: { demandaId: string; statusId: string }) => void;
   podeMover: boolean;
+  /** Mesma forma que a `ListaLente` usa — as duas lentes falam a mesma língua. */
+  vazio?: { titulo: string; descricao?: string };
   /**
    * Todas as etapas que a fonte conhece, na ordem da esteira.
    *
@@ -323,7 +325,7 @@ interface Props {
   etapas?: EtapaDaFonte[];
 }
 
-function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMover, etapas }: Props) {
+function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMover, etapas, vazio }: Props) {
   const [arrastando, setArrastando] = useState<Demanda | null>(null);
   const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
   const [jaVistas, setJaVistas] = useState<Set<string>>(new Set());
@@ -365,8 +367,27 @@ function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMov
     return [...daEsteira, ...orfaos];
   }, [etapas, grupos]);
 
-  if (colunas.length === 0) {
-    return <EmptyPanel title="Sem colunas" description="Nenhuma demanda corresponde a esta fila." />;
+  /**
+   * ESTEIRA INTEIRA VAZIA É UMA FRASE, NÃO SEIS CAIXAS
+   *
+   * Mostrar as colunas quando NENHUMA tem cartão faz a tela dizer a mesma
+   * coisa seis vezes, em forma de retângulo tracejado — e quem olha entende
+   * "quebrou", não "não há nada aqui". As colunas existem para mostrar o
+   * caminho quando há trabalho andando por ele; sem trabalho nenhum, o que a
+   * pessoa precisa é de uma frase e de uma saída.
+   *
+   * Com pelo menos um cartão, as colunas vazias voltam a ser informação —
+   * "ninguém está testando nada" é diferente de "não há nada".
+   */
+  const totalDeCartoes = colunas.reduce((n, g) => n + g.itens.length, 0);
+
+  if (colunas.length === 0 || totalDeCartoes === 0) {
+    return (
+      <EmptyPanel
+        title={vazio?.titulo ?? "Nada nesta fila"}
+        description={vazio?.descricao ?? "Troque de fila para ver outro recorte."}
+      />
+    );
   }
 
   const alternar = (id: string) =>
