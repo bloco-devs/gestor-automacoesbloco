@@ -244,7 +244,7 @@ describe("domain/demand — fila × lente", () => {
 
   it("as lentes mudam o agrupamento, nunca o conjunto", () => {
     const total = (grupos: { itens: unknown[] }[]) => grupos.reduce((n, g) => n + g.itens.length, 0);
-    expect(total(agrupar(universo, "lista"))).toBe(4);
+    expect(total(agrupar(universo, "board"))).toBe(4);
     expect(total(agrupar(universo, "sprint"))).toBe(4);
     expect(total(agrupar(universo, "timeline"))).toBe(4);
   });
