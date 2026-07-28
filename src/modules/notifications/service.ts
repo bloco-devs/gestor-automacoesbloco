@@ -90,6 +90,42 @@ export async function listNotifications(limit = 50): Promise<AppNotification[]> 
   return (data ?? []) as unknown as AppNotification[];
 }
 
+/**
+ * APAGAR DE VERDADE, NAO SO MARCAR COMO LIDA
+ *
+ * "Marcar todas como lidas" tirava o contador mas deixava a lista igual — a
+ * pessoa voltava no dia seguinte e reencontrava as mesmas dez linhas, agora
+ * com um tique do lado. Notificação lida que não sai do caminho deixa de ser
+ * aviso e vira histórico, e histórico é exatamente o que ninguém quer num
+ * sino.
+ *
+ * A política de exclusão já existia no banco desde o começo; faltava alguém
+ * chamá-la.
+ */
+export async function deleteNotification(id: string): Promise<void> {
+  const { error } = await supabase.from("notifications" as never).delete().eq("id", id);
+  if (error) throw error;
+}
+
+/**
+ * Limpa o que já foi visto, e só isso.
+ *
+ * Apagar tudo levaria junto o que ainda não foi lido — e o aviso que a pessoa
+ * ainda não viu é justamente o único que importa. Um botão que destrói
+ * informação não lida é um botão que se aprende a não clicar.
+ */
+export async function clearReadNotifications(): Promise<void> {
+  const { data: userRes } = await supabase.auth.getUser();
+  const uid = userRes.user?.id;
+  if (!uid) return;
+  const { error } = await supabase
+    .from("notifications" as never)
+    .delete()
+    .eq("user_id", uid)
+    .eq("read", true);
+  if (error) throw error;
+}
+
 export async function markNotificationRead(id: string): Promise<void> {
   const { error } = await supabase.from("notifications" as never).update({ read: true } as never).eq("id", id);
   if (error) throw error;

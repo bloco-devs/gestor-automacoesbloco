@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Loader2, PanelRightClose, PanelRightOpen, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { usePreferencia } from "@/hooks/usePreferencia";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
 import { cn } from "@/lib/utils";
 import { useAcoesDemanda, useDemandas, ehInbox, type Escopo } from "@/modules/demand-access";
@@ -67,13 +68,31 @@ export default function WorkspaceDemandas() {
     [projetoId, naInbox],
   );
 
-  const lente: LenteId = isLenteId(params.get("lente")) ? (params.get("lente") as LenteId) : "board";
-  const fila: FilaId = isFilaId(params.get("fila")) ? (params.get("fila") as FilaId) : "todas";
+  /**
+   * A ESCOLHA SOBREVIVE À NAVEGAÇÃO
+   *
+   * Lente e fila viviam só na URL. Ao abrir uma demanda e voltar, os
+   * parâmetros sumiam e tudo caía no padrão — a pessoa escolhia "Sprint",
+   * clicava num item, voltava e estava em "Board". Cada volta cobrava o mesmo
+   * clique.
+   *
+   * A URL continua mandando quando existe, porque um link colado num Slack
+   * precisa abrir a visão que quem colou estava vendo. Na ausência dela, vale
+   * a última escolha da pessoa. As duas coisas convivem sem se contradizer:
+   * link explícito ganha; hábito preenche o silêncio.
+   */
+  const [lenteSalva, guardarLente] = usePreferencia<LenteId>("demandas:lente", "board", isLenteId);
+  const [filaSalva, guardarFila] = usePreferencia<FilaId>("demandas:fila", "todas", isFilaId);
+
+  const lente: LenteId = isLenteId(params.get("lente")) ? (params.get("lente") as LenteId) : lenteSalva;
+  const fila: FilaId = isFilaId(params.get("fila")) ? (params.get("fila") as FilaId) : filaSalva;
 
   const trocar = (chave: "lente" | "fila", valor: string) => {
     const proximo = new URLSearchParams(params);
     proximo.set(chave, valor);
     setParams(proximo, { replace: true });
+    if (chave === "lente" && isLenteId(valor)) guardarLente(valor);
+    if (chave === "fila" && isFilaId(valor)) guardarFila(valor);
   };
 
   const { demandas, projeto, etapas, capacidades, carregando, erro } = useDemandas(escopo);

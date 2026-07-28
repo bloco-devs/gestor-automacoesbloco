@@ -5,6 +5,8 @@ import {
   deleteWebhook,
   listNotifications,
   listWebhooks,
+  clearReadNotifications,
+  deleteNotification,
   markAllNotificationsRead,
   markNotificationRead,
   testWebhook,
@@ -64,6 +66,22 @@ export function useMarkAllRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => markAllNotificationsRead(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: NOTI_KEY }),
+  });
+}
+
+export function useDeleteNotification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteNotification(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: NOTI_KEY }),
+  });
+}
+
+export function useClearReadNotifications() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => clearReadNotifications(),
     onSuccess: () => qc.invalidateQueries({ queryKey: NOTI_KEY }),
   });
 }

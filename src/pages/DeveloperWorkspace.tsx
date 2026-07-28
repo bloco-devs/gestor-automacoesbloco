@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTodasAsDemandas } from "@/modules/demand-access";
@@ -13,6 +13,7 @@ import {
 } from "@/domain/demand";
 import { ListaLente } from "@/modules/workspace-demandas/components/ListaLente";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePreferencia } from "@/hooks/usePreferencia";
 import { cn } from "@/lib/utils";
 
 // v2: a chave subiu de versão junto com a mudança de padrão. Quem já tinha
@@ -20,27 +21,20 @@ import { cn } from "@/lib/utils";
 // salva venceria um padrão que a pessoa nunca chegou a ver. Subir a versão
 // dá a todo mundo uma primeira impressão da tela nova; quem preferir "todas"
 // escolhe de novo, e aí sim fica gravado.
-const LS_FILA = "hoje:fila:v2";
-
 /**
- * A TELA CHAMA "HOJE" — ENTÃO ELA NÃO ABRE COM TUDO
+ * A fila de Hoje usa o mesmo mecanismo de preferência do resto do sistema.
+ * Antes esta tela tinha a própria cópia de leitura/gravação em localStorage,
+ * com o próprio jeito de versionar chave — uma de três implementações
+ * diferentes da mesma ideia espalhadas pelo código.
  *
- * Abrindo em "Todas", a primeira coisa que aparecia eram 79 demandas: o
- * backlog somado de todos os projetos, ordenado por status, com trabalho de
- * duas semanas atrás no topo. Isso é um arquivo, não um dia. A pessoa
- * precisava filtrar para chegar ao próprio trabalho — ou seja, a tela abria
- * errada por padrão e cobrava um clique para ficar certa.
- *
- * "Minhas" é a resposta à pergunta que o nome da tela faz. As outras filas
- * continuam a um clique, e a escolha é lembrada — quem prefere ver tudo só
- * precisa dizer isso uma vez.
+ * "Minhas" como padrão: a tela chama "Hoje" e abria com o backlog somado de
+ * todos os projetos, ordenado por status, com trabalho de duas semanas atrás
+ * no topo. Isso é um arquivo, não um dia.
  */
 const FILA_PADRAO: FilaId = "minhas";
 
-function lerFilaSalva(): FilaId {
-  if (typeof window === "undefined") return FILA_PADRAO;
-  const v = window.localStorage.getItem(LS_FILA);
-  return FILAS.some((f) => f.id === v) ? (v as FilaId) : FILA_PADRAO;
+function ehFila(v: unknown): v is FilaId {
+  return typeof v === "string" && FILAS.some((f) => f.id === v);
 }
 
 /**
@@ -61,7 +55,7 @@ export default function DeveloperWorkspace() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { demandas, projetoPorDemanda, capacidades, carregando } = useTodasAsDemandas();
-  const [fila, setFila] = useState<FilaId>(lerFilaSalva);
+  const [fila, setFila] = usePreferencia<FilaId>("hoje:fila", FILA_PADRAO, ehFila);
 
   const contagens = useMemo(() => contarFilas(demandas, user?.id ?? null), [demandas, user?.id]);
   const filtradas = useMemo(
@@ -80,7 +74,6 @@ export default function DeveloperWorkspace() {
 
   function selecionarFila(f: FilaId) {
     setFila(f);
-    if (typeof window !== "undefined") window.localStorage.setItem(LS_FILA, f);
   }
 
   function abrir(id: string) {
