@@ -119,12 +119,12 @@ function CopilotoDaDemandaImpl({
 
   return (
     <aside
-      aria-label="Copiloto desta demanda"
+      aria-label="Blink — análise desta demanda"
       className={cn("flex min-h-0 flex-col overflow-y-auto border-l border-border/60", className)}
     >
       <header className="flex items-center gap-2 border-b border-border/50 px-4 py-2.5">
         <Blink className="size-5 shrink-0" aria-hidden />
-        <span className="text-[13px] font-medium">Copiloto</span>
+        <span className="text-[13px] font-medium">Blink</span>
       </header>
 
       <Bloco titulo="O que está acontecendo">

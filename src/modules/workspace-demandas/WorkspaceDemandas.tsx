@@ -110,7 +110,7 @@ export default function WorkspaceDemandas() {
       <button
         type="button"
         onClick={() => setCopiloto((v) => !v)}
-        aria-label={copiloto ? "Ocultar copiloto" : "Mostrar copiloto"}
+        aria-label={copiloto ? "Ocultar o Blink" : "Mostrar o Blink"}
         className={cn(
           "ml-auto hidden shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs xl:inline-flex",
           "transition-colors duration-fast ease-standard",
@@ -133,7 +133,7 @@ export default function WorkspaceDemandas() {
         <button
           type="button"
           onClick={() => setCopiloto((v) => !v)}
-          aria-label={copiloto ? "Ocultar copiloto" : "Mostrar copiloto"}
+          aria-label={copiloto ? "Ocultar o Blink" : "Mostrar o Blink"}
           className={cn(
             "ml-auto hidden shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs xl:inline-flex",
             "transition-colors duration-fast ease-standard",

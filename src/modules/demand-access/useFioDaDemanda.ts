@@ -1,5 +1,6 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { listComments, listAuditLogs, createComment } from "@/modules/demands/timeline-service";
 import { getProfilesByIds } from "@/modules/demands/service";
 import { STATUS_COLUMNS, PRIORITY_META } from "@/modules/demands/types";
@@ -114,6 +115,58 @@ export function useFioDaDemanda(
     }
     return m;
   }, [pessoas, faltantesQ.data]);
+
+  /**
+   * O FIO PRECISA CHEGAR SOZINHO
+   *
+   * Sem isto, a conversa só aparecia ao recarregar a página. Duas pessoas
+   * discutindo a mesma demanda ficavam cada uma com uma versão do diálogo, e
+   * a mais nova era invisível para quem não soubesse apertar F5 — que é
+   * justamente o solicitante, a pessoa com menos motivo para desconfiar da
+   * tela.
+   *
+   * Três tabelas alimentam o fio, e todas precisam avisar:
+   *   demand_comments    o que as pessoas escrevem
+   *   demand_audit_logs  o que o sistema registra (assumiu, moveu, concluiu)
+   *   demands            responsável, status, prioridade — o que o Contexto
+   *                      e o Copiloto leem
+   *
+   * A terceira explica um sintoma que parecia outro bug: o fio dizia
+   * "fulano assumiu a demanda" enquanto o Contexto insistia em "Ninguém
+   * ainda". Não eram dados divergentes — era a mesma verdade, com um dos
+   * lados parado no tempo.
+   *
+   * Nome de canal único por instância: o supabase-js guarda canais num cache
+   * por nome, e dois componentes com o mesmo nome recebem o MESMO objeto — o
+   * segundo tentaria inscrever num canal já inscrito e falharia. Foi
+   * exatamente o erro que derrubou as notificações antes.
+   */
+  useEffect(() => {
+    if (!habilitado || !demandaId) return;
+
+    const canal = supabase
+      .channel(`fio-${demandaId}-${crypto.randomUUID()}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "demand_comments", filter: `demand_id=eq.${demandaId}` },
+        () => qc.invalidateQueries({ queryKey: ["demanda", demandaId, "comentarios"] }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "demand_audit_logs", filter: `demand_id=eq.${demandaId}` },
+        () => qc.invalidateQueries({ queryKey: ["demanda", demandaId, "auditoria"] }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "demands", filter: `id=eq.${demandaId}` },
+        () => qc.invalidateQueries({ queryKey: ["demands"] }),
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(canal);
+    };
+  }, [demandaId, habilitado, qc]);
 
   const eventos = useMemo<Evento[]>(() => {
     const falas: Evento[] = (comentariosQ.data ?? []).map((c) => ({

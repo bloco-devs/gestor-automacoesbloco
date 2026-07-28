@@ -104,7 +104,7 @@ function CopilotoImpl({ demandas, resumo, onAbrir, className }: Props) {
   }
 
   return (
-    <aside aria-label="Copiloto" className={cn("space-y-7 border-l border-border/60 px-5 py-5", className)}>
+    <aside aria-label="Blink — panorama do projeto" className={cn("space-y-7 border-l border-border/60 px-5 py-5", className)}>
       <Bloco titulo="Como está">
         <p className="ds-caption text-muted-foreground">
           {resumo.saudavel ? (
