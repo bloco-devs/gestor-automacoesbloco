@@ -240,9 +240,21 @@ export default function AppLayout() {
               </div>
             )}
           </div>
+          {/*
+            SEM O RODAPÉ, O `flex-1` VIRAVA UM VAZIO DE TELA INTEIRA
+            A navegação esticava para ocupar toda a altura porque precisava
+            empurrar o bloco da conta para o pé. A conta subiu para o header e
+            esse esticamento perdeu a razão de existir — o que sobrou foi um
+            painel branco de mil pixels embaixo de quatro itens.
+
+            Agora a lista tem a altura dos próprios itens e rola só se
+            precisar. O vazio abaixo continua sendo a barra, não um bloco
+            esticado dentro dela: a diferença aparece no hover e em qualquer
+            fundo que não seja liso.
+          */}
           <nav
             className={cn(
-              "flex-1 overflow-y-auto py-2",
+              "min-h-0 shrink overflow-y-auto py-1",
               mini && !isMobile ? "px-2" : "px-2.5",
             )}
             aria-label="Menu"

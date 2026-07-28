@@ -240,7 +240,13 @@ function Coluna({
     <section
       ref={setNodeRef}
       className={cn(
-        "flex max-h-[calc(100vh-8rem)] min-h-[16rem] w-[15rem] shrink-0 flex-col rounded-md",
+        // A coluna preenche a altura do board em vez de calcular a sua a partir
+        // da viewport. `max-h-[calc(100vh-8rem)]` era um chute sobre quanta
+        // moldura existe acima — chute que erra sempre que o cabeçalho muda, e
+        // que deixava o board mais curto que a área disponível. O resultado era
+        // a barra de rolagem horizontal aparecendo no meio da tela, com um vazio
+        // enorme embaixo dela.
+        "flex h-full min-h-[16rem] w-[15rem] shrink-0 flex-col rounded-md",
         "transition-colors duration-base ease-standard",
         // O alvo de drop se anuncia por fundo, não por anel: anel em volta de
         // uma coluna sem corpo desenharia uma caixa que não existe.
@@ -412,7 +418,9 @@ function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMov
 
   return (
     <DndContext sensors={sensores} onDragStart={aoIniciar} onDragEnd={aoTerminar} onDragCancel={() => setArrastando(null)}>
-      <div className="rolagem-discreta flex gap-4 overflow-x-auto pb-2">
+      {/* `contents` deixa o filho herdar a altura do avô sem criar um nível de
+          caixa no meio — o DndContext não renderiza DOM, mas este wrapper sim. */}
+      <div className="rolagem-discreta flex h-full min-h-0 items-stretch gap-4 overflow-x-auto overflow-y-hidden pb-2">
         {colunas.map((g) =>
           recolhidas.has(g.id) ? (
             <ColunaRecolhida key={g.id} grupo={g} onExpandir={() => alternar(g.id)} />

@@ -196,7 +196,19 @@ export default function WorkspaceDemandas() {
         filtradas={visiveis.length}
       />
 
-      <div className="min-h-0 flex-1 overflow-auto">
+      {/*
+        A ALTURA PRECISA DESCER INTEIRA ATÉ O BOARD
+        O board é a única lente que rola na horizontal, e ele só pode fazer
+        isso se souber sua altura. Antes o container era `overflow-auto` e a
+        grade tinha altura de conteúdo: o board terminava onde os cartões
+        terminavam, a barra horizontal aparecia no meio da tela e sobrava um
+        vazio enorme embaixo — e a página inteira ganhava uma segunda barra.
+
+        Com o board, a rolagem vertical é da coluna, não da página. As outras
+        lentes (lista, sprint, gantt) continuam rolando a página inteira,
+        porque nelas o conteúdo é uma coluna só que cresce para baixo.
+      */}
+      <div className={cn("min-h-0 flex-1", lente === "board" ? "overflow-hidden" : "overflow-auto")}>
         <div
           className={cn(
             // Sem largura maxima e com respiro minimo: numa tela de 2560px o
@@ -204,9 +216,10 @@ export default function WorkspaceDemandas() {
             // enquanto o board rolava na horizontal.
             "grid w-full grid-cols-1 gap-0 px-3 py-3 md:px-4",
             copiloto && "xl:grid-cols-[minmax(0,1fr)_17rem] xl:gap-4",
+            lente === "board" && "h-full min-h-0",
           )}
         >
-          <div className="min-w-0">
+          <div className={cn("min-w-0", lente === "board" && "h-full min-h-0")}>
             {lente === "board" ? (
               <BoardLente
                 grupos={grupos}
@@ -242,7 +255,19 @@ export default function WorkspaceDemandas() {
             )}
           </div>
 
-          {copiloto && <Copiloto demandas={daFila} resumo={resumo} onAbrir={abrir} className="hidden xl:block" />}
+          {/* No board o pai não rola mais, então o painel precisa rolar por
+              conta própria — senão o conteúdo dele fica cortado sem saída. */}
+          {copiloto && (
+            <Copiloto
+              demandas={daFila}
+              resumo={resumo}
+              onAbrir={abrir}
+              className={cn(
+                "hidden xl:block",
+                lente === "board" && "h-full min-h-0 overflow-y-auto rolagem-discreta",
+              )}
+            />
+          )}
         </div>
       </div>
     </div>
