@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   useTodasAsDemandas,
   useAssumirDemanda,
+  useMoverDemanda,
   type EtapaDaFonte,
 } from "@/modules/demand-access";
 import {
