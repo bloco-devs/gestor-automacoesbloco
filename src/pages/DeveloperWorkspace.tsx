@@ -125,12 +125,16 @@ export default function DeveloperWorkspace() {
    * inventado faria a coluna aparecer duas vezes (uma vazia, uma cheia).
    * Se não há, entra um id sintético e a coluna renderiza vazia.
    *
-   * Colunas customizadas de quadros importados não estão nesta lista: o
-   * `BoardLente` as reconhece como órfãs e as desenha no fim, para nenhum
-   * dado sumir da tela.
+   * Colunas customizadas de quadros importados — e os grupos concluídos —
+   * não estão nesta lista: o `BoardLente` os reconhece como órfãos, desenha no
+   * fim e recolhe os concluídos sozinho.
    */
   const etapas = useMemo<EtapaDaFonte[]>(() => {
-    const porRotulo = new Map(grupos.map((g) => [normalizar(g.rotulo), g]));
+    // Grupos concluídos ficam de fora mesmo quando o rótulo casa: promovê-los
+    // a coluna da esteira devolveria a duplicação que este filtro corrige.
+    const porRotulo = new Map(
+      grupos.filter((g) => !g.concluido).map((g) => [normalizar(g.rotulo), g]),
+    );
     return ESTEIRA.map((rotulo) => {
       const grupo = porRotulo.get(normalizar(rotulo));
       return { id: grupo?.id ?? `esteira:${normalizar(rotulo)}`, rotulo: grupo?.rotulo ?? rotulo };
