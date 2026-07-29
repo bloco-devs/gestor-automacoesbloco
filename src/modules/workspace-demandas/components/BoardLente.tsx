@@ -197,6 +197,11 @@ function Cartao({
         // sobe de leve no hover: a sombra só aparece quando o cursor está nele,
         // que é quando ele de fato pode ser pego.
         "rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
+        // FAIXA DE ETAPA — a cor da coluna repetida na borda esquerda do cartão,
+        // para que ele continue legível fora do alinhamento da coluna (arrasto,
+        // overlay, rolagem que esconde o cabeçalho).
+        "border-l-4",
+        PALETA[tom].borda,
         "shadow-[0_1px_2px_hsl(var(--foreground)/0.04)]",
         "transition-[background-color,border-color,box-shadow,transform] duration-fast ease-standard",
         "hover:-translate-y-px hover:border-border hover:shadow-elev-2",
