@@ -94,10 +94,13 @@ function Cartao({
   sobreposicao,
   onAssumir,
   assumindo,
+  tom = "neutro",
 }: {
   demanda: Demanda;
   capacidades: Capacidades;
   sinais: SinaisUteis;
+  /** O tom da etapa onde o cartão está — vira a faixa de cor na borda esquerda. */
+  tom?: TomDaEtapa;
   onAbrir?: (id: string) => void;
   arrastavel: boolean;
   sobreposicao?: boolean;
