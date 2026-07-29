@@ -64,7 +64,6 @@ const ESTEIRA = [
   "A Fazer",
   "Em Desenvolvimento",
   "Em Testes",
-  "Homologação",
 ] as const;
 
 
