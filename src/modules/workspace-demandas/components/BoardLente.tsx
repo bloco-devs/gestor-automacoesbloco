@@ -317,6 +317,8 @@ function Coluna({
   onRecolher?: () => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
+  const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
+  const IconeDaEtapa = tinta.icone;
 
   return (
     <section
