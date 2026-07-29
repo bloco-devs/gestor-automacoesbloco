@@ -465,6 +465,7 @@ function Coluna({
             arrastavel={arrastavel}
             onAssumir={onAssumir}
             assumindo={assumindo?.(d.id)}
+            tom={tomDaEtapa(grupo.rotulo)}
           />
         ))}
         {grupo.itens.length === 0 && (
