@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useTodasAsDemandas } from "@/modules/demand-access";
+import { useTodasAsDemandas, type EtapaDaFonte } from "@/modules/demand-access";
 import {
   FILAS,
   type FilaId,
@@ -11,7 +11,7 @@ import {
   sinaisUteis,
   unirGruposHomonimos,
 } from "@/domain/demand";
-import { ListaLente } from "@/modules/workspace-demandas/components/ListaLente";
+import { BoardLente } from "@/modules/workspace-demandas/components/BoardLente";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePreferencia } from "@/hooks/usePreferencia";
 import { cn } from "@/lib/utils";
@@ -38,7 +38,35 @@ function ehFila(v: unknown): v is FilaId {
 }
 
 /**
- * Hoje — a fila do desenvolvedor, cruzando as duas fontes.
+ * A esteira canônica desta tela.
+ *
+ * POR QUE ELA MORA AQUI, E NÃO NA CAMADA DE DADOS
+ * `useTodasAsDemandas` soma DUAS fontes (colunas de quadro + o enum de status
+ * de `demands`) e, por isso mesmo, não tem uma lista de etapas para devolver:
+ * cada quadro tem as suas. O que existe em comum é o vocabulário — os seis
+ * nomes abaixo são os que as duas fontes usam. A esteira é montada por RÓTULO
+ * porque é o rótulo que o usuário lê, e é por ele que `unirGruposHomonimos`
+ * já funde as duas fontes numa coluna só.
+ *
+ * Serve para uma coisa: garantir que "Em Testes" apareça mesmo quando ninguém
+ * está testando nada. Sem isso, uma demanda no backlog desenharia UMA coluna,
+ * e o quadro viraria uma lista de um item.
+ */
+const ESTEIRA = [
+  "Backlog",
+  "A Fazer",
+  "Em Desenvolvimento",
+  "Em Testes",
+  "Homologação",
+  "Concluído",
+] as const;
+
+function normalizar(rotulo: string): string {
+  return rotulo.trim().toLocaleLowerCase("pt-BR");
+}
+
+/**
+ * Hoje — o quadro do desenvolvedor, cruzando as duas fontes.
  *
  * ANTES: esta tela lia só `useDemands()` (tabela `demands`, a fila global do
  * Help Desk). Ficava vazia sempre que a única demanda real do momento vivesse
@@ -46,10 +74,20 @@ function ehFila(v: unknown): v is FilaId {
  * trabalho de verdade. `useTodasAsDemandas` soma as duas fontes; a UI
  * continua sem saber que existem duas.
  *
- * Reaproveita `ListaLente` e o vocabulário fila/lente já usados no Workspace
- * de projeto — a mesma pergunta ("o que eu vejo"), só que sem recorte de
- * projeto. Abrir uma demanda navega para `/demandas/:id`, a página real —
- * nunca um preview embutido.
+ * A lente aqui é o BOARD, o mesmo componente do workspace de projeto. A lista
+ * em acordeão saiu: ela agrupava por status exatamente como o quadro, mudando
+ * só o desenho — e "o que está em cada etapa" é uma pergunta que um quadro
+ * responde de relance e uma lista responde depois de expandir três blocos.
+ *
+ * SOMENTE LEITURA, E ISSO É UMA DECISÃO
+ * `podeMover={false}`. Mover daqui exigiria uma camada de escrita que
+ * traduzisse o destino para "trocar a coluna do card" ou "trocar o enum de
+ * status" conforme a fonte da demanda — que é justamente o que esta tela não
+ * sabe (e não deve saber). Enquanto essa camada não existe, arrastar sem
+ * efeito seria pior do que não arrastar.
+ *
+ * Abrir uma demanda navega para `/demandas/:id`, a página real — nunca um
+ * preview embutido.
  */
 export default function DeveloperWorkspace() {
   const { user } = useAuth();
@@ -64,22 +102,49 @@ export default function DeveloperWorkspace() {
   );
   // `unirGruposHomonimos` porque esta tela soma duas fontes: a coluna
   // "Backlog" de um quadro e o status "backlog" de `demands` são status
-  // diferentes com o mesmo nome, e apareciam como dois blocos "BACKLOG"
-  // seguidos — parecia dado duplicado.
+  // diferentes com o mesmo nome, e apareciam como duas colunas "BACKLOG"
+  // lado a lado — parecia dado duplicado.
   const grupos = useMemo(
     () => unirGruposHomonimos(agrupar(filtradas, "board")),
     [filtradas],
   );
   const sinais = useMemo(() => sinaisUteis(filtradas), [filtradas]);
 
+  /**
+   * A esteira, resolvida contra os grupos que existem agora.
+   *
+   * Para cada nome da esteira: se já há um grupo com aquele rótulo, a etapa
+   * usa o ID DELE — o `BoardLente` casa etapa com grupo por id, e um id
+   * inventado faria a coluna aparecer duas vezes (uma vazia, uma cheia).
+   * Se não há, entra um id sintético e a coluna renderiza vazia.
+   *
+   * Colunas customizadas de quadros importados não estão nesta lista: o
+   * `BoardLente` as reconhece como órfãs e as desenha no fim, para nenhum
+   * dado sumir da tela.
+   */
+  const etapas = useMemo<EtapaDaFonte[]>(() => {
+    const porRotulo = new Map(grupos.map((g) => [normalizar(g.rotulo), g]));
+    return ESTEIRA.map((rotulo) => {
+      const grupo = porRotulo.get(normalizar(rotulo));
+      return { id: grupo?.id ?? `esteira:${normalizar(rotulo)}`, rotulo: grupo?.rotulo ?? rotulo };
+    });
+  }, [grupos]);
+
   function selecionarFila(f: FilaId) {
     setFila(f);
   }
 
-  function abrir(id: string) {
-    const projetoId = projetoPorDemanda.get(id);
-    navigate(projetoId ? `/demandas/${id}?projeto=${projetoId}` : `/demandas/${id}`);
-  }
+  const abrir = useCallback(
+    (id: string) => {
+      const projetoId = projetoPorDemanda.get(id);
+      navigate(projetoId ? `/demandas/${id}?projeto=${projetoId}` : `/demandas/${id}`);
+    },
+    [navigate, projetoPorDemanda],
+  );
+
+  // Somente leitura: existe para satisfazer o contrato do board, e nunca é
+  // chamado porque `podeMover` é falso (os cartões não ficam arrastáveis).
+  const naoMove = useCallback(() => {}, []);
 
   return (
     <div className="flex h-[calc(100vh-var(--app-header-h,3.5rem))] w-full flex-col">
@@ -111,7 +176,10 @@ export default function DeveloperWorkspace() {
         })}
       </nav>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 md:px-6">
+      {/* Sem `overflow-y-auto` aqui: o quadro rola na horizontal por fora e
+          cada coluna rola na vertical por dentro. Um scroll vertical no pai
+          brigaria com os dois. */}
+      <div className="min-h-0 flex-1 px-4 py-3 md:px-6">
         {carregando ? (
           <div className="space-y-2">
             <Skeleton className="h-12 w-full" />
@@ -119,11 +187,14 @@ export default function DeveloperWorkspace() {
             <Skeleton className="h-12 w-full" />
           </div>
         ) : (
-          <ListaLente
+          <BoardLente
             grupos={grupos}
+            etapas={etapas}
             capacidades={capacidades}
             sinais={sinais}
             onAbrir={abrir}
+            onMover={naoMove}
+            podeMover={false}
             vazio={{
               titulo:
                 fila === "minhas"
