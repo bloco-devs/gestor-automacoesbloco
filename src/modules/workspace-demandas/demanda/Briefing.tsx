@@ -46,7 +46,7 @@ function BriefingImpl({ briefing: b, falas }: Props) {
       {b.jaExiste && <Secao rotulo="Já existe">{b.jaExiste}</Secao>}
 
       {b.jaTentado.length > 0 && (
-        <Secao rotulo="Já foi dito">
+        <Secao rotulo="Último retorno">
           <ul className="space-y-0.5">
             {b.jaTentado.map((t, i) => (
               <li key={`${i}-${t.slice(0, 12)}`} className="text-muted-foreground">

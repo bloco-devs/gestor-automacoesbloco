@@ -285,4 +285,6 @@ describe("anexos no fio", () => {
     const eventos = [fala("a", "2026-03-01", "quem-abriu"), anexo("b", "2026-03-02", "dev", "print.png")];
     expect(deQuemEAVez(eventos, "quem-abriu")).toBe("equipe");
   });
+
+
 });

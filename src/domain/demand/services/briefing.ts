@@ -43,6 +43,14 @@ export interface Briefing {
   porOndeComecar: string;
 }
 
+/** "André Laureano dos Santos Silva" vira "André": num resumo, o resto é ruído. */
+function primeiroNome(nome: string | undefined | null): string | null {
+  if (!nome) return null;
+  const limpo = nome.trim();
+  if (!limpo || limpo === "—") return null;
+  return limpo.split(/\s+/)[0];
+}
+
 /** Corta no limite de palavra, não no meio dela. */
 function resumir(texto: string, limite = 180): string {
   const limpo = texto.replace(/\s+/g, " ").trim();
@@ -69,15 +77,32 @@ export function montarBriefing(
   const oQuePedem = resumir(d.descricao || falas[0]?.texto || d.titulo);
 
   /**
-   * "Já tentado" são as últimas falas de quem NÃO abriu. É o que a equipe
-   * disse — e é exatamente o que o desenvolvedor novo precisa para não repetir
-   * uma pergunta que já foi feita, que é a forma mais rápida de queimar a
-   * paciência de quem pediu.
+   * O ÚLTIMO RETORNO DA EQUIPE — UM, NÃO TRÊS
+   *
+   * A intenção sempre foi certa: quem chega numa demanda alheia precisa saber
+   * o que já foi dito, para não repetir uma pergunta já feita — que é a forma
+   * mais rápida de queimar a paciência de quem pediu.
+   *
+   * A execução é que atrapalhava. Três falas copiadas na íntegra, no topo da
+   * tela, e as MESMAS três falas visíveis dois centímetros abaixo, no fio.
+   * Isso não é resumo: é duplicata. E ela cobra o espaço mais caro da tela
+   * — o primeiro que o olho encontra — para dizer o que a conversa logo
+   * abaixo já dizia melhor, com autor, horário e ordem.
+   *
+   * Uma linha basta para a pergunta que este campo responde ("já falaram
+   * algo?"). Se a resposta for sim, a pessoa rola; e rolar é barato. Três
+   * linhas transformam o briefing em transcrição.
+   *
+   * E A ATRIBUIÇÃO NÃO É DETALHE
+   * Sem o nome, uma citação dentro de um resumo lê-se como afirmação do
+   * sistema. "ai você quer demais" sem autor parece o sistema opinando; com
+   * "André:" na frente, volta a ser o que é — alguém falando.
    */
-  const jaTentado = falas
-    .filter((e) => e.autor && e.autor.id !== solicitanteId)
-    .slice(-3)
-    .map((e) => `${e.autor?.ia ? "✦ " : ""}${resumir(e.texto, 100)}`);
+  const ultimaDaEquipe = falas.filter((e) => e.autor && e.autor.id !== solicitanteId).slice(-1);
+  const jaTentado = ultimaDaEquipe.map((e) => {
+    const quem = e.autor?.ia ? "✦ Blink" : primeiroNome(e.autor?.nome);
+    return quem ? `${quem}: ${resumir(e.texto, 120)}` : resumir(e.texto, 120);
+  });
 
   const travando: string[] = [];
   if (!d.concluida) {
