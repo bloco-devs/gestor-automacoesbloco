@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getCoverDisplayUrl, listBoardsResumo } from "@/lib/atividadesBoards";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getCoverDisplayUrl, listBoardsResumo, setBoardArquivado } from "@/lib/atividadesBoards";
 
 /**
  * A lista de projetos.
@@ -27,16 +27,45 @@ export interface ProjetoNaLista {
   pessoas: number;
   favorito: boolean;
   atualizadoEm: string;
+  arquivado: boolean;
 }
 
-export function useProjetos(): { projetos: ProjetoNaLista[]; carregando: boolean; erro: Error | null } {
+/**
+ * ARQUIVAR EM VEZ DE APAGAR
+ *
+ * Um projeto que parou de servir não é um projeto errado: é um projeto que
+ * cumpriu (ou abandonou) o seu papel, e cujo histórico continua sendo a
+ * resposta para "por que decidimos aquilo em março". Apagar resolve a
+ * poluição da lista e destrói a memória junto — e a memória é a parte que não
+ * dá para refazer.
+ *
+ * A coluna `arquivado` já existia no banco desde a importação do Trello, e
+ * `useProjetos` já filtrava por ela. O que faltava era alguém poder acionar
+ * isso de onde trabalha: a única tela com esse botão era o diálogo de
+ * configurações do quadro, dentro da experiência antiga de Atividades.
+ */
+export function useProjetos(
+  opcoes: { incluirArquivados?: boolean } = {},
+): {
+  projetos: ProjetoNaLista[];
+  carregando: boolean;
+  erro: Error | null;
+  arquivar: (id: string) => Promise<void>;
+  restaurar: (id: string) => Promise<void>;
+  salvando: boolean;
+} {
+  const { incluirArquivados = false } = opcoes;
+  const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["atividades", "boards-resumo"],
     queryFn: listBoardsResumo,
     staleTime: 60_000,
   });
 
-  const ativos = useMemo(() => (q.data ?? []).filter((b) => !b.arquivado), [q.data]);
+  const ativos = useMemo(
+    () => (q.data ?? []).filter((b) => incluirArquivados || !b.arquivado),
+    [q.data, incluirArquivados],
+  );
 
   /**
    * As capas vêm como caminho de storage e precisam virar URL assinada. É uma
@@ -70,20 +99,41 @@ export function useProjetos(): { projetos: ProjetoNaLista[]; carregando: boolean
           pessoas: b.totalMembros,
           favorito: b.favorito,
           atualizadoEm: b.updatedAt,
+          arquivado: b.arquivado,
         }))
         // Favoritos primeiro, depois o que se mexeu mais recentemente. Ordem
         // alfabética seria estável e inútil: ninguém procura projeto por letra.
+        // Arquivado desce para o fim mesmo quando visível: ele está ali para
+        // ser encontrado e restaurado, não para disputar atenção com o que
+        // ainda tem trabalho vivo.
         .sort(
           (a, b) =>
+            Number(a.arquivado) - Number(b.arquivado) ||
             Number(b.favorito) - Number(a.favorito) ||
             new Date(b.atualizadoEm).getTime() - new Date(a.atualizadoEm).getTime(),
         ),
     [ativos, capasQ.data],
   );
 
+  const mutacao = useMutation({
+    mutationFn: ({ id, arquivado }: { id: string; arquivado: boolean }) =>
+      setBoardArquivado(id, arquivado),
+    // Invalida a lista inteira em vez de remendar o cache: a contagem de
+    // abertas e a ordenação mudam junto, e um cache remendado pela metade é
+    // pior que uma ida a mais ao servidor.
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["atividades", "boards-resumo"] }),
+  });
+
   return {
     projetos,
     carregando: q.isLoading,
     erro: (q.error as Error | null) ?? null,
+    arquivar: async (id: string) => {
+      await mutacao.mutateAsync({ id, arquivado: true });
+    },
+    restaurar: async (id: string) => {
+      await mutacao.mutateAsync({ id, arquivado: false });
+    },
+    salvando: mutacao.isPending,
   };
 }

@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Inbox, Loader2, Search, Star, Users } from "lucide-react";
+import { Archive, ArchiveRestore, Inbox, Loader2, Search, Star, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { EmptyPanel } from "@/design-system";
 import { cn } from "@/lib/utils";
+import { usePreferencia } from "@/hooks/usePreferencia";
+import { useToast } from "@/hooks/use-toast";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
 import { INBOX_ID, useDemandas, useProjetos, type Escopo, type ProjetoNaLista } from "@/modules/demand-access";
 
@@ -39,51 +42,98 @@ function tempoRelativo(iso: string): string {
   return `há ${meses} ${meses === 1 ? "mês" : "meses"}`;
 }
 
-function Linha({ projeto: p, onAbrir }: { projeto: ProjetoNaLista; onAbrir: (id: string) => void }) {
+function Linha({
+  projeto: p,
+  onAbrir,
+  onArquivar,
+  onRestaurar,
+}: {
+  projeto: ProjetoNaLista;
+  onAbrir: (id: string) => void;
+  onArquivar: (p: ProjetoNaLista) => void;
+  onRestaurar: (p: ProjetoNaLista) => void;
+}) {
   return (
-    <button
-      type="button"
-      onClick={() => onAbrir(p.id)}
+    /**
+     * A linha deixou de ser um <button> e virou um <div> com o botão dentro.
+     *
+     * Não é preferência de marcação: botão dentro de botão é HTML inválido, e
+     * o navegador resolve isso desmontando a estrutura por conta própria — o
+     * clique passa a cair no elemento errado de um jeito que varia entre
+     * navegadores. Com o alvo de navegação e a ação como irmãos, cada um
+     * recebe o próprio clique, o próprio foco e a própria tecla Enter.
+     */
+    <div
       className={cn(
-        "group flex w-full items-center gap-3 border-b border-border/40 px-3 py-2.5 text-left",
+        "group flex w-full items-center border-b border-border/40",
         "transition-colors duration-fast ease-standard hover:bg-muted/40",
-        "focus:outline-none focus-visible:bg-muted/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50",
+        p.arquivado && "opacity-60",
       )}
     >
-      <span
-        aria-hidden
-        className="size-5 shrink-0 overflow-hidden rounded-[6px] border border-border/60 bg-muted"
-        style={!p.capaUrl && p.cor ? { backgroundColor: p.cor } : undefined}
-      >
-        {p.capaUrl ? <img src={p.capaUrl} alt="" className="size-full object-cover" /> : null}
-      </span>
-
-      <span className="flex min-w-0 flex-1 items-baseline gap-2">
-        <span className="truncate text-[13px] font-medium">{p.nome}</span>
-        {p.favorito && <Star className="size-3 shrink-0 fill-current text-warning" aria-label="Favorito" />}
-        {p.descricao && (
-          <span className="ds-caption hidden truncate text-muted-foreground lg:inline">{p.descricao}</span>
+      <button
+        type="button"
+        onClick={() => onAbrir(p.id)}
+        className={cn(
+          "flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left",
+          "focus:outline-none focus-visible:bg-muted/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50",
         )}
-      </span>
-
-      <span className="ds-caption flex shrink-0 items-center gap-4 text-muted-foreground">
-        <span className="hidden items-center gap-1 sm:flex">
-          <Users className="size-3" aria-hidden />
-          <span className="tabular-nums">{p.pessoas}</span>
+      >
+        <span
+          aria-hidden
+          className="size-5 shrink-0 overflow-hidden rounded-[6px] border border-border/60 bg-muted"
+          style={!p.capaUrl && p.cor ? { backgroundColor: p.cor } : undefined}
+        >
+          {p.capaUrl ? <img src={p.capaUrl} alt="" className="size-full object-cover" /> : null}
         </span>
-        <span className="hidden w-20 text-right tabular-nums md:inline">{tempoRelativo(p.atualizadoEm)}</span>
-        {/* O que decide onde entrar: quanto trabalho vivo há aqui. */}
-        <span className="w-20 text-right">
-          {p.abertas > 0 ? (
-            <>
-              <span className="tabular-nums text-foreground">{p.abertas}</span> abertas
-            </>
-          ) : (
-            <span className="text-muted-foreground/60">em dia</span>
+
+        <span className="flex min-w-0 flex-1 items-baseline gap-2">
+          <span className="truncate text-[13px] font-medium">{p.nome}</span>
+          {p.favorito && <Star className="size-3 shrink-0 fill-current text-warning" aria-label="Favorito" />}
+          {p.arquivado && (
+            <span className="ds-caption shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground">
+              arquivado
+            </span>
+          )}
+          {p.descricao && (
+            <span className="ds-caption hidden truncate text-muted-foreground lg:inline">{p.descricao}</span>
           )}
         </span>
+
+        <span className="ds-caption flex shrink-0 items-center gap-4 text-muted-foreground">
+          <span className="hidden items-center gap-1 sm:flex">
+            <Users className="size-3" aria-hidden />
+            <span className="tabular-nums">{p.pessoas}</span>
+          </span>
+          <span className="hidden w-20 text-right tabular-nums md:inline">{tempoRelativo(p.atualizadoEm)}</span>
+          {/* O que decide onde entrar: quanto trabalho vivo há aqui. */}
+          <span className="w-20 text-right">
+            {p.abertas > 0 ? (
+              <>
+                <span className="tabular-nums text-foreground">{p.abertas}</span> abertas
+              </>
+            ) : (
+              <span className="text-muted-foreground/60">em dia</span>
+            )}
+          </span>
+        </span>
+      </button>
+
+      {/* Aparece no hover para não competir com o nome, que é a informação
+          que se lê. Continua alcançável por teclado — some da vista, não da
+          navegação. */}
+      <span className="flex shrink-0 items-center pr-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 text-muted-foreground"
+          onClick={() => (p.arquivado ? onRestaurar(p) : onArquivar(p))}
+          aria-label={p.arquivado ? `Restaurar ${p.nome}` : `Arquivar ${p.nome}`}
+          title={p.arquivado ? "Restaurar" : "Arquivar"}
+        >
+          {p.arquivado ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
+        </Button>
       </span>
-    </button>
+    </div>
   );
 }
 
@@ -140,7 +190,22 @@ const ESCOPO_GLOBAL: Escopo = { tipo: "global" };
 
 export function SelecaoDeProjetos() {
   const navigate = useNavigate();
-  const { projetos, carregando, erro } = useProjetos();
+  const { toast } = useToast();
+  /**
+   * A escolha de ver arquivados sobrevive à navegação.
+   *
+   * Quem liga isso está procurando algo específico e vai abrir e fechar
+   * projetos até achar. Reencontrar a lista limpa a cada volta faria a busca
+   * recomeçar do zero — e é justamente a busca que motivou ligar o filtro.
+   */
+  const [mostrarArquivados, setMostrarArquivados] = usePreferencia<boolean>(
+    "projetos:arquivados",
+    false,
+    (v): v is boolean => typeof v === "boolean",
+  );
+  const { projetos, carregando, erro, arquivar, restaurar } = useProjetos({
+    incluirArquivados: mostrarArquivados,
+  });
   // A contagem da Inbox vem pela mesma porta que todo o resto — esta tela
   // continua sem saber que existe tabela.
   const { demandas: naInbox } = useDemandas(ESCOPO_GLOBAL);
@@ -155,6 +220,49 @@ export function SelecaoDeProjetos() {
   }, [projetos, busca]);
 
   const abrir = (id: string) => navigate(`/workspace/demandas/${id}`);
+
+  /**
+   * Arquivar faz o projeto sumir da lista. Sem um caminho de volta imediato,
+   * isso é indistinguível de apagar — e a pessoa que não sabe se pode voltar
+   * atrás simplesmente não clica.
+   *
+   * O desfazer no aviso resolve o arrependimento de um segundo; o filtro
+   * "Arquivados" resolve o de uma semana. São dois problemas diferentes e
+   * precisam dos dois caminhos.
+   */
+  const aoArquivar = async (p: ProjetoNaLista) => {
+    try {
+      await arquivar(p.id);
+      toast({
+        title: `${p.nome} foi arquivado`,
+        description: "Ele sai da lista, mas nada é apagado.",
+        action: (
+          <Button variant="outline" size="sm" onClick={() => void restaurar(p.id)}>
+            Desfazer
+          </Button>
+        ),
+      });
+    } catch (e) {
+      toast({
+        title: "Não foi possível arquivar",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const aoRestaurar = async (p: ProjetoNaLista) => {
+    try {
+      await restaurar(p.id);
+      toast({ title: `${p.nome} voltou para a lista` });
+    } catch (e) {
+      toast({
+        title: "Não foi possível restaurar",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useContextoDeHeader(
     <span className="text-[13px] font-medium text-foreground">
@@ -204,6 +312,22 @@ export function SelecaoDeProjetos() {
               {visiveis.length} de {projetos.length}
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => setMostrarArquivados(!mostrarArquivados)}
+            aria-pressed={mostrarArquivados}
+            className={cn(
+              "ds-caption ml-auto flex items-center gap-1.5 rounded-md px-2 py-1",
+              "transition-colors duration-fast ease-standard",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+              mostrarArquivados
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            )}
+          >
+            <Archive className="size-3.5" aria-hidden />
+            Arquivados
+          </button>
         </div>
       </div>
 
@@ -230,7 +354,13 @@ export function SelecaoDeProjetos() {
         ) : (
           <div className="w-full">
             {visiveis.map((p) => (
-              <Linha key={p.id} projeto={p} onAbrir={abrir} />
+              <Linha
+                key={p.id}
+                projeto={p}
+                onAbrir={abrir}
+                onArquivar={(x) => void aoArquivar(x)}
+                onRestaurar={(x) => void aoRestaurar(x)}
+              />
             ))}
           </div>
         )}
