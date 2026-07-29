@@ -337,7 +337,7 @@ export default function Portal() {
           <RichConfirmation
             preview={preview}
             score={previewScore}
-            onTrack={() => navigate("/minhas-solicitacoes")}
+            onTrack={() => navigate("/portal/demandas")}
           />
         )}
       </div>
@@ -506,7 +506,7 @@ export default function Portal() {
             Continue de onde parou
           </h2>
           <Link
-            to="/minhas-solicitacoes"
+            to="/portal/demandas"
             className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
           >
             Ver todas <ArrowRight className="size-3.5" />
@@ -604,7 +604,7 @@ export default function Portal() {
                     className={`inline-block size-2.5 shrink-0 rounded-full ${vibe.dot}`}
                   />
                   <Link
-                    to="/minhas-solicitacoes"
+                    to="/portal/demandas"
                     className="flex min-w-0 flex-1 items-center gap-3"
                   >
                     <div className="min-w-0 flex-1">

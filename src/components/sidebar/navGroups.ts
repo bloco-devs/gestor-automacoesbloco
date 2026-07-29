@@ -1,34 +1,4 @@
-import {
-  Activity,
-  BarChart3,
-  BookOpen,
-  Briefcase,
-  Clock,
-  Code2,
-  GanttChartSquare,
-  Gauge,
-  GitMerge,
-  HelpCircle,
-  Headphones,
-  Inbox,
-  Layers,
-  FolderKanban,
-  KanbanSquare,
-  LayoutDashboard,
-  LifeBuoy,
-  List,
-  ListChecks,
-  ListTodo,
-  MessageCircleQuestion,
-  Network,
-  Plus,
-  Plug,
-  Repeat,
-  Settings,
-  Shield,
-  Sparkles,
-  Zap,
-} from "lucide-react";
+import { Activity, BarChart3, BookOpen, Briefcase, Clock, Code2, GanttChartSquare, Gauge, GitMerge, HelpCircle, Headphones, Inbox, Layers, FolderKanban, KanbanSquare, LayoutDashboard, LifeBuoy, List, ListTodo, MessageCircleQuestion, Network, Plus, Plug, Repeat, Settings, Shield, Sparkles, Zap } from "lucide-react";
 
 export type NavItem = {
   to?: string;
@@ -46,12 +16,6 @@ export type NavGroup = {
   items: NavItem[];
 };
 
-const solicitacoesChildren: NavItem[] = [
-  { to: "/solicitacoes", label: "Lista", icon: List },
-  { to: "/solicitacoes/kanban", label: "Kanban", icon: KanbanSquare },
-  { to: "/solicitacoes/gantt", label: "Gantt", icon: GanttChartSquare },
-];
-
 const solucoesChildren: NavItem[] = [
   { to: "/solucoes", label: "Lista", icon: List },
   { to: "/solucoes/kanban", label: "Kanban", icon: KanbanSquare },
@@ -68,7 +32,6 @@ export const devGroups: NavGroup[] = [
       { to: "/workspace", label: "Workspace", icon: Layers },
       { to: "/trabalho/inbox", label: "Inbox", icon: Inbox },
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { label: "Solicitações", icon: ListChecks, matchPrefix: "/solicitacoes", children: solicitacoesChildren },
       // "Atividades" era o nome que veio com a importacao do Trello, e o icone
       // de kanban ensinava que o objeto e o quadro. O destino e o mesmo; o
       // nome agora e o do conceito de produto.
@@ -94,7 +57,6 @@ export const devGroups: NavGroup[] = [
       { label: "Soluções", icon: Sparkles, matchPrefix: "/solucoes", children: solucoesChildren },
       { to: "/diagrama", label: "Diagrama", icon: Network },
       { to: "/observabilidade-ia", label: "Observabilidade IA", icon: Activity },
-      { to: "/consolidacao", label: "Consolidação", icon: GitMerge },
     ],
   },
   {
@@ -147,10 +109,8 @@ export const requesterGroups: NavGroup[] = [
     items: [
       { to: "/portal", label: "Portal", icon: MessageCircleQuestion },
       { to: "/trabalho/inbox", label: "Inbox", icon: Inbox },
-      { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
-      { to: "/minhas-solicitacoes", label: "Minhas Solicitações", icon: ListTodo },
+      { to: "/portal/demandas", label: "Minhas Demandas", icon: ListTodo },
       { to: "/nova-solicitacao", label: "Nova Solicitação", icon: Plus },
-      { label: "Solicitações", icon: ListChecks, matchPrefix: "/solicitacoes", children: solicitacoesChildren },
     ],
   },
   {
@@ -168,10 +128,8 @@ export const builderGroups: NavGroup[] = [
     icon: Briefcase,
     items: [
       { to: "/trabalho/inbox", label: "Inbox", icon: Inbox },
-      { to: "/dashboard-solicitante", label: "Dashboard", icon: Gauge },
-      { to: "/minhas-solicitacoes", label: "Minhas Solicitações", icon: ListTodo },
+      { to: "/portal/demandas", label: "Minhas Demandas", icon: ListTodo },
       { to: "/nova-solicitacao", label: "Nova Solicitação", icon: Plus },
-      { label: "Solicitações", icon: ListChecks, matchPrefix: "/solicitacoes", children: solicitacoesChildren },
     ],
   },
   {

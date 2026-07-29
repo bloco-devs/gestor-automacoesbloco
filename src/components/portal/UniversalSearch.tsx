@@ -108,7 +108,7 @@ export function UniversalSearch({ onPick }: { onPick?: () => void }) {
                 {chamados.map((d) => (
                   <li key={d.id}>
                     <Link
-                      to="/minhas-solicitacoes"
+                      to="/portal/demandas"
                       onClick={() => {
                         setOpen(false);
                         onPick?.();

@@ -1,21 +1,5 @@
 import { Link } from "react-router-dom";
-import {
-  Activity,
-  BarChart3,
-  BookOpen,
-  Boxes,
-  Cog,
-  FileWarning,
-  Inbox,
-  LayoutDashboard,
-  ListChecks,
-  Radar,
-  ShieldCheck,
-  Sparkles,
-  Users,
-  Webhook,
-  Workflow,
-} from "lucide-react";
+import { Activity, BarChart3, BookOpen, Boxes, Cog, Inbox, LayoutDashboard, ListChecks, Radar, ShieldCheck, Sparkles, Users, Webhook, Workflow } from "lucide-react";
 import { PageShell, PageHeader, Section } from "@/design-system";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,7 +51,6 @@ const GROUPS: Group[] = [
       { label: "Ecossistema", description: "Catálogo de sistemas.", href: "/ecossistema", icon: Boxes, badge: "Novo" },
       { label: "Configurações", description: "Plataformas, setores, personas.", href: "/configuracoes", icon: Cog },
       { label: "Perfis & Papéis", description: "Gestão de acesso.", href: "/configuracoes#perfis", icon: Users },
-      { label: "Consolidação", description: "Duplicatas e mesclagem.", href: "/consolidacao", icon: FileWarning },
     ],
   },
 ];

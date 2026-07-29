@@ -42,19 +42,11 @@ import EscolherPerfil from "./pages/EscolherPerfil";
 import NotFound from "./pages/NotFound";
 
 // Lazy — reduz o bundle inicial. Chunks nomeados por área.
-const SolicitarSolucao = lazy(() => import("./pages/SolicitarSolucao"));
-const NovaSolicitacao = lazy(() => import("./pages/NovaSolicitacao"));
 const AIWorkspace = lazy(() => import(/* webpackChunkName: "ai" */ "./pages/AIWorkspace"));
-const MinhasSolicitacoes = lazy(() => import("./pages/MinhasSolicitacoes"));
-const RequesterDashboard = lazy(() => import("./pages/RequesterDashboard"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Kanban = lazy(() => import("./pages/Kanban"));
 const Solucoes = lazy(() => import("./pages/Solucoes"));
-const Solicitacoes = lazy(() => import("./pages/Solicitacoes"));
 const SolucoesKanban = lazy(() => import("./pages/SolucoesKanban"));
-const SolicitacoesGantt = lazy(() => import("./pages/SolicitacoesGantt"));
 const SolucoesGantt = lazy(() => import("./pages/SolucoesGantt"));
-const SolicitacaoDetail = lazy(() => import("./pages/SolicitacaoDetail"));
 const SolucaoDetail = lazy(() => import("./pages/SolucaoDetail"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const Diagrama = lazy(() => import("./pages/Diagrama"));
@@ -65,7 +57,6 @@ const ImportarQuadro = lazy(() => import(/* webpackChunkName: "atividades" */ ".
 const Ajuda = lazy(() => import("./pages/Ajuda"));
 const MeuPerfil = lazy(() => import("./pages/MeuPerfil"));
 const ObservabilidadeIA = lazy(() => import(/* webpackChunkName: "ai" */ "./pages/ObservabilidadeIA"));
-const Consolidacao = lazy(() => import("./pages/Consolidacao"));
 const Inbox = lazy(() => import(/* webpackChunkName: "workspace" */ "./pages/Inbox"));
 const Operacoes = lazy(() => import(/* webpackChunkName: "operations" */ "./pages/Operacoes"));
 const DeveloperWorkspace = lazy(() => import(/* webpackChunkName: "workspace" */ "./pages/DeveloperWorkspace"));
@@ -199,7 +190,6 @@ const AppRoutes = () => {
         <Route path="/sso/callback" element={<SsoCallback />} />
         <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         <Route path="/escolher-perfil" element={<ProtectedRoute><EscolherPerfil /></ProtectedRoute>} />
-        <Route path="/solicitar" element={<SolicitarSolucao />} />
         <Route path="/" element={<Index />} />
 
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -215,22 +205,6 @@ const AppRoutes = () => {
           />
           <Route path="/portal/central" element={<ProtectedRoute><PortalIndex /></ProtectedRoute>} />
           <Route
-            path="/dashboard-solicitante"
-            element={
-              <ProtectedRoute role="requester">
-                <UxRoute on={<Navigate to="/portal/inicio" replace />} off={<RequesterDashboard />} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/minhas-solicitacoes"
-            element={
-              <ProtectedRoute role="requester">
-                <UxRoute on={<Navigate to="/portal/demandas" replace />} off={<MinhasSolicitacoes />} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/nova-solicitacao"
             element={
               <ProtectedRoute role="requester">
@@ -238,7 +212,6 @@ const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/nova-solicitacao/classico" element={<ProtectedRoute role="requester"><NovaSolicitacao /></ProtectedRoute>} />
 
           {/* Portal Unificado — rotas canônicas (gated por `ux.rewrite`). */}
           <Route
@@ -277,10 +250,6 @@ const AppRoutes = () => {
 
           {/* Desenvolvedor */}
           <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
-          <Route path="/solicitacoes" element={<ProtectedRoute><Solicitacoes /></ProtectedRoute>} />
-          <Route path="/solicitacoes/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
-          <Route path="/solicitacoes/gantt" element={<ProtectedRoute><SolicitacoesGantt /></ProtectedRoute>} />
-          <Route path="/kanban" element={<Navigate to="/solicitacoes/kanban" replace />} />
           <Route path="/solucoes" element={<ProtectedRoute role="developer"><Solucoes /></ProtectedRoute>} />
           <Route path="/solucoes/kanban" element={<ProtectedRoute role="developer"><SolucoesKanban /></ProtectedRoute>} />
           <Route path="/solucoes/gantt" element={<ProtectedRoute role="developer"><SolucoesGantt /></ProtectedRoute>} />
@@ -327,7 +296,6 @@ const AppRoutes = () => {
 
 
           <Route path="/observabilidade-ia" element={<ProtectedRoute role="developer"><ObservabilidadeIA /></ProtectedRoute>} />
-          <Route path="/consolidacao" element={<ProtectedRoute role="developer"><Consolidacao /></ProtectedRoute>} />
           <Route path="/admin/base-conhecimento" element={<ProtectedRoute role="developer"><BaseConhecimentoAdmin /></ProtectedRoute>} />
           <Route path="/admin/demandas" element={<ProtectedRoute role="developer"><Demandas /></ProtectedRoute>} />
           <Route path="/admin/dashboard" element={<ProtectedRoute role="developer"><AdminDashboard /></ProtectedRoute>} />
@@ -490,12 +458,10 @@ const AppRoutes = () => {
           {/* Compartilhado */}
           <Route path="/ajuda" element={<Ajuda />} />
           <Route path="/perfil" element={<MeuPerfil />} />
-          <Route path="/solicitacao/:id" element={<SolicitacaoDetail />} />
         </Route>
 
 
         {/* Redirecionamentos de rotas antigas (compatibilidade) */}
-        <Route path="/minhas-demandas" element={<Navigate to="/minhas-solicitacoes" replace />} />
         <Route path="/nova-demanda" element={<Navigate to="/nova-solicitacao" replace />} />
         <Route path="/demanda/:id" element={<RedirectLegacySolicitacao />} />
 

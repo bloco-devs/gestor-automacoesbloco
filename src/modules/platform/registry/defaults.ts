@@ -1,19 +1,4 @@
-import {
-  Activity,
-  GitMerge,
-  HelpCircle,
-  Inbox,
-  KanbanSquare,
-  LayoutDashboard,
-  List,
-  ListChecks,
-  ListTodo,
-  Network,
-  Plus,
-  Settings,
-  Sparkles,
-  Gauge,
-} from "lucide-react";
+import { Activity, HelpCircle, Inbox, KanbanSquare, LayoutDashboard, ListChecks, Network, Plus, Settings, Sparkles } from "lucide-react";
 import type { NavItem, PlatformCommand } from "../types";
 
 export const DEFAULT_NAV_ITEMS: NavItem[] = [
@@ -37,16 +22,6 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
     permissions: ["developer", "administrador"],
   },
   {
-    id: "dashboard-solicitante",
-    title: "Dashboard do Solicitante",
-    description: "Visão do solicitante",
-    route: "/dashboard-solicitante",
-    category: "Trabalho",
-    keywords: ["dashboard", "solicitante"],
-    icon: Gauge,
-    permissions: ["requester", "builder"],
-  },
-  {
     id: "nova-solicitacao",
     title: "Nova Solicitação",
     description: "Abrir AI Workspace para nova demanda",
@@ -54,33 +29,6 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
     category: "Solicitações",
     keywords: ["nova", "criar", "demanda", "solicitar", "ai", "workspace"],
     icon: Plus,
-  },
-  {
-    id: "minhas-solicitacoes",
-    title: "Minhas Solicitações",
-    description: "Suas demandas em andamento",
-    route: "/minhas-solicitacoes",
-    category: "Solicitações",
-    keywords: ["minhas", "solicitações"],
-    icon: ListTodo,
-    permissions: ["requester", "builder"],
-  },
-  {
-    id: "solicitacoes",
-    title: "Solicitações",
-    description: "Lista de solicitações",
-    route: "/solicitacoes",
-    category: "Solicitações",
-    keywords: ["solicitações", "demandas", "lista", "backlog"],
-    icon: List,
-  },
-  {
-    id: "solicitacoes-kanban",
-    title: "Solicitações — Kanban",
-    route: "/solicitacoes/kanban",
-    category: "Solicitações",
-    keywords: ["kanban", "board", "solicitações"],
-    icon: KanbanSquare,
   },
   {
     id: "solucoes",
@@ -119,16 +67,6 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
     category: "IA",
     keywords: ["diagrama", "mapa", "ecossistema"],
     icon: Network,
-    permissions: ["developer", "administrador"],
-  },
-  {
-    id: "consolidacao",
-    title: "Consolidação",
-    description: "Motor de consolidação de demandas",
-    route: "/consolidacao",
-    category: "IA",
-    keywords: ["consolidação", "duplicatas"],
-    icon: GitMerge,
     permissions: ["developer", "administrador"],
   },
   {
@@ -189,27 +127,6 @@ export const DEFAULT_COMMANDS: PlatformCommand[] = [
     icon: LayoutDashboard,
     handler: ({ navigate, closePalette }) => {
       navigate("/dashboard");
-      closePalette();
-    },
-  },
-  {
-    id: "cmd.open-kanban",
-    title: "Abrir Kanban de Solicitações",
-    shortcut: "mod+shift+k",
-    category: "Navegar",
-    icon: KanbanSquare,
-    handler: ({ navigate, closePalette }) => {
-      navigate("/solicitacoes/kanban");
-      closePalette();
-    },
-  },
-  {
-    id: "cmd.open-backlog",
-    title: "Abrir Backlog",
-    category: "Navegar",
-    icon: List,
-    handler: ({ navigate, closePalette }) => {
-      navigate("/solicitacoes");
       closePalette();
     },
   },

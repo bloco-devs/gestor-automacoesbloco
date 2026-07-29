@@ -5,7 +5,7 @@ const Index = () => {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
-  return <Navigate to={user.role === "developer" ? "/dashboard" : "/minhas-solicitacoes"} replace />;
+  return <Navigate to={user.role === "developer" ? "/dashboard" : "/portal/demandas"} replace />;
 };
 
 export default Index;

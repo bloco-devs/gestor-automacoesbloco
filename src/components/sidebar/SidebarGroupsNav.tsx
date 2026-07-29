@@ -14,14 +14,11 @@ function dataTourFor(item: NavItem): string | null {
   // mantendo compatibilidade com as rotas antigas para não quebrar o tour.
   if (
     item.to === "/dashboard" ||
-    item.to === "/dashboard-solicitante" ||
     item.to === "/workspace" ||
     item.to === "/portal/inicio"
   )
     return "nav-dashboard";
   if (
-    item.matchPrefix === "/solicitacoes" ||
-    item.to === "/minhas-solicitacoes" ||
     item.to === "/workspace/demandas" ||
     item.to === "/portal/demandas"
   )
@@ -220,7 +217,7 @@ function SidebarNavItem({
 
   const showBadge =
     isDeveloper &&
-    (item.matchPrefix === "/solicitacoes" || item.to === "/workspace/demandas") &&
+    item.to === "/workspace/demandas" &&
     pendingEvalCount > 0;
   const dataTour = dataTourFor(item);
   const Icon = item.icon;

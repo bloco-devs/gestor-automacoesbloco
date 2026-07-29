@@ -299,14 +299,6 @@ export const ADMIN_NAV: AdminNavItem[] = [
       { label: "Novo workflow", href: "/admin/workflows/novo" },
     ],
   },
-  {
-    id: "consolidacao",
-    group: "ia",
-    label: "Consolidação",
-    description: "Duplicatas e mesclagem inteligente.",
-    href: "/consolidacao",
-    icon: FileWarning,
-  },
 
   // Operacional
   {
