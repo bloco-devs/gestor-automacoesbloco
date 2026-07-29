@@ -647,7 +647,16 @@ function BoardLenteImpl({
       <DragOverlay dropAnimation={null}>
         {arrastando ? (
           <div className="w-[17rem]">
-            <Cartao demanda={arrastando} capacidades={capacidades} sinais={sinais} arrastavel sobreposicao />
+            <Cartao
+              demanda={arrastando}
+              capacidades={capacidades}
+              sinais={sinais}
+              arrastavel
+              sobreposicao
+              tom={tomDaEtapa(
+                grupos.find((g) => g.itens.some((i) => i.id === arrastando.id))?.rotulo ?? "",
+              )}
+            />
           </div>
         ) : null}
       </DragOverlay>
