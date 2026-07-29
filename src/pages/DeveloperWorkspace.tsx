@@ -38,19 +38,26 @@ function ehFila(v: unknown): v is FilaId {
 }
 
 /**
- * A esteira canônica desta tela.
+ * A esteira canônica desta tela — só as etapas EM ANDAMENTO.
  *
  * POR QUE ELA MORA AQUI, E NÃO NA CAMADA DE DADOS
  * `useTodasAsDemandas` soma DUAS fontes (colunas de quadro + o enum de status
  * de `demands`) e, por isso mesmo, não tem uma lista de etapas para devolver:
- * cada quadro tem as suas. O que existe em comum é o vocabulário — os seis
- * nomes abaixo são os que as duas fontes usam. A esteira é montada por RÓTULO
+ * cada quadro tem as suas. O que existe em comum é o vocabulário — os nomes
+ * abaixo são os que as duas fontes usam. A esteira é montada por RÓTULO
  * porque é o rótulo que o usuário lê, e é por ele que `unirGruposHomonimos`
  * já funde as duas fontes numa coluna só.
  *
  * Serve para uma coisa: garantir que "Em Testes" apareça mesmo quando ninguém
  * está testando nada. Sem isso, uma demanda no backlog desenharia UMA coluna,
  * e o quadro viraria uma lista de um item.
+ *
+ * "CONCLUÍDO" NÃO ESTÁ AQUI, DE PROPÓSITO
+ * O quadro já trata grupos concluídos como faixa estreita recolhida. Ter o
+ * rótulo na esteira criava uma coluna vazia sintética (que nunca nasce
+ * recolhida, por não carregar o marcador de concluído) ao lado da faixa real:
+ * "Concluído" aparecia duas vezes. Fora da esteira, o grupo real entra como
+ * coluna extra no fim e recolhe sozinho, que é o comportamento desejado.
  */
 const ESTEIRA = [
   "Backlog",
@@ -58,8 +65,8 @@ const ESTEIRA = [
   "Em Desenvolvimento",
   "Em Testes",
   "Homologação",
-  "Concluído",
 ] as const;
+
 
 function normalizar(rotulo: string): string {
   return rotulo.trim().toLocaleLowerCase("pt-BR");
