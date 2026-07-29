@@ -358,13 +358,36 @@ export default function DemandaDetalhe() {
         do Blink — a resposta a "o que faço agora". Mas some com um clique
         quando a pessoa só quer conversar, e a escolha é lembrada.
       */}
+      {/*
+        A LINHA QUE FALTAVA
+
+        O grid declarava as COLUNAS e nunca a linha. Sem `grid-template-rows`,
+        a linha implícita é `auto` — ou seja, ela cresce até caber o conteúdo
+        inteiro. O `Fio` pedia `h-full` e recebia "a altura de tudo o que há
+        dentro de mim", que é sempre suficiente: a barra de rolagem interna
+        existia, estava correta, e nunca tinha o que rolar.
+
+        `min-h-0` no container não resolve isso. Ele impede o container de
+        travar no tamanho do conteúdo, mas o item de grid tem
+        `min-height: auto` próprio, e é ele quem empurra a linha.
+
+        `grid-rows-[minmax(0,1fr)]` diz o que faltava: uma linha só, do tamanho
+        do espaço disponível, autorizada a ficar menor que o conteúdo. A partir
+        daí o `overflow-y-auto` lá dentro tem o que fazer.
+
+        Abaixo de `lg` o painel empilha embaixo da conversa, e aí são duas
+        linhas — a altura fixa passaria a ser errada. Por isso a regra é só de
+        `lg` para cima; no estreito, a página rola inteira, que é o
+        comportamento certo quando não há colunas para dividir.
+      */}
       <div
         className={cn(
-          "grid min-h-0 flex-1 grid-cols-1",
+          "grid min-h-0 flex-1 grid-cols-1 overflow-y-auto rolagem-discreta",
+          "lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden",
           painel ? "lg:grid-cols-[minmax(0,1fr)_20rem]" : "lg:grid-cols-1",
         )}
       >
-        <main className="min-h-0 min-w-0">
+        <main className="min-h-0 min-w-0 lg:overflow-hidden">
           {capacidades.comentarios ? (
             <Fio
               eventos={eventos}

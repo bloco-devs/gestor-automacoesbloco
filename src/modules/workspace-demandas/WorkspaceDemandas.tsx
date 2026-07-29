@@ -150,7 +150,7 @@ export default function WorkspaceDemandas() {
           copiloto ? "text-foreground" : "text-muted-foreground hover:text-foreground",
         )}
       >
-        <Blink className="size-[18px]" animado />
+        <Blink className="size-5" animado />
         {copiloto ? <PanelRightClose className="size-3.5" /> : <PanelRightOpen className="size-3.5" />}
       </button>
     </>
@@ -173,7 +173,7 @@ export default function WorkspaceDemandas() {
             copiloto ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <Blink className="size-[18px]" animado />
+          <Blink className="size-5" animado />
           {copiloto ? <PanelRightClose className="size-3.5" /> : <PanelRightOpen className="size-3.5" />}
         </button>
       </>
