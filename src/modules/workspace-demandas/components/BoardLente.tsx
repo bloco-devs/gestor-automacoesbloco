@@ -275,7 +275,7 @@ function Cartao({
  */
 const PALETA: Record<
   TomDaEtapa,
-  { icone: typeof Circle; texto: string; fundo: string; regua: string; pastilha: string }
+  { icone: typeof Circle; texto: string; fundo: string; regua: string; pastilha: string; borda: string }
 > = {
   neutro: {
     icone: Circle,
@@ -283,6 +283,7 @@ const PALETA: Record<
     fundo: "bg-muted",
     regua: "bg-border",
     pastilha: "bg-muted text-muted-foreground",
+    borda: "border-l-border",
   },
   andamento: {
     icone: CircleDot,
@@ -290,6 +291,7 @@ const PALETA: Record<
     fundo: "bg-warning/10",
     regua: "bg-warning/50",
     pastilha: "bg-warning/10 text-warning",
+    borda: "border-l-warning",
   },
   revisao: {
     icone: Eye,
@@ -297,6 +299,7 @@ const PALETA: Record<
     fundo: "bg-info/10",
     regua: "bg-info/50",
     pastilha: "bg-info/10 text-info",
+    borda: "border-l-info",
   },
   concluido: {
     icone: CheckCircle2,
@@ -304,6 +307,7 @@ const PALETA: Record<
     fundo: "bg-success/10",
     regua: "bg-success/50",
     pastilha: "bg-success/10 text-success",
+    borda: "border-l-success",
   },
   bloqueado: {
     icone: Ban,
@@ -311,6 +315,7 @@ const PALETA: Record<
     fundo: "bg-destructive/10",
     regua: "bg-destructive/50",
     pastilha: "bg-destructive/10 text-destructive",
+    borda: "border-l-destructive",
   },
 };
 
