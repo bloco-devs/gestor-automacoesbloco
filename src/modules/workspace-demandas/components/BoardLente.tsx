@@ -624,6 +624,8 @@ function BoardLenteImpl({
               onAbrir={onAbrir}
               arrastavel={podeMover}
               onRecolher={g.concluido ? () => alternar(g.id) : undefined}
+              onAssumir={onAssumir}
+              assumindo={assumindo}
             />
           ),
         )}
