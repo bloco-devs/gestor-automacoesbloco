@@ -1,0 +1,52 @@
+CREATE OR REPLACE FUNCTION public.list_assignable_users()
+ RETURNS TABLE(id uuid, nome text, email text, role text, avatar_url text)
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT
+    u.id,
+    COALESCE(NULLIF(p.nome, ''), ae.nome, split_part(u.email::text, '@', 1)) AS nome,
+    u.email::text AS email,
+    ae.role,
+    p.avatar_url
+  FROM public.allowed_emails ae
+  JOIN auth.users u ON lower(u.email::text) = ae.email
+  LEFT JOIN public.profiles p ON p.id = u.id
+  WHERE ae.role IN ('developer','administrador','builder')
+    AND public.is_allowed_user()
+  ORDER BY nome;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_user_workloads()
+RETURNS TABLE(user_id uuid, nome text, email text, avatar_url text, active_count bigint)
+LANGUAGE sql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    p.id AS user_id,
+    p.nome,
+    p.email,
+    p.avatar_url,
+    COALESCE(d.cnt, 0) AS active_count
+  FROM public.profiles p
+  LEFT JOIN (
+    SELECT assigned_to, COUNT(*)::bigint AS cnt
+    FROM public.demands
+    WHERE deleted_at IS NULL
+      AND status <> 'concluido'
+      AND assigned_to IS NOT NULL
+    GROUP BY assigned_to
+  ) d ON d.assigned_to = p.id
+  WHERE public.is_allowed_user()
+    AND EXISTS (
+      SELECT 1 FROM public.allowed_emails ae WHERE ae.email = lower(p.email)
+    )
+  ORDER BY COALESCE(d.cnt, 0) ASC, p.nome ASC;
+$$;
+
+REVOKE ALL ON FUNCTION public.list_assignable_users() FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.get_user_workloads() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.list_assignable_users() TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_user_workloads() TO authenticated, service_role;
