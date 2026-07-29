@@ -2622,6 +2622,10 @@ export type Database = {
         Returns: string
       }
       atividades_reorder_cards: { Args: { items: Json }; Returns: undefined }
+      can_view_demand: {
+        Args: { _demand_id: string; _user_id?: string }
+        Returns: boolean
+      }
       get_my_role: { Args: never; Returns: string }
       get_user_workloads: {
         Args: never
