@@ -126,6 +126,33 @@ export async function clearReadNotifications(): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Ler ou apagar um GRUPO precisa valer para tudo que ele esconde.
+ *
+ * Uma linha que representa cinco avisos e some sozinha deixando quatro para
+ * trás é pior que não agrupar: a pessoa clica no X, a contagem cai de 5 para
+ * 4, e ela aprende que o botão não funciona. O agrupamento só é honesto se a
+ * ação seguir o que a tela promete.
+ *
+ * `.in()` faz isso numa ida só. A RLS continua valendo linha a linha — o
+ * banco filtra o que não é da pessoa, exatamente como faria com cinco
+ * chamadas separadas.
+ */
+export async function deleteNotifications(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const { error } = await supabase.from("notifications" as never).delete().in("id", ids);
+  if (error) throw error;
+}
+
+export async function markNotificationsRead(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const { error } = await supabase
+    .from("notifications" as never)
+    .update({ read: true } as never)
+    .in("id", ids);
+  if (error) throw error;
+}
+
 export async function markNotificationRead(id: string): Promise<void> {
   const { error } = await supabase.from("notifications" as never).update({ read: true } as never).eq("id", id);
   if (error) throw error;

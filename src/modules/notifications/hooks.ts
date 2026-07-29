@@ -9,6 +9,8 @@ import {
   deleteNotification,
   markAllNotificationsRead,
   markNotificationRead,
+  markNotificationsRead,
+  deleteNotifications,
   testWebhook,
   upsertWebhook,
   type Webhook,
@@ -58,6 +60,22 @@ export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => markNotificationRead(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: NOTI_KEY }),
+  });
+}
+
+export function useMarkNotificationsRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => markNotificationsRead(ids),
+    onSuccess: () => qc.invalidateQueries({ queryKey: NOTI_KEY }),
+  });
+}
+
+export function useDeleteNotifications() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => deleteNotifications(ids),
     onSuccess: () => qc.invalidateQueries({ queryKey: NOTI_KEY }),
   });
 }

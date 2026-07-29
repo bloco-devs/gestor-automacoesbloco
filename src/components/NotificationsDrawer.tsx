@@ -7,13 +7,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
+  agruparNotificacoes,
   useClearReadNotifications,
-  useDeleteNotification,
+  useDeleteNotifications,
   useMarkAllRead,
-  useMarkNotificationRead,
+  useMarkNotificationsRead,
   useNotifications,
 } from "@/modules/notifications";
-import type { AppNotification } from "@/modules/notifications";
+import type { AppNotification, GrupoDeNotificacoes } from "@/modules/notifications";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -36,19 +37,30 @@ const TYPE_STYLES: Record<AppNotification["type"], string> = {
 
 export function NotificationsDrawer() {
   const { data: notifications } = useNotifications();
-  const markOne = useMarkNotificationRead();
+  const marcarLidas = useMarkNotificationsRead();
   const markAll = useMarkAllRead();
-  const remover = useDeleteNotification();
+  const remover = useDeleteNotifications();
   const limparLidas = useClearReadNotifications();
   const navigate = useNavigate();
 
   const list = notifications ?? [];
-  const unread = useMemo(() => list.filter((n) => !n.read).length, [list]);
+  const grupos = useMemo(() => agruparNotificacoes(list), [list]);
+
+  /**
+   * O contador conta GRUPOS, não linhas do banco.
+   *
+   * Se o sino marcasse 5 e a lista mostrasse 1, o número estaria certo e
+   * ainda assim seria um erro: badge e lista precisam responder à mesma
+   * pergunta, senão a pessoa abre para conferir e sai sem entender o que
+   * viu. O que ela quer saber é quantos ASSUNTOS a esperam.
+   */
+  const unread = useMemo(() => grupos.filter((g) => g.naoLidas > 0).length, [grupos]);
   const lidas = useMemo(() => list.filter((n) => n.read).length, [list]);
 
-  function handleOpen(n: AppNotification) {
-    if (!n.read) markOne.mutate(n.id);
-    if (n.link_url) navigate(n.link_url);
+  function handleOpen(g: GrupoDeNotificacoes) {
+    if (g.naoLidas > 0) marcarLidas.mutate(g.ids);
+    const destino = g.representante.link_url;
+    if (destino) navigate(destino);
   }
 
   return (
@@ -109,21 +121,23 @@ export function NotificationsDrawer() {
             </div>
           ) : (
             <ul className="divide-y">
-              {list.map((n) => (
+              {grupos.map((g) => {
+                const n = g.representante;
+                return (
                 <li
-                  key={n.id}
+                  key={g.id}
                   className={cn(
                     "notificacao-item group/noti px-3 py-2.5 cursor-pointer border-l-2 hover:bg-muted/50 transition-colors",
-                    n.read && "notificacao-item--lida",
+                    g.naoLidas === 0 && "notificacao-item--lida",
                     TYPE_STYLES[n.type],
-                    !n.read && "bg-muted/30",
+                    g.naoLidas > 0 && "bg-muted/30",
                   )}
-                  onClick={() => handleOpen(n)}
+                  onClick={() => handleOpen(g)}
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className={cn("text-sm truncate", !n.read && "font-semibold")}>
+                        <span className={cn("text-sm truncate", g.naoLidas > 0 && "font-semibold")}>
                           {n.title}
                         </span>
                         <span className="text-[10px] text-muted-foreground shrink-0">
@@ -133,6 +147,14 @@ export function NotificationsDrawer() {
                       <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
                         {n.message}
                       </p>
+                      {/* O contador não é decoração: ele é a prova de que nada
+                          foi escondido. Sem ele, quatro avisos somem em
+                          silêncio e o agrupamento vira perda de informação. */}
+                      {g.quantidade > 1 && (
+                        <span className="mt-1 inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          {g.quantidade} atualizações
+                        </span>
+                      )}
                     </div>
                     {/* Dois destinos possíveis para um aviso: virou lido, ou
                         não interessa mais. Antes só existia o primeiro, e a
@@ -140,14 +162,14 @@ export function NotificationsDrawer() {
                         para não poluir a leitura — mas continuam alcançáveis
                         por teclado. */}
                     <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/noti:opacity-100 focus-within:opacity-100">
-                      {!n.read && (
+                      {g.naoLidas > 0 && (
                         <Button
                           variant="ghost"
                           size="icon"
                           className="size-6"
                           onClick={(e) => {
                             e.stopPropagation();
-                            markOne.mutate(n.id);
+                            marcarLidas.mutate(g.ids);
                           }}
                           aria-label="Marcar como lida"
                           title="Marcar como lida"
@@ -161,7 +183,7 @@ export function NotificationsDrawer() {
                         className="size-6 text-muted-foreground hover:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
-                          remover.mutate(n.id);
+                          remover.mutate(g.ids);
                         }}
                         aria-label="Remover notificação"
                         title="Remover"
@@ -171,7 +193,8 @@ export function NotificationsDrawer() {
                     </span>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </ScrollArea>

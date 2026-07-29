@@ -50,7 +50,7 @@ describe("domain/board/CardService", () => {
     const dto = await svc.create({
       boardId: "b1",
       columnId: "c1",
-      titulo: "T",
+      titulo: "Tarefa",
       descricao: null,
       ordem: 0,
       dataEntrega: null,
