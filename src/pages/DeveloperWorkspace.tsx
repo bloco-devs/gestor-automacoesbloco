@@ -1,7 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useTodasAsDemandas, type EtapaDaFonte } from "@/modules/demand-access";
+import {
+  useTodasAsDemandas,
+  useAssumirDemanda,
+  type EtapaDaFonte,
+} from "@/modules/demand-access";
 import {
   FILAS,
   type FilaId,
@@ -14,6 +18,7 @@ import {
 import { BoardLente } from "@/modules/workspace-demandas/components/BoardLente";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePreferencia } from "@/hooks/usePreferencia";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 // v2: a chave subiu de versão junto com a mudança de padrão. Quem já tinha
