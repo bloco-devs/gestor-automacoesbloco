@@ -2,6 +2,7 @@ import { CheckCircle2, Flame, Tag, UserCircle2, Clock3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AiPreview } from "@/hooks/useAIWorkspace";
 import { prioridadeLabel } from "@/hooks/useAIWorkspace";
+import { TIPO_DEMANDA_LABEL } from "@/lib/types";
 
 interface Props {
   preview: AiPreview;
@@ -40,7 +41,13 @@ export function RichConfirmation({ preview, score, onClose, onTrack }: Props) {
     {
       icon: Tag,
       label: "Categoria",
-      value: preview.setor || "—",
+      // Antes vinha de `preview.setor`, que era o primeiro setor da lista em
+      // ordem alfabética — um rótulo sorteado, exibido logo abaixo da frase
+      // "Ela já foi classificada automaticamente". `tipoDemanda` é a
+      // classificação que o modelo de fato produziu; quando ele não conseguiu
+      // classificar, o travessão diz isso, e dizer "não sei" é melhor do que
+      // dizer algo errado com convicção.
+      value: preview.tipoDemanda ? TIPO_DEMANDA_LABEL[preview.tipoDemanda] : "—",
       tone: "text-sky-600 bg-sky-500/10 dark:text-sky-400",
     },
     {

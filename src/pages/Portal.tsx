@@ -144,7 +144,6 @@ export default function Portal() {
     preview,
     previewScore,
     demandaDoPreview,
-    setoresDisponiveis,
     sistemas,
     sendMessage,
     updatePreview,

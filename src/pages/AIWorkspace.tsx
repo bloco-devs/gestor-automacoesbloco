@@ -28,7 +28,6 @@ export default function AIWorkspace() {
     preview,
     previewScore,
     demandaDoPreview,
-    setoresDisponiveis,
     sistemas,
     sendMessage,
     updatePreview,

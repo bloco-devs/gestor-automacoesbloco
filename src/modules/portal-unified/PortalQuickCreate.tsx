@@ -30,7 +30,6 @@ export function PortalQuickCreate() {
     preview,
     previewScore,
     demandaDoPreview,
-    setoresDisponiveis,
     sistemas,
     sendMessage,
     updatePreview,

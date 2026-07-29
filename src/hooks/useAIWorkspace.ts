@@ -2,7 +2,6 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useSetoresNomes } from "@/hooks/useSetores";
 import { useEcossistemaSistemas } from "@/hooks/useEcossistemaSistemas";
 import { salvarMatchEcossistema } from "@/lib/supabaseData";
 import { useCriarDemanda } from "@/modules/demand-access";
@@ -26,7 +25,22 @@ export type Phase = "welcome" | "chatting" | "processing" | "preview" | "submitt
 export interface AiPreview {
   titulo: string;
   descricao: string;
-  setor: string;
+  /**
+   * Aqui existia um campo `setor`. Ele era preenchido com
+   * `setoresDisponiveis[0]` — o primeiro nome da lista em ordem alfabética —
+   * e exibido na tela de confirmação sob o rótulo "Categoria", numa tela cujo
+   * texto promete "Ela já foi classificada automaticamente".
+   *
+   * Ou seja: quem abrisse uma demanda de folha de pagamento saía lendo
+   * "Categoria: Administrativo" porque Administrativo vem antes no alfabeto.
+   * Nada disso era gravado — o campo nunca chegava a `demands`. Era um rótulo
+   * inventado, exibido com confiança, na única tela que existe para gerar
+   * confiança.
+   *
+   * A regra do projeto é "a IA não inventa dado", e essa invenção nem era da
+   * IA: era nossa. O lugar do rótulo agora é `tipoDemanda`, que é uma
+   * classificação que o modelo de fato fez.
+   */
   tipoDemanda: TipoDemanda | null;
   sistemaAlvoSlug: string | null;
   frequencia: number;
@@ -68,7 +82,6 @@ export function useAIWorkspace() {
   const { criar } = useCriarDemanda();
   const { user } = useAuth();
   const { toast } = useToast();
-  const setoresDisponiveis = useSetoresNomes();
   const { sistemas } = useEcossistemaSistemas(true);
   const workspaceContext = useAIWorkspaceSnapshot();
 
@@ -108,7 +121,6 @@ export function useAIWorkspace() {
         });
         if (cancelled.current) return;
 
-        const setorInicial = setoresDisponiveis[0] || "";
         const sistemaNome = result.triagem.sistema_alvo_slug
           ? sistemas.find((s) => s.id === result.triagem.sistema_alvo_slug)?.nome ?? null
           : null;
@@ -116,12 +128,10 @@ export function useAIWorkspace() {
         const tipo = result.triagem.tipo_demanda as TipoDemanda | null;
         if (tipo) tags.push(TIPO_DEMANDA_LABEL[tipo]);
         if (sistemaNome) tags.push(sistemaNome);
-        if (setorInicial) tags.push(setorInicial);
 
         setPreview({
           titulo: result.titulo,
           descricao: result.descricao,
-          setor: setorInicial,
           tipoDemanda: tipo,
           sistemaAlvoSlug: result.triagem.sistema_alvo_slug,
           frequencia: result.triagem.frequencia,
@@ -144,7 +154,7 @@ export function useAIWorkspace() {
         setPhase("chatting");
       }
     },
-    [setoresDisponiveis, sistemas, toast, workspaceContext],
+    [sistemas, toast, workspaceContext],
   );
 
   const sendMessage = useCallback(
@@ -295,7 +305,6 @@ export function useAIWorkspace() {
     preview,
     previewScore,
     demandaDoPreview,
-    setoresDisponiveis,
     sistemas,
     sendMessage,
     updatePreview,
