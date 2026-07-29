@@ -1,9 +1,10 @@
-import { memo, useState } from "react";
-import { Loader2, Lock, LockOpen, Paperclip, SendHorizontal } from "lucide-react";
+import { memo, useMemo, useState } from "react";
+import { ChevronDown, Loader2, Lock, LockOpen, Paperclip, SendHorizontal } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { dobrarMudancas, representanteDaDobra } from "@/domain/demand";
 import type { Briefing as DadosDoBriefing, Evento } from "@/domain/demand";
 import { Briefing } from "./Briefing";
 import { Blink } from "@/components/blink/Blink";
@@ -55,6 +56,71 @@ function Mudanca({ evento }: { evento: Evento }) {
       <time className="ml-auto shrink-0 tabular-nums" dateTime={evento.em}>
         {quando(evento.em)}
       </time>
+    </li>
+  );
+}
+
+/**
+ * Uma sequência de mudanças, dobrada.
+ *
+ * A linha fechada mostra o ESTADO ATUAL — o último movimento da sequência — e
+ * quantos passos houve até ele. Se alguém moveu para Testes, voltou para
+ * Backlog e terminou em Concluído, o que interessa ler é "Concluído"; o
+ * caminho se consulta quando se quer.
+ *
+ * Ela abre no próprio lugar, em vez de mandar a pessoa a outra tela, porque
+ * aqui não há para onde mandar: o fio É o lugar do histórico. Aberta, os
+ * eventos voltam na ordem original, sem nada resumido.
+ */
+function Dobra({ eventos }: { eventos: Evento[] }) {
+  const [aberta, setAberta] = useState(false);
+  const atual = representanteDaDobra(eventos);
+
+  if (aberta) {
+    return (
+      <>
+        {eventos.map((e) => (
+          <Mudanca key={e.id} evento={e} />
+        ))}
+        <li className="pl-9">
+          <button
+            type="button"
+            onClick={() => setAberta(false)}
+            className="rounded text-[12px] text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            Recolher
+          </button>
+        </li>
+      </>
+    );
+  }
+
+  return (
+    <li className="py-1 pl-9">
+      <button
+        type="button"
+        onClick={() => setAberta(true)}
+        aria-expanded={false}
+        className={cn(
+          "group/dobra flex w-full items-baseline gap-2 rounded text-left text-[12px] text-muted-foreground",
+          "transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+        )}
+      >
+        <span aria-hidden className="size-1 shrink-0 rounded-full bg-border" />
+        <span className="min-w-0">
+          <span className="text-foreground/70">{atual.autor?.nome ?? "Sistema"}</span> {atual.texto}
+        </span>
+        <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums">
+          +{eventos.length - 1}
+        </span>
+        <ChevronDown
+          aria-hidden
+          className="size-3 shrink-0 opacity-0 transition-opacity group-hover/dobra:opacity-100"
+        />
+        <time className="ml-auto shrink-0 tabular-nums" dateTime={atual.em}>
+          {quando(atual.em)}
+        </time>
+      </button>
     </li>
   );
 }
@@ -148,6 +214,7 @@ interface Props {
 }
 
 function FioImpl({ eventos, pedido, briefing, podeComentar, podeNotaInterna, onComentar, onAbrirAnexo, vazio }: Props) {
+  const itens = useMemo(() => dobrarMudancas(eventos), [eventos]);
   const [texto, setTexto] = useState("");
   const [interna, setInterna] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -185,7 +252,9 @@ function FioImpl({ eventos, pedido, briefing, podeComentar, podeNotaInterna, onC
         {eventos.length === 0 && !pedido && (
           <li className="py-8 text-center text-[13px] text-muted-foreground">{vazio}</li>
         )}
-        {eventos.map((e) => {
+        {itens.map((item) => {
+          if (item.tipo === "dobra") return <Dobra key={item.id} eventos={item.eventos} />;
+          const e = item.evento;
           if (e.tipo === "fala") return <Fala key={e.id} evento={e} />;
           if (e.tipo === "anexo") return <Anexo key={e.id} evento={e} onAbrir={onAbrirAnexo} />;
           return <Mudanca key={e.id} evento={e} />;
