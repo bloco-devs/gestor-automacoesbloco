@@ -228,8 +228,9 @@ export default function DeveloperWorkspace() {
             capacidades={capacidades}
             sinais={sinais}
             onAbrir={abrir}
-            onMover={naoMove}
             podeMover={false}
+            onAssumir={user?.id ? aoAssumir : undefined}
+            assumindo={assumindo}
             vazio={{
               titulo:
                 fila === "minhas"
