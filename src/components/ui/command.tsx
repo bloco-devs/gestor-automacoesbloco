@@ -30,9 +30,23 @@ const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
           leitor de tela ouve "diálogo" e nada mais — e o console avisa a cada
           abertura. A paleta é visualmente auto-explicativa (um campo de busca
           em foco), então o título existe só para a tecnologia assistiva. */}
-      <DialogContent className="overflow-hidden p-0 shadow-lg" aria-describedby={undefined}>
+      {/* Paleta nao e caixa de dialogo: e uma superficie de comando.
+          Centralizada na vertical, ela empurra o conteudo para o meio e a
+          lista de resultados cresce para os dois lados, mexendo o item que a
+          pessoa estava mirando. Ancorada perto do topo, a lista cresce so para
+          baixo e o primeiro resultado nunca sai do lugar — e o primeiro
+          resultado e o que 90% das vezes se quer. */}
+      <DialogContent
+        className="top-[18%] max-w-2xl translate-y-0 gap-0 overflow-hidden rounded-xl p-0 shadow-elev-3"
+        aria-describedby={undefined}
+      >
         <DialogTitle className="sr-only">Buscar no sistema</DialogTitle>
-        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
+        {/* O tema anterior forcava 20px em todo svg do item e 12px de altura
+            de linha. Icone de 20px ao lado de texto de 14px inverte a
+            hierarquia: o simbolo grita mais alto que a palavra, e a lista vira
+            uma coluna de desenhos com legenda. 16px devolve o icone ao papel
+            dele, que e ajudar a achar a linha certa, nao ser a linha. */}
+        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground/70 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-4 [&_[cmdk-item]_svg]:size-4">
           {children}
         </Command>
       </DialogContent>
@@ -44,12 +58,12 @@ const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
-  <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
-    <Search className="mr-2 size-4 shrink-0 opacity-50" />
+  <div className="flex items-center gap-2.5 border-b px-3.5" cmdk-input-wrapper="">
+    <Search className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.75} />
     <CommandPrimitive.Input
       ref={ref}
       className={cn(
-        "flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-12 w-full rounded-md bg-transparent py-3 text-[14px] outline-none placeholder:text-muted-foreground/70 disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}
@@ -110,7 +124,16 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50",
+      // `bg-accent` e a cor de MARCA — o amarelo. Usada como realce de linha,
+      // ela pinta um bloco saturado atras de texto escuro a cada tecla de
+      // seta: o olho persegue o bloco em vez de ler a lista, e a cor que
+      // deveria significar "acao principal" passa a significar "cursor".
+      // Realce de navegacao precisa ser a superficie mais discreta que ainda
+      // se distingue do fundo.
+      "relative flex cursor-default select-none items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] outline-none",
+      "transition-colors duration-fast ease-standard",
+      "data-[selected=true]:bg-muted data-[selected=true]:text-foreground",
+      "data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
       className,
     )}
     {...props}

@@ -275,9 +275,23 @@ function SidebarNavItem({
                 className="absolute -left-2 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-primary"
               />
             )}
+            {/* DEZOITO, NAO DEZESSETE — e nao e implicancia
+                Os icones do lucide sao desenhados numa grade de 24px com traco
+                de 2px. Em 17px a escala e 0,708: cada traco vertical cai em
+                meio-pixel e o navegador o espalha por duas colunas de pixel
+                com meia opacidade cada. O resultado nao e "menor", e BORRADO —
+                e traco borrado o olho le como torto, nao como suave. Era esse
+                o "mal centralizado".
+                18px da escala 0,75, que devolve os tracos para o pixel inteiro.
+
+                E o traco de 2px do padrao pesa demais nesse tamanho: fecha os
+                vaos internos e transforma cada icone numa mancha. 1,75 e o que
+                Linear e Raycast usam, e e o que separa "icone de biblioteca"
+                de "icone desenhado para este produto". */}
             <Icon
+              strokeWidth={1.75}
               className={cn(
-                "size-[17px] shrink-0 transition-opacity duration-fast",
+                "size-[18px] shrink-0 transition-opacity duration-fast",
                 isActive ? "opacity-100" : "opacity-60 group-hover:opacity-90",
               )}
             />

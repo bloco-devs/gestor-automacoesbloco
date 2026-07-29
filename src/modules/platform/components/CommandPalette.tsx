@@ -8,12 +8,49 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { usePlatformContext } from "../providers/PlatformProvider";
 import { useGlobalSearch } from "../hooks";
 import { formatHotkey } from "../utils/hotkeys";
 import type { PlatformCommand, SearchEntity } from "../types";
 
 const MAX_RESULTS_PER_GROUP = 8;
+
+/**
+ * O icone ganha um berco, e o atalho vira tecla.
+ *
+ * Solto ao lado do texto, o icone flutuava numa altura que dependia do
+ * desenho de cada simbolo — casa vazada senta diferente de engrenagem cheia, e
+ * uma lista inteira assim parece tremida. Num quadrado de superficie fixa,
+ * todos os icones ocupam a mesma caixa e a coluna fica reta.
+ *
+ * O atalho era texto cinza de 10px encostado na direita: lia-se como legenda,
+ * nao como algo que se aperta. Com borda e fundo ele vira o que e — uma tecla.
+ */
+function Berco({ Icone }: { Icone?: React.ComponentType<{ className?: string; strokeWidth?: string | number }> }) {
+  if (!Icone) return <span aria-hidden className="size-7 shrink-0" />;
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "flex size-7 shrink-0 items-center justify-center rounded-md",
+        "bg-muted/60 text-muted-foreground",
+        "transition-colors duration-fast ease-standard",
+        "group-data-[selected=true]:bg-background group-data-[selected=true]:text-foreground",
+      )}
+    >
+      <Icone className="size-4" strokeWidth={1.75} />
+    </span>
+  );
+}
+
+function Tecla({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="ml-auto shrink-0 rounded border border-border/80 bg-muted/50 px-1.5 py-0.5 font-sans text-[10px] font-medium tabular-nums text-muted-foreground">
+      {children}
+    </kbd>
+  );
+}
 
 export function CommandPalette() {
   const {
@@ -118,14 +155,11 @@ export function CommandPalette() {
                   key={`recent-${c.id}`}
                   value={`recent ${c.title}`}
                   onSelect={() => runCommand(c.id)}
+                  className="group"
                 >
-                  {c.icon ? <c.icon className="mr-2 size-4" aria-hidden /> : null}
-                  <span>{c.title}</span>
-                  {c.shortcut ? (
-                    <kbd className="ml-auto text-[10px] text-muted-foreground">
-                      {formatHotkey(c.shortcut)}
-                    </kbd>
-                  ) : null}
+                  <Berco Icone={c.icon} />
+                  <span className="truncate">{c.title}</span>
+                  {c.shortcut ? <Tecla>{formatHotkey(c.shortcut)}</Tecla> : null}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -141,14 +175,15 @@ export function CommandPalette() {
                   key={`${type}-${e.id}`}
                   value={`${e.label} ${e.description ?? ""} ${(e.keywords ?? []).join(" ")}`}
                   onSelect={() => handleEntity(e)}
+                  className="group"
                 >
-                  {e.icon ? <e.icon className="mr-2 size-4" aria-hidden /> : null}
-                  <div className="flex flex-col">
-                    <span>{e.label}</span>
+                  <Berco Icone={e.icon} />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate">{e.label}</span>
                     {e.description ? (
-                      <span className="text-xs text-muted-foreground">{e.description}</span>
+                      <span className="truncate text-[11px] text-muted-foreground">{e.description}</span>
                     ) : null}
-                  </div>
+                  </span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -163,19 +198,16 @@ export function CommandPalette() {
                 key={c.id}
                 value={`${c.title} ${c.description ?? ""} ${(c.keywords ?? []).join(" ")}`}
                 onSelect={() => runCommand(c.id)}
+                className="group"
               >
-                {c.icon ? <c.icon className="mr-2 size-4" aria-hidden /> : null}
-                <div className="flex flex-col">
-                  <span>{c.title}</span>
+                <Berco Icone={c.icon} />
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate">{c.title}</span>
                   {c.description ? (
-                    <span className="text-xs text-muted-foreground">{c.description}</span>
+                    <span className="truncate text-[11px] text-muted-foreground">{c.description}</span>
                   ) : null}
-                </div>
-                {c.shortcut ? (
-                  <kbd className="ml-auto text-[10px] text-muted-foreground">
-                    {formatHotkey(c.shortcut)}
-                  </kbd>
-                ) : null}
+                </span>
+                {c.shortcut ? <Tecla>{formatHotkey(c.shortcut)}</Tecla> : null}
               </CommandItem>
             ))}
           </CommandGroup>

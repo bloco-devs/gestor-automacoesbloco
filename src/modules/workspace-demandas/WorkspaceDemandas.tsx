@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Loader2, PanelRightClose, PanelRightOpen, Sparkles } from "lucide-react";
+import { Loader2, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Blink } from "@/components/blink/Blink";
 import { usePreferencia } from "@/hooks/usePreferencia";
 import { useAuth } from "@/hooks/useAuth";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
@@ -149,7 +150,7 @@ export default function WorkspaceDemandas() {
           copiloto ? "text-foreground" : "text-muted-foreground hover:text-foreground",
         )}
       >
-        <Sparkles className="size-3.5" aria-hidden />
+        <Blink className="size-[18px]" animado />
         {copiloto ? <PanelRightClose className="size-3.5" /> : <PanelRightOpen className="size-3.5" />}
       </button>
     </>
@@ -172,7 +173,7 @@ export default function WorkspaceDemandas() {
             copiloto ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <Sparkles className="size-3.5" aria-hidden />
+          <Blink className="size-[18px]" animado />
           {copiloto ? <PanelRightClose className="size-3.5" /> : <PanelRightOpen className="size-3.5" />}
         </button>
       </>

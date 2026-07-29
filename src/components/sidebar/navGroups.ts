@@ -3,7 +3,7 @@ import { Activity, BarChart3, BookOpen, Briefcase, Clock, Code2, GanttChartSquar
 export type NavItem = {
   to?: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: string | number }>;
   children?: NavItem[];
   /** Rotas que mantêm o item marcado como ativo (para realçar e auto-abrir). */
   matchPrefix?: string;
@@ -12,7 +12,7 @@ export type NavItem = {
 export type NavGroup = {
   id: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: string | number }>;
   items: NavItem[];
 };
 
