@@ -357,6 +357,8 @@ function Coluna({
   onAbrir,
   arrastavel,
   onRecolher,
+  onAssumir,
+  assumindo,
 }: {
   grupo: Grupo;
   capacidades: Capacidades;
@@ -364,6 +366,8 @@ function Coluna({
   onAbrir: (id: string) => void;
   arrastavel: boolean;
   onRecolher?: () => void;
+  onAssumir?: (id: string) => void;
+  assumindo?: (id: string) => boolean;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
   const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
