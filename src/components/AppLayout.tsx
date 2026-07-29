@@ -328,7 +328,14 @@ export default function AppLayout() {
           vazio da lateral em moldura da janela em vez de painel sem conteúdo. */}
       <main
         className={cn(
-          "relative min-w-0 flex-1 overflow-hidden",
+          // `flex flex-col` e o que faltava. `<main>` tinha altura definida
+          // (é `flex-1` dentro de uma linha de `h-screen`) e `overflow-hidden`
+          // para que cada tela cuidasse da própria rolagem — mas ele nunca foi
+          // um container flex. Os cabeçalhos e o conteúdo empilhavam como
+          // blocos comuns, e a caixa do conteúdo ficava do tamanho do que
+          // havia dentro dela. O excesso não rolava: era CORTADO pelo
+          // `overflow-hidden`, sem barra e sem aviso.
+          "relative flex min-w-0 flex-1 flex-col overflow-hidden",
           "md:my-1.5 md:mr-1.5 md:rounded-xl md:border md:border-border/70 md:bg-background",
           "md:shadow-elev-1",
         )}
@@ -400,7 +407,37 @@ export default function AppLayout() {
             </Button>
           </div>
         </header>
-        <div className={cn("w-full min-w-0", molduraPropria ? "" : "p-4 md:p-8")}>
+      {/*
+        ONDE A ROLAGEM ACONTECE — E POR QUE DEPENDE DA PÁGINA
+
+        Esta caixa era `w-full min-w-0` e mais nada: sem altura e sem flex. Uma
+        tela que pedia `h-full` recebia 100% de um pai cuja altura era "o
+        tamanho do meu conteúdo" — sempre suficiente, por definição. Nenhuma
+        rolagem interna jamais teve o que rolar, e o que passava do fim da
+        janela sumia atrás do `overflow-hidden` do `<main>`. Era por isso que
+        só diminuindo o zoom dava para ler o resto.
+
+        `min-h-0 flex-1` fecha a conta: a caixa passa a valer exatamente o
+        espaço que sobra abaixo dos cabeçalhos, e pode ficar MENOR que o
+        conteúdo — que é a condição para existir rolagem.
+
+        As duas metades da regra:
+
+        `molduraPropria` — Workspace e a tela da demanda desenham colunas de
+        altura cheia, cada uma com a sua própria área de rolagem. Aqui a caixa
+        segura o `overflow-hidden` e não rola nada: quem rola são os painéis
+        lá dentro, e é isso que mantém cabeçalho e barra de resposta fixos
+        enquanto só a conversa se move.
+
+        Todo o resto — páginas de documento comum, que rolam inteiras. A
+        rolagem mora aqui, uma só, e o respiro de 32px vem junto.
+      */}
+        <div
+          className={cn(
+            "min-h-0 w-full min-w-0 flex-1",
+            molduraPropria ? "overflow-hidden" : "overflow-y-auto rolagem-discreta p-4 md:p-8",
+          )}
+        >
           <OnboardingTour />
           <Outlet />
         </div>
