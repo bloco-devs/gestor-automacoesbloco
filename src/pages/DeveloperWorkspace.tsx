@@ -91,12 +91,12 @@ function normalizar(rotulo: string): string {
  * só o desenho — e "o que está em cada etapa" é uma pergunta que um quadro
  * responde de relance e uma lista responde depois de expandir três blocos.
  *
- * SOMENTE LEITURA, E ISSO É UMA DECISÃO
- * `podeMover={false}`. Mover daqui exigiria uma camada de escrita que
- * traduzisse o destino para "trocar a coluna do card" ou "trocar o enum de
- * status" conforme a fonte da demanda — que é justamente o que esta tela não
- * sabe (e não deve saber). Enquanto essa camada não existe, arrastar sem
- * efeito seria pior do que não arrastar.
+ * ARRASTO LIGADO, COM TRADUÇÃO NA BORDA
+ * `podeMover`. O board devolve o id da coluna de destino — que pertence a uma
+ * fonte só — e esta tela traduz para o RÓTULO da etapa antes de entregar a
+ * `useMoverDemanda`, que decide entre trocar a coluna do cartão (quadro) ou o
+ * enum de status (fila global). A tela continua sem conhecer tabela.
+
  *
  * Abrir uma demanda navega para `/demandas/:id`, a página real — nunca um
  * preview embutido.
