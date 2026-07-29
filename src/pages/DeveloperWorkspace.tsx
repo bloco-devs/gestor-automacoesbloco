@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   useTodasAsDemandas,
   useAssumirDemanda,
+  useMoverDemanda,
   type EtapaDaFonte,
 } from "@/modules/demand-access";
 import {
@@ -90,12 +91,12 @@ function normalizar(rotulo: string): string {
  * só o desenho — e "o que está em cada etapa" é uma pergunta que um quadro
  * responde de relance e uma lista responde depois de expandir três blocos.
  *
- * SOMENTE LEITURA, E ISSO É UMA DECISÃO
- * `podeMover={false}`. Mover daqui exigiria uma camada de escrita que
- * traduzisse o destino para "trocar a coluna do card" ou "trocar o enum de
- * status" conforme a fonte da demanda — que é justamente o que esta tela não
- * sabe (e não deve saber). Enquanto essa camada não existe, arrastar sem
- * efeito seria pior do que não arrastar.
+ * ARRASTO LIGADO, COM TRADUÇÃO NA BORDA
+ * `podeMover`. O board devolve o id da coluna de destino — que pertence a uma
+ * fonte só — e esta tela traduz para o RÓTULO da etapa antes de entregar a
+ * `useMoverDemanda`, que decide entre trocar a coluna do cartão (quadro) ou o
+ * enum de status (fila global). A tela continua sem conhecer tabela.
+
  *
  * Abrir uma demanda navega para `/demandas/:id`, a página real — nunca um
  * preview embutido.
@@ -157,12 +158,42 @@ export default function DeveloperWorkspace() {
     [navigate, projetoPorDemanda],
   );
 
-  // Somente leitura no arrasto: existe para satisfazer o contrato do board, e
-  // nunca é chamado porque `podeMover` é falso.
-  const naoMove = useCallback(() => {}, []);
+  /**
+   * Mover: o board entrega o ID da coluna de destino, e esse id pertence a
+   * UMA fonte (coluna de um quadro, enum de `demands`, ou `esteira:` quando a
+   * coluna está vazia). Aqui ele é traduzido para o RÓTULO — que é o que as
+   * duas fontes têm em comum — e a camada de acesso resolve o resto.
+   */
+  const rotuloPorStatusId = useMemo(() => {
+    const mapa = new Map<string, string>();
+    for (const e of etapas) mapa.set(e.id, e.rotulo);
+    for (const g of grupos) mapa.set(g.id, g.rotulo);
+    return mapa;
+  }, [etapas, grupos]);
+
+  const { mover, movendo } = useMoverDemanda();
+  const lidarComMovimento = useCallback(
+    ({ demandaId, statusId }: { demandaId: string; statusId: string }) => {
+      if (movendo(demandaId)) return;
+      const rotulo =
+        rotuloPorStatusId.get(statusId) ??
+        (statusId.startsWith("esteira:") ? statusId.slice("esteira:".length) : null);
+      if (!rotulo) return;
+      void mover(demandaId, projetoPorDemanda.get(demandaId) ?? null, rotulo).catch(
+        (e: unknown) => {
+          toast({
+            title: "Não deu para mover",
+            description: e instanceof Error ? e.message : "Tente de novo em instantes.",
+            variant: "destructive",
+          });
+        },
+      );
+    },
+    [mover, movendo, projetoPorDemanda, rotuloPorStatusId],
+  );
 
   /**
-   * Assumir é a única escrita desta tela. A fonte da demanda é decidida aqui,
+   * Assumir é a outra escrita desta tela. A fonte da demanda é decidida aqui,
    * pelo mapa que a própria tela já tinha: com projeto é cartão de quadro, sem
    * projeto é ticket da fila global. O cartão não sabe nada disso.
    */
@@ -228,8 +259,8 @@ export default function DeveloperWorkspace() {
             capacidades={capacidades}
             sinais={sinais}
             onAbrir={abrir}
-            onMover={naoMove}
-            podeMover={false}
+            onMover={lidarComMovimento}
+            podeMover
             onAssumir={user?.id ? aoAssumir : undefined}
             assumindo={assumindo}
             vazio={{
