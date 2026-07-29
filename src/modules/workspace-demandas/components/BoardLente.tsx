@@ -353,23 +353,36 @@ function Coluna({
       {/* A contagem vira pastilha em vez de número solto: ela é um dado
           diferente do nome da coluna, e sem forma própria os dois se leem como
           uma frase só ("BACKLOG 8"). */}
-      <header className="mb-2 flex items-center gap-2 border-b border-border/60 px-1.5 pb-2">
-        <h2 className="truncate text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          {grupo.rotulo}
-        </h2>
-        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-          {grupo.itens.length}
-        </span>
-        {onRecolher && (
-          <button
-            type="button"
-            onClick={onRecolher}
-            aria-label={`Recolher ${grupo.rotulo}`}
-            className="ml-auto rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      <header className="mb-2 px-1.5">
+        <div className="flex items-center gap-2 pb-2">
+          <span className={cn("flex size-5 shrink-0 items-center justify-center rounded", tinta.fundo)}>
+            <IconeDaEtapa className={cn("size-3", tinta.texto)} aria-hidden />
+          </span>
+          <h2 className={cn("truncate text-[12px] font-medium uppercase tracking-wide", tinta.texto)}>
+            {grupo.rotulo}
+          </h2>
+          <span
+            className={cn(
+              "rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+              tinta.pastilha,
+            )}
           >
-            <ChevronRight className="size-3.5 rotate-180" aria-hidden />
-          </button>
-        )}
+            {grupo.itens.length}
+          </span>
+          {onRecolher && (
+            <button
+              type="button"
+              onClick={onRecolher}
+              aria-label={`Recolher ${grupo.rotulo}`}
+              className="ml-auto rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              <ChevronRight className="size-3.5 rotate-180" aria-hidden />
+            </button>
+          )}
+        </div>
+        {/* A régua substitui a borda cinza de 1px. Mesmo trabalho de separar, e
+            de quebra é a única marca de cor que sobrevive quando a coluna rola. */}
+        <div className={cn("h-0.5 w-full rounded-full", tinta.regua)} aria-hidden />
       </header>
       <div className="rolagem-discreta flex-1 space-y-2 overflow-y-auto px-1 pb-2">
         {grupo.itens.map((d) => (
