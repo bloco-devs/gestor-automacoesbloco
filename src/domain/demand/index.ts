@@ -16,3 +16,4 @@ export * from "./services/anexos";
 export * from "./services/conhecimento";
 export { fromAtividades, CAPACIDADES_ATIVIDADES, type EntradaAtividades } from "./mappers/fromAtividades";
 export { fromDemands, CAPACIDADES_DEMANDS, type EntradaDemands } from "./mappers/fromDemands";
+export * from "./services/tomDaEtapa";
