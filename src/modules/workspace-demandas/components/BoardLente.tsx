@@ -210,6 +210,59 @@ function Cartao({
 }
 
 /**
+ * A TINTA DA COLUNA
+ *
+ * Cada tom aparece em quatro lugares do cabeçalho — ícone, fundo do ícone,
+ * texto e a régua embaixo — e em nenhum outro. O corpo da coluna e os cartões
+ * continuam sem cor de estado: se o cartão também fosse tingido, a cor deixaria
+ * de responder "em que etapa isto está?" (que a posição já responde) e passaria
+ * a competir com risco, SLA e prioridade.
+ *
+ * As cores saem dos tokens semânticos, que já têm variante para o tema escuro.
+ * As opacidades baixas são o que separa "tinta" de "bloco de cor".
+ */
+const PALETA: Record<
+  TomDaEtapa,
+  { icone: typeof Circle; texto: string; fundo: string; regua: string; pastilha: string }
+> = {
+  neutro: {
+    icone: Circle,
+    texto: "text-muted-foreground",
+    fundo: "bg-muted",
+    regua: "bg-border",
+    pastilha: "bg-muted text-muted-foreground",
+  },
+  andamento: {
+    icone: CircleDot,
+    texto: "text-warning",
+    fundo: "bg-warning/10",
+    regua: "bg-warning/50",
+    pastilha: "bg-warning/10 text-warning",
+  },
+  revisao: {
+    icone: Eye,
+    texto: "text-info",
+    fundo: "bg-info/10",
+    regua: "bg-info/50",
+    pastilha: "bg-info/10 text-info",
+  },
+  concluido: {
+    icone: CheckCircle2,
+    texto: "text-success",
+    fundo: "bg-success/10",
+    regua: "bg-success/50",
+    pastilha: "bg-success/10 text-success",
+  },
+  bloqueado: {
+    icone: Ban,
+    texto: "text-destructive",
+    fundo: "bg-destructive/10",
+    regua: "bg-destructive/50",
+    pastilha: "bg-destructive/10 text-destructive",
+  },
+};
+
+/**
  * A coluna recolhida.
  *
  * Não é uma coluna escondida: continua sendo alvo de drop, continua mostrando
@@ -219,6 +272,9 @@ function Cartao({
  */
 function ColunaRecolhida({ grupo, onExpandir }: { grupo: Grupo; onExpandir: () => void }) {
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
+  // Recolher esconde largura, não significado.
+  const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
+  const IconeDaEtapa = tinta.icone;
 
   return (
     <button
@@ -234,6 +290,9 @@ function ColunaRecolhida({ grupo, onExpandir }: { grupo: Grupo; onExpandir: () =
       )}
     >
       <ChevronRight className="size-3.5 shrink-0" aria-hidden />
+      <span className={cn("flex size-5 shrink-0 items-center justify-center rounded", tinta.fundo)}>
+        <IconeDaEtapa className={cn("size-3", tinta.texto)} aria-hidden />
+      </span>
       <span className="ds-caption tabular-nums font-medium text-foreground">{grupo.itens.length}</span>
       <span className="ds-caption whitespace-nowrap" style={{ writingMode: "vertical-rl" }}>
         {grupo.rotulo}
