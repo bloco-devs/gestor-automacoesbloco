@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listCards, listColunas, listLabels, listPersonas } from "@/lib/atividades";
+import { listBoardsResumo } from "@/lib/atividadesBoards";
 import { listAssignableUsers, listSolucoes } from "@/lib/supabaseData";
 import { atividadesKeys } from "@/hooks/useAtividadesBoard";
 import { useDemands, useDemandProfiles } from "@/modules/demands";
@@ -58,6 +59,25 @@ export function useTodasAsDemandas(): EstadoTodasAsDemandas {
     queryFn: () => listCards(),
     staleTime: 30_000,
   });
+  /**
+   * ARQUIVAR UM PROJETO PRECISA TIRAR AS DEMANDAS DELE DA FILA
+   *
+   * `listCards()` traz os cartões de TODOS os quadros e não pergunta se o
+   * quadro ainda vale. O resultado é que arquivar um projeto o tirava da lista
+   * de projetos e deixava as demandas dele em "Hoje", como se nada tivesse
+   * acontecido — um botão que promete uma coisa e entrega meia.
+   *
+   * Pior que não funcionar: arquivar passa a ser um gesto que a pessoa faz e
+   * depois desconfia, porque o efeito visível contradiz o esperado.
+   *
+   * Mesma chave de cache da lista de projetos, então não há ida a mais ao
+   * servidor: as duas telas compartilham a resposta.
+   */
+  const boardsQ = useQuery({
+    queryKey: ["atividades", "boards-resumo"],
+    queryFn: listBoardsResumo,
+    staleTime: 60_000,
+  });
   const colunasQ = useQuery({
     queryKey: [...atividadesKeys.all, "colunas", "todos-os-quadros"],
     queryFn: () => listColunas(),
@@ -88,9 +108,14 @@ export function useTodasAsDemandas(): EstadoTodasAsDemandas {
   const demandsList = useMemo(() => demandsQ.data ?? [], [demandsQ.data]);
   const perfisQ = useDemandProfiles(demandsList);
 
+  const quadrosArquivados = useMemo(
+    () => new Set((boardsQ.data ?? []).filter((b) => b.arquivado).map((b) => b.id)),
+    [boardsQ.data],
+  );
+
   const demandas = useMemo<Demanda[]>(() => {
     const { demandas: dasAtividades } = fromAtividades({
-      cards: cardsQ.data ?? [],
+      cards: (cardsQ.data ?? []).filter((c) => !quadrosArquivados.has(c.boardId)),
       colunas: colunasQ.data ?? [],
       labels: labelsQ.data ?? [],
       personas: personasQ.data ?? [],
@@ -127,11 +152,15 @@ export function useTodasAsDemandas(): EstadoTodasAsDemandas {
     solucoesQ.data,
     demandsList,
     perfisQ.data,
+    quadrosArquivados,
   ]);
 
   const projetoPorDemanda = useMemo(() => {
     const mapa = new Map<string, string>();
-    for (const card of cardsQ.data ?? []) mapa.set(card.id, card.boardId);
+    for (const card of cardsQ.data ?? []) {
+      if (quadrosArquivados.has(card.boardId)) continue;
+      mapa.set(card.id, card.boardId);
+    }
     return mapa;
   }, [cardsQ.data]);
 

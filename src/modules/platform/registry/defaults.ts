@@ -29,6 +29,11 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
     category: "Solicitações",
     keywords: ["nova", "criar", "demanda", "solicitar", "ai", "workspace"],
     icon: Plus,
+    // A rota é `role="requester"`. Sem esta linha o comando aparecia para o
+    // desenvolvedor, que clicava, era rejeitado pelo guarda de papel e
+    // aterrissava numa tela que não tinha pedido. Comando que existe e não
+    // funciona é pior que comando ausente: ele ensina a desconfiar da paleta.
+    permissions: ["requester", "builder"],
   },
   {
     id: "solucoes",

@@ -37,7 +37,7 @@ export function ProtectedRoute({
     // aqui. Apagar a rota antiga sem trocar este destino primeiro mandaria
     // todo solicitante barrado para um 404, e o barrado é justamente quem
     // menos tem como se orientar sozinho.
-    return <Navigate to={user.role === "developer" ? "/dashboard" : "/portal/demandas"} replace />;
+    return <Navigate to={user.role === "developer" ? "/workspace" : "/portal/demandas"} replace />;
   }
 
   return <>{children}</>;

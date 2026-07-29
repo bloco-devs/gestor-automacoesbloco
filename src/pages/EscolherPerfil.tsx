@@ -14,12 +14,12 @@ export default function EscolherPerfil() {
   if (!user) return null;
   // Only Administradores may pick a profile. Others go straight to their default view.
   if (!isDual) {
-    return <Navigate to={user.role === "developer" ? "/dashboard" : "/portal/demandas"} replace />;
+    return <Navigate to={user.role === "developer" ? "/workspace" : "/portal/demandas"} replace />;
   }
 
   function choose(role: Role) {
     setViewAs(role);
-    navigate(role === "developer" ? "/dashboard" : "/portal/demandas");
+    navigate(role === "developer" ? "/workspace" : "/portal/demandas");
   }
 
   return (

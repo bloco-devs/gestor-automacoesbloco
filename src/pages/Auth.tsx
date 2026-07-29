@@ -72,7 +72,7 @@ export default function Auth() {
       if (dual) {
         navigate("/escolher-perfil");
       } else {
-        navigate(u.role === "developer" ? "/dashboard" : "/portal/demandas");
+        navigate(u.role === "developer" ? "/workspace" : "/portal/demandas");
       }
     } catch (err) {
       const msg =

@@ -43,7 +43,6 @@ import NotFound from "./pages/NotFound";
 
 // Lazy — reduz o bundle inicial. Chunks nomeados por área.
 const AIWorkspace = lazy(() => import(/* webpackChunkName: "ai" */ "./pages/AIWorkspace"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Solucoes = lazy(() => import("./pages/Solucoes"));
 const SolucoesKanban = lazy(() => import("./pages/SolucoesKanban"));
 const SolucoesGantt = lazy(() => import("./pages/SolucoesGantt"));
@@ -226,7 +225,7 @@ const AppRoutes = () => {
             path="/portal/demandas"
             element={
               <ProtectedRoute>
-                <UxRoute on={<PortalDemandasPage />} off={<Navigate to="/minhas-solicitacoes" replace />} />
+                <PortalDemandasPage />
               </ProtectedRoute>
             }
           />
@@ -249,7 +248,15 @@ const AppRoutes = () => {
 
 
           {/* Desenvolvedor */}
-          <Route path="/dashboard" element={<ProtectedRoute role="developer"><Dashboard /></ProtectedRoute>} />
+          {/* `/dashboard` era a tela de Solicitações ordenadas por prioridade —
+              construída sobre a tabela `solicitacoes`, hoje vazia. Ela abria
+              com sete zeros e um botão "Abrir Kanban" que apontava para uma
+              rota removida. O desenvolvedor caía ali toda vez que um guarda de
+              papel o rejeitava, e a primeira impressão do sistema virava uma
+              tela zerada com um link quebrado.
+              A URL sobrevive como redirecionamento porque ela está na memória
+              muscular de quem usa e em qualquer aba salva. */}
+          <Route path="/dashboard" element={<Navigate to="/workspace" replace />} />
           <Route path="/solucoes" element={<ProtectedRoute role="developer"><Solucoes /></ProtectedRoute>} />
           <Route path="/solucoes/kanban" element={<ProtectedRoute role="developer"><SolucoesKanban /></ProtectedRoute>} />
           <Route path="/solucoes/gantt" element={<ProtectedRoute role="developer"><SolucoesGantt /></ProtectedRoute>} />
@@ -377,7 +384,7 @@ const AppRoutes = () => {
             path="/workspace/demandas"
             element={
               <ProtectedRoute role="developer">
-                <UxRoute on={<WorkspaceDemandasPage />} off={<Navigate to="/solicitacoes/kanban" replace />} />
+                <WorkspaceDemandasPage />
               </ProtectedRoute>
             }
           />
@@ -388,7 +395,7 @@ const AppRoutes = () => {
             path="/workspace/demandas/:projetoId"
             element={
               <ProtectedRoute role="developer">
-                <UxRoute on={<WorkspaceDemandasPage />} off={<Navigate to="/solicitacoes/kanban" replace />} />
+                <WorkspaceDemandasPage />
               </ProtectedRoute>
             }
           />

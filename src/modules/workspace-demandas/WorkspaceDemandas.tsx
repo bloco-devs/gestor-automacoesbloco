@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Loader2, PanelRightClose, PanelRightOpen, Sparkles } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { usePreferencia } from "@/hooks/usePreferencia";
+import { useAuth } from "@/hooks/useAuth";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
 import { cn } from "@/lib/utils";
 import { useAcoesDemanda, useDemandas, ehInbox, type Escopo } from "@/modules/demand-access";
@@ -56,7 +56,19 @@ export default function WorkspaceDemandas() {
   const { projetoId } = useParams<{ projetoId: string }>();
   const [params, setParams] = useSearchParams();
   const [busca, setBusca] = useState("");
-  const [copiloto, setCopiloto] = useState(true);
+  /**
+   * Fechar o painel precisa CONTINUAR fechado.
+   *
+   * Era `useState(true)`: a escolha morria ao trocar de projeto, e quem tinha
+   * fechado reencontrava o painel aberto a cada navegação. Um controle que
+   * esquece cobra o mesmo clique para sempre, e ensina a não personalizar
+   * nada — porque personalizar não compensa.
+   */
+  const [copiloto, setCopiloto] = usePreferencia<boolean>(
+    "workspace:copiloto",
+    true,
+    (v): v is boolean => typeof v === "boolean",
+  );
 
   // A Inbox é a fila de quem ainda não foi classificado. Ela mora na mesma
   // rota dos projetos porque, para quem navega, é um destino irmão — mas o
@@ -128,7 +140,7 @@ export default function WorkspaceDemandas() {
       <ContextoDaInbox aguardando={resumo.abertas} />
       <button
         type="button"
-        onClick={() => setCopiloto((v) => !v)}
+        onClick={() => setCopiloto(!copiloto)}
         aria-label={copiloto ? "Ocultar o Blink" : "Mostrar o Blink"}
         className={cn(
           "ml-auto hidden shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs xl:inline-flex",
@@ -151,7 +163,7 @@ export default function WorkspaceDemandas() {
         <ContextoDoProjeto projeto={projeto} resumo={resumo} onFila={(f) => trocar("fila", f)} />
         <button
           type="button"
-          onClick={() => setCopiloto((v) => !v)}
+          onClick={() => setCopiloto(!copiloto)}
           aria-label={copiloto ? "Ocultar o Blink" : "Mostrar o Blink"}
           className={cn(
             "ml-auto hidden shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs xl:inline-flex",

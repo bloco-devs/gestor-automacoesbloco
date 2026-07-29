@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, PanelRightClose, PanelRightOpen, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePreferencia } from "@/hooks/usePreferencia";
 import { useAuth } from "@/hooks/useAuth";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
 import { cn } from "@/lib/utils";
@@ -121,15 +122,11 @@ export default function DemandaDetalhe() {
    * conduzindo uma conversa longa quer a largura toda, e não deveria pagar
    * essa escolha de novo a cada demanda que abre.
    */
-  const [painel, setPainel] = useState<boolean>(() => {
-    if (typeof window === "undefined") return true;
-    return window.localStorage.getItem("demanda:painel") !== "0";
-  });
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("demanda:painel", painel ? "1" : "0");
-  }, [painel]);
+  const [painel, setPainel] = usePreferencia<boolean>(
+    "demanda:painel",
+    true,
+    (v): v is boolean => typeof v === "boolean",
+  );
 
   /**
    * O rascunho de artigo, montado da demanda resolvida.
@@ -234,7 +231,7 @@ export default function DemandaDetalhe() {
         </span>
         <button
           type="button"
-          onClick={() => setPainel((v) => !v)}
+          onClick={() => setPainel(!painel)}
           aria-label={painel ? "Ocultar o painel do Blink" : "Mostrar o painel do Blink"}
           aria-pressed={painel}
           title={painel ? "Ocultar o painel" : "Mostrar o painel"}

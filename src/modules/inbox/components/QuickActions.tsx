@@ -6,9 +6,9 @@ import { Section } from "@/design-system";
 const ACTIONS = [
   { to: "/nova-solicitacao", label: "Nova Solicitação", icon: Plus },
   { to: "/nova-solicitacao", label: "Abrir AI Workspace", icon: Sparkles },
-  { to: "/solicitacoes/kanban", label: "Kanban", icon: KanbanSquare },
+  { to: "/workspace/demandas", label: "Projetos", icon: KanbanSquare },
   { to: "/atividades", label: "Sprint atual", icon: ListChecks },
-  { to: "/solicitacoes", label: "Backlog", icon: ListTodo },
+  { to: "/workspace", label: "Hoje", icon: ListTodo },
 ];
 
 /**
