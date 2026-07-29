@@ -10,7 +10,15 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { useDraggable } from "@dnd-kit/core";
-import { ChevronRight, Sparkles } from "lucide-react";
+import {
+  Ban,
+  CheckCircle2,
+  ChevronRight,
+  CircleDot,
+  Circle,
+  Eye,
+  Sparkles,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { EmptyPanel } from "@/design-system";
@@ -21,6 +29,8 @@ import {
   type Demanda,
   type Grupo,
   type SinaisUteis,
+  tomDaEtapa,
+  type TomDaEtapa,
 } from "@/domain/demand";
 import type { EtapaDaFonte } from "@/modules/demand-access";
 
@@ -200,6 +210,69 @@ function Cartao({
 }
 
 /**
+ * A TINTA DA COLUNA
+ *
+ * Cada tom aparece em quatro lugares do cabeçalho — ícone, fundo do ícone,
+ * texto e a régua embaixo — e em nenhum outro. O corpo da coluna e os cartões
+ * continuam sem cor de estado.
+ *
+ * Isso é deliberado. Se o cartão também fosse tingido, a cor deixaria de
+ * responder "em que etapa isto está?" (que o cartão já responde pela posição)
+ * e passaria a competir com os sinais que ELE precisa carregar: risco, SLA,
+ * prioridade. Duas informações disputando o mesmo canal, e a mais importante
+ * perdendo.
+ *
+ * O cabeçalho é o lugar certo porque é o que se lê de longe. A pergunta que
+ * cor responde bem — "tem muito vermelho neste board?" — é uma pergunta de
+ * visão periférica, e visão periférica não lê cartão, lê coluna.
+ *
+ * As cores saem dos tokens semânticos do sistema, não de valores fixos: elas
+ * já têm variante para o tema escuro. As opacidades baixas são o que separa
+ * "tinta" de "bloco de cor" — fundo sólido no cabeçalho pesaria mais que os
+ * cartões, e o cabeçalho é a moldura, não o conteúdo.
+ */
+const PALETA: Record<
+  TomDaEtapa,
+  { icone: typeof Circle; texto: string; fundo: string; regua: string; pastilha: string }
+> = {
+  neutro: {
+    icone: Circle,
+    texto: "text-muted-foreground",
+    fundo: "bg-muted",
+    regua: "bg-border",
+    pastilha: "bg-muted text-muted-foreground",
+  },
+  andamento: {
+    icone: CircleDot,
+    texto: "text-warning",
+    fundo: "bg-warning/10",
+    regua: "bg-warning/50",
+    pastilha: "bg-warning/10 text-warning",
+  },
+  revisao: {
+    icone: Eye,
+    texto: "text-info",
+    fundo: "bg-info/10",
+    regua: "bg-info/50",
+    pastilha: "bg-info/10 text-info",
+  },
+  concluido: {
+    icone: CheckCircle2,
+    texto: "text-success",
+    fundo: "bg-success/10",
+    regua: "bg-success/50",
+    pastilha: "bg-success/10 text-success",
+  },
+  bloqueado: {
+    icone: Ban,
+    texto: "text-destructive",
+    fundo: "bg-destructive/10",
+    regua: "bg-destructive/50",
+    pastilha: "bg-destructive/10 text-destructive",
+  },
+};
+
+/**
  * A coluna recolhida.
  *
  * Não é uma coluna escondida: continua sendo alvo de drop, continua mostrando
@@ -209,6 +282,11 @@ function Cartao({
  */
 function ColunaRecolhida({ grupo, onExpandir }: { grupo: Grupo; onExpandir: () => void }) {
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
+  // Recolher esconde largura, não significado. Sem o tom aqui, a coluna
+  // recolhida viraria a única do board sem estado legível — e recolher passaria
+  // a custar informação, que não é o trato.
+  const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
+  const IconeDaEtapa = tinta.icone;
 
   return (
     <button
@@ -224,6 +302,12 @@ function ColunaRecolhida({ grupo, onExpandir }: { grupo: Grupo; onExpandir: () =
       )}
     >
       <ChevronRight className="size-3.5 shrink-0" aria-hidden />
+      <span
+        aria-hidden
+        className={cn("flex size-5 shrink-0 items-center justify-center rounded-[6px]", tinta.fundo)}
+      >
+        <IconeDaEtapa className={cn("size-3", tinta.texto)} />
+      </span>
       <span className="ds-caption tabular-nums font-medium text-foreground">{grupo.itens.length}</span>
       <span className="ds-caption whitespace-nowrap" style={{ writingMode: "vertical-rl" }}>
         {grupo.rotulo}
@@ -248,6 +332,8 @@ function Coluna({
   onRecolher?: () => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
+  const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
+  const IconeDaEtapa = tinta.icone;
 
   return (
     <section
@@ -282,23 +368,40 @@ function Coluna({
       {/* A contagem vira pastilha em vez de número solto: ela é um dado
           diferente do nome da coluna, e sem forma própria os dois se leem como
           uma frase só ("BACKLOG 8"). */}
-      <header className="mb-2 flex items-center gap-2 border-b border-border/60 px-1.5 pb-2">
-        <h2 className="truncate text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-          {grupo.rotulo}
-        </h2>
-        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-          {grupo.itens.length}
-        </span>
-        {onRecolher && (
-          <button
-            type="button"
-            onClick={onRecolher}
-            aria-label={`Recolher ${grupo.rotulo}`}
-            className="ml-auto rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      <header className="mb-2 px-1.5">
+        <div className="flex items-center gap-2 pb-2">
+          <span
+            aria-hidden
+            className={cn("flex size-5 shrink-0 items-center justify-center rounded-[6px]", tinta.fundo)}
           >
-            <ChevronRight className="size-3.5 rotate-180" aria-hidden />
-          </button>
-        )}
+            <IconeDaEtapa className={cn("size-3", tinta.texto)} />
+          </span>
+          <h2 className={cn("truncate text-[12px] font-semibold uppercase tracking-wide", tinta.texto)}>
+            {grupo.rotulo}
+          </h2>
+          <span
+            className={cn(
+              "rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+              tinta.pastilha,
+            )}
+          >
+            {grupo.itens.length}
+          </span>
+          {onRecolher && (
+            <button
+              type="button"
+              onClick={onRecolher}
+              aria-label={`Recolher ${grupo.rotulo}`}
+              className="ml-auto rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              <ChevronRight className="size-3.5 rotate-180" aria-hidden />
+            </button>
+          )}
+        </div>
+        {/* A régua substitui a borda cinza de 1px. Ela faz o mesmo trabalho de
+            separar cabeçalho de conteúdo, e de quebra carrega o tom — é a
+            única marca de cor que sobrevive quando a coluna rola. */}
+        <div aria-hidden className={cn("h-0.5 w-full rounded-full", tinta.regua)} />
       </header>
       <div className="rolagem-discreta flex-1 space-y-2 overflow-y-auto px-1 pb-2">
         {grupo.itens.map((d) => (
