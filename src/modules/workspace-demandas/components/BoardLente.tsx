@@ -450,6 +450,8 @@ function Coluna({
             sinais={sinais}
             onAbrir={onAbrir}
             arrastavel={arrastavel}
+            onAssumir={onAssumir}
+            assumindo={assumindo?.(d.id)}
           />
         ))}
         {grupo.itens.length === 0 && (
