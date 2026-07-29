@@ -92,6 +92,8 @@ function Cartao({
   onAbrir,
   arrastavel,
   sobreposicao,
+  onAssumir,
+  assumindo,
 }: {
   demanda: Demanda;
   capacidades: Capacidades;
@@ -99,6 +101,12 @@ function Cartao({
   onAbrir?: (id: string) => void;
   arrastavel: boolean;
   sobreposicao?: boolean;
+  /**
+   * Quem sabe atribuir é a tela — ela conhece a fonte da demanda. Sem este
+   * callback o cartão continua exatamente como era: círculo tracejado.
+   */
+  onAssumir?: (id: string) => void;
+  assumindo?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: d.id,
@@ -114,6 +122,8 @@ function Cartao({
     .filter(Boolean)
     .join(" · ");
 
+  const podeAssumir = !responsavel && !!onAssumir && !sobreposicao;
+
   const direita = (
     <span className="ds-caption flex shrink-0 items-center gap-1.5 text-muted-foreground">
       {capacidades.ia && d.ia && (
@@ -127,11 +137,35 @@ function Cartao({
           {responsavel.avatarUrl && <AvatarImage src={responsavel.avatarUrl} alt={responsavel.nome} />}
           <AvatarFallback className="bg-muted text-[8px]">{iniciais(responsavel.nome)}</AvatarFallback>
         </Avatar>
+      ) : podeAssumir ? (
+        /* O drag do dnd-kit escuta pointer, e o cartão inteiro abre no click:
+           parar os dois é o que separa "assumir" de "abrir" ou "arrastar". */
+        <button
+          type="button"
+          disabled={assumindo}
+          onPointerDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onAssumir?.(d.id);
+          }}
+          title="Atribuir esta demanda a você"
+          className={cn(
+            "rounded border border-border/70 bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium leading-none",
+            "text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+            "disabled:cursor-progress disabled:opacity-60",
+          )}
+        >
+          {assumindo ? "Assumindo…" : "Assumir"}
+        </button>
       ) : (
         <span className="size-4 rounded-full border border-dashed border-border" title="Sem responsável" />
       )}
     </span>
   );
+
 
   return (
     <div
