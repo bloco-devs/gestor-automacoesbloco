@@ -10,7 +10,15 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { useDraggable } from "@dnd-kit/core";
-import { ChevronRight, Sparkles } from "lucide-react";
+import {
+  Ban,
+  CheckCircle2,
+  ChevronRight,
+  Circle,
+  CircleDot,
+  Eye,
+  Sparkles,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { EmptyPanel } from "@/design-system";
@@ -21,6 +29,8 @@ import {
   type Demanda,
   type Grupo,
   type SinaisUteis,
+  tomDaEtapa,
+  type TomDaEtapa,
 } from "@/domain/demand";
 import type { EtapaDaFonte } from "@/modules/demand-access";
 
