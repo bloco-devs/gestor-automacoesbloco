@@ -1,7 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useTodasAsDemandas, type EtapaDaFonte } from "@/modules/demand-access";
+import {
+  useTodasAsDemandas,
+  useAssumirDemanda,
+  type EtapaDaFonte,
+} from "@/modules/demand-access";
 import {
   FILAS,
   type FilaId,
@@ -14,6 +18,7 @@ import {
 import { BoardLente } from "@/modules/workspace-demandas/components/BoardLente";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePreferencia } from "@/hooks/usePreferencia";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 // v2: a chave subiu de versão junto com a mudança de padrão. Quem já tinha
@@ -152,9 +157,29 @@ export default function DeveloperWorkspace() {
     [navigate, projetoPorDemanda],
   );
 
-  // Somente leitura: existe para satisfazer o contrato do board, e nunca é
-  // chamado porque `podeMover` é falso (os cartões não ficam arrastáveis).
+  // Somente leitura no arrasto: existe para satisfazer o contrato do board, e
+  // nunca é chamado porque `podeMover` é falso.
   const naoMove = useCallback(() => {}, []);
+
+  /**
+   * Assumir é a única escrita desta tela. A fonte da demanda é decidida aqui,
+   * pelo mapa que a própria tela já tinha: com projeto é cartão de quadro, sem
+   * projeto é ticket da fila global. O cartão não sabe nada disso.
+   */
+  const { assumir, assumindo } = useAssumirDemanda();
+  const aoAssumir = useCallback(
+    (id: string) => {
+      if (!user?.id) return;
+      void assumir(id, projetoPorDemanda.get(id) ?? null, user.id).catch((e: unknown) => {
+        toast({
+          title: "Não deu para assumir",
+          description: e instanceof Error ? e.message : "Tente de novo em instantes.",
+          variant: "destructive",
+        });
+      });
+    },
+    [assumir, projetoPorDemanda, user?.id],
+  );
 
   return (
     <div className="flex h-[calc(100vh-var(--app-header-h,3.5rem))] w-full flex-col">
@@ -205,6 +230,8 @@ export default function DeveloperWorkspace() {
             onAbrir={abrir}
             onMover={naoMove}
             podeMover={false}
+            onAssumir={user?.id ? aoAssumir : undefined}
+            assumindo={assumindo}
             vazio={{
               titulo:
                 fila === "minhas"

@@ -92,6 +92,8 @@ function Cartao({
   onAbrir,
   arrastavel,
   sobreposicao,
+  onAssumir,
+  assumindo,
 }: {
   demanda: Demanda;
   capacidades: Capacidades;
@@ -99,6 +101,12 @@ function Cartao({
   onAbrir?: (id: string) => void;
   arrastavel: boolean;
   sobreposicao?: boolean;
+  /**
+   * Quem sabe atribuir é a tela — ela conhece a fonte da demanda. Sem este
+   * callback o cartão continua exatamente como era: círculo tracejado.
+   */
+  onAssumir?: (id: string) => void;
+  assumindo?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: d.id,
@@ -114,6 +122,8 @@ function Cartao({
     .filter(Boolean)
     .join(" · ");
 
+  const podeAssumir = !responsavel && !!onAssumir && !sobreposicao;
+
   const direita = (
     <span className="ds-caption flex shrink-0 items-center gap-1.5 text-muted-foreground">
       {capacidades.ia && d.ia && (
@@ -127,11 +137,35 @@ function Cartao({
           {responsavel.avatarUrl && <AvatarImage src={responsavel.avatarUrl} alt={responsavel.nome} />}
           <AvatarFallback className="bg-muted text-[8px]">{iniciais(responsavel.nome)}</AvatarFallback>
         </Avatar>
+      ) : podeAssumir ? (
+        /* O drag do dnd-kit escuta pointer, e o cartão inteiro abre no click:
+           parar os dois é o que separa "assumir" de "abrir" ou "arrastar". */
+        <button
+          type="button"
+          disabled={assumindo}
+          onPointerDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onAssumir?.(d.id);
+          }}
+          title="Atribuir esta demanda a você"
+          className={cn(
+            "rounded border border-border/70 bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium leading-none",
+            "text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+            "disabled:cursor-progress disabled:opacity-60",
+          )}
+        >
+          {assumindo ? "Assumindo…" : "Assumir"}
+        </button>
       ) : (
         <span className="size-4 rounded-full border border-dashed border-border" title="Sem responsável" />
       )}
     </span>
   );
+
 
   return (
     <div
@@ -323,6 +357,8 @@ function Coluna({
   onAbrir,
   arrastavel,
   onRecolher,
+  onAssumir,
+  assumindo,
 }: {
   grupo: Grupo;
   capacidades: Capacidades;
@@ -330,6 +366,8 @@ function Coluna({
   onAbrir: (id: string) => void;
   arrastavel: boolean;
   onRecolher?: () => void;
+  onAssumir?: (id: string) => void;
+  assumindo?: (id: string) => boolean;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
   const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
@@ -412,6 +450,8 @@ function Coluna({
             sinais={sinais}
             onAbrir={onAbrir}
             arrastavel={arrastavel}
+            onAssumir={onAssumir}
+            assumindo={assumindo?.(d.id)}
           />
         ))}
         {grupo.itens.length === 0 && (
@@ -462,9 +502,27 @@ interface Props {
    * vazios — é o vazio que informa que ninguém está testando nada.
    */
   etapas?: EtapaDaFonte[];
+  /**
+   * Atribuir a demanda à pessoa logada, direto do cartão. Sem isto o botão
+   * "Assumir" não existe — quem decide se a ação é possível é a tela, porque
+   * é ela que sabe de qual fonte cada demanda veio.
+   */
+  onAssumir?: (id: string) => void;
+  assumindo?: (id: string) => boolean;
 }
 
-function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMover, etapas, vazio }: Props) {
+function BoardLenteImpl({
+  grupos,
+  capacidades,
+  sinais,
+  onAbrir,
+  onMover,
+  podeMover,
+  etapas,
+  vazio,
+  onAssumir,
+  assumindo,
+}: Props) {
   const [arrastando, setArrastando] = useState<Demanda | null>(null);
   const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
   const [jaVistas, setJaVistas] = useState<Set<string>>(new Set());
@@ -566,6 +624,8 @@ function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMov
               onAbrir={onAbrir}
               arrastavel={podeMover}
               onRecolher={g.concluido ? () => alternar(g.id) : undefined}
+              onAssumir={onAssumir}
+              assumindo={assumindo}
             />
           ),
         )}
