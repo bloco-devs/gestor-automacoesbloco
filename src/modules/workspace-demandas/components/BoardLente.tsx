@@ -94,10 +94,13 @@ function Cartao({
   sobreposicao,
   onAssumir,
   assumindo,
+  tom = "neutro",
 }: {
   demanda: Demanda;
   capacidades: Capacidades;
   sinais: SinaisUteis;
+  /** O tom da etapa onde o cartão está — vira a faixa de cor na borda esquerda. */
+  tom?: TomDaEtapa;
   onAbrir?: (id: string) => void;
   arrastavel: boolean;
   sobreposicao?: boolean;
@@ -194,6 +197,11 @@ function Cartao({
         // sobe de leve no hover: a sombra só aparece quando o cursor está nele,
         // que é quando ele de fato pode ser pego.
         "rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
+        // FAIXA DE ETAPA — a cor da coluna repetida na borda esquerda do cartão,
+        // para que ele continue legível fora do alinhamento da coluna (arrasto,
+        // overlay, rolagem que esconde o cabeçalho).
+        "border-l-4",
+        PALETA[tom].borda,
         "shadow-[0_1px_2px_hsl(var(--foreground)/0.04)]",
         "transition-[background-color,border-color,box-shadow,transform] duration-fast ease-standard",
         "hover:-translate-y-px hover:border-border hover:shadow-elev-2",
@@ -267,7 +275,7 @@ function Cartao({
  */
 const PALETA: Record<
   TomDaEtapa,
-  { icone: typeof Circle; texto: string; fundo: string; regua: string; pastilha: string }
+  { icone: typeof Circle; texto: string; fundo: string; regua: string; pastilha: string; borda: string }
 > = {
   neutro: {
     icone: Circle,
@@ -275,6 +283,7 @@ const PALETA: Record<
     fundo: "bg-muted",
     regua: "bg-border",
     pastilha: "bg-muted text-muted-foreground",
+    borda: "border-l-border",
   },
   andamento: {
     icone: CircleDot,
@@ -282,6 +291,7 @@ const PALETA: Record<
     fundo: "bg-warning/10",
     regua: "bg-warning/50",
     pastilha: "bg-warning/10 text-warning",
+    borda: "border-l-warning",
   },
   revisao: {
     icone: Eye,
@@ -289,6 +299,7 @@ const PALETA: Record<
     fundo: "bg-info/10",
     regua: "bg-info/50",
     pastilha: "bg-info/10 text-info",
+    borda: "border-l-info",
   },
   concluido: {
     icone: CheckCircle2,
@@ -296,6 +307,7 @@ const PALETA: Record<
     fundo: "bg-success/10",
     regua: "bg-success/50",
     pastilha: "bg-success/10 text-success",
+    borda: "border-l-success",
   },
   bloqueado: {
     icone: Ban,
@@ -303,6 +315,7 @@ const PALETA: Record<
     fundo: "bg-destructive/10",
     regua: "bg-destructive/50",
     pastilha: "bg-destructive/10 text-destructive",
+    borda: "border-l-destructive",
   },
 };
 
@@ -452,6 +465,7 @@ function Coluna({
             arrastavel={arrastavel}
             onAssumir={onAssumir}
             assumindo={assumindo?.(d.id)}
+            tom={tomDaEtapa(grupo.rotulo)}
           />
         ))}
         {grupo.itens.length === 0 && (
@@ -633,7 +647,16 @@ function BoardLenteImpl({
       <DragOverlay dropAnimation={null}>
         {arrastando ? (
           <div className="w-[17rem]">
-            <Cartao demanda={arrastando} capacidades={capacidades} sinais={sinais} arrastavel sobreposicao />
+            <Cartao
+              demanda={arrastando}
+              capacidades={capacidades}
+              sinais={sinais}
+              arrastavel
+              sobreposicao
+              tom={tomDaEtapa(
+                grupos.find((g) => g.itens.some((i) => i.id === arrastando.id))?.rotulo ?? "",
+              )}
+            />
           </div>
         ) : null}
       </DragOverlay>
