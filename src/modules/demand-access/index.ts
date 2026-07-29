@@ -8,6 +8,7 @@ export { useDemandas, useDemanda } from "./useDemandas";
 export { useTodasAsDemandas, type EstadoTodasAsDemandas } from "./useTodasAsDemandas";
 export { useAcoesDemanda } from "./useAcoesDemanda";
 export { useAssumirDemanda, type AssumirDemanda } from "./useAssumirDemanda";
+export { useMoverDemanda, type MoverDemanda } from "./useMoverDemanda";
 export { resolverFonte, projetoDoEscopo } from "./resolverFonte";
 export { useProjetos } from "./useProjetos";
 export { useCriarDemanda } from "./useCriarDemanda";
