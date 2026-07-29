@@ -502,9 +502,27 @@ interface Props {
    * vazios — é o vazio que informa que ninguém está testando nada.
    */
   etapas?: EtapaDaFonte[];
+  /**
+   * Atribuir a demanda à pessoa logada, direto do cartão. Sem isto o botão
+   * "Assumir" não existe — quem decide se a ação é possível é a tela, porque
+   * é ela que sabe de qual fonte cada demanda veio.
+   */
+  onAssumir?: (id: string) => void;
+  assumindo?: (id: string) => boolean;
 }
 
-function BoardLenteImpl({ grupos, capacidades, sinais, onAbrir, onMover, podeMover, etapas, vazio }: Props) {
+function BoardLenteImpl({
+  grupos,
+  capacidades,
+  sinais,
+  onAbrir,
+  onMover,
+  podeMover,
+  etapas,
+  vazio,
+  onAssumir,
+  assumindo,
+}: Props) {
   const [arrastando, setArrastando] = useState<Demanda | null>(null);
   const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
   const [jaVistas, setJaVistas] = useState<Set<string>>(new Set());
