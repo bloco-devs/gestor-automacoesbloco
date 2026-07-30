@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Paperclip, Users } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   createComentario,
@@ -18,20 +18,17 @@ import { Separator } from "@/components/ui/separator";
 import { CardLabelsBotao, CardLabelsResumo } from "./card/CardLabels";
 import { CardDueDateBotao, CardDueDateResumo } from "./card/CardDueDate";
 import { CardChecklistBotao, CardChecklistCorpo } from "./card/CardChecklist";
+import { CardMembersBotao, CardMembersResumo } from "./card/CardMembers";
+import { CardAttachmentsBotao, CardAttachmentsCorpo } from "./card/CardAttachments";
 
 /**
  * Modal de detalhe do cartão — estilo Trello.
  *
  * ESCOPO ATUAL
  * Título, descrição e comentários (tabelas de `atividades_*`), além dos módulos
- * isolados de Etiquetas, Datas e Checklists. Membros e Anexos seguem inertes
- * até ganharem sua própria etapa.
+ * isolados de Etiquetas, Datas, Checklists, Membros e Anexos.
  */
 
-const ACOES_PENDENTES = [
-  { id: "membros", rotulo: "Membros", Icone: Users },
-  { id: "anexos", rotulo: "Anexos", Icone: Paperclip },
-] as const;
 
 interface Props {
   cardId: string | null;
@@ -123,18 +120,18 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
           <div className="grid max-h-[70vh] grid-cols-1 gap-6 overflow-y-auto p-5 md:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
             {/* Coluna principal */}
             <div className="min-w-0 space-y-6">
-              {(cardId && boardId) || cartao.data?.dataEntrega ? (
+              {cardId ? (
                 <div className="flex flex-wrap items-center gap-2">
+                  {cardId && <CardMembersResumo cardId={cardId} />}
                   {cardId && boardId && <CardLabelsResumo cardId={cardId} boardId={boardId} />}
-                  {cardId && (
-                    <CardDueDateResumo
-                      cardId={cardId}
-                      boardId={boardId}
-                      dataEntrega={cartao.data?.dataEntrega ?? null}
-                    />
-                  )}
+                  <CardDueDateResumo
+                    cardId={cardId}
+                    boardId={boardId}
+                    dataEntrega={cartao.data?.dataEntrega ?? null}
+                  />
                 </div>
               ) : null}
+
 
               <section>
                 <h3 className="ds-body-strong mb-2 text-sm font-medium">Descrição</h3>
@@ -150,6 +147,9 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
               </section>
 
               {cardId && <CardChecklistCorpo cardId={cardId} />}
+
+              {cardId && <CardAttachmentsCorpo cardId={cardId} />}
+
 
               <Separator />
 
@@ -204,19 +204,9 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                   dataEntrega={cartao.data?.dataEntrega ?? null}
                 />
               )}
-              {ACOES_PENDENTES.map(({ id, rotulo, Icone }) => (
-                <Button
-                  key={id}
-                  variant="outline"
-                  size="sm"
-                  disabled
-                  title="Disponível em breve"
-                  className="w-full justify-start"
-                >
-                  <Icone className="mr-2 size-4" aria-hidden />
-                  {rotulo}
-                </Button>
-              ))}
+              {cardId && <CardMembersBotao cardId={cardId} />}
+              {cardId && <CardAttachmentsBotao cardId={cardId} boardId={boardId} />}
+
             </aside>
           </div>
         )}

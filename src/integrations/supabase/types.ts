@@ -427,6 +427,38 @@ export type Database = {
           },
         ]
       }
+      atividades_card_membros: {
+        Row: {
+          added_by: string | null
+          card_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          card_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          card_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_card_membros_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atividades_cards: {
         Row: {
           board_id: string
@@ -2795,6 +2827,16 @@ export type Database = {
         }[]
       }
       list_assignable_users: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          email: string
+          id: string
+          nome: string
+          role: string
+        }[]
+      }
+      list_equipe_users: {
         Args: never
         Returns: {
           avatar_url: string
