@@ -88,11 +88,16 @@ function Linha({
       >
         <span
           aria-hidden
-          className="size-5 shrink-0 overflow-hidden rounded-[6px] border border-border/60 bg-muted"
+          className="flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-[6px] border border-border/60 bg-muted text-[11px] leading-none"
           style={!p.capaUrl && p.cor ? { backgroundColor: p.cor } : undefined}
         >
-          {p.capaUrl ? <img src={p.capaUrl} alt="" className="size-full object-cover" /> : null}
+          {p.capaUrl ? (
+            <img src={p.capaUrl} alt="" className="size-full object-cover" />
+          ) : (
+            p.icone ?? null
+          )}
         </span>
+
 
         <span className="flex min-w-0 flex-1 items-baseline gap-2">
           <span className="truncate text-[13px] font-medium">{p.nome}</span>
