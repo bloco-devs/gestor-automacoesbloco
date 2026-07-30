@@ -1,6 +1,27 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Archive, ArchiveRestore, Inbox, Loader2, Plus, Search, Star, Users } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  Inbox,
+  Loader2,
+  Plus,
+  Search,
+  Star,
+  Trash2,
+  Users,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EmptyPanel } from "@/design-system";
