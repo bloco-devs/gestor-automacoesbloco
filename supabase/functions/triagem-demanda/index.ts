@@ -155,10 +155,11 @@ Deno.serve(async (req) => {
     }
 
     const sistemasBloco = sistemas.length
-      ? `\nSISTEMAS (use APENAS um destes slugs em sistema_alvo_slug, ou null):\n${sistemas
-          .map((s) => `- ${s.slug} — ${s.nome}`)
-          .join("\n")}`
+      ? `\nSISTEMAS (escolha EXATAMENTE um destes slugs em sistema_alvo_slug):\n${sistemas
+          .map((s) => `- ${s.slug} — ${s.nome}${s.grupo ? ` (área: ${s.grupo})` : ""}`)
+          .join("\n")}\nLembrete: se o texto mencionar qualquer uma dessas áreas ou sistemas (mesmo por sigla ou apelido), devolva o slug correspondente em vez de null.`
       : `\nSISTEMAS: (não fornecidos — devolva tipo_demanda e sistema_alvo_slug como null)`;
+
 
     const userMsg = `TÍTULO: ${titulo || "(sem título)"}
 SETOR: ${setor || "(não informado)"}
