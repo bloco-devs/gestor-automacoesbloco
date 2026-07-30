@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tag, X } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { LABEL_COLORS, labelColorClass, labelColorStyle } from "@/lib/atividades";
+import { LABEL_COLORS, labelColorStyle } from "@/lib/atividades";
+
 import {
   createEtiqueta,
   deleteEtiqueta,
