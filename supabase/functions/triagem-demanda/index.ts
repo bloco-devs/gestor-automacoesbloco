@@ -43,47 +43,77 @@ function normalizar(texto: string): string {
 
 /** Apelidos comuns por slug conhecido do ecossistema. */
 const APELIDOS: Record<string, string[]> = {
-  rh: ["rh", "recursos humanos", "departamento pessoal", "folha", "admissao", "ferias"],
+  rh: ["rh", "recursos humanos", "recurso humano", "departamento pessoal", "dp", "folha", "folha de pagamento", "admissao", "admissoes", "ferias", "colaboradores"],
   processos: ["processos", "processo", "sgpo"],
-  obra: ["obra", "obras", "canteiro"],
-  suprimentos: ["suprimentos", "compras", "almoxarifado"],
-  financeiro: ["financeiro", "financas", "contas a pagar", "contas a receber"],
+  obra: ["obra", "obras", "canteiro", "canteiro de obras"],
+  suprimentos: ["suprimentos", "compras", "almoxarifado", "estoque"],
+  financeiro: ["financeiro", "financas", "contas a pagar", "contas a receber", "tesouraria"],
   "gestao-comercial": ["comercial", "vendas"],
   "crm-house": ["crm"],
   portfolio: ["portfolio", "empreendimentos"],
-  incorporacao: ["incorporacao"],
-  "gestao-projetos": ["projetos"],
-  nakhon: ["contratos", "nakhon"],
+  incorporacao: ["incorporacao", "incorporadora"],
+  "gestao-projetos": ["projetos", "projeto"],
+  nakhon: ["contratos", "contrato", "nakhon"],
   atividades: ["atividades", "quadro", "kanban"],
-  automacoes: ["automacoes", "gestor de automacoes"],
+  automacoes: ["automacoes", "automacao", "gestor de automacoes"],
   viabuilder: ["viabuilder", "viabilidade"],
   "hub-bloco-id": ["bloco id", "hub", "sso", "login"],
 };
 
-/** Contém o termo como palavra inteira. */
-function mencionado(textoNorm: string, termo: string): boolean {
-  const t = normalizar(termo);
-  if (!t || t.length < 2) return false;
-  return new RegExp(`(^|\\s)${t.replace(/\s+/g, "\\s+")}($|\\s)`).test(textoNorm);
+/** Escapa metacaracteres para uso dentro de RegExp. */
+function escaparRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
- * Rede de segurança: quando o LLM devolve null, tenta inferir o sistema
- * a partir do texto (slug, nome cadastrado ou apelido conhecido).
- * Só decide quando há exatamente um candidato — ambiguidade continua null.
+ * Regex robusta com fronteiras de palavra e case-insensitive.
+ * Opera sobre o texto normalizado (sem acento), então os termos
+ * também são normalizados antes de compor o padrão.
+ */
+function construirRegex(termos: string[]): RegExp | null {
+  const partes = termos
+    .map((t) => normalizar(t))
+    .filter((t) => t.length >= 2)
+    .map((t) => escaparRegex(t).replace(/\s+/g, "\\s+"));
+  if (!partes.length) return null;
+  // \b funciona porque o texto normalizado só tem [a-z0-9\s].
+  return new RegExp(`\\b(?:${partes.join("|")})\\b`, "i");
+}
+
+/**
+ * Rede de segurança determinística: quando o LLM devolve null, infere o sistema
+ * a partir do texto (slug, nome cadastrado ou apelido conhecido) via regex.
+ * Com múltiplos candidatos, vence o de casamento mais longo (mais específico);
+ * empate real continua null.
  */
 function inferirSistema(
   texto: string,
   sistemas: Array<{ slug: string; nome: string }>,
-): string | null {
+): { slug: string | null; candidatos: Array<{ slug: string; termo: string }> } {
   const norm = normalizar(texto);
-  const candidatos = new Set<string>();
+  const candidatos: Array<{ slug: string; termo: string }> = [];
+
   for (const s of sistemas) {
     const termos = [s.slug.replace(/-/g, " "), s.nome, ...(APELIDOS[s.slug] ?? [])];
-    if (termos.some((t) => mencionado(norm, t))) candidatos.add(s.slug);
+    const re = construirRegex(termos);
+    if (!re) continue;
+    const m = norm.match(re);
+    if (m) candidatos.push({ slug: s.slug, termo: m[0] });
   }
-  return candidatos.size === 1 ? [...candidatos][0] : null;
+
+  if (!candidatos.length) return { slug: null, candidatos };
+
+  const unicos = new Set(candidatos.map((c) => c.slug));
+  if (unicos.size === 1) return { slug: candidatos[0].slug, candidatos };
+
+  // Desempate: termo casado mais longo (ex.: "recursos humanos" > "rh").
+  const ordenados = [...candidatos].sort((a, b) => b.termo.length - a.termo.length);
+  if (ordenados[0].termo.length > ordenados[1].termo.length) {
+    return { slug: ordenados[0].slug, candidatos };
+  }
+  return { slug: null, candidatos };
 }
+
 
 
 function getServiceClient() {
