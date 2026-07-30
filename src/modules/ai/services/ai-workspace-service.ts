@@ -51,6 +51,19 @@ export const aiWorkspaceService = {
       messages: conversation,
     }).then((r) => String(r.description ?? "").trim());
   },
+  /** Título curto (5–7 palavras). Best-effort: falhou, devolve "". */
+  async generateTitle(conversation: Conversation): Promise<string> {
+    try {
+      const r = await invoke<{ title?: string }>("assistente-demanda", {
+        action: "generate_title",
+        messages: conversation,
+      });
+      return String(r.title ?? "").trim();
+    } catch {
+      return "";
+    }
+  },
+
   triage(titulo: string, descricao: string, sistemas: Array<{ slug: string; nome: string }>) {
     return invoke<TriageResult>("triagem-demanda", { titulo, descricao, setor: "", sistemas });
   },
