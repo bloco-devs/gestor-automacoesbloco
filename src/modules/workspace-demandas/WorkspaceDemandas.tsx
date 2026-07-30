@@ -25,6 +25,16 @@ import { BoardLente } from "./components/BoardLente";
 import { GanttLente } from "./components/GanttLente";
 import { Copiloto } from "./components/Copiloto";
 
+const ETAPA_FORA_DO_FLUXO = "homologacao";
+
+function normalizarEtapa(rotulo: string): string {
+  return rotulo
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLocaleLowerCase("pt-BR");
+}
+
 /**
  * FEATURE 027 — Workspace de Demandas.
  *
@@ -114,7 +124,14 @@ export default function WorkspaceDemandas() {
   const contagens = useMemo(() => contarFilas(demandas, user?.id ?? null), [demandas, user?.id]);
   const daFila = useMemo(() => aplicarFila(demandas, fila, user?.id ?? null), [demandas, fila, user?.id]);
   const visiveis = useMemo(() => buscar(daFila, busca), [daFila, busca]);
-  const grupos = useMemo(() => agrupar(visiveis, lente), [visiveis, lente]);
+  const grupos = useMemo(
+    () => agrupar(visiveis, lente).filter((grupo) => normalizarEtapa(grupo.rotulo) !== ETAPA_FORA_DO_FLUXO),
+    [visiveis, lente],
+  );
+  const etapasVisiveis = useMemo(
+    () => etapas.filter((etapa) => normalizarEtapa(etapa.rotulo) !== ETAPA_FORA_DO_FLUXO),
+    [etapas],
+  );
   const resumo = useMemo(() => resumir(daFila), [daFila]);
 
   // Dois filtros diferentes sobre o que desenhar:
@@ -255,7 +272,7 @@ export default function WorkspaceDemandas() {
             {lente === "board" ? (
               <BoardLente
                 grupos={grupos}
-                etapas={etapas}
+                etapas={etapasVisiveis}
                 capacidades={capacidadesVisiveis}
                 sinais={sinais}
                 onAbrir={abrir}

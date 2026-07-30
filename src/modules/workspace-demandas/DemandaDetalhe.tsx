@@ -39,6 +39,16 @@ import { RascunhoDeArtigo } from "./demanda/RascunhoDeArtigo";
 import { Fio } from "./demanda/Fio";
 import { CopilotoDaDemanda } from "./demanda/CopilotoDaDemanda";
 
+const ETAPA_FORA_DO_FLUXO = "homologacao";
+
+function normalizarEtapa(rotulo: string): string {
+  return rotulo
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLocaleLowerCase("pt-BR");
+}
+
 /**
  * `/demandas/:id` — a página mais importante do sistema.
  *
@@ -149,7 +159,14 @@ export default function DemandaDetalhe() {
   );
 
   const progressao = useMemo(
-    () => (demanda ? montarProgressao(demanda, eventos, etapas) : null),
+    () =>
+      demanda
+        ? montarProgressao(
+            demanda,
+            eventos,
+            etapas.filter((etapa) => normalizarEtapa(etapa.rotulo) !== ETAPA_FORA_DO_FLUXO),
+          )
+        : null,
     [demanda, eventos, etapas],
   );
 
