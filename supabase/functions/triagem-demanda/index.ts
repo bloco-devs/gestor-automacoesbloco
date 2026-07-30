@@ -194,13 +194,33 @@ ${descricao}${sistemasBloco}`;
 
     const TIPOS_VALIDOS = new Set(["ajuste_existente", "novo_modulo", "novo_sistema"]);
     const tipoRaw = typeof parsed.tipo_demanda === "string" ? parsed.tipo_demanda.trim() : null;
-    const tipo_demanda = tipoRaw && TIPOS_VALIDOS.has(tipoRaw) ? tipoRaw : null;
+    let tipo_demanda = tipoRaw && TIPOS_VALIDOS.has(tipoRaw) ? tipoRaw : null;
 
     const slugRaw = typeof parsed.sistema_alvo_slug === "string" ? parsed.sistema_alvo_slug.trim() : null;
-    let sistema_alvo_slug: string | null = null;
-    if (slugRaw && slugsValidos.has(slugRaw) && tipo_demanda !== "novo_sistema") {
-      sistema_alvo_slug = slugRaw;
+    let sistema_alvo_slug: string | null =
+      slugRaw && slugsValidos.has(slugRaw) ? slugRaw : null;
+
+    // Um sistema válido não é descartado por erro de tipo: se o modelo apontou
+    // "novo_sistema" mas indicou um sistema existente, o caso real é novo módulo.
+    if (sistema_alvo_slug && tipo_demanda === "novo_sistema") {
+      tipo_demanda = "novo_modulo";
     }
+
+    // Rede de segurança determinística — só quando o LLM não identificou nada.
+    let inferido = false;
+    if (!sistema_alvo_slug && sistemas.length) {
+      const palpite = inferirSistema(`${titulo} ${descricao} ${setor}`, sistemas);
+      if (palpite) {
+        sistema_alvo_slug = palpite;
+        inferido = true;
+        if (!tipo_demanda || tipo_demanda === "novo_sistema") tipo_demanda = "novo_modulo";
+      }
+    }
+
+    const justificativaBase =
+      typeof parsed.justificativa === "string" && parsed.justificativa.trim()
+        ? parsed.justificativa.trim().slice(0, 500)
+        : "Estimativa gerada com base na descrição fornecida.";
 
     const resposta = {
       frequencia: clamp10(parsed.frequencia),
@@ -209,11 +229,11 @@ ${descricao}${sistemasBloco}`;
       complexidade_dev: clamp10(parsed.complexidade_dev),
       tipo_demanda,
       sistema_alvo_slug,
-      justificativa:
-        typeof parsed.justificativa === "string" && parsed.justificativa.trim()
-          ? parsed.justificativa.trim().slice(0, 500)
-          : "Estimativa gerada com base na descrição fornecida.",
+      justificativa: inferido
+        ? `${justificativaBase} Sistema identificado pela menção direta no texto da demanda.`.slice(0, 600)
+        : justificativaBase,
     };
+
 
     return new Response(JSON.stringify(resposta), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
