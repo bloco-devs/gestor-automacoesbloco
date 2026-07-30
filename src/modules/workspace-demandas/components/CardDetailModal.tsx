@@ -169,9 +169,9 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                   {(comentarios.data ?? []).map((c) => (
                     <li key={c.id} className="rounded-lg border bg-muted/30 p-3">
                       <p className="text-xs text-muted-foreground">
-                        {c.userEmail ?? "Alguém"} ·{" "}
                         {new Date(c.createdAt).toLocaleString("pt-BR")}
                       </p>
+
                       <p className="mt-1 whitespace-pre-wrap text-sm">{c.texto}</p>
                     </li>
                   ))}
