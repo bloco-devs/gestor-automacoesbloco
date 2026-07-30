@@ -388,7 +388,15 @@ export function SelecaoDeProjetos() {
               description={
                 busca
                   ? "Tente outro termo."
-                  : "Quando houver um projeto com demandas, ele aparece aqui."
+                  : "Crie um quadro para começar a organizar o trabalho."
+              }
+              action={
+                busca ? undefined : (
+                  <Button size="sm" onClick={() => setCriando(true)} className="gap-1.5">
+                    <Plus className="size-3.5" aria-hidden />
+                    Criar quadro
+                  </Button>
+                )
               }
             />
           </div>
@@ -406,6 +414,14 @@ export function SelecaoDeProjetos() {
           </div>
         )}
       </div>
+
+      <NovoProjetoDialog
+        open={criando}
+        onOpenChange={setCriando}
+        salvando={salvando}
+        onCriar={(nome) => void aoCriar(nome)}
+      />
     </div>
   );
 }
+
