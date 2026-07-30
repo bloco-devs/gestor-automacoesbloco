@@ -1,6 +1,27 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Archive, ArchiveRestore, Inbox, Loader2, Plus, Search, Star, Users } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  Inbox,
+  Loader2,
+  Plus,
+  Search,
+  Star,
+  Trash2,
+  Users,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EmptyPanel } from "@/design-system";
@@ -12,10 +33,12 @@ import {
   INBOX_ID,
   useCriarProjeto,
   useDemandas,
+  useExcluirProjeto,
   useProjetos,
   type Escopo,
   type ProjetoNaLista,
 } from "@/modules/demand-access";
+import type { IdentidadeDoProjeto } from "@/modules/demand-access";
 import { NovoProjetoDialog } from "./NovoProjetoDialog";
 
 /**
@@ -55,12 +78,21 @@ function Linha({
   onAbrir,
   onArquivar,
   onRestaurar,
+  onExcluir,
+
 }: {
   projeto: ProjetoNaLista;
   onAbrir: (id: string) => void;
   onArquivar: (p: ProjetoNaLista) => void;
   onRestaurar: (p: ProjetoNaLista) => void;
+  /**
+   * Excluir de vez. Só chega aqui nas linhas arquivadas: arquivar é o caminho
+   * normal, e excluir é o que se faz com o que já foi tirado da frente e não
+   * vai voltar — teste, duplicado, quadro criado por engano.
+   */
+  onExcluir?: (p: ProjetoNaLista) => void;
 }) {
+
   return (
     /**
      * A linha deixou de ser um <button> e virou um <div> com o botão dentro.
@@ -88,11 +120,16 @@ function Linha({
       >
         <span
           aria-hidden
-          className="size-5 shrink-0 overflow-hidden rounded-[6px] border border-border/60 bg-muted"
+          className="flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-[6px] border border-border/60 bg-muted text-[11px] leading-none"
           style={!p.capaUrl && p.cor ? { backgroundColor: p.cor } : undefined}
         >
-          {p.capaUrl ? <img src={p.capaUrl} alt="" className="size-full object-cover" /> : null}
+          {p.capaUrl ? (
+            <img src={p.capaUrl} alt="" className="size-full object-cover" />
+          ) : (
+            p.icone ?? null
+          )}
         </span>
+
 
         <span className="flex min-w-0 flex-1 items-baseline gap-2">
           <span className="truncate text-[13px] font-medium">{p.nome}</span>
@@ -140,8 +177,21 @@ function Linha({
         >
           {p.arquivado ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
         </Button>
+        {p.arquivado && onExcluir && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground hover:text-destructive"
+            onClick={() => onExcluir(p)}
+            aria-label={`Excluir ${p.nome}`}
+            title="Excluir"
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        )}
       </span>
     </div>
+
   );
 }
 
@@ -211,6 +261,7 @@ export function SelecaoDeProjetos() {
     false,
     (v): v is boolean => typeof v === "boolean",
   );
+  const [aExcluir, setAExcluir] = useState<ProjetoNaLista | null>(null);
   const { projetos, carregando, erro, arquivar, restaurar } = useProjetos({
     incluirArquivados: mostrarArquivados,
   });
@@ -274,14 +325,32 @@ export function SelecaoDeProjetos() {
     }
   };
 
+  const exclusao = useExcluirProjeto();
+
+  const aoExcluir = async () => {
+    const p = aExcluir;
+    if (!p) return;
+    try {
+      await exclusao.excluir(p.id);
+      setAExcluir(null);
+      toast({ title: `${p.nome} foi excluído` });
+    } catch (e) {
+      toast({
+        title: "Não foi possível excluir",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
   /**
    * Criar e entrar. Um quadro recém-criado está vazio por definição: deixar a
    * pessoa na lista, olhando o nome novo, obrigaria um segundo clique para
    * chegar onde ela já queria estar.
    */
-  const aoCriar = async (nome: string) => {
+  const aoCriar = async (nome: string, identidade: IdentidadeDoProjeto) => {
     try {
-      const id = await criar(nome);
+      const id = await criar(nome, identidade);
       setCriando(false);
       toast({ title: `${nome} foi criado`, description: "Já com A Fazer, Em Andamento e Concluído." });
       navigate(`/workspace/demandas/${id}`);
@@ -409,6 +478,7 @@ export function SelecaoDeProjetos() {
                 onAbrir={abrir}
                 onArquivar={(x) => void aoArquivar(x)}
                 onRestaurar={(x) => void aoRestaurar(x)}
+                onExcluir={(x) => setAExcluir(x)}
               />
             ))}
           </div>
@@ -419,8 +489,33 @@ export function SelecaoDeProjetos() {
         open={criando}
         onOpenChange={setCriando}
         salvando={salvando}
-        onCriar={(nome) => void aoCriar(nome)}
+        onCriar={(nome, identidade) => void aoCriar(nome, identidade)}
       />
+
+      <AlertDialog open={!!aExcluir} onOpenChange={(o) => !o && setAExcluir(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir “{aExcluir?.nome}”?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza? Isso apagará todas as tarefas deste quadro e não pode ser
+              desfeito.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={exclusao.salvando}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={exclusao.salvando}
+              onClick={(e) => {
+                e.preventDefault();
+                void aoExcluir();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {exclusao.salvando ? "Excluindo…" : "Excluir quadro"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

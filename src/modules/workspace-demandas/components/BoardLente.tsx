@@ -17,11 +17,13 @@ import {
   CircleDot,
   Circle,
   Eye,
+  Plus,
   Sparkles,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { EmptyPanel } from "@/design-system";
+
 import {
   PRIORIDADE_ROTULO,
   RISCO_ROTULO,
@@ -376,6 +378,94 @@ function ColunaRecolhida({ grupo, onExpandir }: { grupo: Grupo; onExpandir: () =
   );
 }
 
+/**
+ * Compor cartão sem sair da coluna.
+ *
+ * Dentro de um projeto, criar item é a ação mais repetida do dia, e mandá-la
+ * para o assistente de IA (que classifica, sugere sistema e abre demanda) é
+ * caro para "Revisar contrato". O botão vira campo, Enter grava, Esc desiste, e
+ * o campo continua aberto para o próximo — quem está esvaziando a cabeça digita
+ * cinco itens seguidos, não um.
+ *
+ * Só existe onde há coluna de banco para receber: a tela passa o callback
+ * apenas em escopo de projeto.
+ */
+function ComporCartao({
+  onCriar,
+  salvando,
+}: {
+  onCriar: (titulo: string) => void | Promise<void>;
+  salvando?: boolean;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const [titulo, setTitulo] = useState("");
+
+  async function gravar() {
+    const limpo = titulo.trim();
+    if (!limpo || salvando) return;
+    await onCriar(limpo);
+    setTitulo("");
+  }
+
+  if (!aberto) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        className="mx-0.5 mt-1 flex w-[calc(100%-0.25rem)] items-center gap-1.5 rounded-lg px-2 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:bg-muted"
+      >
+        <Plus className="size-3.5 shrink-0" aria-hidden />
+        Adicionar um cartão
+      </button>
+    );
+  }
+
+  return (
+    <div className="mx-0.5 mt-1 space-y-1.5">
+      <textarea
+        autoFocus
+        rows={2}
+        value={titulo}
+        disabled={salvando}
+        placeholder="Título do cartão"
+        aria-label="Título do novo cartão"
+        onChange={(e) => setTitulo(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            void gravar();
+          }
+          if (e.key === "Escape") {
+            setTitulo("");
+            setAberto(false);
+          }
+        }}
+        className="w-full resize-none rounded-lg border border-border bg-card px-2 py-1.5 text-xs text-foreground shadow-sm placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      />
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          disabled={!titulo.trim() || salvando}
+          onClick={() => void gravar()}
+          className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          {salvando ? "Salvando…" : "Adicionar"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setTitulo("");
+            setAberto(false);
+          }}
+          className="rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Coluna({
   grupo,
   capacidades,
@@ -385,6 +475,8 @@ function Coluna({
   onRecolher,
   onAssumir,
   assumindo,
+  onCriarCartao,
+  criandoCartao,
 }: {
   grupo: Grupo;
   capacidades: Capacidades;
@@ -394,9 +486,12 @@ function Coluna({
   onRecolher?: () => void;
   onAssumir?: (id: string) => void;
   assumindo?: (id: string) => boolean;
+  onCriarCartao?: (titulo: string) => void | Promise<void>;
+  criandoCartao?: boolean;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
   const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
+
   const IconeDaEtapa = tinta.icone;
 
   return (
@@ -501,7 +596,11 @@ function Coluna({
             )}
           </div>
         )}
+        {onCriarCartao ? (
+          <ComporCartao onCriar={onCriarCartao} salvando={criandoCartao} />
+        ) : null}
       </div>
+
     </section>
   );
 }
@@ -536,6 +635,13 @@ interface Props {
    */
   onAssumir?: (id: string) => void;
   assumindo?: (id: string) => boolean;
+  /**
+   * Criar cartão direto na coluna. Sem isto o "+ Adicionar um cartão" não
+   * aparece — quem sabe se existe coluna de banco para receber é a tela, e na
+   * Inbox não existe.
+   */
+  onCriarCartao?: (params: { statusId: string; titulo: string }) => void | Promise<void>;
+  criandoCartao?: boolean;
 }
 
 function BoardLenteImpl({
@@ -549,7 +655,10 @@ function BoardLenteImpl({
   vazio,
   onAssumir,
   assumindo,
+  onCriarCartao,
+  criandoCartao,
 }: Props) {
+
   const [arrastando, setArrastando] = useState<Demanda | null>(null);
   const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
   const [jaVistas, setJaVistas] = useState<Set<string>>(new Set());
@@ -648,7 +757,14 @@ function BoardLenteImpl({
               onRecolher={g.concluido ? () => alternar(g.id) : undefined}
               onAssumir={onAssumir}
               assumindo={assumindo}
+              onCriarCartao={
+                onCriarCartao
+                  ? (titulo) => onCriarCartao({ statusId: g.id, titulo })
+                  : undefined
+              }
+              criandoCartao={criandoCartao}
             />
+
           ),
         )}
       </div>

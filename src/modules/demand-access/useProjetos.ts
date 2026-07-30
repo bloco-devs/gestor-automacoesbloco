@@ -20,6 +20,9 @@ export interface ProjetoNaLista {
   nome: string;
   descricao: string | null;
   cor: string | null;
+  /** Emoji escolhido na criação; preenche o quadradinho quando não há capa. */
+  icone: string | null;
+
   /** URL exibível. `BoardResumo.coverUrl` é caminho de storage, não URL. */
   capaUrl: string | null;
   abertas: number;
@@ -93,6 +96,8 @@ export function useProjetos(
           nome: b.nome,
           descricao: b.descricao,
           cor: b.cor,
+          icone: b.icone,
+
           capaUrl: capasQ.data?.[b.id] ?? null,
           abertas: b.cardsAbertos,
           total: b.totalCards,

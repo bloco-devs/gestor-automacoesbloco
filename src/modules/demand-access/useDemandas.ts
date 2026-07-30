@@ -95,8 +95,16 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
       });
       const r = projetoQ.data;
       const projeto: ProjetoAtual | null = r
-        ? { id: r.id, nome: r.nome, descricao: r.descricao, cor: r.cor, capaUrl: capaQ.data ?? null }
+        ? {
+            id: r.id,
+            nome: r.nome,
+            descricao: r.descricao,
+            cor: r.cor,
+            icone: r.icone,
+            capaUrl: capaQ.data ?? null,
+          }
         : null;
+
 
       return {
         demandas,

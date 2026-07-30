@@ -12,7 +12,10 @@ export { useMoverDemanda, type MoverDemanda } from "./useMoverDemanda";
 export { resolverFonte, projetoDoEscopo } from "./resolverFonte";
 export { useProjetos } from "./useProjetos";
 export { useCriarDemanda } from "./useCriarDemanda";
-export { useCriarProjeto } from "./useCriarProjeto";
+export { useCriarProjeto, type IdentidadeDoProjeto } from "./useCriarProjeto";
+export { useExcluirProjeto } from "./useExcluirProjeto";
+export { useCriarCartao } from "./useCriarCartao";
+
 export { useFioDaDemanda } from "./useFioDaDemanda";
 export { useChecklist, type ItemDaLista } from "./useChecklist";
 export { useAnexos, type AnexoExibivel } from "./useAnexos";

@@ -31,7 +31,10 @@ export interface ProjetoAtual {
   nome: string;
   descricao: string | null;
   cor: string | null;
+  /** Emoji escolhido na criação. Ocupa o quadradinho do cabeçalho quando não há capa. */
+  icone?: string | null;
   capaUrl: string | null;
+
 }
 
 /** Uma etapa do caminho da demanda, na ordem em que a fonte a define. */
