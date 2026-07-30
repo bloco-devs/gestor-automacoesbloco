@@ -1,7 +1,23 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, ChevronDown, Inbox, LayoutGrid } from "lucide-react";
+import { Check, ChevronDown, Inbox, LayoutGrid, MoreHorizontal, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import type { Resumo } from "@/domain/demand";
 import { INBOX_ID, useProjetos, type ProjetoAtual } from "@/modules/demand-access";
@@ -27,27 +43,42 @@ import { INBOX_ID, useProjetos, type ProjetoAtual } from "@/modules/demand-acces
  * O `⌄` ao lado do nome é o seletor de projeto. Ele existe aqui para que trocar
  * de projeto deixe de exigir uma viagem à página de quadros — que era o último
  * ponto do fluxo com vocabulário de Trello.
+ *
+ * O `⋯` é o que se faz COM o quadro, não dentro dele. Hoje só excluir: é a
+ * única ação de quadro que não tem lugar nenhum na tela de trabalho e que
+ * obrigava uma viagem à experiência antiga de Atividades. Ela pede confirmação
+ * porque leva os cartões com ela — arquivar continua sendo o caminho normal,
+ * na lista de projetos.
  */
 
 interface Props {
   projeto: ProjetoAtual;
   resumo: Resumo;
   onFila: (fila: "em_risco" | "sem_responsavel") => void;
+  /** Sem isto o `⋯` não aparece: quem sabe se dá para excluir é a tela. */
+  onExcluir?: () => void | Promise<void>;
+  excluindo?: boolean;
 }
 
-function ContextoDoProjetoImpl({ projeto, resumo, onFila }: Props) {
+function ContextoDoProjetoImpl({ projeto, resumo, onFila, onExcluir, excluindo }: Props) {
   const navigate = useNavigate();
   const { projetos } = useProjetos();
+  const [confirmando, setConfirmando] = useState(false);
 
   return (
     <div className="flex min-w-0 items-center gap-2.5">
       <span
         aria-hidden
-        className="size-[18px] shrink-0 overflow-hidden rounded-[5px] border border-border/60 bg-muted"
+        className="flex size-[18px] shrink-0 items-center justify-center overflow-hidden rounded-[5px] border border-border/60 bg-muted text-[10px] leading-none"
         style={!projeto.capaUrl && projeto.cor ? { backgroundColor: projeto.cor } : undefined}
       >
-        {projeto.capaUrl ? <img src={projeto.capaUrl} alt="" className="size-full object-cover" /> : null}
+        {projeto.capaUrl ? (
+          <img src={projeto.capaUrl} alt="" className="size-full object-cover" />
+        ) : (
+          projeto.icone ?? null
+        )}
       </span>
+
 
       <Popover>
         <PopoverTrigger
@@ -111,6 +142,57 @@ function ContextoDoProjetoImpl({ projeto, resumo, onFila }: Props) {
           </div>
         </PopoverContent>
       </Popover>
+
+      {onExcluir ? (
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Ações do quadro"
+                className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:bg-muted"
+              >
+                <MoreHorizontal className="size-3.5" aria-hidden />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuItem
+                onSelect={() => setConfirmando(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 size-3.5" aria-hidden /> Excluir quadro
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <AlertDialog open={confirmando} onOpenChange={setConfirmando}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir “{projeto.nome}”?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza? Isso apagará todas as tarefas deste quadro. Se você só quer
+                  tirá-lo da frente, arquive em Todos os projetos.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={excluindo}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={excluindo}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void onExcluir();
+                  }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {excluindo ? "Excluindo…" : "Excluir quadro"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      ) : null}
+
+
 
       <span className="h-4 w-px shrink-0 bg-border" aria-hidden />
 

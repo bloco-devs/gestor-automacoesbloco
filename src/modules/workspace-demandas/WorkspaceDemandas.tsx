@@ -6,7 +6,16 @@ import { usePreferencia } from "@/hooks/usePreferencia";
 import { useAuth } from "@/hooks/useAuth";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
 import { cn } from "@/lib/utils";
-import { useAcoesDemanda, useDemandas, ehInbox, type Escopo } from "@/modules/demand-access";
+import { toast } from "sonner";
+import {
+  useAcoesDemanda,
+  useCriarCartao,
+  useDemandas,
+  useExcluirProjeto,
+  ehInbox,
+  type Escopo,
+} from "@/modules/demand-access";
+
 import {
   agrupar,
   aplicarFila,
@@ -120,6 +129,10 @@ export default function WorkspaceDemandas() {
 
   const { demandas, projeto, etapas, capacidades, carregando, erro } = useDemandas(escopo);
   const acoes = useAcoesDemanda(escopo);
+  // Criar e excluir só existem em escopo de projeto: é lá que há board e coluna.
+  const cartoes = useCriarCartao(!naInbox && projetoId ? projetoId : null);
+  const exclusao = useExcluirProjeto();
+
 
   const contagens = useMemo(() => contarFilas(demandas, user?.id ?? null), [demandas, user?.id]);
   const daFila = useMemo(() => aplicarFila(demandas, fila, user?.id ?? null), [demandas, fila, user?.id]);
@@ -178,7 +191,22 @@ export default function WorkspaceDemandas() {
       contextoInbox
     ) : projeto ? (
       <>
-        <ContextoDoProjeto projeto={projeto} resumo={resumo} onFila={(f) => trocar("fila", f)} />
+        <ContextoDoProjeto
+          projeto={projeto}
+          resumo={resumo}
+          onFila={(f) => trocar("fila", f)}
+          excluindo={exclusao.salvando}
+          onExcluir={async () => {
+            try {
+              await exclusao.excluir(projeto.id);
+              toast.success("Quadro excluído.");
+              navigate("/workspace/demandas");
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Não foi possível excluir o quadro.");
+            }
+          }}
+        />
+
         <button
           type="button"
           onClick={() => setCopiloto(!copiloto)}
@@ -278,6 +306,21 @@ export default function WorkspaceDemandas() {
                 onAbrir={abrir}
                 onMover={({ demandaId, statusId }) => void acoes.mover({ demandaId, statusId })}
                 podeMover={acoes.podeMover}
+                criandoCartao={cartoes.salvando}
+                onCriarCartao={
+                  !naInbox && projetoId
+                    ? async ({ statusId, titulo }) => {
+                        try {
+                          await cartoes.criar({ colunaId: statusId, titulo });
+                        } catch (e) {
+                          toast.error(
+                            e instanceof Error ? e.message : "Não foi possível criar o cartão.",
+                          );
+                        }
+                      }
+                    : undefined
+                }
+
                 vazio={{
                   titulo: busca ? "Nenhuma demanda encontrada" : "Nada nesta fila",
                   descricao: busca
