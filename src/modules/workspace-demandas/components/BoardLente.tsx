@@ -247,6 +247,22 @@ function Cartao({
           title={d.risco ? RISCO_ROTULO[d.risco] : undefined}
         />
         <div className="min-w-0 flex-1">
+          {(capa?.etiquetas.length ?? 0) > 0 && (
+            /* BARRAS DE ETIQUETA — cor antes de texto. Elas ficam acima de
+               tudo porque a pergunta que respondem ("que tipo de item é
+               este?") é de visão periférica, não de leitura. */
+            <div className="mb-1.5 flex flex-wrap items-center gap-1">
+              {capa!.etiquetas.map((e) => (
+                <span
+                  key={e.id}
+                  title={e.nome ?? "Etiqueta"}
+                  aria-label={e.nome ?? "Etiqueta"}
+                  className="h-1.5 w-8 rounded-full"
+                  style={{ backgroundColor: e.cor }}
+                />
+              ))}
+            </div>
+          )}
           {sistemaNome && (
             // ETIQUETA DE SISTEMA — estilo Trello: o dev bate o olho e sabe de
             // qual sistema é a tarefa antes mesmo de ler o título.
@@ -277,7 +293,41 @@ function Cartao({
               <span className="ml-auto">{direita}</span>
             </div>
           )}
+          {(d.prazo || (capa?.membros.length ?? 0) > 0) && (
+            /* RODAPÉ DA CAPA — prazo à esquerda, quem está nisso à direita.
+               É a linha que responde "para quando" e "com quem" sem abrir o
+               cartão; ela só existe quando há uma das duas coisas. */
+            <div className="mt-1.5 flex items-center gap-2">
+              {d.prazo ? (
+                <span
+                  className="flex items-center gap-1 rounded px-1 py-0.5 text-[11px] text-muted-foreground"
+                  title={`Entrega em ${new Date(d.prazo).toLocaleDateString("pt-BR")}`}
+                >
+                  <Clock className="size-3 shrink-0" aria-hidden />
+                  <span className="tabular-nums">{prazoCurto(d.prazo)}</span>
+                </span>
+              ) : null}
+              {(capa?.membros.length ?? 0) > 0 && (
+                <span className="ml-auto flex items-center -space-x-1.5">
+                  {capa!.membros.slice(0, 4).map((m) => (
+                    <Avatar key={m.id} className="size-6 border border-card" title={m.nome}>
+                      {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.nome} />}
+                      <AvatarFallback className="bg-muted text-[9px]">
+                        {iniciais(m.nome)}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {capa!.membros.length > 4 && (
+                    <span className="flex size-6 items-center justify-center rounded-full border border-card bg-muted text-[9px] font-medium text-muted-foreground">
+                      +{capa!.membros.length - 4}
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
+          )}
         </div>
+
       </div>
     </div>
   );
