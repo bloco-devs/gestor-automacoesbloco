@@ -24,6 +24,7 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { labelColorStyle } from "@/lib/atividades";
 import { EmptyPanel } from "@/design-system";
 
 import {
