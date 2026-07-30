@@ -842,6 +842,7 @@ function BoardLenteImpl({
                   : undefined
               }
               criandoCartao={criandoCartao}
+              capas={capas}
             />
 
           ),
@@ -856,10 +857,12 @@ function BoardLenteImpl({
               sinais={sinais}
               arrastavel
               sobreposicao
+              capa={capas?.get(arrastando.id)}
               tom={tomDaEtapa(
                 grupos.find((g) => g.itens.some((i) => i.id === arrastando.id))?.rotulo ?? "",
               )}
             />
+
           </div>
         ) : null}
       </DragOverlay>
