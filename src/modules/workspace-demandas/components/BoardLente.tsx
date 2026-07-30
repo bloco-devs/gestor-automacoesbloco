@@ -644,6 +644,8 @@ function Coluna({
             onAssumir={onAssumir}
             assumindo={assumindo?.(d.id)}
             tom={tomDaEtapa(grupo.rotulo)}
+            capa={capas?.get(d.id)}
+
           />
         ))}
         {grupo.itens.length === 0 && (
