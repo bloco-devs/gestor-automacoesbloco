@@ -358,7 +358,7 @@ export function SelecaoDeProjetos() {
             onClick={() => setMostrarArquivados(!mostrarArquivados)}
             aria-pressed={mostrarArquivados}
             className={cn(
-              "ds-caption ml-auto flex items-center gap-1.5 rounded-md px-2 py-1",
+              "ds-caption flex items-center gap-1.5 rounded-md px-2 py-1",
               "transition-colors duration-fast ease-standard",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
               mostrarArquivados
