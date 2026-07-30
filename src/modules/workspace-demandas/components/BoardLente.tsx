@@ -134,6 +134,7 @@ function Cartao({
     id: d.id,
     disabled: !arrastavel || sobreposicao,
   });
+  const [labelsExpanded, setLabelsExpanded] = useState(false);
   const responsavel = d.responsaveis[0];
 
   const sistemaNome = sinais.sistema ? d.sistema?.nome ?? null : null;
