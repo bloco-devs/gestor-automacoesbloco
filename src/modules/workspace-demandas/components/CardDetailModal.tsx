@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CalendarDays,
-  CheckSquare,
-  Loader2,
-  Paperclip,
-  Tag,
-  Users,
-} from "lucide-react";
+import { Loader2, Paperclip, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   createComentario,
@@ -22,23 +15,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { CardLabelsBotao, CardLabelsResumo } from "./card/CardLabels";
+import { CardDueDateBotao, CardDueDateResumo } from "./card/CardDueDate";
+import { CardChecklistBotao, CardChecklistCorpo } from "./card/CardChecklist";
 
 /**
  * Modal de detalhe do cartão — estilo Trello.
  *
- * ESCOPO DESTA ETAPA
- * A estrutura visual e os dois campos que já têm tabela: título e descrição
- * (em `atividades_cards`) e comentários (`atividades_comentarios`). A barra
- * lateral é deliberadamente inerte: membros, etiquetas, checklist, datas e
- * anexos ganham comportamento em etapas próprias, cada uma com sua tabela.
- * Botão desabilitado é mais honesto que botão que abre um popover vazio.
+ * ESCOPO ATUAL
+ * Título, descrição e comentários (tabelas de `atividades_*`), além dos módulos
+ * isolados de Etiquetas, Datas e Checklists. Membros e Anexos seguem inertes
+ * até ganharem sua própria etapa.
  */
 
-const ACOES_LATERAIS = [
+const ACOES_PENDENTES = [
   { id: "membros", rotulo: "Membros", Icone: Users },
-  { id: "etiquetas", rotulo: "Etiquetas", Icone: Tag },
-  { id: "checklist", rotulo: "Checklist", Icone: CheckSquare },
-  { id: "datas", rotulo: "Datas", Icone: CalendarDays },
   { id: "anexos", rotulo: "Anexos", Icone: Paperclip },
 ] as const;
 
@@ -132,6 +123,19 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
           <div className="grid max-h-[70vh] grid-cols-1 gap-6 overflow-y-auto p-5 md:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
             {/* Coluna principal */}
             <div className="min-w-0 space-y-6">
+              {(cardId && boardId) || cartao.data?.dataEntrega ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {cardId && boardId && <CardLabelsResumo cardId={cardId} boardId={boardId} />}
+                  {cardId && (
+                    <CardDueDateResumo
+                      cardId={cardId}
+                      boardId={boardId}
+                      dataEntrega={cartao.data?.dataEntrega ?? null}
+                    />
+                  )}
+                </div>
+              ) : null}
+
               <section>
                 <h3 className="ds-body-strong mb-2 text-sm font-medium">Descrição</h3>
                 <Textarea
@@ -144,6 +148,8 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                   placeholder="Adicione uma descrição mais detalhada…"
                 />
               </section>
+
+              {cardId && <CardChecklistCorpo cardId={cardId} />}
 
               <Separator />
 
@@ -189,7 +195,16 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
               <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Adicionar ao cartão
               </h3>
-              {ACOES_LATERAIS.map(({ id, rotulo, Icone }) => (
+              {cardId && boardId && <CardLabelsBotao cardId={cardId} boardId={boardId} />}
+              {cardId && <CardChecklistBotao cardId={cardId} />}
+              {cardId && (
+                <CardDueDateBotao
+                  cardId={cardId}
+                  boardId={boardId}
+                  dataEntrega={cartao.data?.dataEntrega ?? null}
+                />
+              )}
+              {ACOES_PENDENTES.map(({ id, rotulo, Icone }) => (
                 <Button
                   key={id}
                   variant="outline"
