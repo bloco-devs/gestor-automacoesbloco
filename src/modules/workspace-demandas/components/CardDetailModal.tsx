@@ -53,15 +53,18 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
   });
 
   const [titulo, setTitulo] = useState("");
-  const [descricao, setDescricao] = useState("");
+  const [descValue, setDescValue] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
   const [comentario, setComentario] = useState("");
 
   useEffect(() => {
     if (cartao.data) {
       setTitulo(cartao.data.titulo);
-      setDescricao(cartao.data.descricao ?? "");
+      setDescValue(cartao.data.descricao ?? "");
+      setIsEditing(false);
     }
   }, [cartao.data]);
+
 
   const invalidar = () => {
     void qc.invalidateQueries({ queryKey: ["atividades", "card", cardId] });
@@ -117,9 +120,9 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
             <span className="sr-only">Carregando cartão…</span>
           </div>
         ) : (
-          <div className="grid max-h-[70vh] grid-cols-1 gap-6 overflow-y-auto p-5 md:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
+          <div className="grid max-h-[70vh] grid-cols-1 gap-6 overflow-y-auto p-5 md:grid-cols-4">
             {/* Coluna principal */}
-            <div className="min-w-0 space-y-6">
+            <div className="min-w-0 space-y-6 md:col-span-3">
               {cardId ? (
                 <div className="flex flex-wrap items-center gap-2">
                   {cardId && <CardMembersResumo cardId={cardId} />}
@@ -135,16 +138,56 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
 
               <section>
                 <h3 className="ds-body-strong mb-2 text-sm font-medium">Descrição</h3>
-                <Textarea
-                  value={descricao}
-                  onChange={(e) => setDescricao(e.target.value)}
-                  onBlur={() => {
-                    if (descricao !== (cartao.data?.descricao ?? "")) salvar.mutate({ descricao });
-                  }}
-                  rows={7}
-                  placeholder="Adicione uma descrição mais detalhada…"
-                />
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={descValue}
+                      onChange={(e) => setDescValue(e.target.value)}
+                      rows={7}
+                      autoFocus
+                      placeholder="Adicione uma descrição mais detalhada…"
+                      className="transition-all duration-300 ease-in-out"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        disabled={salvar.isPending}
+                        onClick={() => {
+                          salvar.mutate({ descricao: descValue });
+                          setIsEditing(false);
+                        }}
+                      >
+                        Salvar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setDescValue(cartao.data?.descricao ?? "");
+                          setIsEditing(false);
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="w-full rounded-md bg-muted/40 p-3 text-left text-sm transition-colors duration-300 ease-in-out hover:bg-muted"
+                  >
+                    {descValue ? (
+                      <span className="whitespace-pre-wrap">{descValue}</span>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        Adicionar uma descrição mais detalhada…
+                      </span>
+                    )}
+                  </button>
+                )}
               </section>
+
 
               {cardId && <CardChecklistCorpo cardId={cardId} />}
 
@@ -191,7 +234,7 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
             </div>
 
             {/* Barra lateral */}
-            <aside className="space-y-2">
+            <aside className="space-y-2 md:col-span-1">
               <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Adicionar ao cartão
               </h3>

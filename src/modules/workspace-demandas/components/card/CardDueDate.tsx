@@ -3,7 +3,7 @@ import { CalendarDays, X } from "lucide-react";
 import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -39,22 +39,62 @@ function useSalvarData({ cardId, boardId, onSalvo }: Omit<Props, "dataEntrega">)
 
 export function CardDueDateResumo({ cardId, boardId, dataEntrega, onSalvo }: Props) {
   const salvar = useSalvarData({ cardId, boardId, onSalvo });
+  const selecionada: Date | undefined = dataEntrega ? new Date(dataEntrega) : undefined;
   if (!dataEntrega) return null;
   return (
-    <Badge variant="secondary" className="gap-1.5">
-      <CalendarDays className="size-3.5" aria-hidden />
-      {format(new Date(dataEntrega), "dd 'de' MMM, yyyy", { locale: ptBR })}
+    <div className="flex items-center gap-1">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label="Alterar data de entrega"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded bg-muted px-2 py-1 text-xs font-medium text-foreground transition-colors duration-300 ease-in-out hover:bg-muted/60"
+          >
+            <CalendarDays className="size-3.5" aria-hidden />
+            {format(new Date(dataEntrega), "dd 'de' MMM, yyyy", { locale: ptBR })}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto p-0">
+          <Calendar
+            mode="single"
+            required={false}
+            locale={ptBR}
+            selected={selecionada}
+            defaultMonth={selecionada}
+            onSelect={(d: Date | undefined) => {
+              if (!d) {
+                salvar.mutate(null);
+                return;
+              }
+              const normalizada = new Date(
+                d.getFullYear(),
+                d.getMonth(),
+                d.getDate(),
+                12,
+                0,
+                0,
+                0,
+              );
+              salvar.mutate(normalizada.toISOString());
+            }}
+            modifiersClassNames={{ today: "" }}
+            initialFocus
+            className="pointer-events-auto p-3"
+          />
+        </PopoverContent>
+      </Popover>
       <button
         type="button"
         aria-label="Remover data de entrega"
-        className="ml-1 rounded hover:text-destructive"
+        className="rounded p-1 text-muted-foreground transition-colors duration-300 ease-in-out hover:text-destructive"
         onClick={() => salvar.mutate(null)}
       >
         <X className="size-3" aria-hidden />
       </button>
-    </Badge>
+    </div>
   );
 }
+
 
 export function CardDueDateBotao({ cardId, boardId, dataEntrega, onSalvo }: Props) {
   const salvar = useSalvarData({ cardId, boardId, onSalvo });
