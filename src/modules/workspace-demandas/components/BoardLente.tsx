@@ -16,10 +16,12 @@ import {
   ChevronRight,
   CircleDot,
   Circle,
+  Clock,
   Eye,
   Plus,
   Sparkles,
 } from "lucide-react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { EmptyPanel } from "@/design-system";
