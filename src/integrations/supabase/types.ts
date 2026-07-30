@@ -1248,6 +1248,7 @@ export type Database = {
           sla_status: Database["public"]["Enums"]["demand_sla_status"]
           status: Database["public"]["Enums"]["demand_status"]
           system_id: string | null
+          ticket_code: string
           title: string
           type: Database["public"]["Enums"]["demand_type"]
           updated_at: string
@@ -1270,6 +1271,7 @@ export type Database = {
           sla_status?: Database["public"]["Enums"]["demand_sla_status"]
           status?: Database["public"]["Enums"]["demand_status"]
           system_id?: string | null
+          ticket_code: string
           title: string
           type?: Database["public"]["Enums"]["demand_type"]
           updated_at?: string
@@ -1292,6 +1294,7 @@ export type Database = {
           sla_status?: Database["public"]["Enums"]["demand_sla_status"]
           status?: Database["public"]["Enums"]["demand_status"]
           system_id?: string | null
+          ticket_code?: string
           title?: string
           type?: Database["public"]["Enums"]["demand_type"]
           updated_at?: string
@@ -2626,6 +2629,7 @@ export type Database = {
         Args: { _demand_id: string; _user_id?: string }
         Returns: boolean
       }
+      demand_prefixo: { Args: { _system_id: string }; Returns: string }
       get_my_role: { Args: never; Returns: string }
       get_user_workloads: {
         Args: never

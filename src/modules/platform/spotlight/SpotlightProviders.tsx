@@ -15,15 +15,21 @@ export function SpotlightProviders() {
   useEffect(() => {
     searchRegistry.registerProvider("solicitacao", () => {
       const demands = qc.getQueryData<Demand[]>(["demands"]) ?? [];
-      return demands.slice(0, 60).map((d) => ({
-        id: d.id,
-        type: "solicitacao" as const,
-        label: d.title,
-        description: `#${d.id.slice(0, 8)} · ${d.status} · ${d.priority}`,
-        keywords: [d.priority, d.type, d.status, d.id.slice(0, 8)],
-        route: `/workspace?d=${d.id}`,
-        icon: Ticket,
-      }));
+      return demands.slice(0, 60).map((d) => {
+        // O código de rastreio é o que a pessoa tem na mão (num e-mail, num
+        // print). Buscar por ele precisa funcionar.
+        const ref = d.ticket_code ?? `#${d.id.slice(0, 8)}`;
+        return {
+          id: d.id,
+          type: "solicitacao" as const,
+          label: d.title,
+          description: `${ref} · ${d.status} · ${d.priority}`,
+          keywords: [ref, d.priority, d.type, d.status, d.id.slice(0, 8)],
+          route: `/workspace?d=${d.id}`,
+          icon: Ticket,
+        };
+      });
+
     });
 
     // Favoritos globais aparecem como itens "nav" (topo dos resultados)

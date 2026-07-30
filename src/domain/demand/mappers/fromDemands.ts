@@ -48,9 +48,15 @@ const STATUS_META: Record<DemandStatus, { rotulo: string; categoria: StatusCateg
   concluido: { rotulo: "Concluída", categoria: "concluida", ordem: 5 },
 };
 
-function referenciaCurta(id: string): string {
-  return `#${id.replace(/-/g, "").slice(0, 6)}`;
+/**
+ * O código de rastreio da demanda (`RH-2607-0001`), gerado pelo banco.
+ * O recorte do UUID fica só como rede para linhas antigas em cache que ainda
+ * não trazem a coluna — um identificador ilegível é melhor que nenhum.
+ */
+function referenciaDe(d: Demand): string {
+  return d.ticket_code ?? `#${d.id.replace(/-/g, "").slice(0, 6)}`;
 }
+
 
 export interface EntradaDemands {
   demands: Demand[];
@@ -108,7 +114,7 @@ export function fromDemands({
 
     return {
       id: d.id,
-      referencia: referenciaCurta(d.id),
+      referencia: referenciaDe(d),
       titulo: d.title,
       descricao: d.description ?? "",
 
