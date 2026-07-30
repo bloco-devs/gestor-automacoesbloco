@@ -55,6 +55,8 @@ function Linha({
   onAbrir,
   onArquivar,
   onRestaurar,
+  onExcluir,
+
 }: {
   projeto: ProjetoNaLista;
   onAbrir: (id: string) => void;
