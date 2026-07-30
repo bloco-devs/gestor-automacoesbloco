@@ -592,20 +592,14 @@ function BoardLenteImpl({
   }, [etapas, grupos]);
 
   /**
-   * ESTEIRA INTEIRA VAZIA É UMA FRASE, NÃO SEIS CAIXAS
+   * COLUNAS SÃO ESTRUTURA, NÃO CONTEÚDO
    *
-   * Mostrar as colunas quando NENHUMA tem cartão faz a tela dizer a mesma
-   * coisa seis vezes, em forma de retângulo tracejado — e quem olha entende
-   * "quebrou", não "não há nada aqui". As colunas existem para mostrar o
-   * caminho quando há trabalho andando por ele; sem trabalho nenhum, o que a
-   * pessoa precisa é de uma frase e de uma saída.
-   *
-   * Com pelo menos um cartão, as colunas vazias voltam a ser informação —
-   * "ninguém está testando nada" é diferente de "não há nada".
+   * Um quadro recém-criado nasce com colunas e zero cartões: é exatamente o
+   * momento em que a pessoa precisa ver as colunas para arrastar algo para
+   * dentro. Por isso o vazio só aparece quando a fonte não devolveu coluna
+   * nenhuma; havendo colunas, elas são desenhadas mesmo todas vazias.
    */
-  const totalDeCartoes = colunas.reduce((n, g) => n + g.itens.length, 0);
-
-  if (colunas.length === 0 || totalDeCartoes === 0) {
+  if (colunas.length === 0) {
     return (
       <EmptyPanel
         title={vazio?.titulo ?? "Nada nesta fila"}
@@ -613,6 +607,7 @@ function BoardLenteImpl({
       />
     );
   }
+
 
   const alternar = (id: string) =>
     setRecolhidas((r) => {
