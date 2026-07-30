@@ -120,3 +120,36 @@ graph LR
 - **FKs restritivas** entre board → colunas/cards/labels/anexos (delete controlado pela RPC `atividades_board_delete`).
 - **Guards** (triggers) preferidos a CHECK constraints para lógica temporal.
 - Detalhamento de policies por tabela vive em `docs/RLS_AUDIT.md` e no schema (39 tabelas × N policies).
+
+## Helpdesk × Projetos: dois contextos, dois arquivados
+
+São dois modelos de trabalho distintos e **não compartilham tabela nem estado de arquivamento**:
+
+| | Helpdesk (Inbox) | Projetos (Quadros) |
+| --- | --- | --- |
+| Tabela de itens | `demands` | `atividades_cards` |
+| Etapas | enum `demand_status` (fixo) | `atividades_colunas` (por quadro) |
+| Encerrar item | `status = 'concluido'`, `deleted_at` para descarte | `concluido = true` |
+| Arquivar contêiner | não existe (a Inbox é única) | `atividades_boards.arquivado` |
+| Hook de leitura | `useDemands` | `useAtividadesBoard` |
+
+Consequências práticas:
+
+- Arquivar um quadro (`atividades_board_set_arquivado`) **não** afeta nenhuma linha
+  de `demands`. O filtro "Arquivados" da lista de projetos lê apenas
+  `atividades_boards.arquivado`.
+- Encerrar/descartar uma demanda de helpdesk **não** afeta cards de quadro.
+- Não há FK entre os dois mundos: `demands` não tem `board_id`/`projeto_id`. A
+  ligação, quando existir, será uma decisão explícita de produto — hoje a
+  separação é estrutural e intencional.
+- A tradução para a linguagem de produto ("projeto" = quadro) mora em
+  `src/modules/demand-access/useProjetos.ts` e `useCriarProjeto.ts`; nenhuma tela
+  conhece o nome da tabela.
+
+### Colunas padrão de um novo quadro
+
+`atividades_create_board` cria o quadro, o membro `owner`, o registro de
+histórico e exatamente **três** colunas — `A Fazer`, `Em Andamento`,
+`Concluído` — na mesma transação. Antes de 2026-07-30 eram cinco (com `Backlog`
+e `Em Revisão`); quadros criados antes disso mantêm as colunas originais.
+
