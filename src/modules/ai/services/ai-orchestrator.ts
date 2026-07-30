@@ -67,6 +67,20 @@ function deriveTitulo(descricao: string): string {
 }
 
 /**
+ * Rede de segurança: mesmo com o prompt estrito, o título nunca passa de
+ * 7 palavras e nunca termina em pontuação.
+ */
+function enxugarTitulo(titulo: string): string {
+  const limpo = titulo.trim().replace(/^["'`]|["'`]$/g, "").replace(/\s+/g, " ");
+  if (!limpo) return "Nova solicitação";
+  const palavras = limpo.split(" ");
+  const cortado = palavras.length > 7 ? palavras.slice(0, 7).join(" ") : limpo;
+  const semPonto = cortado.replace(/[.,;:]+$/, "");
+  return semPonto.charAt(0).toUpperCase() + semPonto.slice(1);
+}
+
+
+/**
  * Fachada única consumida pelo AI Workspace.
  * O Workspace só conversa com o Orchestrator — NUNCA diretamente com
  * Edge Functions, Supabase ou serviços específicos.
@@ -116,7 +130,10 @@ export const aiOrchestrator = {
    */
   async finalize(input: OrchestratorFinalizeInput): Promise<OrchestratorFinalizeResult> {
     const descricao = await aiWorkspaceService.generateDescription(input.conversation);
-    const titulo = deriveTitulo(descricao);
+    const titulo = enxugarTitulo(
+      (await aiWorkspaceService.generateTitle(input.conversation)) || deriveTitulo(descricao),
+    );
+
     const [triagem, similares] = await Promise.all([
       aiWorkspaceService.triage(titulo, descricao, input.sistemas),
       aiWorkspaceService.similar(titulo, descricao),

@@ -117,13 +117,15 @@ function Cartao({
   });
   const responsavel = d.responsaveis[0];
 
+  const sistemaNome = sinais.sistema ? d.sistema?.nome ?? null : null;
+
   const meta = [
     sinais.prioridade && d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
-    sinais.sistema ? (d.sistema?.nome ?? null) : null,
     sinais.referencia ? d.referencia : null,
   ]
     .filter(Boolean)
     .join(" · ");
+
 
   const podeAssumir = !responsavel && !!onAssumir && !sobreposicao;
 
@@ -226,7 +228,18 @@ function Cartao({
           title={d.risco ? RISCO_ROTULO[d.risco] : undefined}
         />
         <div className="min-w-0 flex-1">
+          {sistemaNome && (
+            // ETIQUETA DE SISTEMA — estilo Trello: o dev bate o olho e sabe de
+            // qual sistema é a tarefa antes mesmo de ler o título.
+            <span
+              title={`Sistema: ${sistemaNome}`}
+              className="mb-1 inline-flex max-w-full items-center truncate rounded-sm bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+            >
+              {sistemaNome}
+            </span>
+          )}
           <div className="flex items-start gap-2">
+
             <p
               className={cn(
                 "line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug",

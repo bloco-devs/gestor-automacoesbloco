@@ -69,9 +69,10 @@ Deno.serve(async (req) => {
 
   try {
     const { action, messages } = (await req.json()) as {
-      action: "next_question" | "generate_description";
+      action: "next_question" | "generate_description" | "generate_title";
       messages: ChatMessage[];
     };
+
 
     if (!action || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "Payload inválido" }), {
@@ -115,6 +116,26 @@ Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeraç�
       });
     }
 
+    if (action === "generate_title") {
+      const system = `Com base na conversa entre o assistente e o solicitante, escreva o TÍTULO da demanda.
+
+REGRA ESTRITA: o título deve ser extremamente resumido, direto e claro, contendo no máximo 5 a 7 palavras. Deixe os detalhes apenas para a descrição.
+- Sem ponto final, sem aspas, sem prefixos como "Título:".
+- Português do Brasil, usando as palavras do solicitante.
+- Retorne apenas o título, nada mais.`;
+      const data = await callAI(
+        {
+          model: "google/gemini-3-flash-preview",
+          messages: [{ role: "system", content: system }, ...messages],
+        },
+        { acao: "assistente-demanda:generate_title", userId },
+      ) as any;
+      const title: string = data.choices?.[0]?.message?.content?.trim() ?? "";
+      return new Response(JSON.stringify({ title }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "generate_description") {
       const system = `Com base na conversa abaixo entre o assistente e o solicitante, escreva uma DESCRIÇÃO DA DEMANDA em português, em 1 a 2 parágrafos, em primeira pessoa do solicitante, de forma objetiva e completa. Não inclua perguntas, não use bullet points, não inclua título. Retorne apenas o texto da descrição.`;
       const data = await callAI(
@@ -129,6 +150,7 @@ Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeraç�
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     return new Response(JSON.stringify({ error: "Ação desconhecida" }), {
       status: 400,
