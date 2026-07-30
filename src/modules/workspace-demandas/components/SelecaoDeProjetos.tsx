@@ -274,6 +274,28 @@ export function SelecaoDeProjetos() {
     }
   };
 
+  /**
+   * Criar e entrar. Um quadro recém-criado está vazio por definição: deixar a
+   * pessoa na lista, olhando o nome novo, obrigaria um segundo clique para
+   * chegar onde ela já queria estar.
+   */
+  const aoCriar = async (nome: string) => {
+    try {
+      const id = await criar(nome);
+      setCriando(false);
+      toast({ title: `${nome} foi criado`, description: "Já com A Fazer, Em Andamento e Concluído." });
+      navigate(`/workspace/demandas/${id}`);
+    } catch (e) {
+      toast({
+        title: "Não foi possível criar o quadro",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+
+
   useContextoDeHeader(
     <span className="text-[13px] font-medium text-foreground">
       Projetos{" "}
