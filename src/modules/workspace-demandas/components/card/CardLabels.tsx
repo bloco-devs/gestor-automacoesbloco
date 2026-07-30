@@ -62,8 +62,8 @@ export function CardLabelsResumo({ cardId, boardId }: { cardId: string; boardId:
       {selecionadas.map((e) => (
         <span
           key={e.id}
-          className={`overflow-hidden whitespace-nowrap text-xs font-medium transition-all duration-300 ease-in-out ${
-            isExpanded ? "h-auto w-auto rounded px-3 py-1" : "h-2 w-12 rounded-full"
+          className={`overflow-hidden whitespace-nowrap rounded-md text-xs font-medium transition-all duration-300 ease-in-out ${
+            isExpanded ? "h-auto w-auto px-3 py-1" : "h-2 w-12"
           }`}
           style={labelColorStyle(e.cor)}
         >
