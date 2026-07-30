@@ -89,6 +89,13 @@ function iniciais(nome: string): string {
   return nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
 }
 
+/** Data curta ("12 mar") — o cartão não tem largura para data completa. */
+function prazoCurto(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
+}
+
 function Cartao({
   demanda: d,
   capacidades,
@@ -99,6 +106,7 @@ function Cartao({
   onAssumir,
   assumindo,
   tom = "neutro",
+  capa,
 }: {
   demanda: Demanda;
   capacidades: Capacidades;
@@ -114,7 +122,14 @@ function Cartao({
    */
   onAssumir?: (id: string) => void;
   assumindo?: boolean;
+  /**
+   * A CAPA — etiquetas e membros do cartão, lidos em lote pela tela.
+   * Opcional de propósito: na Inbox (fonte `demands`) não existe etiqueta de
+   * quadro nem membro de cartão, e o cartão fica exatamente como era.
+   */
+  capa?: CapaResolvida;
 }) {
+
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: d.id,
     disabled: !arrastavel || sobreposicao,
