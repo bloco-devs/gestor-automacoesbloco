@@ -328,7 +328,9 @@ export default function WorkspaceDemandas() {
                 onAbrir={abrir}
                 onMover={({ demandaId, statusId }) => void acoes.mover({ demandaId, statusId })}
                 podeMover={acoes.podeMover}
+                capas={capas}
                 criandoCartao={cartoes.salvando}
+
                 onCriarCartao={
                   !naInbox && projetoId
                     ? async ({ statusId, titulo }) => {
