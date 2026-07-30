@@ -24,6 +24,7 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { labelColorStyle } from "@/lib/atividades";
 import { EmptyPanel } from "@/design-system";
 
 import {
@@ -273,7 +274,7 @@ function Cartao({
                     "overflow-hidden whitespace-nowrap rounded-md text-[10px] font-medium leading-tight transition-all duration-300 ease-in-out",
                     labelsExpanded ? "h-auto w-auto px-2 py-0.5" : "h-2 w-10",
                   )}
-                  style={{ backgroundColor: e.cor }}
+                  style={labelColorStyle(e.cor)}
                 >
                   <span
                     className={cn(
