@@ -114,7 +114,7 @@ export function fromDemands({
 
     return {
       id: d.id,
-      referencia: referenciaCurta(d.id),
+      referencia: referenciaDe(d),
       titulo: d.title,
       descricao: d.description ?? "",
 
