@@ -160,6 +160,16 @@ export default function WorkspaceDemandas() {
 
   const sinais = useMemo(() => sinaisUteis(visiveis), [visiveis]);
 
+  /**
+   * A CAPA dos cartões — etiquetas e membros, em lote, só em escopo de
+   * projeto. Na Inbox não existe etiqueta de quadro nem membro de cartão, e
+   * buscar seria pagar uma consulta para receber nada.
+   */
+  const emProjeto = !naInbox && Boolean(projetoId);
+  const idsVisiveis = useMemo(() => visiveis.map((d) => d.id), [visiveis]);
+  const capas = useCapasDosCards(emProjeto ? idsVisiveis : [], emProjeto);
+
+
   // O detalhe tem endereço próprio. Era a mudança estrutural que faltava para
   // uma demanda poder ser colada num Slack ou num e-mail.
   // Em escopo de PROJETO o cartão abre no modal (estilo Trello): o detalhe é
