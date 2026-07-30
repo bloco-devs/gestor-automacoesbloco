@@ -69,9 +69,10 @@ Deno.serve(async (req) => {
 
   try {
     const { action, messages } = (await req.json()) as {
-      action: "next_question" | "generate_description";
+      action: "next_question" | "generate_description" | "generate_title";
       messages: ChatMessage[];
     };
+
 
     if (!action || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "Payload inválido" }), {
