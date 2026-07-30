@@ -130,9 +130,11 @@ Deno.serve(async (req) => {
       .map((s) => ({
         slug: String(s?.slug ?? s?.id ?? "").trim(),
         nome: String(s?.nome ?? "").trim(),
+        grupo: String(s?.grupo ?? "").trim(),
       }))
       .filter((s) => s.slug && s.nome)
       .slice(0, 60);
+
     const slugsValidos = new Set(sistemas.map((s) => s.slug));
 
     if (!descricao || descricao.length < 10) {
