@@ -60,7 +60,14 @@ function Linha({
   onAbrir: (id: string) => void;
   onArquivar: (p: ProjetoNaLista) => void;
   onRestaurar: (p: ProjetoNaLista) => void;
+  /**
+   * Excluir de vez. Só chega aqui nas linhas arquivadas: arquivar é o caminho
+   * normal, e excluir é o que se faz com o que já foi tirado da frente e não
+   * vai voltar — teste, duplicado, quadro criado por engano.
+   */
+  onExcluir?: (p: ProjetoNaLista) => void;
 }) {
+
   return (
     /**
      * A linha deixou de ser um <button> e virou um <div> com o botão dentro.
