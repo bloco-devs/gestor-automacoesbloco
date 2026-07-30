@@ -36,7 +36,7 @@ import {
   tomDaEtapa,
   type TomDaEtapa,
 } from "@/domain/demand";
-import type { EtapaDaFonte } from "@/modules/demand-access";
+import type { CapaResolvida, CapasResolvidas, EtapaDaFonte } from "@/modules/demand-access";
 
 /**
  * A lente de board.
