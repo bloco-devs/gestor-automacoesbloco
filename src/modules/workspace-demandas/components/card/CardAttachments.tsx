@@ -53,6 +53,25 @@ export function CardAttachmentsCorpo({ cardId }: { cardId: string }) {
     }
   };
 
+  /**
+   * MINIATURAS — o bucket é privado, então não existe URL pública: cada
+   * imagem ganha um link assinado próprio, com validade curta e re-uso via
+   * cache do react-query.
+   */
+  const imagens = (anexos.data ?? []).filter(ehImagem);
+  const previews = useQueries({
+    queries: imagens.map((a) => ({
+      queryKey: ["atividades", "anexo-preview", a.id] as const,
+      queryFn: () => getDownloadUrl(a),
+      staleTime: 4 * 60_000,
+    })),
+  });
+  const urlPor = new Map<string, string>();
+  imagens.forEach((a, i) => {
+    const url = previews[i]?.data;
+    if (typeof url === "string") urlPor.set(a.id, url);
+  });
+
   if (anexos.isLoading) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -66,36 +85,56 @@ export function CardAttachmentsCorpo({ cardId }: { cardId: string }) {
     <section>
       <h3 className="mb-2 text-sm font-medium">Anexos</h3>
       <ul className="space-y-2">
-        {(anexos.data ?? []).map((a) => (
-          <li
-            key={a.id}
-            className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm"
-          >
-            <Paperclip className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-            <span className="min-w-0 flex-1 truncate">{a.filename}</span>
-            <span className="shrink-0 text-xs text-muted-foreground">{tamanho(a.sizeBytes)}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              aria-label={`Baixar ${a.filename}`}
-              onClick={() => void abrir(a)}
-            >
-              <Download className="size-4" aria-hidden />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 hover:text-destructive"
-              aria-label={`Remover ${a.filename}`}
-              disabled={remover.isPending}
-              onClick={() => remover.mutate(a)}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          </li>
-        ))}
+        {(anexos.data ?? []).map((a) => {
+          const preview = ehImagem(a) ? urlPor.get(a.id) : undefined;
+          return (
+            <li key={a.id} className="overflow-hidden rounded-lg border bg-muted/30">
+              {preview && (
+                <button
+                  type="button"
+                  className="block w-full"
+                  onClick={() => void abrir(a)}
+                  aria-label={`Abrir ${a.filename}`}
+                >
+                  <img
+                    src={preview}
+                    alt={a.filename}
+                    loading="lazy"
+                    className="h-32 w-full object-cover"
+                  />
+                </button>
+              )}
+              <div className="flex items-center gap-2 px-3 py-2 text-sm">
+                <Paperclip className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{a.filename}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {tamanho(a.sizeBytes)}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  aria-label={`Baixar ${a.filename}`}
+                  onClick={() => void abrir(a)}
+                >
+                  <Download className="size-4" aria-hidden />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 hover:text-destructive"
+                  aria-label={`Remover ${a.filename}`}
+                  disabled={remover.isPending}
+                  onClick={() => remover.mutate(a)}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
+
     </section>
   );
 }
