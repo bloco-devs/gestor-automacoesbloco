@@ -544,6 +544,7 @@ function Coluna({
   assumindo,
   onCriarCartao,
   criandoCartao,
+  capas,
 }: {
   grupo: Grupo;
   capacidades: Capacidades;
@@ -555,7 +556,9 @@ function Coluna({
   assumindo?: (id: string) => boolean;
   onCriarCartao?: (titulo: string) => void | Promise<void>;
   criandoCartao?: boolean;
+  capas?: CapasResolvidas;
 }) {
+
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
   const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
 
