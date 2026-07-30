@@ -154,8 +154,21 @@ function Linha({
         >
           {p.arquivado ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
         </Button>
+        {p.arquivado && onExcluir && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground hover:text-destructive"
+            onClick={() => onExcluir(p)}
+            aria-label={`Excluir ${p.nome}`}
+            title="Excluir"
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        )}
       </span>
     </div>
+
   );
 }
 
