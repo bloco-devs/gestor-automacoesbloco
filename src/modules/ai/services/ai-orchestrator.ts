@@ -116,7 +116,10 @@ export const aiOrchestrator = {
    */
   async finalize(input: OrchestratorFinalizeInput): Promise<OrchestratorFinalizeResult> {
     const descricao = await aiWorkspaceService.generateDescription(input.conversation);
-    const titulo = deriveTitulo(descricao);
+    const titulo = enxugarTitulo(
+      (await aiWorkspaceService.generateTitle(input.conversation)) || deriveTitulo(descricao),
+    );
+
     const [triagem, similares] = await Promise.all([
       aiWorkspaceService.triage(titulo, descricao, input.sistemas),
       aiWorkspaceService.similar(titulo, descricao),
