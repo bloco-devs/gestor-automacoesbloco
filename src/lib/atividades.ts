@@ -395,28 +395,46 @@ export interface CreateCardInput {
 export async function createCard(input: CreateCardInput): Promise<AtividadeCard> {
   const ids = input.responsavelIds ?? [];
   const personaIds = input.responsavelPersonaIds ?? [];
+  /**
+   * `prioridade` é NOT NULL no banco (default 'media'). Enviar `null` explícito
+   * fazia o PostgREST devolver 400 — a causa do bug de criação inline. Só
+   * mandamos a coluna quando há valor; o default cobre o resto.
+   */
+  const payload: Record<string, unknown> = {
+    board_id: input.boardId,
+    coluna_id: input.colunaId,
+    titulo: input.titulo,
+    descricao: input.descricao ?? "",
+    responsavel_id: ids[0] ?? null,
+    responsavel_ids: ids,
+    responsavel_persona_ids: personaIds,
+    solucao_id: input.solucaoId ?? null,
+    checklist: input.checklist ?? [],
+    links: input.links ?? [],
+    created_by: input.createdBy ?? null,
+    ordem: input.ordem ?? 0,
+    data_entrega: input.dataEntrega ?? null,
+    cover_cor: input.coverCor ?? null,
+  };
+  if (input.prioridade) payload.prioridade = input.prioridade;
+
   const { data, error } = await sb
     .from("atividades_cards")
-    .insert({
-      board_id: input.boardId,
-      coluna_id: input.colunaId,
-      titulo: input.titulo,
-      descricao: input.descricao ?? "",
-      responsavel_id: ids[0] ?? null,
-      responsavel_ids: ids,
-      responsavel_persona_ids: personaIds,
-      solucao_id: input.solucaoId ?? null,
-      checklist: input.checklist ?? [],
-      links: input.links ?? [],
-      created_by: input.createdBy ?? null,
-      ordem: input.ordem ?? 0,
-      data_entrega: input.dataEntrega ?? null,
-      prioridade: input.prioridade ?? null,
-      cover_cor: input.coverCor ?? null,
-    })
+    .insert(payload)
     .select(SELECT_COLS)
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error("[createCard] falha ao inserir cartão", {
+      boardId: input.boardId,
+      colunaId: input.colunaId,
+      titulo: input.titulo,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      message: error.message,
+    });
+    throw error;
+  }
   const labelIds = input.labelIds ?? [];
   if (labelIds.length > 0) {
     await setCardLabels(data.id, labelIds);

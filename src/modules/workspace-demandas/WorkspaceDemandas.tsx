@@ -33,6 +33,7 @@ import { ListaLente } from "./components/ListaLente";
 import { BoardLente } from "./components/BoardLente";
 import { GanttLente } from "./components/GanttLente";
 import { Copiloto } from "./components/Copiloto";
+import { CardDetailModal } from "./components/CardDetailModal";
 
 const ETAPA_FORA_DO_FLUXO = "homologacao";
 
@@ -76,6 +77,7 @@ export default function WorkspaceDemandas() {
   const { projetoId } = useParams<{ projetoId: string }>();
   const [params, setParams] = useSearchParams();
   const [busca, setBusca] = useState("");
+  const [cartaoAberto, setCartaoAberto] = useState<string | null>(null);
   /**
    * Fechar o painel precisa CONTINUAR fechado.
    *
@@ -160,8 +162,16 @@ export default function WorkspaceDemandas() {
 
   // O detalhe tem endereço próprio. Era a mudança estrutural que faltava para
   // uma demanda poder ser colada num Slack ou num e-mail.
-  const abrir = (id: string) =>
-    navigate(`/demandas/${id}${projetoId && !naInbox ? `?projeto=${projetoId}` : ""}`);
+  // Em escopo de PROJETO o cartão abre no modal (estilo Trello): o detalhe é
+  // edição rápida, não uma página. Na Inbox continua indo para a rota própria,
+  // porque lá a demanda é um ticket com fio de conversa e SLA.
+  const abrir = (id: string) => {
+    if (projetoId && !naInbox) {
+      setCartaoAberto(id);
+      return;
+    }
+    navigate(`/demandas/${id}`);
+  };
 
   // A Inbox não tem projeto para descrever, mas precisa dizer onde a pessoa
   // está e quanto trabalho aguarda classificação — senão o header cai no
@@ -362,6 +372,12 @@ export default function WorkspaceDemandas() {
           )}
         </div>
       </div>
+
+      <CardDetailModal
+        cardId={cartaoAberto}
+        boardId={!naInbox && projetoId ? projetoId : null}
+        onFechar={() => setCartaoAberto(null)}
+      />
     </div>
   );
 }
