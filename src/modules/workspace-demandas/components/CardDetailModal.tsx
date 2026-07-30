@@ -148,6 +148,9 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
 
               {cardId && <CardChecklistCorpo cardId={cardId} />}
 
+              {cardId && <CardAttachmentsCorpo cardId={cardId} />}
+
+
               <Separator />
 
               <section>
