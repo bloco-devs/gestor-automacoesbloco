@@ -120,18 +120,18 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
           <div className="grid max-h-[70vh] grid-cols-1 gap-6 overflow-y-auto p-5 md:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
             {/* Coluna principal */}
             <div className="min-w-0 space-y-6">
-              {(cardId && boardId) || cartao.data?.dataEntrega ? (
+              {cardId ? (
                 <div className="flex flex-wrap items-center gap-2">
+                  {cardId && <CardMembersResumo cardId={cardId} />}
                   {cardId && boardId && <CardLabelsResumo cardId={cardId} boardId={boardId} />}
-                  {cardId && (
-                    <CardDueDateResumo
-                      cardId={cardId}
-                      boardId={boardId}
-                      dataEntrega={cartao.data?.dataEntrega ?? null}
-                    />
-                  )}
+                  <CardDueDateResumo
+                    cardId={cardId}
+                    boardId={boardId}
+                    dataEntrega={cartao.data?.dataEntrega ?? null}
+                  />
                 </div>
               ) : null}
+
 
               <section>
                 <h3 className="ds-body-strong mb-2 text-sm font-medium">Descrição</h3>
@@ -201,19 +201,9 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                   dataEntrega={cartao.data?.dataEntrega ?? null}
                 />
               )}
-              {ACOES_PENDENTES.map(({ id, rotulo, Icone }) => (
-                <Button
-                  key={id}
-                  variant="outline"
-                  size="sm"
-                  disabled
-                  title="Disponível em breve"
-                  className="w-full justify-start"
-                >
-                  <Icone className="mr-2 size-4" aria-hidden />
-                  {rotulo}
-                </Button>
-              ))}
+              {cardId && <CardMembersBotao cardId={cardId} />}
+              {cardId && <CardAttachmentsBotao cardId={cardId} boardId={boardId} />}
+
             </aside>
           </div>
         )}
