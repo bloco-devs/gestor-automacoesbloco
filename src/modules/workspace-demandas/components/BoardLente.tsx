@@ -248,21 +248,45 @@ function Cartao({
         />
         <div className="min-w-0 flex-1">
           {(capa?.etiquetas.length ?? 0) > 0 && (
-            /* BARRAS DE ETIQUETA — cor antes de texto. Elas ficam acima de
-               tudo porque a pergunta que respondem ("que tipo de item é
-               este?") é de visão periférica, não de leitura. */
-            <div className="mb-1.5 flex flex-wrap items-center gap-1">
+            /* BARRAS DE ETIQUETA — cor antes de texto, igual ao modal: clique
+               expande para mostrar o nome, com stopPropagation para não abrir
+               o cartão nem iniciar o arrasto. */
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setLabelsExpanded((v) => !v);
+              }}
+              aria-expanded={labelsExpanded}
+              aria-label={labelsExpanded ? "Recolher etiquetas" : "Expandir etiquetas"}
+              className="mb-1.5 flex flex-wrap items-center gap-1 rounded-md"
+            >
               {capa!.etiquetas.map((e) => (
                 <span
                   key={e.id}
                   title={e.nome ?? "Etiqueta"}
-                  aria-label={e.nome ?? "Etiqueta"}
-                  className="h-1.5 w-8 rounded-full"
+                  className={cn(
+                    "overflow-hidden whitespace-nowrap rounded-md text-[10px] font-medium leading-tight transition-all duration-300 ease-in-out",
+                    labelsExpanded ? "h-auto w-auto px-2 py-0.5" : "h-2 w-10",
+                  )}
                   style={{ backgroundColor: e.cor }}
-                />
+                >
+                  <span
+                    className={cn(
+                      "transition-opacity duration-300 ease-in-out",
+                      labelsExpanded ? "opacity-100" : "opacity-0",
+                    )}
+                  >
+                    {labelsExpanded ? e.nome || "Sem nome" : ""}
+                  </span>
+                </span>
               ))}
-            </div>
+            </button>
           )}
+
           {sistemaNome && (
             // ETIQUETA DE SISTEMA — estilo Trello: o dev bate o olho e sabe de
             // qual sistema é a tarefa antes mesmo de ler o título.
