@@ -12,6 +12,7 @@ export { useMoverDemanda, type MoverDemanda } from "./useMoverDemanda";
 export { resolverFonte, projetoDoEscopo } from "./resolverFonte";
 export { useProjetos } from "./useProjetos";
 export { useCriarDemanda } from "./useCriarDemanda";
+export { useCriarProjeto } from "./useCriarProjeto";
 export { useFioDaDemanda } from "./useFioDaDemanda";
 export { useChecklist, type ItemDaLista } from "./useChecklist";
 export { useAnexos, type AnexoExibivel } from "./useAnexos";

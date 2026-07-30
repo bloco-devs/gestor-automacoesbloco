@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Archive, ArchiveRestore, Inbox, Loader2, Search, Star, Users } from "lucide-react";
+import { Archive, ArchiveRestore, Inbox, Loader2, Plus, Search, Star, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EmptyPanel } from "@/design-system";
@@ -8,7 +8,15 @@ import { cn } from "@/lib/utils";
 import { usePreferencia } from "@/hooks/usePreferencia";
 import { useToast } from "@/hooks/use-toast";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
-import { INBOX_ID, useDemandas, useProjetos, type Escopo, type ProjetoNaLista } from "@/modules/demand-access";
+import {
+  INBOX_ID,
+  useCriarProjeto,
+  useDemandas,
+  useProjetos,
+  type Escopo,
+  type ProjetoNaLista,
+} from "@/modules/demand-access";
+import { NovoProjetoDialog } from "./NovoProjetoDialog";
 
 /**
  * A seleção de projetos — `Demandas → Projeto → Lente`.
@@ -210,6 +218,8 @@ export function SelecaoDeProjetos() {
   // continua sem saber que existe tabela.
   const { demandas: naInbox } = useDemandas(ESCOPO_GLOBAL);
   const [busca, setBusca] = useState("");
+  const [criando, setCriando] = useState(false);
+  const { criar, salvando } = useCriarProjeto();
 
   const aguardando = useMemo(() => naInbox.filter((d) => !d.concluida).length, [naInbox]);
 
@@ -264,6 +274,28 @@ export function SelecaoDeProjetos() {
     }
   };
 
+  /**
+   * Criar e entrar. Um quadro recém-criado está vazio por definição: deixar a
+   * pessoa na lista, olhando o nome novo, obrigaria um segundo clique para
+   * chegar onde ela já queria estar.
+   */
+  const aoCriar = async (nome: string) => {
+    try {
+      const id = await criar(nome);
+      setCriando(false);
+      toast({ title: `${nome} foi criado`, description: "Já com A Fazer, Em Andamento e Concluído." });
+      navigate(`/workspace/demandas/${id}`);
+    } catch (e) {
+      toast({
+        title: "Não foi possível criar o quadro",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+
+
   useContextoDeHeader(
     <span className="text-[13px] font-medium text-foreground">
       Projetos{" "}
@@ -312,12 +344,21 @@ export function SelecaoDeProjetos() {
               {visiveis.length} de {projetos.length}
             </span>
           )}
+          <Button
+            size="sm"
+            className="ml-auto h-7 gap-1.5 px-2.5 text-[13px]"
+            onClick={() => setCriando(true)}
+          >
+            <Plus className="size-3.5" aria-hidden />
+            Criar quadro
+          </Button>
           <button
+
             type="button"
             onClick={() => setMostrarArquivados(!mostrarArquivados)}
             aria-pressed={mostrarArquivados}
             className={cn(
-              "ds-caption ml-auto flex items-center gap-1.5 rounded-md px-2 py-1",
+              "ds-caption flex items-center gap-1.5 rounded-md px-2 py-1",
               "transition-colors duration-fast ease-standard",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
               mostrarArquivados
@@ -347,7 +388,15 @@ export function SelecaoDeProjetos() {
               description={
                 busca
                   ? "Tente outro termo."
-                  : "Quando houver um projeto com demandas, ele aparece aqui."
+                  : "Crie um quadro para começar a organizar o trabalho."
+              }
+              action={
+                busca ? undefined : (
+                  <Button size="sm" onClick={() => setCriando(true)} className="gap-1.5">
+                    <Plus className="size-3.5" aria-hidden />
+                    Criar quadro
+                  </Button>
+                )
               }
             />
           </div>
@@ -365,6 +414,14 @@ export function SelecaoDeProjetos() {
           </div>
         )}
       </div>
+
+      <NovoProjetoDialog
+        open={criando}
+        onOpenChange={setCriando}
+        salvando={salvando}
+        onCriar={(nome) => void aoCriar(nome)}
+      />
     </div>
   );
 }
+
