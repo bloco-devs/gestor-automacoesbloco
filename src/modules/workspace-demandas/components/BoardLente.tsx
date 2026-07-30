@@ -117,13 +117,15 @@ function Cartao({
   });
   const responsavel = d.responsaveis[0];
 
+  const sistemaNome = sinais.sistema ? d.sistema?.nome ?? null : null;
+
   const meta = [
     sinais.prioridade && d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
-    sinais.sistema ? (d.sistema?.nome ?? null) : null,
     sinais.referencia ? d.referencia : null,
   ]
     .filter(Boolean)
     .join(" · ");
+
 
   const podeAssumir = !responsavel && !!onAssumir && !sobreposicao;
 
