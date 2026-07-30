@@ -714,6 +714,11 @@ interface Props {
    */
   onCriarCartao?: (params: { statusId: string; titulo: string }) => void | Promise<void>;
   criandoCartao?: boolean;
+  /**
+   * A capa dos cartões (etiquetas e membros), por id de demanda. Quem carrega
+   * é a tela — o board apenas desenha o que recebe.
+   */
+  capas?: CapasResolvidas;
 }
 
 function BoardLenteImpl({
@@ -729,7 +734,9 @@ function BoardLenteImpl({
   assumindo,
   onCriarCartao,
   criandoCartao,
+  capas,
 }: Props) {
+
 
   const [arrastando, setArrastando] = useState<Demanda | null>(null);
   const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
