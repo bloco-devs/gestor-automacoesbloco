@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Archive, ArchiveRestore, Inbox, Loader2, Search, Star, Users } from "lucide-react";
+import { Archive, ArchiveRestore, Inbox, Loader2, Plus, Search, Star, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EmptyPanel } from "@/design-system";
@@ -8,7 +8,15 @@ import { cn } from "@/lib/utils";
 import { usePreferencia } from "@/hooks/usePreferencia";
 import { useToast } from "@/hooks/use-toast";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
-import { INBOX_ID, useDemandas, useProjetos, type Escopo, type ProjetoNaLista } from "@/modules/demand-access";
+import {
+  INBOX_ID,
+  useCriarProjeto,
+  useDemandas,
+  useProjetos,
+  type Escopo,
+  type ProjetoNaLista,
+} from "@/modules/demand-access";
+import { NovoProjetoDialog } from "./NovoProjetoDialog";
 
 /**
  * A seleção de projetos — `Demandas → Projeto → Lente`.
