@@ -234,7 +234,7 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
             </div>
 
             {/* Barra lateral */}
-            <aside className="space-y-2">
+            <aside className="space-y-2 md:col-span-1">
               <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Adicionar ao cartão
               </h3>
