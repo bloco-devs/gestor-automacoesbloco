@@ -27,7 +27,10 @@ export type DemandSlaStatus =
 
 export interface Demand {
   id: string;
+  /** Código de rastreio legível gerado pelo banco (ex.: `RH-2607-0001`). */
+  ticket_code?: string | null;
   title: string;
+
   description: string | null;
   system_id: string | null;
   status: DemandStatus;
