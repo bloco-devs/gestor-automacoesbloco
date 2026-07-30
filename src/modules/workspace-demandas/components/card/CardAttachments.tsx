@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Loader2, Paperclip, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,12 @@ function tamanho(bytes: number) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
+
+/** Imagem tem miniatura; o resto continua sendo uma linha com ícone. */
+function ehImagem(a: AtividadeAnexo) {
+  return a.mimeType.startsWith("image/");
+}
+
 
 export function CardAttachmentsCorpo({ cardId }: { cardId: string }) {
   const qc = useQueryClient();
