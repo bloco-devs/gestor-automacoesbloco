@@ -364,6 +364,36 @@ export type Database = {
           },
         ]
       }
+      atividades_card_etiquetas: {
+        Row: {
+          card_id: string
+          etiqueta_id: string
+        }
+        Insert: {
+          card_id: string
+          etiqueta_id: string
+        }
+        Update: {
+          card_id?: string
+          etiqueta_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_card_etiquetas_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_card_etiquetas_etiqueta_id_fkey"
+            columns: ["etiqueta_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_etiquetas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atividades_card_labels: {
         Row: {
           card_id: string
@@ -417,6 +447,7 @@ export type Database = {
           responsavel_ids: string[]
           responsavel_persona_ids: string[]
           solucao_id: string | null
+          status_prazo: string | null
           titulo: string
           updated_at: string
         }
@@ -439,6 +470,7 @@ export type Database = {
           responsavel_ids?: string[]
           responsavel_persona_ids?: string[]
           solucao_id?: string | null
+          status_prazo?: string | null
           titulo: string
           updated_at?: string
         }
@@ -461,6 +493,7 @@ export type Database = {
           responsavel_ids?: string[]
           responsavel_persona_ids?: string[]
           solucao_id?: string | null
+          status_prazo?: string | null
           titulo?: string
           updated_at?: string
         }
@@ -491,6 +524,67 @@ export type Database = {
             columns: ["solucao_id"]
             isOneToOne: false
             referencedRelation: "demanda_solucoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_checklist_items: {
+        Row: {
+          checklist_id: string | null
+          concluido: boolean | null
+          id: string
+          nome: string
+          ordem: number | null
+        }
+        Insert: {
+          checklist_id?: string | null
+          concluido?: boolean | null
+          id?: string
+          nome: string
+          ordem?: number | null
+        }
+        Update: {
+          checklist_id?: string | null
+          concluido?: boolean | null
+          id?: string
+          nome?: string
+          ordem?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_checklist_items_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_checklists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_checklists: {
+        Row: {
+          card_id: string | null
+          id: string
+          ordem: number | null
+          titulo: string
+        }
+        Insert: {
+          card_id?: string | null
+          id?: string
+          ordem?: number | null
+          titulo: string
+        }
+        Update: {
+          card_id?: string | null
+          id?: string
+          ordem?: number | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_checklists_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_cards"
             referencedColumns: ["id"]
           },
         ]
@@ -577,6 +671,42 @@ export type Database = {
             columns: ["card_id"]
             isOneToOne: false
             referencedRelation: "atividades_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_etiquetas: {
+        Row: {
+          board_id: string | null
+          cor: string
+          id: string
+          nome: string | null
+        }
+        Insert: {
+          board_id?: string | null
+          cor: string
+          id?: string
+          nome?: string | null
+        }
+        Update: {
+          board_id?: string | null
+          cor?: string
+          id?: string
+          nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_etiquetas_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_etiquetas_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
             referencedColumns: ["id"]
           },
         ]
