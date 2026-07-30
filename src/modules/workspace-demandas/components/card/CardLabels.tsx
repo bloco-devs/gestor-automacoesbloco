@@ -48,23 +48,38 @@ function useEtiquetas(cardId: string, boardId: string) {
 
 export function CardLabelsResumo({ cardId, boardId }: { cardId: string; boardId: string }) {
   const { catalogo, vinculos } = useEtiquetas(cardId, boardId);
+  const [isExpanded, setIsExpanded] = useState(false);
   const selecionadas = (catalogo.data ?? []).filter((e) => (vinculos.data ?? []).includes(e.id));
   if (selecionadas.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-1.5" aria-label="Etiquetas do cartão">
+    <button
+      type="button"
+      onClick={() => setIsExpanded((v) => !v)}
+      aria-expanded={isExpanded}
+      aria-label={isExpanded ? "Recolher etiquetas" : "Expandir etiquetas"}
+      className="flex flex-wrap items-center gap-1.5 rounded"
+    >
       {selecionadas.map((e) => (
-        <Badge
+        <span
           key={e.id}
-          className={labelColorClass(e.cor)}
+          className={`overflow-hidden whitespace-nowrap text-xs font-medium transition-all duration-300 ease-in-out ${
+            isExpanded ? "h-auto w-auto rounded px-3 py-1" : "h-2 w-12 rounded-full"
+          }`}
           style={labelColorStyle(e.cor)}
-          variant="outline"
         >
-          {e.nome || "Sem nome"}
-        </Badge>
+          <span
+            className={`transition-opacity duration-300 ease-in-out ${
+              isExpanded ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            {isExpanded ? e.nome || "Sem nome" : ""}
+          </span>
+        </span>
       ))}
-    </div>
+    </button>
   );
 }
+
 
 export function CardLabelsBotao({ cardId, boardId }: { cardId: string; boardId: string }) {
   const { catalogo, vinculos, invalidar } = useEtiquetas(cardId, boardId);
