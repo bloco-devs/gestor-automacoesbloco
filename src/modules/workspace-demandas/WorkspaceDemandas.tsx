@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import {
   useAcoesDemanda,
   useCriarCartao,
+  useCapasDosCards,
+
   useDemandas,
   useExcluirProjeto,
   ehInbox,
@@ -159,6 +161,16 @@ export default function WorkspaceDemandas() {
   }, [capacidades, demandas]);
 
   const sinais = useMemo(() => sinaisUteis(visiveis), [visiveis]);
+
+  /**
+   * A CAPA dos cartões — etiquetas e membros, em lote, só em escopo de
+   * projeto. Na Inbox não existe etiqueta de quadro nem membro de cartão, e
+   * buscar seria pagar uma consulta para receber nada.
+   */
+  const emProjeto = !naInbox && Boolean(projetoId);
+  const idsVisiveis = useMemo(() => visiveis.map((d) => d.id), [visiveis]);
+  const capas = useCapasDosCards(emProjeto ? idsVisiveis : [], emProjeto);
+
 
   // O detalhe tem endereço próprio. Era a mudança estrutural que faltava para
   // uma demanda poder ser colada num Slack ou num e-mail.
@@ -316,7 +328,9 @@ export default function WorkspaceDemandas() {
                 onAbrir={abrir}
                 onMover={({ demandaId, statusId }) => void acoes.mover({ demandaId, statusId })}
                 podeMover={acoes.podeMover}
+                capas={capas}
                 criandoCartao={cartoes.salvando}
+
                 onCriarCartao={
                   !naInbox && projetoId
                     ? async ({ statusId, titulo }) => {

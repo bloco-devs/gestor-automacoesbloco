@@ -16,10 +16,12 @@ import {
   ChevronRight,
   CircleDot,
   Circle,
+  Clock,
   Eye,
   Plus,
   Sparkles,
 } from "lucide-react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { EmptyPanel } from "@/design-system";
@@ -34,7 +36,7 @@ import {
   tomDaEtapa,
   type TomDaEtapa,
 } from "@/domain/demand";
-import type { EtapaDaFonte } from "@/modules/demand-access";
+import type { CapaResolvida, CapasResolvidas, EtapaDaFonte } from "@/modules/demand-access";
 
 /**
  * A lente de board.
@@ -87,6 +89,13 @@ function iniciais(nome: string): string {
   return nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
 }
 
+/** Data curta ("12 mar") — o cartão não tem largura para data completa. */
+function prazoCurto(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
+}
+
 function Cartao({
   demanda: d,
   capacidades,
@@ -97,6 +106,7 @@ function Cartao({
   onAssumir,
   assumindo,
   tom = "neutro",
+  capa,
 }: {
   demanda: Demanda;
   capacidades: Capacidades;
@@ -112,7 +122,14 @@ function Cartao({
    */
   onAssumir?: (id: string) => void;
   assumindo?: boolean;
+  /**
+   * A CAPA — etiquetas e membros do cartão, lidos em lote pela tela.
+   * Opcional de propósito: na Inbox (fonte `demands`) não existe etiqueta de
+   * quadro nem membro de cartão, e o cartão fica exatamente como era.
+   */
+  capa?: CapaResolvida;
 }) {
+
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: d.id,
     disabled: !arrastavel || sobreposicao,
@@ -230,6 +247,22 @@ function Cartao({
           title={d.risco ? RISCO_ROTULO[d.risco] : undefined}
         />
         <div className="min-w-0 flex-1">
+          {(capa?.etiquetas.length ?? 0) > 0 && (
+            /* BARRAS DE ETIQUETA — cor antes de texto. Elas ficam acima de
+               tudo porque a pergunta que respondem ("que tipo de item é
+               este?") é de visão periférica, não de leitura. */
+            <div className="mb-1.5 flex flex-wrap items-center gap-1">
+              {capa!.etiquetas.map((e) => (
+                <span
+                  key={e.id}
+                  title={e.nome ?? "Etiqueta"}
+                  aria-label={e.nome ?? "Etiqueta"}
+                  className="h-1.5 w-8 rounded-full"
+                  style={{ backgroundColor: e.cor }}
+                />
+              ))}
+            </div>
+          )}
           {sistemaNome && (
             // ETIQUETA DE SISTEMA — estilo Trello: o dev bate o olho e sabe de
             // qual sistema é a tarefa antes mesmo de ler o título.
@@ -260,7 +293,41 @@ function Cartao({
               <span className="ml-auto">{direita}</span>
             </div>
           )}
+          {(d.prazo || (capa?.membros.length ?? 0) > 0) && (
+            /* RODAPÉ DA CAPA — prazo à esquerda, quem está nisso à direita.
+               É a linha que responde "para quando" e "com quem" sem abrir o
+               cartão; ela só existe quando há uma das duas coisas. */
+            <div className="mt-1.5 flex items-center gap-2">
+              {d.prazo ? (
+                <span
+                  className="flex items-center gap-1 rounded px-1 py-0.5 text-[11px] text-muted-foreground"
+                  title={`Entrega em ${new Date(d.prazo).toLocaleDateString("pt-BR")}`}
+                >
+                  <Clock className="size-3 shrink-0" aria-hidden />
+                  <span className="tabular-nums">{prazoCurto(d.prazo)}</span>
+                </span>
+              ) : null}
+              {(capa?.membros.length ?? 0) > 0 && (
+                <span className="ml-auto flex items-center -space-x-1.5">
+                  {capa!.membros.slice(0, 4).map((m) => (
+                    <Avatar key={m.id} className="size-6 border border-card" title={m.nome}>
+                      {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.nome} />}
+                      <AvatarFallback className="bg-muted text-[9px]">
+                        {iniciais(m.nome)}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {capa!.membros.length > 4 && (
+                    <span className="flex size-6 items-center justify-center rounded-full border border-card bg-muted text-[9px] font-medium text-muted-foreground">
+                      +{capa!.membros.length - 4}
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
+          )}
         </div>
+
       </div>
     </div>
   );
@@ -477,6 +544,7 @@ function Coluna({
   assumindo,
   onCriarCartao,
   criandoCartao,
+  capas,
 }: {
   grupo: Grupo;
   capacidades: Capacidades;
@@ -488,7 +556,9 @@ function Coluna({
   assumindo?: (id: string) => boolean;
   onCriarCartao?: (titulo: string) => void | Promise<void>;
   criandoCartao?: boolean;
+  capas?: CapasResolvidas;
 }) {
+
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
   const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
 
@@ -574,6 +644,8 @@ function Coluna({
             onAssumir={onAssumir}
             assumindo={assumindo?.(d.id)}
             tom={tomDaEtapa(grupo.rotulo)}
+            capa={capas?.get(d.id)}
+
           />
         ))}
         {grupo.itens.length === 0 && (
@@ -642,6 +714,11 @@ interface Props {
    */
   onCriarCartao?: (params: { statusId: string; titulo: string }) => void | Promise<void>;
   criandoCartao?: boolean;
+  /**
+   * A capa dos cartões (etiquetas e membros), por id de demanda. Quem carrega
+   * é a tela — o board apenas desenha o que recebe.
+   */
+  capas?: CapasResolvidas;
 }
 
 function BoardLenteImpl({
@@ -657,7 +734,9 @@ function BoardLenteImpl({
   assumindo,
   onCriarCartao,
   criandoCartao,
+  capas,
 }: Props) {
+
 
   const [arrastando, setArrastando] = useState<Demanda | null>(null);
   const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
@@ -763,6 +842,7 @@ function BoardLenteImpl({
                   : undefined
               }
               criandoCartao={criandoCartao}
+              capas={capas}
             />
 
           ),
@@ -777,10 +857,12 @@ function BoardLenteImpl({
               sinais={sinais}
               arrastavel
               sobreposicao
+              capa={capas?.get(arrastando.id)}
               tom={tomDaEtapa(
                 grupos.find((g) => g.itens.some((i) => i.id === arrastando.id))?.rotulo ?? "",
               )}
             />
+
           </div>
         ) : null}
       </DragOverlay>
