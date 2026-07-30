@@ -91,8 +91,10 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
   });
 
   const comentar = useMutation({
-    mutationFn: (texto: string) =>
-      createComentario({ cardId: cardId as string, texto, userId: user?.id ?? null }),
+    mutationFn: (texto: string) => {
+      if (!user?.id) throw new Error("Faça login para comentar.");
+      return createComentario({ cardId: cardId as string, texto, userId: user.id });
+    },
     onSuccess: () => {
       setComentario("");
       void qc.invalidateQueries({ queryKey: ["atividades", "comentarios", cardId] });
