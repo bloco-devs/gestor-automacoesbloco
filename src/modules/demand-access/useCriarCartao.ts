@@ -16,21 +16,40 @@ import { useAuth } from "@/hooks/useAuth";
  * a tela simplesmente não passa o callback e o botão não aparece.
  */
 export function useCriarCartao(projetoId: string | null): {
-  criar: (params: { colunaId: string; titulo: string }) => Promise<void>;
+  criar: (params: { colunaId: string; titulo: string; ordem?: number }) => Promise<void>;
   salvando: boolean;
 } {
   const qc = useQueryClient();
   const { user } = useAuth();
 
   const mutacao = useMutation({
-    mutationFn: async ({ colunaId, titulo }: { colunaId: string; titulo: string }) => {
+    mutationFn: async ({
+      colunaId,
+      titulo,
+      ordem,
+    }: {
+      colunaId: string;
+      titulo: string;
+      ordem?: number;
+    }) => {
       if (!projetoId) throw new Error("Sem projeto aberto.");
-      await createCard({
-        boardId: projetoId,
-        colunaId,
-        titulo,
-        createdBy: user?.id ?? null,
-      });
+      try {
+        await createCard({
+          boardId: projetoId,
+          colunaId,
+          titulo: titulo.trim(),
+          ordem: ordem ?? 0,
+          createdBy: user?.id ?? null,
+        });
+      } catch (e) {
+        console.error("[useCriarCartao] falha ao criar cartão", {
+          boardId: projetoId,
+          colunaId,
+          titulo,
+          erro: e,
+        });
+        throw e;
+      }
     },
     onSuccess: () => {
       if (!projetoId) return;
