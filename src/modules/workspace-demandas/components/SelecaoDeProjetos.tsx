@@ -218,6 +218,8 @@ export function SelecaoDeProjetos() {
   // continua sem saber que existe tabela.
   const { demandas: naInbox } = useDemandas(ESCOPO_GLOBAL);
   const [busca, setBusca] = useState("");
+  const [criando, setCriando] = useState(false);
+  const { criar, salvando } = useCriarProjeto();
 
   const aguardando = useMemo(() => naInbox.filter((d) => !d.concluida).length, [naInbox]);
 
