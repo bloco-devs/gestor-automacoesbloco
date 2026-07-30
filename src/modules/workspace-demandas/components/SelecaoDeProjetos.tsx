@@ -344,7 +344,16 @@ export function SelecaoDeProjetos() {
               {visiveis.length} de {projetos.length}
             </span>
           )}
+          <Button
+            size="sm"
+            className="ml-auto h-7 gap-1.5 px-2.5 text-[13px]"
+            onClick={() => setCriando(true)}
+          >
+            <Plus className="size-3.5" aria-hidden />
+            Criar quadro
+          </Button>
           <button
+
             type="button"
             onClick={() => setMostrarArquivados(!mostrarArquivados)}
             aria-pressed={mostrarArquivados}
