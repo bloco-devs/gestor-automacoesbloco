@@ -53,15 +53,18 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
   });
 
   const [titulo, setTitulo] = useState("");
-  const [descricao, setDescricao] = useState("");
+  const [descValue, setDescValue] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
   const [comentario, setComentario] = useState("");
 
   useEffect(() => {
     if (cartao.data) {
       setTitulo(cartao.data.titulo);
-      setDescricao(cartao.data.descricao ?? "");
+      setDescValue(cartao.data.descricao ?? "");
+      setIsEditing(false);
     }
   }, [cartao.data]);
+
 
   const invalidar = () => {
     void qc.invalidateQueries({ queryKey: ["atividades", "card", cardId] });
