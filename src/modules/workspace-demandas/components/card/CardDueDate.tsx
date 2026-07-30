@@ -58,7 +58,7 @@ export function CardDueDateResumo({ cardId, boardId, dataEntrega, onSalvo }: Pro
 
 export function CardDueDateBotao({ cardId, boardId, dataEntrega, onSalvo }: Props) {
   const salvar = useSalvarData({ cardId, boardId, onSalvo });
-  const selecionada = dataEntrega ? new Date(dataEntrega) : undefined;
+  const selecionada: Date | undefined = dataEntrega ? new Date(dataEntrega) : undefined;
 
   return (
     <Popover>
@@ -71,12 +71,34 @@ export function CardDueDateBotao({ cardId, boardId, dataEntrega, onSalvo }: Prop
       <PopoverContent align="end" className="w-auto p-0">
         <Calendar
           mode="single"
+          required={false}
           locale={ptBR}
           selected={selecionada}
-          onSelect={(d) => salvar.mutate(d ? d.toISOString() : null)}
+          defaultMonth={selecionada}
+          onSelect={(d: Date | undefined) => {
+            if (!d) {
+              salvar.mutate(null);
+              return;
+            }
+            // Fixa meio-dia local: evita o deslocamento de fuso que fazia a data
+            // salva cair no dia anterior/posterior ao clicado.
+            const normalizada = new Date(
+              d.getFullYear(),
+              d.getMonth(),
+              d.getDate(),
+              12,
+              0,
+              0,
+              0,
+            );
+            salvar.mutate(normalizada.toISOString());
+          }}
+          modifiersClassNames={{ today: "" }}
           initialFocus
+          className="p-3 pointer-events-auto"
         />
       </PopoverContent>
     </Popover>
   );
 }
+
