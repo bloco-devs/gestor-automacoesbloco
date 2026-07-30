@@ -116,7 +116,7 @@ export function useAIWorkspace() {
       try {
         const result = await aiOrchestrator.finalize({
           conversation: history,
-          sistemas: sistemas.map((s) => ({ slug: s.id, nome: s.nome })),
+          sistemas: sistemas.map((s) => ({ slug: s.id, nome: s.nome, grupo: s.grupo ?? null })),
           workspaceContext,
         });
         if (cancelled.current) return;

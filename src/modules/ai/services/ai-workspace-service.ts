@@ -64,7 +64,12 @@ export const aiWorkspaceService = {
     }
   },
 
-  triage(titulo: string, descricao: string, sistemas: Array<{ slug: string; nome: string }>) {
+  triage(
+    titulo: string,
+    descricao: string,
+    sistemas: Array<{ slug: string; nome: string; grupo?: string | null }>,
+  ) {
+
     return invoke<TriageResult>("triagem-demanda", { titulo, descricao, setor: "", sistemas });
   },
   async similar(titulo: string, descricao: string): Promise<SimilarItem[]> {

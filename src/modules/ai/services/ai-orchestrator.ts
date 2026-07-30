@@ -46,7 +46,7 @@ export interface OrchestratorTurn {
 
 export interface OrchestratorFinalizeInput {
   conversation: Conversation;
-  sistemas: Array<{ slug: string; nome: string }>;
+  sistemas: Array<{ slug: string; nome: string; grupo?: string | null }>;
   workspaceContext?: OrchestratorContext;
 }
 
