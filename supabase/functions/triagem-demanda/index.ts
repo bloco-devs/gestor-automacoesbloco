@@ -196,6 +196,14 @@ SETOR: ${setor || "(não informado)"}
 DESCRIÇÃO:
 ${descricao}${sistemasBloco}`;
 
+    console.log("[triagem-demanda] entrada:", JSON.stringify({
+      titulo,
+      setor,
+      descricao: descricao.slice(0, 500),
+      sistemas: sistemas.map((s) => s.slug),
+      totalSistemas: sistemas.length,
+    }));
+
     const data = await callAI(
       {
         model: "google/gemini-3-flash-preview",
@@ -209,6 +217,7 @@ ${descricao}${sistemasBloco}`;
     ) as any;
 
     const raw: string = data.choices?.[0]?.message?.content ?? "";
+    console.log("[triagem-demanda] resposta bruta do LLM:", raw.slice(0, 1500));
     let parsed: Record<string, unknown> = {};
     try {
       parsed = JSON.parse(raw);
@@ -230,6 +239,10 @@ ${descricao}${sistemasBloco}`;
     let sistema_alvo_slug: string | null =
       slugRaw && slugsValidos.has(slugRaw) ? slugRaw : null;
 
+    if (slugRaw && !sistema_alvo_slug) {
+      console.log(`[triagem-demanda] LLM devolveu slug fora da lista: "${slugRaw}" (descartado)`);
+    }
+
     // Um sistema válido não é descartado por erro de tipo: se o modelo apontou
     // "novo_sistema" mas indicou um sistema existente, o caso real é novo módulo.
     if (sistema_alvo_slug && tipo_demanda === "novo_sistema") {
@@ -239,13 +252,23 @@ ${descricao}${sistemasBloco}`;
     // Rede de segurança determinística — só quando o LLM não identificou nada.
     let inferido = false;
     if (!sistema_alvo_slug && sistemas.length) {
-      const palpite = inferirSistema(`${titulo} ${descricao} ${setor}`, sistemas);
+      const { slug: palpite, candidatos } = inferirSistema(
+        `${titulo} ${descricao} ${setor}`,
+        sistemas,
+      );
+      console.log("[triagem-demanda] fallback regex acionado:", JSON.stringify({
+        candidatos,
+        escolhido: palpite,
+      }));
       if (palpite) {
         sistema_alvo_slug = palpite;
         inferido = true;
         if (!tipo_demanda || tipo_demanda === "novo_sistema") tipo_demanda = "novo_modulo";
       }
     }
+
+    console.log("[triagem-demanda] sistema final:", sistema_alvo_slug, "| inferido:", inferido);
+
 
     const justificativaBase =
       typeof parsed.justificativa === "string" && parsed.justificativa.trim()
