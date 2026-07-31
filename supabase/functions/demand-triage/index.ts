@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callAI, IAUsageError } from "../_shared/ia-gateway.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { modeloPara } from "../_shared/modelos.ts";
 
 type Body = { title?: string; description?: string };
 
@@ -79,7 +80,7 @@ Deno.serve(async (req) => {
 
     const data = await callAI(
       {
-        model: "google/gemini-3-flash-preview",
+        model: modeloPara("triagem"),
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: `TÍTULO: ${title || "(sem título)"}\nDESCRIÇÃO:\n${description || "(vazia)"}` },

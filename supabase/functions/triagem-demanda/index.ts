@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callAI, IAUsageError } from "../_shared/ia-gateway.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { modeloPara } from "../_shared/modelos.ts";
 
 type SistemaItem = { slug?: string; id?: string; nome?: string; grupo?: string | null };
 type Body = { titulo?: string; descricao?: string; setor?: string; sistemas?: SistemaItem[] };
@@ -206,7 +207,7 @@ ${descricao}${sistemasBloco}`;
 
     const data = await callAI(
       {
-        model: "google/gemini-3-flash-preview",
+        model: modeloPara("triagem"),
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: userMsg },

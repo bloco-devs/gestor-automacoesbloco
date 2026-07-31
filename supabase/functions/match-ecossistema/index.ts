@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callAI, IAUsageError } from "../_shared/ia-gateway.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { modeloPara } from "../_shared/modelos.ts";
 
 const HUB_URL = (Deno.env.get("BLOCO_ID_HUB_URL") ?? "").replace(/\/+$/, "");
 const HUB_TOKEN = Deno.env.get("BLOCO_ID_TOKEN") ?? "";
@@ -202,7 +203,7 @@ ${listaTxt}`;
     try {
       data = await callAI(
         {
-          model: "google/gemini-3-flash-preview",
+          model: modeloPara("triagem"),
           messages: [
             { role: "system", content: SYSTEM },
             { role: "user", content: userMsg },

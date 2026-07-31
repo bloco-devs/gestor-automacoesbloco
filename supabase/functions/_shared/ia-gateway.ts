@@ -7,6 +7,25 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const HUB_URL = (Deno.env.get("BLOCO_ID_HUB_URL") ?? "").replace(/\/+$/, "");
 const HUB_TOKEN = Deno.env.get("BLOCO_ID_TOKEN") ?? "";
 
+/**
+ * OPENROUTER COMO CAMINHO PRINCIPAL — QUANDO A CHAVE EXISTIR
+ *
+ * A escolha de modelo só é real se houver de onde escolher. Pelo gateway da
+ * Lovable, o catálogo é o que ela oferecer, o custo por chamada não aparece,
+ * e não há como declarar um segundo modelo caso o primeiro falhe.
+ *
+ * A ATIVAÇÃO É A PRESENÇA DA CHAVE, E ISSO É DE PROPÓSITO
+ * Sem `OPENROUTER_API_KEY`, nada nesta mudança acontece: o caminho antigo
+ * continua exatamente como estava. Com a chave, o OpenRouter passa a ser
+ * tentado primeiro. Não há flag para lembrar de ligar nem passo de migração
+ * — e, se algo der errado, apagar o secret devolve o sistema ao estado
+ * anterior em segundos, sem deploy.
+ *
+ * Isso importa porque esta é a única parte do sistema que, se cair, deixa o
+ * solicitante sem conseguir abrir uma demanda.
+ */
+const OPENROUTER_KEY = Deno.env.get("OPENROUTER_API_KEY") ?? "";
+
 export class IAUsageError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -46,6 +65,35 @@ async function callDireto(body: unknown): Promise<unknown> {
     const usageMsg = mapUsageStatus(resp.status);
     if (usageMsg) throw new IAUsageError(resp.status, usageMsg);
     throw new Error(`Erro IA (${resp.status}): ${text}`);
+  }
+  return await resp.json();
+}
+
+// Chamada direta ao OpenRouter. Mesmo formato de payload (OpenAI chat), então
+// nenhuma das oito funções precisa saber que o caminho mudou.
+async function callOpenRouter(body: unknown): Promise<unknown> {
+  const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENROUTER_KEY}`,
+      "Content-Type": "application/json",
+      // O OpenRouter usa estes dois para atribuir a chamada. Não são
+      // obrigatórios, mas sem eles o painel de uso vira uma lista anônima —
+      // e o objetivo de sair da Lovable era justamente enxergar o consumo.
+      "HTTP-Referer": "https://gestor.grupobloco.com.br",
+      "X-Title": "Gestor de Automacoes",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => "");
+    const usageMsg = mapUsageStatus(resp.status);
+    // Limite e crédito são erros de USO: a Lovable também os teria. Cair para
+    // ela seria gastar o crédito do outro lado por um problema que é de
+    // consumo, não de infraestrutura — e esconder do usuário a causa real.
+    if (usageMsg) throw new IAUsageError(resp.status, usageMsg);
+    throw new Error(`OPENROUTER_INFRA_${resp.status}:${text}`);
   }
   return await resp.json();
 }
@@ -126,8 +174,36 @@ export async function callAI(body: unknown, ctx: IACallContext = {}): Promise<un
   const modelo = extrairModelo(body);
   const temHub = Boolean(HUB_URL && HUB_TOKEN);
 
+  /**
+   * A ordem: OpenRouter, depois o caminho que já existia.
+   *
+   * A reserva cobre falha de INFRAESTRUTURA do OpenRouter — fora do ar, DNS,
+   * 5xx. Não cobre limite nem crédito: esses sobem direto, porque tentar de
+   * novo no outro provedor apenas gastaria o crédito de lá pelo mesmo motivo,
+   * e mostraria ao usuário um erro que não descreve o que houve.
+   *
+   * O modelo pedido vai junto na reserva. Se o nome não existir no catálogo
+   * da Lovable, ela responde erro e o usuário vê a falha — que é melhor do
+   * que uma resposta silenciosa de um modelo que ninguém escolheu.
+   */
+  const antigo = () => (temHub ? callHubOrFallback(body) : callDireto(body));
+
   try {
-    const data = temHub ? await callHubOrFallback(body) : await callDireto(body);
+    let data: unknown;
+    if (OPENROUTER_KEY) {
+      try {
+        data = await callOpenRouter(body);
+      } catch (e) {
+        if (e instanceof IAUsageError) throw e;
+        console.warn(
+          "ia-gateway: OpenRouter falhou, usando o caminho de reserva:",
+          e instanceof Error ? e.message : String(e),
+        );
+        data = await antigo();
+      }
+    } else {
+      data = await antigo();
+    }
     const usage = extrairUsage(data);
     await logUso({
       acao: ctx.acao,

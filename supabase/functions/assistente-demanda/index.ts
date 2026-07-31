@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callAI, IAUsageError } from "../_shared/ia-gateway.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { modeloPara } from "../_shared/modelos.ts";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -104,7 +105,7 @@ Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeraç�
 
       const data = await callAI(
         {
-          model: "google/gemini-3-flash-preview",
+          model: modeloPara("conversa"),
           messages: [{ role: "system", content: system }, ...messages],
         },
         { acao: "assistente-demanda:next_question", userId },
@@ -125,7 +126,7 @@ REGRA ESTRITA: o título deve ser extremamente resumido, direto e claro, contend
 - Retorne apenas o título, nada mais.`;
       const data = await callAI(
         {
-          model: "google/gemini-3-flash-preview",
+          model: modeloPara("conversa"),
           messages: [{ role: "system", content: system }, ...messages],
         },
         { acao: "assistente-demanda:generate_title", userId },
@@ -140,7 +141,7 @@ REGRA ESTRITA: o título deve ser extremamente resumido, direto e claro, contend
       const system = `Com base na conversa abaixo entre o assistente e o solicitante, escreva uma DESCRIÇÃO DA DEMANDA em português, em 1 a 2 parágrafos, em primeira pessoa do solicitante, de forma objetiva e completa. Não inclua perguntas, não use bullet points, não inclua título. Retorne apenas o texto da descrição.`;
       const data = await callAI(
         {
-          model: "google/gemini-3-flash-preview",
+          model: modeloPara("conversa"),
           messages: [{ role: "system", content: system }, ...messages],
         },
         { acao: "assistente-demanda:generate_description", userId },
