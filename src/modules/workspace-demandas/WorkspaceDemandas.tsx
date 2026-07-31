@@ -172,6 +172,38 @@ export default function WorkspaceDemandas() {
   const idsVisiveis = useMemo(() => visiveis.map((d) => d.id), [visiveis]);
   const capas = useCapasDosCards(emProjeto ? idsVisiveis : [], emProjeto);
 
+  /**
+   * CONCLUIR NA CAPA — a bolinha do cartão.
+   * A etapa de conclusão é descoberta pelo tom do nome (a mesma regra que
+   * pinta a coluna), então mover não depende de um campo novo no banco. Sem
+   * etapa de conclusão a ação não é oferecida.
+   */
+  const etapaConcluida = useMemo(
+    () => etapasVisiveis.find((etapa) => tomDaEtapa(etapa.rotulo) === "concluido") ?? null,
+    [etapasVisiveis],
+  );
+  const [concluindo, setConcluindo] = useState<Set<string>>(new Set());
+
+  const concluirCartao = async (demandaId: string) => {
+    const alvo = visiveis.find((d) => d.id === demandaId);
+    if (!alvo || alvo.concluida) return;
+    setConcluindo((s) => new Set(s).add(demandaId));
+    try {
+      if (etapaConcluida && alvo.status.id !== etapaConcluida.id) {
+        await acoes.mover({ demandaId, statusId: etapaConcluida.id });
+      }
+      await acoes.concluir({ demandaId });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível concluir o cartão.");
+    } finally {
+      setConcluindo((s) => {
+        const p = new Set(s);
+        p.delete(demandaId);
+        return p;
+      });
+    }
+  };
+
 
   // O detalhe tem endereço próprio. Era a mudança estrutural que faltava para
   // uma demanda poder ser colada num Slack ou num e-mail.
