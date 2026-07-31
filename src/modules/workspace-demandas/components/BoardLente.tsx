@@ -687,6 +687,8 @@ function Coluna({
   assumindo?: (id: string) => boolean;
   onConcluir?: (id: string) => void;
   concluindo?: (id: string) => boolean;
+  onExcluir?: (id: string) => void;
+  excluindo?: (id: string) => boolean;
   onCriarCartao?: (titulo: string) => void | Promise<void>;
   criandoCartao?: boolean;
   capas?: CapasResolvidas;
