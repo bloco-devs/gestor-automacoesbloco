@@ -149,6 +149,8 @@ function Cartao({
    */
   onExcluir?: (id: string) => void;
   excluindo?: boolean;
+  /** Nome da coluna onde o cartão está — usado para reconhecer conclusão pelo texto. */
+  colunaRotulo?: string;
   /**
    * A CAPA — etiquetas e membros do cartão, lidos em lote pela tela.
    * Opcional de propósito: na Inbox (fonte `demands`) não existe etiqueta de
