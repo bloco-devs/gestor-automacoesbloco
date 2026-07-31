@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { isBoardIconUrl } from "@/lib/atividadesBoards";
 import { useNavigate } from "react-router-dom";
 import {
   Archive,

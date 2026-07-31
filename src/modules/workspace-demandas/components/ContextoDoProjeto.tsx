@@ -1,4 +1,5 @@
 import { memo, useState } from "react";
+import { isBoardIconUrl } from "@/lib/atividadesBoards";
 import { useNavigate } from "react-router-dom";
 import { Check, ChevronDown, Inbox, LayoutGrid, MoreHorizontal, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
