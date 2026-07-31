@@ -520,6 +520,9 @@ export interface CardComentario {
   texto: string;
   createdAt: string;
   updatedAt: string;
+  /** Autor resolvido a partir de `profiles` — nulo quando o perfil não existe. */
+  autorNome: string | null;
+  autorAvatarUrl: string | null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -531,6 +534,8 @@ function mapComentario(r: any): CardComentario {
     texto: r.texto,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
+    autorNome: null,
+    autorAvatarUrl: null,
   };
 }
 
@@ -541,7 +546,28 @@ export async function listComentarios(cardId: string): Promise<CardComentario[]>
     .eq("card_id", cardId)
     .order("created_at", { ascending: true });
   if (error) throw error;
-  return (data ?? []).map(mapComentario);
+  const comentarios = (data ?? []).map(mapComentario);
+
+  // O autor vem de `profiles` numa segunda consulta em lote: não há FK
+  // declarada para o PostgREST embutir o join, e uma query por comentário
+  // custaria N chamadas para desenhar N avatares.
+  const ids = [...new Set(comentarios.map((c) => c.userId).filter(Boolean))] as string[];
+  if (ids.length === 0) return comentarios;
+  const { data: perfis } = await sb
+    .from("profiles")
+    .select("id, nome, email, avatar_url")
+    .in("id", ids);
+  const porId = new Map<string, { nome: string | null; avatarUrl: string | null }>(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (perfis ?? []).map((p: any) => [
+      p.id as string,
+      { nome: (p.nome as string) || (p.email as string) || null, avatarUrl: p.avatar_url ?? null },
+    ]),
+  );
+  return comentarios.map((c) => {
+    const perfil = c.userId ? porId.get(c.userId) : undefined;
+    return { ...c, autorNome: perfil?.nome ?? null, autorAvatarUrl: perfil?.avatarUrl ?? null };
+  });
 }
 
 export async function createComentario(input: {

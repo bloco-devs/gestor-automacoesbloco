@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlignLeft, Circle, Loader2, MessageSquare } from "lucide-react";
+import { AlignLeft, CheckCircle2, Circle, Loader2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import {
   createComentario,
@@ -9,9 +9,10 @@ import {
   listComentarios,
   updateCard,
 } from "@/lib/atividades";
+import { tomDaEtapa } from "@/domain/demand";
 import { atividadesKeys } from "@/hooks/useAtividadesBoard";
 import { useAuth } from "@/hooks/useAuth";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,17 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
 
   const nomeDaColuna =
     (colunas.data ?? []).find((c) => c.id === cartao.data?.colunaId)?.nome ?? null;
+
+  /**
+   * A coluna de "Concluído" não é um campo do banco: o tom vem do NOME da
+   * etapa (`tomDaEtapa`), a mesma regra que o board usa para pintar a coluna.
+   */
+  const colunaConcluida =
+    (colunas.data ?? []).find((c) => tomDaEtapa(c.nome) === "concluido") ?? null;
+  const estaConcluido =
+    !!cartao.data &&
+    (cartao.data.concluido === true ||
+      (!!colunaConcluida && cartao.data.colunaId === colunaConcluida.id));
 
   const comentarios = useQuery({
     queryKey: ["atividades", "comentarios", cardId],
@@ -153,6 +165,32 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
     },
   });
 
+  /**
+   * Concluir = mover para a coluna de conclusão (e marcar o campo `concluido`,
+   * que é o que a capa do cartão lê). Reabrir desfaz apenas o campo: devolver
+   * o cartão para uma coluna anterior é decisão de quem trabalha nele.
+   */
+  const concluir = useMutation({
+    mutationFn: async (marcar: boolean) => {
+      const id = cardIdRef.current;
+      if (!id) return;
+      await updateCard(id, {
+        concluido: marcar,
+        ...(marcar && colunaConcluida && colunaConcluida.id !== cartao.data?.colunaId
+          ? { colunaId: colunaConcluida.id }
+          : {}),
+      });
+    },
+    onSuccess: () => {
+      const id = cardIdRef.current;
+      if (id) invalidar(id);
+    },
+    onError: (e) => {
+      console.error("[CardDetailModal] falha ao concluir cartão", { cardId, e });
+      toast.error("Não foi possível concluir o cartão.");
+    },
+  });
+
   return (
     <Dialog open={!!cardId} onOpenChange={(aberto) => !aberto && fecharComSalvamento()}>
       <DialogContent className="max-w-5xl gap-0 p-0">
@@ -164,7 +202,22 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
             </span>
           ) : null}
           <div className="flex items-start gap-3">
-            <Circle className="mt-2 size-5 shrink-0 text-muted-foreground" aria-hidden />
+            <button
+              type="button"
+              disabled={concluir.isPending}
+              onClick={() => concluir.mutate(!estaConcluido)}
+              title={estaConcluido ? "Reabrir cartão" : "Marcar como concluído"}
+              aria-label={estaConcluido ? "Reabrir cartão" : "Marcar como concluído"}
+              aria-pressed={estaConcluido}
+              className="mt-1.5 shrink-0 rounded-full p-0.5 transition-colors duration-200 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-progress disabled:opacity-60"
+            >
+              {estaConcluido ? (
+                <CheckCircle2 className="size-5 text-success" aria-hidden />
+              ) : (
+                <Circle className="size-5 text-muted-foreground transition-colors duration-200 hover:text-foreground" aria-hidden />
+              )}
+            </button>
+
             <Input
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
@@ -318,13 +371,22 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                 {(comentarios.data ?? []).map((c) => (
                   <li key={c.id} className="flex gap-2">
                     <Avatar className="size-7 shrink-0">
-                      <AvatarFallback className="text-[10px]">•</AvatarFallback>
+                      {/* A foto quando existe; a inicial só como último recurso. */}
+                      {c.autorAvatarUrl ? (
+                        <AvatarImage src={c.autorAvatarUrl} alt={c.autorNome ?? "Autor"} />
+                      ) : null}
+                      <AvatarFallback className="text-[10px]">
+                        {(c.autorNome ?? "?").trim().slice(0, 1).toUpperCase() || "?"}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1 rounded-lg border bg-muted/30 p-3">
                       <p className="text-xs text-muted-foreground">
+                        {c.autorNome ? <span className="font-medium text-foreground">{c.autorNome}</span> : null}
+                        {c.autorNome ? " · " : null}
                         {new Date(c.createdAt).toLocaleString("pt-BR")}
                       </p>
                       <p className="mt-1 whitespace-pre-wrap text-sm">{c.texto}</p>
+
                     </div>
                   </li>
                 ))}

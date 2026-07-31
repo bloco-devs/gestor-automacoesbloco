@@ -107,6 +107,8 @@ function Cartao({
   sobreposicao,
   onAssumir,
   assumindo,
+  onConcluir,
+  concluindo,
   tom = "neutro",
   capa,
 }: {
@@ -124,6 +126,12 @@ function Cartao({
    */
   onAssumir?: (id: string) => void;
   assumindo?: boolean;
+  /**
+   * Concluir direto da capa (estilo Trello). Sem este callback a bolinha não
+   * aparece — quem sabe se existe etapa de conclusão é a tela.
+   */
+  onConcluir?: (id: string) => void;
+  concluindo?: boolean;
   /**
    * A CAPA — etiquetas e membros do cartão, lidos em lote pela tela.
    * Opcional de propósito: na Inbox (fonte `demands`) não existe etiqueta de
@@ -151,6 +159,7 @@ function Cartao({
 
 
   const podeAssumir = !responsavel && !!onAssumir && !sobreposicao;
+  const podeConcluir = !!onConcluir && !sobreposicao;
 
   const direita = (
     <span className="ds-caption flex shrink-0 items-center gap-1.5 text-muted-foreground">
@@ -221,7 +230,7 @@ function Cartao({
         // como objetos que se pega e move. Agora ele tem superfície própria e
         // sobe de leve no hover: a sombra só aparece quando o cursor está nele,
         // que é quando ele de fato pode ser pego.
-        "rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
+        "group rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
         // FAIXA DE ETAPA — a cor da coluna repetida na borda esquerda do cartão,
         // para que ele continue legível fora do alinhamento da coluna (arrasto,
         // overlay, rolagem que esconde o cabeçalho).
@@ -302,6 +311,39 @@ function Cartao({
             </span>
           )}
           <div className="flex items-start gap-2">
+            {/* CONCLUIR NA CAPA — a bolinha do Trello. Ela só se destaca no
+                hover do cartão (por isso o `group` no container) e para o
+                pointer/click para não abrir o modal nem iniciar o arrasto. */}
+            {podeConcluir && (
+              <button
+                type="button"
+                disabled={concluindo}
+                onPointerDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onConcluir?.(d.id);
+                }}
+                title={d.concluida ? "Concluída" : "Marcar como concluída"}
+                aria-label={d.concluida ? "Concluída" : "Marcar como concluída"}
+                className={cn(
+                  "mt-0.5 shrink-0 rounded-full transition-opacity duration-200",
+                  d.concluida
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+                  "text-muted-foreground hover:text-foreground",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  "disabled:cursor-progress",
+                )}
+              >
+                {d.concluida ? (
+                  <CheckCircle2 className="size-4 text-success" aria-hidden />
+                ) : (
+                  <Circle className="size-4 transition-colors duration-200" aria-hidden />
+                )}
+              </button>
+            )}
 
             <p
               className={cn(
@@ -570,6 +612,8 @@ function Coluna({
   onRecolher,
   onAssumir,
   assumindo,
+  onConcluir,
+  concluindo,
   onCriarCartao,
   criandoCartao,
   capas,
@@ -582,6 +626,8 @@ function Coluna({
   onRecolher?: () => void;
   onAssumir?: (id: string) => void;
   assumindo?: (id: string) => boolean;
+  onConcluir?: (id: string) => void;
+  concluindo?: (id: string) => boolean;
   onCriarCartao?: (titulo: string) => void | Promise<void>;
   criandoCartao?: boolean;
   capas?: CapasResolvidas;
@@ -671,6 +717,8 @@ function Coluna({
             arrastavel={arrastavel}
             onAssumir={onAssumir}
             assumindo={assumindo?.(d.id)}
+            onConcluir={onConcluir}
+            concluindo={concluindo?.(d.id)}
             tom={tomDaEtapa(grupo.rotulo)}
             capa={capas?.get(d.id)}
 
@@ -736,6 +784,12 @@ interface Props {
   onAssumir?: (id: string) => void;
   assumindo?: (id: string) => boolean;
   /**
+   * Concluir direto da capa. Sem isto a bolinha não aparece — só a tela sabe
+   * se a fonte tem uma etapa de conclusão para onde mover.
+   */
+  onConcluir?: (id: string) => void;
+  concluindo?: (id: string) => boolean;
+  /**
    * Criar cartão direto na coluna. Sem isto o "+ Adicionar um cartão" não
    * aparece — quem sabe se existe coluna de banco para receber é a tela, e na
    * Inbox não existe.
@@ -760,6 +814,8 @@ function BoardLenteImpl({
   vazio,
   onAssumir,
   assumindo,
+  onConcluir,
+  concluindo,
   onCriarCartao,
   criandoCartao,
   capas,
@@ -864,6 +920,8 @@ function BoardLenteImpl({
               onRecolher={g.concluido ? () => alternar(g.id) : undefined}
               onAssumir={onAssumir}
               assumindo={assumindo}
+              onConcluir={onConcluir}
+              concluindo={concluindo}
               onCriarCartao={
                 onCriarCartao
                   ? (titulo) => onCriarCartao({ statusId: g.id, titulo })
