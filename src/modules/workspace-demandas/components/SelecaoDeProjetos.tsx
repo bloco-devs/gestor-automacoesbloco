@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { isBoardIconUrl } from "@/lib/atividadesBoards";
 import { useNavigate } from "react-router-dom";
 import {
   Archive,
@@ -120,11 +121,16 @@ function Linha({
       >
         <span
           aria-hidden
-          className="flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-[6px] border border-border/60 bg-muted text-[11px] leading-none"
-          style={!p.capaUrl && p.cor ? { backgroundColor: p.cor } : undefined}
+          className={cn(
+            "flex shrink-0 items-center justify-center overflow-hidden rounded-[6px] border border-border/60 bg-muted leading-none",
+            isBoardIconUrl(p.icone) && !p.capaUrl ? "size-7" : "size-5 text-[11px]",
+          )}
+          style={!p.capaUrl && p.cor && !isBoardIconUrl(p.icone) ? { backgroundColor: p.cor } : undefined}
         >
           {p.capaUrl ? (
             <img src={p.capaUrl} alt="" className="size-full object-cover" />
+          ) : isBoardIconUrl(p.icone) ? (
+            <img src={p.icone as string} alt="" className="size-full rounded-md object-cover" />
           ) : (
             p.icone ?? null
           )}
