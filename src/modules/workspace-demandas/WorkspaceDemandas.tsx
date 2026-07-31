@@ -361,6 +361,8 @@ export default function WorkspaceDemandas() {
                 onAbrir={abrir}
                 onMover={({ demandaId, statusId }) => void acoes.mover({ demandaId, statusId })}
                 podeMover={acoes.podeMover}
+                onConcluir={emProjeto ? (id) => void concluirCartao(id) : undefined}
+                concluindo={(id) => concluindo.has(id)}
                 capas={capas}
                 criandoCartao={cartoes.salvando}
 
