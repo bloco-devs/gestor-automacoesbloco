@@ -160,7 +160,10 @@ function Cartao({
 
   const meta = [
     sinais.prioridade && d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
-    sinais.referencia ? d.referencia : null,
+    // O código de rastreio é linguagem de Helpdesk: dentro de um quadro de
+    // projeto ninguém cita "#4e6706", cita o título do cartão.
+    !emProjeto && sinais.referencia ? d.referencia : null,
+
   ]
     .filter(Boolean)
     .join(" · ");
