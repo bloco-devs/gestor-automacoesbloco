@@ -630,6 +630,7 @@ function Coluna({
   onCriarCartao,
   criandoCartao,
   capas,
+  emProjeto,
 }: {
   grupo: Grupo;
   capacidades: Capacidades;
@@ -644,6 +645,7 @@ function Coluna({
   onCriarCartao?: (titulo: string) => void | Promise<void>;
   criandoCartao?: boolean;
   capas?: CapasResolvidas;
+  emProjeto?: boolean;
 }) {
 
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
@@ -734,6 +736,7 @@ function Coluna({
             concluindo={concluindo?.(d.id)}
             tom={tomDaEtapa(grupo.rotulo)}
             capa={capas?.get(d.id)}
+            emProjeto={emProjeto}
 
           />
         ))}
@@ -814,6 +817,11 @@ interface Props {
    * é a tela — o board apenas desenha o que recebe.
    */
   capas?: CapasResolvidas;
+  /**
+   * Quadro de projeto: esconde os sinais que só fazem sentido no Helpdesk
+   * (código de rastreio, círculo tracejado de "sem responsável").
+   */
+  emProjeto?: boolean;
 }
 
 function BoardLenteImpl({
@@ -832,6 +840,7 @@ function BoardLenteImpl({
   onCriarCartao,
   criandoCartao,
   capas,
+  emProjeto,
 }: Props) {
 
 
@@ -942,6 +951,7 @@ function BoardLenteImpl({
               }
               criandoCartao={criandoCartao}
               capas={capas}
+              emProjeto={emProjeto}
             />
 
           ),
@@ -956,6 +966,7 @@ function BoardLenteImpl({
               sinais={sinais}
               arrastavel
               sobreposicao
+              emProjeto={emProjeto}
               capa={capas?.get(arrastando.id)}
               tom={tomDaEtapa(
                 grupos.find((g) => g.itens.some((i) => i.id === arrastando.id))?.rotulo ?? "",
