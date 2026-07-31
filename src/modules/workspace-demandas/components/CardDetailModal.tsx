@@ -56,6 +56,17 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
   const nomeDaColuna =
     (colunas.data ?? []).find((c) => c.id === cartao.data?.colunaId)?.nome ?? null;
 
+  /**
+   * A coluna de "Concluído" não é um campo do banco: o tom vem do NOME da
+   * etapa (`tomDaEtapa`), a mesma regra que o board usa para pintar a coluna.
+   */
+  const colunaConcluida =
+    (colunas.data ?? []).find((c) => tomDaEtapa(c.nome) === "concluido") ?? null;
+  const estaConcluido =
+    !!cartao.data &&
+    (cartao.data.concluido === true ||
+      (!!colunaConcluida && cartao.data.colunaId === colunaConcluida.id));
+
   const comentarios = useQuery({
     queryKey: ["atividades", "comentarios", cardId],
     queryFn: () => listComentarios(cardId as string),
