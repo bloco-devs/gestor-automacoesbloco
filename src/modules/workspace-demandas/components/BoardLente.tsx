@@ -38,6 +38,7 @@ import {
   type TomDaEtapa,
 } from "@/domain/demand";
 import type { CapaResolvida, CapasResolvidas, EtapaDaFonte } from "@/modules/demand-access";
+import { useEtiquetasExpandidas } from "./card/etiquetasExpandidas";
 
 /**
  * A lente de board.
@@ -135,7 +136,8 @@ function Cartao({
     id: d.id,
     disabled: !arrastavel || sobreposicao,
   });
-  const [labelsExpanded, setLabelsExpanded] = useState(false);
+  // A escolha vale para todos os cartões e sobrevive à navegação.
+  const [labelsExpanded, alternarLabels] = useEtiquetasExpandidas();
   const responsavel = d.responsaveis[0];
 
   const sistemaNome = sinais.sistema ? d.sistema?.nome ?? null : null;
@@ -260,7 +262,7 @@ function Cartao({
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                setLabelsExpanded((v) => !v);
+                alternarLabels();
               }}
               aria-expanded={labelsExpanded}
               aria-label={labelsExpanded ? "Recolher etiquetas" : "Expandir etiquetas"}
@@ -334,7 +336,7 @@ function Cartao({
                 </span>
               ) : null}
               {(capa?.membros.length ?? 0) > 0 && (
-                <span className="ml-auto flex items-center -space-x-1.5">
+                <span className="ml-auto flex items-center -space-x-2">
                   {capa!.membros.slice(0, 4).map((m) => (
                     <Avatar key={m.id} className="size-6 border border-card" title={m.nome}>
                       {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.nome} />}
