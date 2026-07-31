@@ -419,6 +419,7 @@ export function SelecaoDeProjetos() {
           )}
           <Button
             size="sm"
+            data-testid="abrir-criar-quadro"
             className="ml-auto h-7 gap-1.5 px-2.5 text-[13px]"
             onClick={() => setCriando(true)}
           >
