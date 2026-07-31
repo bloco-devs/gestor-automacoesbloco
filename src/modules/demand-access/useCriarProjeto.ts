@@ -39,7 +39,9 @@ export function useCriarProjeto(): {
         visibilidade: "workspace",
         cor: identidade?.cor ?? null,
         icone: identidade?.icone ?? null,
+        background: identidade?.background ?? null,
       }),
+
     // A lista carrega contagens e ordenação derivadas — invalidar inteiro é
     // mais honesto (e mais barato de manter) que remendar o cache.
     onSuccess: () => qc.invalidateQueries({ queryKey: ["atividades", "boards-resumo"] }),
