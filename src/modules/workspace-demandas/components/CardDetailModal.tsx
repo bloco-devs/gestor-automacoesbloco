@@ -193,7 +193,7 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
 
   return (
     <Dialog open={!!cardId} onOpenChange={(aberto) => !aberto && fecharComSalvamento()}>
-      <DialogContent className="max-w-5xl gap-0 p-0">
+      <DialogContent data-testid="card-detail-modal" className="max-w-5xl gap-0 p-0">
         <DialogHeader className="space-y-2 border-b px-6 py-5">
           <DialogTitle className="sr-only">Detalhes do cartão</DialogTitle>
           {nomeDaColuna ? (
@@ -206,6 +206,8 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
               type="button"
               disabled={concluir.isPending}
               onClick={() => concluir.mutate(!estaConcluido)}
+              data-testid="modal-concluir"
+              data-concluida={estaConcluido ? "true" : "false"}
               title={estaConcluido ? "Reabrir cartão" : "Marcar como concluído"}
               aria-label={estaConcluido ? "Reabrir cartão" : "Marcar como concluído"}
               aria-pressed={estaConcluido}
