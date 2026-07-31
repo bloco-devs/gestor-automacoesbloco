@@ -56,7 +56,12 @@ export function CardMembersBotao({ cardId }: { cardId: string }) {
   const alternar = useMutation({
     mutationFn: async (u: EquipeUsuario) =>
       ids.includes(u.id) ? desvincularMembro(cardId, u.id) : vincularMembro(cardId, u.id),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: chaveMembros(cardId) }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: chaveMembros(cardId) });
+      // Sem isto os avatares só apareciam na capa do Kanban após um refetch:
+      // a capa é lida em lote por uma chave diferente da do modal.
+      void qc.invalidateQueries({ queryKey: ["atividades", "capas-dos-cards"] });
+    },
     onError: (e) => {
       console.error("[CardMembers] falha ao alterar responsável", { cardId, e });
       toast.error("Não foi possível alterar o responsável.");

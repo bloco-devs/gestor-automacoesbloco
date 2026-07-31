@@ -42,6 +42,8 @@ function useEtiquetas(cardId: string, boardId: string) {
   const invalidar = () => {
     void qc.invalidateQueries({ queryKey: chaveVinculos(cardId) });
     void qc.invalidateQueries({ queryKey: chaveEtiquetas(boardId) });
+    // A capa do cartão no Kanban lê etiquetas em lote por outra chave.
+    void qc.invalidateQueries({ queryKey: ["atividades", "capas-dos-cards"] });
   };
   return { catalogo, vinculos, invalidar };
 }
