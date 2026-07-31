@@ -111,12 +111,20 @@ function Cartao({
   concluindo,
   tom = "neutro",
   capa,
+  emProjeto,
 }: {
   demanda: Demanda;
   capacidades: Capacidades;
   sinais: SinaisUteis;
+  /**
+   * Quadro de projeto (não Helpdesk). No projeto o cartão já vive dentro de um
+   * contexto nomeado: o código de rastreio e o círculo tracejado de "sem
+   * responsável" são ruído — a bolinha de conclusão é a única marca circular.
+   */
+  emProjeto?: boolean;
   /** O tom da etapa onde o cartão está — vira a faixa de cor na borda esquerda. */
   tom?: TomDaEtapa;
+
   onAbrir?: (id: string) => void;
   arrastavel: boolean;
   sobreposicao?: boolean;
