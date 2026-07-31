@@ -144,16 +144,25 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
   });
 
   return (
-    <Dialog open={!!cardId} onOpenChange={(aberto) => !aberto && onFechar()}>
+    <Dialog open={!!cardId} onOpenChange={(aberto) => !aberto && fecharComSalvamento()}>
       <DialogContent className="max-w-4xl gap-0 p-0">
         <DialogHeader className="border-b px-5 py-4">
           <DialogTitle className="sr-only">Detalhes do cartão</DialogTitle>
           <Input
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
+            }}
             onBlur={() => {
               const limpo = titulo.trim();
-              if (limpo && limpo !== cartao.data?.titulo) salvar.mutate({ titulo: limpo });
+              const id = cardIdRef.current;
+              if (id && limpo && limpo !== originalRef.current.titulo) {
+                salvar.mutate({ id, patch: { titulo: limpo } });
+              }
             }}
             aria-label="Título do cartão"
             className="h-auto border-0 bg-transparent px-0 text-lg font-semibold shadow-none focus-visible:ring-0"
