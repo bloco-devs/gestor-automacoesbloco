@@ -136,6 +136,7 @@ export default function WorkspaceDemandas() {
   const acoes = useAcoesDemanda(escopo);
   // Criar e excluir só existem em escopo de projeto: é lá que há board e coluna.
   const cartoes = useCriarCartao(!naInbox && projetoId ? projetoId : null);
+  const cartaoExcluido = useExcluirCartao(!naInbox && projetoId ? projetoId : null);
   const exclusao = useExcluirProjeto();
 
 
