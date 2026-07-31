@@ -494,3 +494,32 @@ export async function getCoverDisplayUrl(pathOrUrl: string | null): Promise<stri
   if (error) return null;
   return (data?.signedUrl as string) ?? null;
 }
+
+// ===== Fundo de quadro enviado pelo usuário (bucket privado, signed URL longa) =====
+
+export const FUNDOS_BUCKET = "boards-backgrounds";
+
+/**
+ * O fundo é escolhido ANTES do quadro existir, então o caminho não pode ser
+ * prefixado pelo board: usamos a pasta do usuário (que é o que a política de
+ * storage sabe verificar nesse momento).
+ *
+ * O bucket é privado por política do workspace — não há URL pública. Devolvemos
+ * uma URL assinada de longa duração, que é o que `background` já sabe guardar
+ * (uma string http), sem exigir mudança de banco.
+ */
+export async function uploadBoardBackground(file: File, userId: string): Promise<string> {
+  const erro = validateCapa(file);
+  if (erro) throw new Error(erro);
+  const ext = (file.name.split(".").pop() || "img").toLowerCase().slice(0, 5);
+  const path = `${userId}/fundo-${Date.now()}.${ext}`;
+  const { error } = await sb.storage
+    .from(FUNDOS_BUCKET)
+    .upload(path, file, { upsert: false, contentType: file.type, cacheControl: "3600" });
+  if (error) throw error;
+  const { data, error: erroUrl } = await sb.storage
+    .from(FUNDOS_BUCKET)
+    .createSignedUrl(path, 60 * 60 * 24 * 365);
+  if (erroUrl || !data?.signedUrl) throw erroUrl ?? new Error("Não foi possível gerar o link da imagem.");
+  return data.signedUrl;
+}
