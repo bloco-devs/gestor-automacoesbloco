@@ -277,9 +277,8 @@ export function NovoProjetoDialog({
             </div>
           </div>
 
-          {/* Rodapé colado no fim do modal: com a rolagem interna, os botões
-              precisam continuar alcançáveis sem procurar. */}
-          <DialogFooter className="sticky bottom-0 -mx-6 -mb-6 border-t border-border/60 bg-background px-6 py-3">
+          <DialogFooter>
+
             <Button
               type="button"
               variant="ghost"
