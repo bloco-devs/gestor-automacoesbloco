@@ -183,7 +183,17 @@ function Cartao({
 
   const podeAssumir = !responsavel && !!onAssumir && !sobreposicao;
   const podeConcluir = !!onConcluir && !sobreposicao;
-  const podeExcluir = !!onExcluir && !sobreposicao && tom === "concluido";
+  // Conclusão reconhecida de duas formas: pelo tom da etapa (regra da paleta) e
+  // pelo próprio nome da coluna, sem depender de acento ou caixa — "Concluída",
+  // "CONCLUIDO" e "Concluídas" contam todas.
+  const nomeDaColuna = (colunaRotulo ?? "").toLowerCase();
+  const colunaDeConclusao =
+    tom === "concluido" ||
+    nomeDaColuna.includes("concluíd") ||
+    nomeDaColuna.includes("concluid") ||
+    nomeDaColuna.includes("finaliz") ||
+    nomeDaColuna.includes("done");
+  const podeExcluir = !!onExcluir && !sobreposicao && colunaDeConclusao;
 
   const direita = (
     <span className="ds-caption flex shrink-0 items-center gap-1.5 text-muted-foreground">
