@@ -321,7 +321,27 @@ export default function WorkspaceDemandas() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    /*
+      O FUNDO DO QUADRO VIVE AQUI, E NÃO NA LENTE
+      Quem escolhe a imagem escolhe o clima da tela inteira — barra de trabalho
+      inclusive —, então ela vai no container raiz. `isolate` cria contexto de
+      empilhamento próprio: o véu fica atrás do conteúdo sem precisar competir
+      com z-index de modais e popovers vizinhos.
+
+      O véu usa `bg-background/70` em vez de preto fixo: escurecer serve ao tema
+      escuro, mas no claro empasta cartões claros sobre fundo escuro. Velar com
+      a cor de fundo do tema mantém contraste de texto nos dois.
+    */
+    <div
+      className="relative isolate flex h-full min-h-0 flex-col bg-cover bg-center bg-no-repeat"
+      style={projeto?.fundoUrl ? { backgroundImage: `url(${projeto.fundoUrl})` } : undefined}
+    >
+      {projeto?.fundoUrl && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 bg-background/70 backdrop-blur-[2px]"
+        />
+      )}
       <BarraDeTrabalho
         fila={fila}
         onFila={(f) => trocar("fila", f)}
