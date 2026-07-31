@@ -209,23 +209,17 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                         size="sm"
                         disabled={salvar.isPending}
                         onClick={() => {
-                          salvar.mutate({ descricao: descValue });
+                          const id = cardIdRef.current;
+                          if (id && descValue !== originalRef.current.descricao) {
+                            salvar.mutate({ id, patch: { descricao: descValue } });
+                          }
                           setIsEditing(false);
                         }}
                       >
                         Salvar
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setDescValue(cartao.data?.descricao ?? "");
-                          setIsEditing(false);
-                        }}
-                      >
-                        Cancelar
-                      </Button>
                     </div>
+
                   </div>
                 ) : (
                   <button
