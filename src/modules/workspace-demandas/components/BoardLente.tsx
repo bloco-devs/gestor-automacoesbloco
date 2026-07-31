@@ -920,6 +920,8 @@ function BoardLenteImpl({
               onRecolher={g.concluido ? () => alternar(g.id) : undefined}
               onAssumir={onAssumir}
               assumindo={assumindo}
+              onConcluir={onConcluir}
+              concluindo={concluindo}
               onCriarCartao={
                 onCriarCartao
                   ? (titulo) => onCriarCartao({ statusId: g.id, titulo })
