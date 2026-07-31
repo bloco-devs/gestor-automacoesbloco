@@ -208,9 +208,11 @@ function Cartao({
         >
           {assumindo ? "Assumindo…" : "Assumir"}
         </button>
-      ) : (
+      ) : emProjeto ? null : (
+        /* No projeto a única marca circular do cartão é a bolinha de concluir. */
         <span className="size-4 rounded-full border border-dashed border-border" title="Sem responsável" />
       )}
+
     </span>
   );
 
