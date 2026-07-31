@@ -259,6 +259,33 @@ export function useAIWorkspace() {
    *
    * Agora o usuário confirma e o trabalho aparece na fila de quem vai fazer.
    */
+  /**
+   * O NOME DO SISTEMA VEM DO SLUG DA IA, NAO DO UUID DA DEMANDA
+   *
+   * A tela lia `demandaDoPreview.sistemaId` — que e FIXO em `null` desde o
+   * conserto do erro 400 (a IA devolve slug, `demands.system_id` e uuid, e
+   * mandar um no outro derrubava o insert).
+   *
+   * Consequencia que passou despercebida: a tela de confirmacao mostrava
+   * "Sistema: Nao identificado" em TODA demanda, para sempre, sem depender do
+   * que a IA respondeu. E ela respondia certo — a comparacao de modelos provou
+   * isso: os quatro modelos testados acertaram o sistema no caso real que
+   * aparecia como nao identificado.
+   *
+   * Ou seja, o defeito nunca foi de IA. Era a tela perguntando ao campo
+   * errado.
+   *
+   * Aqui o nome sai do `sistemaAlvoSlug` — o mesmo valor que ja alimenta o
+   * casamento com o ecossistema — validado contra o catalogo. Slug que nao
+   * existe na lista continua virando `null`, que e a regra de sempre: a IA
+   * nao inventa dado.
+   */
+  const sistemaDoPreview = useMemo<string | null>(() => {
+    const slug = preview?.sistemaAlvoSlug;
+    if (!slug) return null;
+    return sistemas.find((s) => s.id === slug)?.nome ?? null;
+  }, [preview?.sistemaAlvoSlug, sistemas]);
+
   const confirmSubmit = useCallback(async () => {
     if (!demandaDoPreview || !user) return;
     setPhase("submitting");
@@ -305,6 +332,7 @@ export function useAIWorkspace() {
     preview,
     previewScore,
     demandaDoPreview,
+    sistemaDoPreview,
     sistemas,
     sendMessage,
     updatePreview,

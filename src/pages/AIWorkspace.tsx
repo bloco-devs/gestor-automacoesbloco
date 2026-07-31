@@ -28,7 +28,7 @@ export default function AIWorkspace() {
     preview,
     previewScore,
     demandaDoPreview,
-    sistemas,
+    sistemaDoPreview,
     sendMessage,
     updatePreview,
     confirmSubmit,
@@ -118,11 +118,7 @@ export default function AIWorkspace() {
       {showPreview && demandaDoPreview && (
         <PreviewDaDemanda
             nova={demandaDoPreview}
-            sistemaNome={
-              demandaDoPreview.sistemaId
-                ? sistemas.find((s) => s.id === demandaDoPreview.sistemaId)?.nome ?? null
-                : null
-            }
+            sistemaNome={sistemaDoPreview}
             onConfirmar={confirmSubmit}
             onVoltarParaConversa={goBackToChat}
             enviando={phase === "submitting"}

@@ -144,7 +144,7 @@ export default function Portal() {
     preview,
     previewScore,
     demandaDoPreview,
-    sistemas,
+    sistemaDoPreview,
     sendMessage,
     updatePreview,
     confirmSubmit,
@@ -321,11 +321,7 @@ export default function Portal() {
         {showPreview && demandaDoPreview && !submitting && (
           <PreviewDaDemanda
             nova={demandaDoPreview}
-            sistemaNome={
-              demandaDoPreview.sistemaId
-                ? sistemas.find((s) => s.id === demandaDoPreview.sistemaId)?.nome ?? null
-                : null
-            }
+            sistemaNome={sistemaDoPreview}
             onConfirmar={confirmSubmit}
             onVoltarParaConversa={goBackToChat}
             enviando={submitting}
