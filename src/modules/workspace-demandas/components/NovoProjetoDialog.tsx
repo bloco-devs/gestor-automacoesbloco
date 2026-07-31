@@ -360,7 +360,7 @@ export function NovoProjetoDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={!valido || salvando || enviando}>
+            <Button type="submit" disabled={!valido || salvando || enviando || enviandoIcone}>
               {salvando ? "Criando…" : "Criar"}
             </Button>
           </DialogFooter>
