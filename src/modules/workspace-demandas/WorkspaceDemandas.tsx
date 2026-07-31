@@ -18,6 +18,7 @@ import {
   ehInbox,
   type Escopo,
 } from "@/modules/demand-access";
+import { useDeleteDemand } from "@/modules/demands";
 
 import {
   agrupar,
