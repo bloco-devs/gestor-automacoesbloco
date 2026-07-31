@@ -208,6 +208,50 @@ export function NovoProjetoDialog({
                   />
                 </button>
               ))}
+
+              {/* O fundo enviado fica ao lado dos prontos: depois do upload ele
+                  é apenas mais uma opção selecionável. */}
+              {fundoEnviado && (
+                <button
+                  type="button"
+                  onClick={() => setFundo(fundoEnviado)}
+                  aria-label="Usar a imagem enviada"
+                  aria-pressed={fundo === fundoEnviado}
+                  className={cn(
+                    "h-12 w-16 shrink-0 overflow-hidden rounded-md border-2",
+                    fundo === fundoEnviado ? "border-foreground" : "border-transparent",
+                    "transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  )}
+                >
+                  <img src={fundoEnviado} alt="Imagem enviada" className="size-full object-cover" />
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => arquivoRef.current?.click()}
+                disabled={enviando}
+                aria-label="Enviar imagem de fundo"
+                title="Enviar imagem de fundo"
+                className={cn(
+                  "flex h-12 w-16 shrink-0 items-center justify-center rounded-md border-2 border-dashed border-border",
+                  "text-muted-foreground transition-colors hover:border-foreground hover:text-foreground",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-progress",
+                )}
+              >
+                {enviando ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : (
+                  <ImagePlus className="size-4" aria-hidden />
+                )}
+              </button>
+              <input
+                ref={arquivoRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={escolherArquivo}
+              />
             </div>
           </div>
 
@@ -233,8 +277,9 @@ export function NovoProjetoDialog({
             </div>
           </div>
 
-
-          <DialogFooter>
+          {/* Rodapé colado no fim do modal: com a rolagem interna, os botões
+              precisam continuar alcançáveis sem procurar. */}
+          <DialogFooter className="sticky bottom-0 -mx-6 -mb-6 border-t border-border/60 bg-background px-6 py-3">
             <Button
               type="button"
               variant="ghost"
@@ -243,7 +288,7 @@ export function NovoProjetoDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={!valido || salvando}>
+            <Button type="submit" disabled={!valido || salvando || enviando}>
               {salvando ? "Criando…" : "Criar"}
             </Button>
           </DialogFooter>
