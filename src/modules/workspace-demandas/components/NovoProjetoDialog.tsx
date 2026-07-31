@@ -73,8 +73,12 @@ export function NovoProjetoDialog({
   const [fundo, setFundo] = useState<string | null>(null);
   /** Fundo enviado pelo usuário nesta sessão — vira uma miniatura ao lado das prontas. */
   const [fundoEnviado, setFundoEnviado] = useState<string | null>(null);
+  /** Ícone enviado pelo usuário nesta sessão — mesma ideia dos fundos. */
+  const [iconeEnviado, setIconeEnviado] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [enviandoIcone, setEnviandoIcone] = useState(false);
   const arquivoRef = useRef<HTMLInputElement>(null);
+  const arquivoIconeRef = useRef<HTMLInputElement>(null);
 
   // Reabrir com o texto da tentativa anterior confunde: parece que já existe
   // algo salvo. Zera ao fechar.
