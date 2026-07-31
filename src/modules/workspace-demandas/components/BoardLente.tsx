@@ -797,6 +797,7 @@ function Coluna({
             onExcluir={onExcluir}
             excluindo={excluindo?.(d.id)}
             tom={tomDaEtapa(grupo.rotulo)}
+            colunaRotulo={grupo.rotulo}
             capa={capas?.get(d.id)}
             emProjeto={emProjeto}
 
