@@ -57,7 +57,7 @@ export function CardChecklistBotao({ cardId }: { cardId: string }) {
     <Button
       variant="outline"
       size="sm"
-      className="w-full justify-start"
+      className="justify-start"
       disabled={criar.isPending}
       onClick={() => criar.mutate()}
     >

@@ -71,7 +71,7 @@ export function CardMembersBotao({ cardId }: { cardId: string }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full justify-start">
+        <Button variant="outline" size="sm" className="justify-start">
           <Users className="mr-2 size-4" aria-hidden />
           Membros
         </Button>
