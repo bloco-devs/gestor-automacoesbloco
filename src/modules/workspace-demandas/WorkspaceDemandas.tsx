@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import {
   useAcoesDemanda,
   useCriarCartao,
+  useExcluirCartao,
   useCapasDosCards,
 
   useDemandas,
