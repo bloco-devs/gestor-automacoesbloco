@@ -433,37 +433,35 @@ function Cartao({
             </div>
           )}
 
-          {/* EXCLUIR — só em etapa de conclusão, e só quando a tela sabe
-              excluir. Trabalho terminado é o único que pode sair sem perder
-              rastro; em qualquer outra etapa isto seria uma armadilha ao lado
-              do arrasto. */}
+          {/* EXCLUIR — só em coluna de conclusão, e só quando a tela sabe
+              excluir. Fica ancorado no canto inferior direito do cartão, acima
+              dos demais elementos, para não competir com a meta-informação. */}
           {podeExcluir && (
-            <div className="mt-1 flex justify-end">
-              <button
-                type="button"
-                disabled={excluindo}
-                onPointerDown={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  if (window.confirm("Tem certeza que deseja excluir esta demanda definitivamente?")) {
-                    onExcluir?.(d.id);
-                  }
-                }}
-                title="Excluir definitivamente"
-                aria-label="Excluir definitivamente"
-                className={cn(
-                  "rounded p-1 text-muted-foreground/60 transition-all duration-200",
-                  "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
-                  "hover:text-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                  "disabled:cursor-progress",
-                )}
-              >
-                <Trash2 className="size-3.5" aria-hidden />
-              </button>
-            </div>
+            <button
+              type="button"
+              disabled={excluindo}
+              onPointerDown={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (window.confirm("Tem certeza que deseja excluir esta demanda definitivamente?")) {
+                  onExcluir?.(d.id);
+                }
+              }}
+              title="Excluir definitivamente"
+              aria-label="Excluir definitivamente"
+              className={cn(
+                "absolute bottom-2 right-2 z-10 rounded p-1",
+                "bg-card/80 text-muted-foreground/70 transition-colors duration-200",
+                "hover:text-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                "disabled:cursor-progress",
+              )}
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+            </button>
           )}
+
         </div>
 
       </div>
