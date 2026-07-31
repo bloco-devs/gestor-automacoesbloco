@@ -69,11 +69,18 @@ function ContextoDoProjetoImpl({ projeto, resumo, onFila, onExcluir, excluindo }
     <div className="flex min-w-0 items-center gap-2.5">
       <span
         aria-hidden
-        className="flex size-[18px] shrink-0 items-center justify-center overflow-hidden rounded-[5px] border border-border/60 bg-muted text-[10px] leading-none"
-        style={!projeto.capaUrl && projeto.cor ? { backgroundColor: projeto.cor } : undefined}
+        className={cn(
+          "flex shrink-0 items-center justify-center overflow-hidden rounded-[5px] border border-border/60 bg-muted leading-none",
+          isBoardIconUrl(projeto.icone) && !projeto.capaUrl
+            ? "size-7 rounded-md"
+            : "size-[18px] text-[10px]",
+        )}
+        style={!projeto.capaUrl && projeto.cor && !isBoardIconUrl(projeto.icone) ? { backgroundColor: projeto.cor } : undefined}
       >
         {projeto.capaUrl ? (
           <img src={projeto.capaUrl} alt="" className="size-full object-cover" />
+        ) : isBoardIconUrl(projeto.icone) ? (
+          <img src={projeto.icone as string} alt="" className="size-full rounded-md object-cover" />
         ) : (
           projeto.icone ?? null
         )}
