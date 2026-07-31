@@ -2661,6 +2661,10 @@ export type Database = {
         Args: { _board_id: string; _user_id?: string }
         Returns: boolean
       }
+      atividades_can_view_board_background: {
+        Args: { _object_name: string }
+        Returns: boolean
+      }
       atividades_coluna_create: {
         Args: { _board_id: string; _chave?: string; _nome: string }
         Returns: string
