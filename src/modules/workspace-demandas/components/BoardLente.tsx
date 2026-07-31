@@ -409,9 +409,42 @@ function Cartao({
               )}
             </div>
           )}
+
+          {/* EXCLUIR — só em etapa de conclusão, e só quando a tela sabe
+              excluir. Trabalho terminado é o único que pode sair sem perder
+              rastro; em qualquer outra etapa isto seria uma armadilha ao lado
+              do arrasto. */}
+          {podeExcluir && (
+            <div className="mt-1 flex justify-end">
+              <button
+                type="button"
+                disabled={excluindo}
+                onPointerDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  if (window.confirm("Tem certeza que deseja excluir esta demanda definitivamente?")) {
+                    onExcluir?.(d.id);
+                  }
+                }}
+                title="Excluir definitivamente"
+                aria-label="Excluir definitivamente"
+                className={cn(
+                  "rounded p-1 text-muted-foreground/60 transition-all duration-200",
+                  "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+                  "hover:text-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  "disabled:cursor-progress",
+                )}
+              >
+                <Trash2 className="size-3.5" aria-hidden />
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
+
     </div>
   );
 }
