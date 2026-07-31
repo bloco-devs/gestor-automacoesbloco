@@ -266,7 +266,9 @@ function Cartao({
         // como objetos que se pega e move. Agora ele tem superfície própria e
         // sobe de leve no hover: a sombra só aparece quando o cursor está nele,
         // que é quando ele de fato pode ser pego.
-        "group rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
+        "group relative rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
+        // Espaço reservado para a lixeira ancorada no canto inferior direito.
+        podeExcluir && "pb-8",
         // FAIXA DE ETAPA — a cor da coluna repetida na borda esquerda do cartão,
         // para que ele continue legível fora do alinhamento da coluna (arrasto,
         // overlay, rolagem que esconde o cabeçalho).
