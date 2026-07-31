@@ -1001,6 +1001,8 @@ function BoardLenteImpl({
               assumindo={assumindo}
               onConcluir={onConcluir}
               concluindo={concluindo}
+              onExcluir={onExcluir}
+              excluindo={excluindo}
               onCriarCartao={
                 onCriarCartao
                   ? (titulo) => onCriarCartao({ statusId: g.id, titulo })
