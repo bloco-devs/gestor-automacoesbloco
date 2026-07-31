@@ -159,10 +159,14 @@ export function NovoProjetoDialog({
             <div className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border/60 text-base"
+                className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/60 text-base"
                 style={{ backgroundColor: cor }}
               >
-                {icone}
+                {isBoardIconUrl(icone) ? (
+                  <img src={icone} alt="" className="size-full object-cover" />
+                ) : (
+                  icone
+                )}
               </span>
               <Input
                 id="nome-do-quadro"
