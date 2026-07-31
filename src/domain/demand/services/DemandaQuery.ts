@@ -160,6 +160,14 @@ export function ordenarPorAtencao(demandas: Demanda[]): Demanda[] {
   return [...demandas].sort((a, b) => pesoDeAtencao(b) - pesoDeAtencao(a));
 }
 
+/** Mais recente primeiro. Concluídas ao fim, porque fila é trabalho pendente. */
+export function ordenarPorChegada(demandas: Demanda[]): Demanda[] {
+  return [...demandas].sort((a, b) => {
+    if (a.concluida !== b.concluida) return a.concluida ? 1 : -1;
+    return new Date(b.criadaEm).getTime() - new Date(a.criadaEm).getTime();
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Lentes — o que muda é só o critério de corte
 // ---------------------------------------------------------------------------
