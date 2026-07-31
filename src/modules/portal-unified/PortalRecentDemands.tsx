@@ -6,6 +6,7 @@ import { useDemands } from "@/modules/demands/hooks";
 import type { Demand } from "@/modules/demands/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { visivelParaOSolicitante } from "@/modules/demands/janelaDeVisibilidade";
 import { humanizeStatus, humanTime } from "./statusHuman";
 
 export function PortalRecentDemands({ limit = 3 }: { limit?: number }) {
@@ -16,6 +17,10 @@ export function PortalRecentDemands({ limit = 3 }: { limit?: number }) {
     if (!user?.id) return [];
     return demands
       .filter((d) => d.created_by === user.id)
+      // Concluída sai da lista depois de alguns dias úteis. Ela continua
+      // existindo em "Ver todas" e na busca — a lista responde "o que eu pedi
+      // e ainda não chegou", e trabalho terminado não responde isso.
+      .filter((d) => visivelParaOSolicitante(d))
       .slice()
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       .slice(0, limit);
