@@ -781,6 +781,8 @@ function Coluna({
             assumindo={assumindo?.(d.id)}
             onConcluir={onConcluir}
             concluindo={concluindo?.(d.id)}
+            onExcluir={onExcluir}
+            excluindo={excluindo?.(d.id)}
             tom={tomDaEtapa(grupo.rotulo)}
             capa={capas?.get(d.id)}
             emProjeto={emProjeto}
