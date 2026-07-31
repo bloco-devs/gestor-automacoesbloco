@@ -784,6 +784,12 @@ interface Props {
   onAssumir?: (id: string) => void;
   assumindo?: (id: string) => boolean;
   /**
+   * Concluir direto da capa. Sem isto a bolinha não aparece — só a tela sabe
+   * se a fonte tem uma etapa de conclusão para onde mover.
+   */
+  onConcluir?: (id: string) => void;
+  concluindo?: (id: string) => boolean;
+  /**
    * Criar cartão direto na coluna. Sem isto o "+ Adicionar um cartão" não
    * aparece — quem sabe se existe coluna de banco para receber é a tela, e na
    * Inbox não existe.
