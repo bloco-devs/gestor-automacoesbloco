@@ -285,6 +285,8 @@ export function useAIWorkspace() {
        * melhor que um `RH` numa demanda de obra.
        */
       sistemaId: casarSistema(sistemaDoPreview, catalogoLocalQ.data ?? []),
+      // O que de fato produz o codigo do chamado. Ver a migracao do prefixo.
+      sistemaSlug: preview?.sistemaAlvoSlug ?? null,
       criteriosDeAceite: criterios,
       origemIa: true,
       confianca: preview.intent?.confidence ?? 0.5,

@@ -46,6 +46,7 @@ export function useCriarDemanda() {
             .join("")
             .trim(),
           system_id: nova.sistemaId,
+          sistema_slug: nova.sistemaSlug ?? null,
           type: nova.tipo,
           priority: nova.prioridade,
           complexity: nova.complexidade,

@@ -93,6 +93,8 @@ export interface CreateDemandInput {
   type: DemandType;
   priority?: DemandPriority;
   complexity?: DemandComplexity;
+  /** Slug do sistema no ecossistema. É dele que o banco monta o código do chamado. */
+  sistema_slug?: string | null;
 }
 
 export const STATUS_COLUMNS: { id: DemandStatus; label: string }[] = [

@@ -47,6 +47,18 @@ export async function createDemand(input: CreateDemandInput & { assigned_to?: st
       title: input.title,
       description: input.description ?? null,
       system_id: input.system_id ?? null,
+      /**
+       * O SLUG DO ECOSSISTEMA — É DELE QUE SAI O CÓDIGO DO CHAMADO
+       *
+       * `system_id` aponta para `solucoes`, que está vazia; e a IA devolve
+       * slug, não uuid. Por isso o prefixo saía sempre `REQ`, que é o código
+       * de "sem sistema identificado".
+       *
+       * O slug vem sem tabela local no meio: o catálogo mora no HUB e continua
+       * sendo o único. Sistema novo lá passa a funcionar aqui sem ninguém
+       * copiar nada.
+       */
+      sistema_slug: input.sistema_slug ?? null,
       type: input.type,
       priority: input.priority ?? "media",
       complexity: input.complexity ?? "media",

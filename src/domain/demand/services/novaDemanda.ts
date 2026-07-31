@@ -27,6 +27,15 @@ export interface NovaDemanda {
   complexidade: Complexidade;
   prioridade: Prioridade;
   sistemaId: string | null;
+  /**
+   * Slug do sistema no ecossistema.
+   *
+   * Coexiste com `sistemaId` porque apontam para catálogos diferentes: o id é
+   * uuid de `solucoes` (tabela local, hoje vazia) e o slug é do HUB, que é
+   * onde os sistemas realmente moram. É do slug que o banco monta o código do
+   * chamado — ver a migração do prefixo.
+   */
+  sistemaSlug?: string | null;
   /** Como saber que ficou pronto. Sem isso, "pronto" vira opinião. */
   criteriosDeAceite: string[];
   /** Marca de origem: esta demanda nasceu de uma conversa, não de um formulário. */
