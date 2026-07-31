@@ -1,0 +1,57 @@
+# A verificação deixa de depender de alguém lembrar.
+#
+# POR QUE ISTO EXISTE
+# Duas pessoas mexem neste repositório, e uma delas trabalha por uma
+# ferramenta que faz commit direto na main. Hoje, quando algo quebra, a
+# descoberta depende de outra pessoa clonar o projeto e rodar os testes por
+# conta própria — o que só acontece por acaso, e sempre depois do deploy.
+#
+# Quatro testes de vocabulário e acoplamento passaram um dia inteiro vermelhos
+# sem que ninguém soubesse. Eles existiam justamente para avisar. Um alarme que
+# ninguém ouve não é um alarme.
+#
+# A partir daqui o próprio GitHub marca o commit com ✗ e diz o que caiu,
+# minutos depois do push, para quem quer que o tenha feito.
+#
+# O QUE ELE NÃO FAZ
+# Não bloqueia nada e não desfaz nada. Só informa. Bloquear merge exige
+# combinar entre vocês como trabalhar quando a Lovable escreve direto na main,
+# e essa é uma conversa de processo, não um arquivo de configuração.
+#
+# O E2E do Playwright ficou de fora por enquanto: ele precisa subir o
+# aplicativo e um navegador, o que torna a verificação lenta o bastante para
+# a pessoa parar de esperar por ela. Melhor um sinal em dois minutos que todo
+# mundo lê do que um em quinze que ninguém acompanha.
+
+name: Verificação
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # Rodar como passos separados, e não num comando só, é o que faz o
+      # GitHub dizer QUAL etapa caiu direto na lista — sem obrigar ninguém a
+      # abrir o log e procurar.
+      - name: Tipos
+        run: npm run typecheck
+
+      - name: Testes
+        run: npm test
+
+      - name: Build
+        run: npm run build
