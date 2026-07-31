@@ -523,3 +523,35 @@ export async function uploadBoardBackground(file: File, userId: string): Promise
   if (erroUrl || !data?.signedUrl) throw erroUrl ?? new Error("Não foi possível gerar o link da imagem.");
   return data.signedUrl;
 }
+
+// ===== Ícone de quadro enviado pelo usuário =====
+
+export const ICONES_BUCKET = "boards_icons";
+
+/** Um ícone que é imagem é uma URL; um ícone que é emoji, não. */
+export function isBoardIconUrl(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return /^https?:\/\//i.test(value) || value.includes("/storage/") || value.startsWith("data:");
+}
+
+/**
+ * Mesmo raciocínio do fundo: o ícone é escolhido antes de o quadro existir, então
+ * o arquivo mora na pasta do usuário. O bucket é privado (política do workspace
+ * bloqueia buckets públicos), então devolvemos uma URL assinada longa — a coluna
+ * `icone` só precisa guardar uma string.
+ */
+export async function uploadBoardIcon(file: File, userId: string): Promise<string> {
+  const erro = validateCapa(file);
+  if (erro) throw new Error(erro);
+  const ext = (file.name.split(".").pop() || "img").toLowerCase().slice(0, 5);
+  const path = `${userId}/icone-${Date.now()}.${ext}`;
+  const { error } = await sb.storage
+    .from(ICONES_BUCKET)
+    .upload(path, file, { upsert: false, contentType: file.type, cacheControl: "3600" });
+  if (error) throw error;
+  const { data, error: erroUrl } = await sb.storage
+    .from(ICONES_BUCKET)
+    .createSignedUrl(path, 60 * 60 * 24 * 365);
+  if (erroUrl || !data?.signedUrl) throw erroUrl ?? new Error("Não foi possível gerar o link do ícone.");
+  return data.signedUrl;
+}

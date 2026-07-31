@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { uploadBoardBackground } from "@/lib/atividadesBoards";
+import { uploadBoardBackground, uploadBoardIcon, isBoardIconUrl } from "@/lib/atividadesBoards";
 import { useAuth } from "@/hooks/useAuth";
 import type { IdentidadeDoProjeto } from "@/modules/demand-access";
 
@@ -73,8 +73,12 @@ export function NovoProjetoDialog({
   const [fundo, setFundo] = useState<string | null>(null);
   /** Fundo enviado pelo usuário nesta sessão — vira uma miniatura ao lado das prontas. */
   const [fundoEnviado, setFundoEnviado] = useState<string | null>(null);
+  /** Ícone enviado pelo usuário nesta sessão — mesma ideia dos fundos. */
+  const [iconeEnviado, setIconeEnviado] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [enviandoIcone, setEnviandoIcone] = useState(false);
   const arquivoRef = useRef<HTMLInputElement>(null);
+  const arquivoIconeRef = useRef<HTMLInputElement>(null);
 
   // Reabrir com o texto da tentativa anterior confunde: parece que já existe
   // algo salvo. Zera ao fechar.
@@ -85,7 +89,9 @@ export function NovoProjetoDialog({
       setIcone(ICONES[0]);
       setFundo(null);
       setFundoEnviado(null);
+      setIconeEnviado(null);
       setEnviando(false);
+      setEnviandoIcone(false);
     }
   }, [open]);
 
@@ -93,7 +99,7 @@ export function NovoProjetoDialog({
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    if (!valido || salvando || enviando) return;
+    if (!valido || salvando || enviando || enviandoIcone) return;
     await onCriar(nome.trim(), { cor, icone, background: fundo });
   }
 
@@ -117,6 +123,26 @@ export function NovoProjetoDialog({
     }
   }
 
+  async function escolherIcone(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!user?.id) {
+      toast.error("Entre novamente para enviar imagens.");
+      return;
+    }
+    setEnviandoIcone(true);
+    try {
+      const url = await uploadBoardIcon(file, user.id);
+      setIconeEnviado(url);
+      setIcone(url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar o ícone.");
+    } finally {
+      setEnviandoIcone(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl md:max-w-3xl">
@@ -133,10 +159,14 @@ export function NovoProjetoDialog({
             <div className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border/60 text-base"
+                className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/60 text-base"
                 style={{ backgroundColor: cor }}
               >
-                {icone}
+                {isBoardIconUrl(icone) ? (
+                  <img src={icone} alt="" className="size-full object-cover" />
+                ) : (
+                  icone
+                )}
               </span>
               <Input
                 id="nome-do-quadro"
@@ -257,7 +287,7 @@ export function NovoProjetoDialog({
 
           <div className="space-y-2">
             <Label>Ícone</Label>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               {ICONES.map((i) => (
                 <button
                   key={i}
@@ -274,6 +304,49 @@ export function NovoProjetoDialog({
                   {i}
                 </button>
               ))}
+
+              {/* Ícone enviado: depois do upload é só mais uma opção selecionável. */}
+              {iconeEnviado && (
+                <button
+                  type="button"
+                  onClick={() => setIcone(iconeEnviado)}
+                  aria-label="Usar o ícone enviado"
+                  aria-pressed={icone === iconeEnviado}
+                  className={cn(
+                    "size-7 overflow-hidden rounded-md border transition-colors",
+                    icone === iconeEnviado ? "border-foreground" : "border-border",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  )}
+                >
+                  <img src={iconeEnviado} alt="Ícone enviado" className="size-full object-cover" />
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => arquivoIconeRef.current?.click()}
+                disabled={enviandoIcone}
+                aria-label="Enviar ícone personalizado"
+                title="Enviar ícone personalizado"
+                className={cn(
+                  "flex size-7 items-center justify-center rounded-md border border-dashed border-border",
+                  "text-muted-foreground transition-colors hover:border-foreground hover:text-foreground",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-progress",
+                )}
+              >
+                {enviandoIcone ? (
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                ) : (
+                  <ImagePlus className="size-3.5" aria-hidden />
+                )}
+              </button>
+              <input
+                ref={arquivoIconeRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={escolherIcone}
+              />
             </div>
           </div>
 
@@ -287,7 +360,7 @@ export function NovoProjetoDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={!valido || salvando || enviando}>
+            <Button type="submit" disabled={!valido || salvando || enviando || enviandoIcone}>
               {salvando ? "Criando…" : "Criar"}
             </Button>
           </DialogFooter>
