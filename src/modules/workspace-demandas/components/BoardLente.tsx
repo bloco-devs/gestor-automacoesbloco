@@ -242,9 +242,14 @@ function Cartao({
 
   return (
     <div
+      data-testid="card-demanda"
+      data-card-id={d.id}
+      data-concluida={d.concluida ? "true" : "false"}
+      data-coluna={colunaRotulo}
       ref={sobreposicao ? undefined : setNodeRef}
       {...(sobreposicao ? {} : listeners)}
       {...(sobreposicao ? {} : attributes)}
+
       onClick={() => {
         if (isDragging || sobreposicao) return;
         onAbrir?.(d.id);
@@ -363,6 +368,8 @@ function Cartao({
                   e.preventDefault();
                   onConcluir?.(d.id);
                 }}
+                data-testid="cartao-concluir"
+                data-concluida={d.concluida ? "true" : "false"}
                 title={d.concluida ? "Concluída" : "Marcar como concluída"}
                 aria-label={d.concluida ? "Concluída" : "Marcar como concluída"}
                 className={cn(
@@ -451,6 +458,7 @@ function Cartao({
                   onExcluir?.(d.id);
                 }
               }}
+              data-testid="cartao-excluir"
               title="Excluir definitivamente"
               aria-label="Excluir definitivamente"
               className={cn(
@@ -617,6 +625,7 @@ function ComporCartao({
     return (
       <button
         type="button"
+        data-testid="compor-cartao-abrir"
         onClick={() => setAberto(true)}
         className="mx-0.5 mt-1 flex w-[calc(100%-0.25rem)] items-center gap-1.5 rounded-lg px-2 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:bg-muted"
       >
@@ -633,6 +642,7 @@ function ComporCartao({
         rows={2}
         value={titulo}
         disabled={salvando}
+        data-testid="compor-cartao-titulo"
         placeholder="Título do cartão"
         aria-label="Título do novo cartão"
         onChange={(e) => setTitulo(e.target.value)}
@@ -651,6 +661,7 @@ function ComporCartao({
       <div className="flex items-center gap-1.5">
         <button
           type="button"
+          data-testid="compor-cartao-salvar"
           disabled={!titulo.trim() || salvando}
           onClick={() => void gravar()}
           className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
@@ -715,6 +726,8 @@ function Coluna({
 
   return (
     <section
+      data-testid="coluna"
+      data-coluna={grupo.rotulo}
       ref={setNodeRef}
       className={cn(
         // A coluna preenche a altura do board em vez de calcular a sua a partir
@@ -742,6 +755,7 @@ function Coluna({
         isOver && "bg-primary/5",
       )}
       aria-label={`${grupo.rotulo}, ${grupo.itens.length} demandas`}
+      data-total={grupo.itens.length}
     >
       {/* A contagem vira pastilha em vez de número solto: ela é um dado
           diferente do nome da coluna, e sem forma própria os dois se leem como

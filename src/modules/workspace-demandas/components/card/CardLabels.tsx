@@ -121,12 +121,12 @@ export function CardLabelsBotao({ cardId, boardId }: { cardId: string; boardId: 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="justify-start">
+        <Button data-testid="botao-etiquetas" variant="outline" size="sm" className="justify-start">
           <Tag className="mr-2 size-4" aria-hidden />
           Etiquetas
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 space-y-3">
+      <PopoverContent data-testid="popover-etiquetas" align="end" className="w-72 space-y-3">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Etiquetas
         </p>
@@ -137,6 +137,7 @@ export function CardLabelsBotao({ cardId, boardId }: { cardId: string; boardId: 
             return (
               <li key={e.id} className="flex items-center gap-2">
                 <Checkbox
+                  data-testid="etiqueta-item"
                   id={`etq-${e.id}`}
                   checked={marcada}
                   onCheckedChange={() => alternar.mutate({ etiqueta: e, marcada })}
@@ -169,6 +170,7 @@ export function CardLabelsBotao({ cardId, boardId }: { cardId: string; boardId: 
           <Input
             value={nome}
             onChange={(ev) => setNome(ev.target.value)}
+            data-testid="etiqueta-nome"
             placeholder="Nova etiqueta…"
             aria-label="Nome da nova etiqueta"
             onKeyDown={(ev) => {
@@ -189,6 +191,7 @@ export function CardLabelsBotao({ cardId, boardId }: { cardId: string; boardId: 
             ))}
           </div>
           <Button
+            data-testid="etiqueta-criar"
             size="sm"
             className="w-full"
             disabled={!nome.trim() || criar.isPending}
