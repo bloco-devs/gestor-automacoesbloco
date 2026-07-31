@@ -612,6 +612,8 @@ function Coluna({
   onRecolher,
   onAssumir,
   assumindo,
+  onConcluir,
+  concluindo,
   onCriarCartao,
   criandoCartao,
   capas,
@@ -624,6 +626,8 @@ function Coluna({
   onRecolher?: () => void;
   onAssumir?: (id: string) => void;
   assumindo?: (id: string) => boolean;
+  onConcluir?: (id: string) => void;
+  concluindo?: (id: string) => boolean;
   onCriarCartao?: (titulo: string) => void | Promise<void>;
   criandoCartao?: boolean;
   capas?: CapasResolvidas;
