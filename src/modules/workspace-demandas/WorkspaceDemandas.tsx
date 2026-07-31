@@ -140,6 +140,9 @@ export default function WorkspaceDemandas() {
   const cartoes = useCriarCartao(!naInbox && projetoId ? projetoId : null);
   const cartaoExcluido = useExcluirCartao(!naInbox && projetoId ? projetoId : null);
   const exclusao = useExcluirProjeto();
+  // Na Caixa de Entrada a demanda mora em `demands`: excluir ali é o soft delete
+  // da fila do Help Desk, não o delete de um cartão de quadro.
+  const demandaExcluida = useDeleteDemand();
 
 
   const contagens = useMemo(() => contarFilas(demandas, user?.id ?? null), [demandas, user?.id]);
