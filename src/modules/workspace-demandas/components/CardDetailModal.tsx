@@ -371,13 +371,22 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                 {(comentarios.data ?? []).map((c) => (
                   <li key={c.id} className="flex gap-2">
                     <Avatar className="size-7 shrink-0">
-                      <AvatarFallback className="text-[10px]">•</AvatarFallback>
+                      {/* A foto quando existe; a inicial só como último recurso. */}
+                      {c.autorAvatarUrl ? (
+                        <AvatarImage src={c.autorAvatarUrl} alt={c.autorNome ?? "Autor"} />
+                      ) : null}
+                      <AvatarFallback className="text-[10px]">
+                        {(c.autorNome ?? "?").trim().slice(0, 1).toUpperCase() || "?"}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1 rounded-lg border bg-muted/30 p-3">
                       <p className="text-xs text-muted-foreground">
+                        {c.autorNome ? <span className="font-medium text-foreground">{c.autorNome}</span> : null}
+                        {c.autorNome ? " · " : null}
                         {new Date(c.createdAt).toLocaleString("pt-BR")}
                       </p>
                       <p className="mt-1 whitespace-pre-wrap text-sm">{c.texto}</p>
+
                     </div>
                   </li>
                 ))}
