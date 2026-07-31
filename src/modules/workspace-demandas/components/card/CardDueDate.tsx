@@ -103,7 +103,7 @@ export function CardDueDateBotao({ cardId, boardId, dataEntrega, onSalvo }: Prop
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full justify-start">
+        <Button variant="outline" size="sm" className="justify-start">
           <CalendarDays className="mr-2 size-4" aria-hidden />
           Datas
         </Button>

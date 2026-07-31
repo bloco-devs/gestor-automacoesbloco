@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { AlignLeft, Circle, Loader2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import {
   createComentario,
   getCardById,
+  listColunas,
   listComentarios,
   updateCard,
 } from "@/lib/atividades";
 import { atividadesKeys } from "@/hooks/useAtividadesBoard";
 import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -22,13 +24,10 @@ import { CardMembersBotao, CardMembersResumo } from "./card/CardMembers";
 import { CardAttachmentsBotao, CardAttachmentsCorpo } from "./card/CardAttachments";
 
 /**
- * Modal de detalhe do cartão — estilo Trello.
- *
- * ESCOPO ATUAL
- * Título, descrição e comentários (tabelas de `atividades_*`), além dos módulos
- * isolados de Etiquetas, Datas, Checklists, Membros e Anexos.
+ * Modal de detalhe do cartão — layout espelhando o Trello novo:
+ * coluna principal (título, ações, descrição, checklists, anexos) + lateral
+ * dedicada a comentários e atividade.
  */
-
 
 interface Props {
   cardId: string | null;
@@ -46,6 +45,16 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
     enabled: !!cardId,
   });
 
+  const colunas = useQuery({
+    queryKey: ["atividades", "colunas", boardId],
+    queryFn: () => listColunas(boardId as string),
+    enabled: !!boardId,
+    staleTime: 5 * 60_000,
+  });
+
+  const nomeDaColuna =
+    (colunas.data ?? []).find((c) => c.id === cartao.data?.colunaId)?.nome ?? null;
+
   const comentarios = useQuery({
     queryKey: ["atividades", "comentarios", cardId],
     queryFn: () => listComentarios(cardId as string),
@@ -56,6 +65,7 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
   const [descValue, setDescValue] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [comentario, setComentario] = useState("");
+  const [mostrarDetalhes, setMostrarDetalhes] = useState(false);
 
   /**
    * Blindagem de unmount: o modal desmonta antes do PATCH terminar, então
@@ -145,29 +155,37 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
 
   return (
     <Dialog open={!!cardId} onOpenChange={(aberto) => !aberto && fecharComSalvamento()}>
-      <DialogContent className="max-w-4xl gap-0 p-0">
-        <DialogHeader className="border-b px-5 py-4">
+      <DialogContent className="max-w-5xl gap-0 p-0">
+        <DialogHeader className="space-y-2 border-b px-6 py-5">
           <DialogTitle className="sr-only">Detalhes do cartão</DialogTitle>
-          <Input
-            value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                e.currentTarget.blur();
-              }
-            }}
-            onBlur={() => {
-              const limpo = titulo.trim();
-              const id = cardIdRef.current;
-              if (id && limpo && limpo !== originalRef.current.titulo) {
-                salvar.mutate({ id, patch: { titulo: limpo } });
-              }
-            }}
-            aria-label="Título do cartão"
-            className="h-auto border-0 bg-transparent px-0 text-lg font-semibold shadow-none focus-visible:ring-0"
-            placeholder="Título do cartão"
-          />
+          {nomeDaColuna ? (
+            <span className="inline-flex w-fit items-center rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+              {nomeDaColuna}
+            </span>
+          ) : null}
+          <div className="flex items-start gap-3">
+            <Circle className="mt-2 size-5 shrink-0 text-muted-foreground" aria-hidden />
+            <Input
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                }
+              }}
+              onBlur={() => {
+                const limpo = titulo.trim();
+                const id = cardIdRef.current;
+                if (id && limpo && limpo !== originalRef.current.titulo) {
+                  salvar.mutate({ id, patch: { titulo: limpo } });
+                }
+              }}
+              aria-label="Título do cartão"
+              className="h-auto border-0 bg-transparent px-0 text-2xl font-bold shadow-none focus-visible:ring-0"
+              placeholder="Título do cartão"
+            />
+          </div>
         </DialogHeader>
 
         {cartao.isLoading ? (
@@ -176,9 +194,24 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
             <span className="sr-only">Carregando cartão…</span>
           </div>
         ) : (
-          <div className="grid max-h-[70vh] grid-cols-1 gap-6 overflow-y-auto p-5 md:grid-cols-4">
+          <div className="grid max-h-[70vh] grid-cols-1 gap-8 overflow-y-auto p-6 md:grid-cols-5">
             {/* Coluna principal */}
             <div className="min-w-0 space-y-6 md:col-span-3">
+              {/* Linha de ações */}
+              <div className="mt-0 flex flex-row flex-wrap gap-2">
+                {cardId && <CardMembersBotao cardId={cardId} />}
+                {cardId && boardId && <CardLabelsBotao cardId={cardId} boardId={boardId} />}
+                {cardId && (
+                  <CardDueDateBotao
+                    cardId={cardId}
+                    boardId={boardId}
+                    dataEntrega={cartao.data?.dataEntrega ?? null}
+                  />
+                )}
+                {cardId && <CardChecklistBotao cardId={cardId} />}
+                {cardId && <CardAttachmentsBotao cardId={cardId} boardId={boardId} />}
+              </div>
+
               {cardId ? (
                 <div className="flex flex-wrap items-center gap-2">
                   {cardId && <CardMembersResumo cardId={cardId} />}
@@ -191,9 +224,11 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                 </div>
               ) : null}
 
-
               <section>
-                <h3 className="ds-body-strong mb-2 text-sm font-medium">Descrição</h3>
+                <h3 className="ds-body-strong mb-2 flex items-center gap-2 text-sm font-medium">
+                  <AlignLeft className="size-4 text-muted-foreground" aria-hidden />
+                  Descrição
+                </h3>
                 {isEditing ? (
                   <div className="space-y-2">
                     <Textarea
@@ -219,7 +254,6 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                         Salvar
                       </Button>
                     </div>
-
                   </div>
                 ) : (
                   <button
@@ -238,68 +272,81 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                 )}
               </section>
 
-
               {cardId && <CardChecklistCorpo cardId={cardId} />}
 
               {cardId && <CardAttachmentsCorpo cardId={cardId} />}
+            </div>
 
+            {/* Lateral: comentários e atividade */}
+            <aside className="min-w-0 space-y-4 md:col-span-2">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-medium">
+                  <MessageSquare className="size-4 text-muted-foreground" aria-hidden />
+                  Comentários e atividade
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground"
+                  onClick={() => setMostrarDetalhes((v) => !v)}
+                >
+                  {mostrarDetalhes ? "Ocultar detalhes" : "Mostrar detalhes"}
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Textarea
+                  value={comentario}
+                  onChange={(e) => setComentario(e.target.value)}
+                  rows={3}
+                  placeholder="Escrever um comentário…"
+                />
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    disabled={!comentario.trim() || comentar.isPending}
+                    onClick={() => comentar.mutate(comentario.trim())}
+                  >
+                    {comentar.isPending ? "Publicando…" : "Comentar"}
+                  </Button>
+                </div>
+              </div>
 
               <Separator />
 
-              <section>
-                <h3 className="mb-2 text-sm font-medium">Atividade</h3>
-                <div className="space-y-2">
-                  <Textarea
-                    value={comentario}
-                    onChange={(e) => setComentario(e.target.value)}
-                    rows={2}
-                    placeholder="Escreva um comentário…"
-                  />
-                  <div className="flex justify-end">
-                    <Button
-                      size="sm"
-                      disabled={!comentario.trim() || comentar.isPending}
-                      onClick={() => comentar.mutate(comentario.trim())}
-                    >
-                      {comentar.isPending ? "Publicando…" : "Comentar"}
-                    </Button>
-                  </div>
-                </div>
-
-                <ul className="mt-4 space-y-3">
-                  {(comentarios.data ?? []).map((c) => (
-                    <li key={c.id} className="rounded-lg border bg-muted/30 p-3">
+              <ul className="space-y-3">
+                {(comentarios.data ?? []).map((c) => (
+                  <li key={c.id} className="flex gap-2">
+                    <Avatar className="size-7 shrink-0">
+                      <AvatarFallback className="text-[10px]">•</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1 rounded-lg border bg-muted/30 p-3">
                       <p className="text-xs text-muted-foreground">
                         {new Date(c.createdAt).toLocaleString("pt-BR")}
                       </p>
-
                       <p className="mt-1 whitespace-pre-wrap text-sm">{c.texto}</p>
-                    </li>
-                  ))}
-                  {comentarios.data?.length === 0 && (
-                    <li className="text-sm text-muted-foreground">Nenhum comentário ainda.</li>
-                  )}
+                    </div>
+                  </li>
+                ))}
+                {comentarios.data?.length === 0 && (
+                  <li className="text-sm text-muted-foreground">Nenhum comentário ainda.</li>
+                )}
+              </ul>
+
+              {mostrarDetalhes && (
+                <ul className="space-y-3 border-t pt-3">
+                  <li className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Avatar className="size-6 shrink-0">
+                      <AvatarFallback className="text-[10px]">
+                        {(user?.email ?? "?").slice(0, 1).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>
+                      adicionou este cartão a {nomeDaColuna ?? "esta coluna"}
+                    </span>
+                  </li>
                 </ul>
-              </section>
-            </div>
-
-            {/* Barra lateral */}
-            <aside className="space-y-2 md:col-span-1">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Adicionar ao cartão
-              </h3>
-              {cardId && boardId && <CardLabelsBotao cardId={cardId} boardId={boardId} />}
-              {cardId && <CardChecklistBotao cardId={cardId} />}
-              {cardId && (
-                <CardDueDateBotao
-                  cardId={cardId}
-                  boardId={boardId}
-                  dataEntrega={cartao.data?.dataEntrega ?? null}
-                />
               )}
-              {cardId && <CardMembersBotao cardId={cardId} />}
-              {cardId && <CardAttachmentsBotao cardId={cardId} boardId={boardId} />}
-
             </aside>
           </div>
         )}

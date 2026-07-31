@@ -121,7 +121,7 @@ export function CardLabelsBotao({ cardId, boardId }: { cardId: string; boardId: 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full justify-start">
+        <Button variant="outline" size="sm" className="justify-start">
           <Tag className="mr-2 size-4" aria-hidden />
           Etiquetas
         </Button>

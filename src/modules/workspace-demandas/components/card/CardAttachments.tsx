@@ -182,7 +182,7 @@ export function CardAttachmentsBotao({
       <Button
         variant="outline"
         size="sm"
-        className="w-full justify-start"
+        className="justify-start"
         disabled={enviar.isPending || !boardId}
         onClick={() => inputRef.current?.click()}
       >
