@@ -39,10 +39,22 @@ async function invoke<T>(name: string, body: unknown): Promise<T> {
 }
 
 export const aiWorkspaceService = {
-  askNext(conversation: Conversation) {
+  /**
+   * A lista de sistemas viaja junto com a conversa.
+   *
+   * Ela só chegava na triagem, no fim do fluxo. Durante a conversa o Blink
+   * não sabia que existiam sistemas — então não tinha como perguntar "isso é
+   * no Gestor de RH ou no Comercial?", que é a pergunta mais útil quando
+   * ninguém disse onde o problema acontece.
+   *
+   * Sem esta lista, a regra correspondente no prompt seria letra morta: o
+   * modelo teria a instrução de oferecer nomes e nenhum nome para oferecer.
+   */
+  askNext(conversation: Conversation, sistemas?: Array<{ slug: string; nome: string }>) {
     return invoke<AssistantNextQuestion>("assistente-demanda", {
       action: "next_question",
       messages: conversation,
+      sistemas: sistemas ?? [],
     });
   },
   generateDescription(conversation: Conversation) {

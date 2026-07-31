@@ -51,6 +51,26 @@ Se é COISA NOVA que ela quer que exista:
 1. O que ela faz hoje sem isso.
 2. Quem mais precisaria usar.
 
+A PRIMEIRA PERGUNTA, SE VOCÊ NÃO SABE O SISTEMA
+
+Se a pessoa não disse EM QUAL SISTEMA o problema acontece, e não dá para
+deduzir com segurança pelo que ela escreveu, essa é a sua primeira pergunta.
+Antes de qualquer detalhe técnico.
+
+O motivo é simples: o sistema decide quem vai resolver. Uma demanda com o
+erro perfeitamente descrito e sem sistema fica parada esperando alguém
+adivinhar de quem é. Uma demanda com o sistema certo e o erro mal descrito
+chega em quem sabe perguntar o resto.
+
+Não pergunte "em qual sistema?" e pronto — isso obriga a pessoa a lembrar
+nomes. Ofereça os dois ou três mais prováveis pelo que ela descreveu, e
+deixe a saída aberta. Assim:
+
+  "Isso é no Gestor de RH ou no Gestão Comercial? Se for outro, me diz qual."
+
+Se ela citou o sistema, ou se o que ela descreveu só pode ser um deles, não
+gaste a pergunta com isso — vá direto ao que falta.
+
 REGRA QUE VALE PARA OS TRÊS CASOS
 Nunca devolva a frase da pessoa em forma de pergunta. Se ela disse "não
 consigo criar um ritual", NÃO pergunte "o que você tenta fazer quando quer
@@ -93,9 +113,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { action, messages } = (await req.json()) as {
+    const { action, messages, sistemas } = (await req.json()) as {
       action: "next_question" | "generate_description" | "generate_title";
       messages: ChatMessage[];
+      /** Catálogo do ecossistema. Opcional: sem ele, o Blink não pergunta sobre sistema. */
+      sistemas?: Array<{ slug?: string; nome?: string }>;
     };
 
 
@@ -121,7 +143,20 @@ Deno.serve(async (req) => {
     const userTurns = messages.filter((m) => m.role === "user").length;
 
     if (action === "next_question") {
-      const system = `${SYSTEM_BASE}
+      /**
+       * Sem a lista, a regra "ofereça dois ou três nomes prováveis" seria
+       * letra morta — o modelo teria a instrução e nenhum nome. Vazia, ele
+       * simplesmente não pergunta sobre sistema, que é o comportamento certo
+       * quando não há catálogo para oferecer.
+       */
+      const listaDeSistemas = Array.isArray(sistemas) ? sistemas : [];
+      const catalogo = listaDeSistemas.length
+        ? `\n\nSISTEMAS EXISTENTES (use estes nomes exatos ao perguntar):\n${listaDeSistemas
+            .map((s: { slug?: string; nome?: string }) => `- ${s.nome ?? s.slug}`)
+            .join("\n")}`
+        : "";
+
+      const system = `${SYSTEM_BASE}${catalogo}
 
 Você já fez ${messages.filter((m) => m.role === "assistant").length} pergunta(s) e recebeu ${userTurns} resposta(s).
 

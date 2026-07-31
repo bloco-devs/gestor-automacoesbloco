@@ -169,7 +169,11 @@ export function useAIWorkspace() {
       if (phase === "welcome") setPhase("chatting");
       setThinking(true);
       try {
-        const turn = await aiOrchestrator.runTurn(nextHistory, { maxUserTurns: MAX_USER_TURNS, workspaceContext });
+        const turn = await aiOrchestrator.runTurn(nextHistory, {
+          maxUserTurns: MAX_USER_TURNS,
+          workspaceContext,
+          sistemas: sistemas.map((s) => ({ slug: s.id, nome: s.nome })),
+        });
         if (turn.shouldFinalize) {
           setThinking(false);
           await finalize(nextHistory);
