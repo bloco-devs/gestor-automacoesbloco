@@ -25,6 +25,7 @@ import {
   contarFilas,
   resumir,
   sinaisUteis,
+  tomDaEtapa,
   type FilaId,
   type LenteId,
 } from "@/domain/demand";
