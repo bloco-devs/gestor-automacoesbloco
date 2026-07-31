@@ -5,7 +5,10 @@ import { createBoard } from "@/lib/atividadesBoards";
 export interface IdentidadeDoProjeto {
   cor?: string | null;
   icone?: string | null;
+  /** URL da imagem de fundo do quadro (opcional). */
+  background?: string | null;
 }
+
 
 /**
  * Criar projeto.
