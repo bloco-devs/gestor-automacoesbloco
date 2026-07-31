@@ -109,6 +109,8 @@ function Cartao({
   assumindo,
   onConcluir,
   concluindo,
+  onExcluir,
+  excluindo,
   tom = "neutro",
   capa,
   emProjeto,
