@@ -173,7 +173,7 @@ export function NovoProjetoDialog({
 
           <div className="space-y-2">
             <Label>Fundo</Label>
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setFundo(null)}
