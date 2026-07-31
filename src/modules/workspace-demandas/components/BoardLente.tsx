@@ -717,6 +717,8 @@ function Coluna({
             arrastavel={arrastavel}
             onAssumir={onAssumir}
             assumindo={assumindo?.(d.id)}
+            onConcluir={onConcluir}
+            concluindo={concluindo?.(d.id)}
             tom={tomDaEtapa(grupo.rotulo)}
             capa={capas?.get(d.id)}
 
