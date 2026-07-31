@@ -242,9 +242,14 @@ function Cartao({
 
   return (
     <div
+      data-testid="card-demanda"
+      data-card-id={d.id}
+      data-concluida={d.concluida ? "true" : "false"}
+      data-coluna={colunaRotulo}
       ref={sobreposicao ? undefined : setNodeRef}
       {...(sobreposicao ? {} : listeners)}
       {...(sobreposicao ? {} : attributes)}
+
       onClick={() => {
         if (isDragging || sobreposicao) return;
         onAbrir?.(d.id);
