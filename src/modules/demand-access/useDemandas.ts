@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAtividadesBoard, atividadesKeys } from "@/hooks/useAtividadesBoard";
 import { countAnexosByBoard } from "@/lib/atividadesAnexos";
 import { getBoardResumo, getCoverDisplayUrl } from "@/lib/atividadesBoards";
+import { isBoardImageRef } from "@/lib/atividadesBg";
 import { useDemands, useDemandProfiles } from "@/modules/demands";
 import { STATUS_COLUMNS } from "@/modules/demands/types";
 import { listSolucoes } from "@/lib/supabaseData";
