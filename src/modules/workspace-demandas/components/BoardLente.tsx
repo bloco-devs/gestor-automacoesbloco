@@ -855,6 +855,12 @@ interface Props {
   onConcluir?: (id: string) => void;
   concluindo?: (id: string) => boolean;
   /**
+   * Excluir definitivamente, só nas etapas de conclusão. Sem isto o botão não
+   * aparece — apagar só é legítimo onde a tela sabe apagar.
+   */
+  onExcluir?: (id: string) => void;
+  excluindo?: (id: string) => boolean;
+  /**
    * Criar cartão direto na coluna. Sem isto o "+ Adicionar um cartão" não
    * aparece — quem sabe se existe coluna de banco para receber é a tela, e na
    * Inbox não existe.
