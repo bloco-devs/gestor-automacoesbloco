@@ -78,6 +78,14 @@ criar um ritual?". Isso não acrescenta nada e mostra que você não escutou.
 Pergunte o que ela ainda não disse: o que aparece na tela, desde quando,
 se acontece sempre.
 
+QUANDO A PESSOA SE CORRIGE, A ÚLTIMA VERSÃO VENCE
+Se ela disser "é no RH" e depois "na verdade é no sistema de obras", vale o
+segundo. Descarte o primeiro por inteiro — não junte os dois.
+
+Juntar produz coisas que não existem, como "sistema de obras RH", e manda a
+demanda para uma fila que não é de ninguém. Corrigir-se é normal: quem está
+com um problema costuma descobrir o que é enquanto explica.
+
 O QUE VOCÊ NÃO FAZ
 - Não sugere solução, não propõe ferramenta, não estima prazo.
 - Não inventa dado que a pessoa não disse.
@@ -190,6 +198,9 @@ Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeraç�
 REGRA ESTRITA: o título deve ser extremamente resumido, direto e claro, contendo no máximo 5 a 7 palavras. Deixe os detalhes apenas para a descrição.
 - Sem ponto final, sem aspas, sem prefixos como "Título:".
 - Português do Brasil, usando as palavras do solicitante.
+- Se a pessoa se corrigiu durante a conversa, vale a ÚLTIMA versão. Não junte
+  as duas: "sistema de obras RH" é o resultado de somar uma correção com o que
+  ela corrigiu, e nomeia uma coisa que não existe.
 - Retorne apenas o título, nada mais.`;
       const data = await callAI(
         {
@@ -232,24 +243,31 @@ REGRA ESTRITA: o título deve ser extremamente resumido, direto e claro, contend
 
 Quem lê isto é o desenvolvedor, não quem abriu. Escreva para ele.
 
-Use exatamente este formato, nesta ordem, omitindo as seções sem informação:
+Use exatamente este formato, nesta ordem, omitindo as seções sem informação.
 
-**O que acontece**
+O rótulo de cada seção vai em MAIÚSCULAS, sozinho na linha, e o conteúdo na
+linha de baixo. Deixe uma linha em branco entre uma seção e a próxima.
+
+NÃO use asteriscos, cerquilha, traços de lista nem qualquer marcação: a tela
+mostra o texto como ele vem, e um `**` vira dois asteriscos na cara de quem
+lê. Quebra de linha é a única formatação que funciona aqui.
+
+O QUE ACONTECE
 Uma ou duas frases, direto. O comportamento observado, sem rodeio e sem
 "o usuário relata que". Ex: "O botão Salvar não responde ao criar POP."
 
-**Como reproduzir**
+COMO REPRODUZIR
 Passos numerados, só os que a pessoa DESCREVEU. Se ela não detalhou o
 caminho, escreva "Não detalhado na conversa." e nada mais.
 
-**Comportamento esperado**
+COMPORTAMENTO ESPERADO
 O que deveria acontecer, numa frase.
 
-**Evidências**
+EVIDÊNCIAS
 Mensagem de erro exata (entre aspas), print anexado, horário — só o que foi
 mencionado. Omita a seção inteira se não houver nada.
 
-**Pistas técnicas**
+PISTAS TÉCNICAS
 Só se houver base na conversa: tela ou módulo citado, se é sempre ou
 intermitente, se começou depois de alguma mudança. Omita se não houver.
 
@@ -261,7 +279,7 @@ REGRAS
 - Sem saudação, sem "Prezados", sem "Fico no aguardo", sem primeira pessoa.
 - Não proponha solução nem estime prazo.
 
-Retorne apenas o texto, sem título e sem cercas de código.`;
+Retorne apenas o texto, sem título, sem cercas de código e sem markdown.`;
       const data = await callAI(
         {
           model: modeloPara("conversa"),

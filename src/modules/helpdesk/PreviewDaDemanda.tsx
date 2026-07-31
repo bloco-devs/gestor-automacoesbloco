@@ -71,7 +71,16 @@ function PreviewDaDemandaImpl({ nova, sistemaNome, onConfirmar, onVoltarParaConv
 
       <div className="px-5 py-4">
         <p className="text-[15px] font-medium leading-snug">{nova.titulo}</p>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{nova.resumo}</p>
+        {/*
+          `whitespace-pre-wrap` porque a descrição vem em blocos — O QUE
+          ACONTECE, COMO REPRODUZIR, COMPORTAMENTO ESPERADO — separados por
+          linha em branco. Sem isso o HTML colapsa tudo num parágrafo só, e o
+          formato que existe justamente para ser escaneável em três segundos
+          vira um bloco corrido que ninguém lê.
+        */}
+        <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-muted-foreground">
+          {nova.resumo}
+        </p>
 
         <div className="mt-4 border-t border-border/50 pt-2">
           <Campo rotulo="Tipo">{TIPO_ROTULO[nova.tipo]}</Campo>
