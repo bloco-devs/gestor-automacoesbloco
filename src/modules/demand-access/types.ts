@@ -34,7 +34,11 @@ export interface ProjetoAtual {
   /** Emoji escolhido na criação. Ocupa o quadradinho do cabeçalho quando não há capa. */
   icone?: string | null;
   capaUrl: string | null;
-
+  /**
+   * Imagem de fundo do quadro, já pronta para renderizar (URL, não caminho de
+   * bucket). É a escolha feita na criação do quadro; `null` quando não há.
+   */
+  fundoUrl: string | null;
 }
 
 /** Uma etapa do caminho da demanda, na ordem em que a fonte a define. */
