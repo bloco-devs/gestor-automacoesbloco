@@ -159,6 +159,7 @@ function Cartao({
 
 
   const podeAssumir = !responsavel && !!onAssumir && !sobreposicao;
+  const podeConcluir = !!onConcluir && !sobreposicao;
 
   const direita = (
     <span className="ds-caption flex shrink-0 items-center gap-1.5 text-muted-foreground">
