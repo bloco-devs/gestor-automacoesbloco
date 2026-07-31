@@ -112,6 +112,7 @@ function Cartao({
   concluindo,
   onExcluir,
   excluindo,
+  colunaRotulo,
   tom = "neutro",
   capa,
   emProjeto,
