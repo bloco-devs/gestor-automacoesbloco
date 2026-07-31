@@ -1405,6 +1405,7 @@ export type Database = {
           description: string | null
           id: string
           priority: Database["public"]["Enums"]["demand_priority"]
+          sistema_slug: string | null
           sla_due_at: string | null
           sla_first_response_at: string | null
           sla_status: Database["public"]["Enums"]["demand_sla_status"]
@@ -1428,6 +1429,7 @@ export type Database = {
           description?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["demand_priority"]
+          sistema_slug?: string | null
           sla_due_at?: string | null
           sla_first_response_at?: string | null
           sla_status?: Database["public"]["Enums"]["demand_sla_status"]
@@ -1451,6 +1453,7 @@ export type Database = {
           description?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["demand_priority"]
+          sistema_slug?: string | null
           sla_due_at?: string | null
           sla_first_response_at?: string | null
           sla_status?: Database["public"]["Enums"]["demand_sla_status"]
@@ -2796,6 +2799,7 @@ export type Database = {
         Returns: boolean
       }
       demand_prefixo: { Args: { _system_id: string }; Returns: string }
+      demand_prefixo_slug: { Args: { _slug: string }; Returns: string }
       get_my_role: { Args: never; Returns: string }
       get_user_workloads: {
         Args: never
