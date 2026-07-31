@@ -15,6 +15,7 @@ export { useCriarDemanda } from "./useCriarDemanda";
 export { useCriarProjeto, type IdentidadeDoProjeto } from "./useCriarProjeto";
 export { useExcluirProjeto } from "./useExcluirProjeto";
 export { useCriarCartao } from "./useCriarCartao";
+export { useExcluirCartao } from "./useExcluirCartao";
 export {
   useCapasDosCards,
   type CapaResolvida,

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import {
   useAcoesDemanda,
   useCriarCartao,
+  useExcluirCartao,
   useCapasDosCards,
 
   useDemandas,
@@ -136,6 +137,7 @@ export default function WorkspaceDemandas() {
   const acoes = useAcoesDemanda(escopo);
   // Criar e excluir só existem em escopo de projeto: é lá que há board e coluna.
   const cartoes = useCriarCartao(!naInbox && projetoId ? projetoId : null);
+  const cartaoExcluido = useExcluirCartao(!naInbox && projetoId ? projetoId : null);
   const exclusao = useExcluirProjeto();
 
 
@@ -364,6 +366,18 @@ export default function WorkspaceDemandas() {
                 emProjeto={emProjeto}
                 onConcluir={emProjeto ? (id) => void concluirCartao(id) : undefined}
                 concluindo={(id) => concluindo.has(id)}
+                onExcluir={
+                  emProjeto
+                    ? (id) => {
+                        void cartaoExcluido.excluir(id).catch((e) =>
+                          toast.error(
+                            e instanceof Error ? e.message : "Não foi possível excluir a demanda.",
+                          ),
+                        );
+                      }
+                    : undefined
+                }
+                excluindo={() => cartaoExcluido.salvando}
                 capas={capas}
                 criandoCartao={cartoes.salvando}
 

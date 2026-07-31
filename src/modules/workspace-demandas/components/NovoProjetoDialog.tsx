@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ImagePlus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { uploadBoardBackground } from "@/lib/atividadesBoards";
+import { useAuth } from "@/hooks/useAuth";
 import type { IdentidadeDoProjeto } from "@/modules/demand-access";
 
 /**
@@ -62,10 +66,15 @@ export function NovoProjetoDialog({
   salvando?: boolean;
   onCriar: (nome: string, identidade: IdentidadeDoProjeto) => void | Promise<void>;
 }) {
+  const { user } = useAuth();
   const [nome, setNome] = useState("");
   const [cor, setCor] = useState<string>(CORES[0]);
   const [icone, setIcone] = useState<string>(ICONES[0]);
   const [fundo, setFundo] = useState<string | null>(null);
+  /** Fundo enviado pelo usuário nesta sessão — vira uma miniatura ao lado das prontas. */
+  const [fundoEnviado, setFundoEnviado] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const arquivoRef = useRef<HTMLInputElement>(null);
 
   // Reabrir com o texto da tentativa anterior confunde: parece que já existe
   // algo salvo. Zera ao fechar.
@@ -75,6 +84,8 @@ export function NovoProjetoDialog({
       setCor(CORES[0]);
       setIcone(ICONES[0]);
       setFundo(null);
+      setFundoEnviado(null);
+      setEnviando(false);
     }
   }, [open]);
 
@@ -82,13 +93,33 @@ export function NovoProjetoDialog({
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    if (!valido || salvando) return;
+    if (!valido || salvando || enviando) return;
     await onCriar(nome.trim(), { cor, icone, background: fundo });
+  }
+
+  async function escolherArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!user?.id) {
+      toast.error("Entre novamente para enviar imagens.");
+      return;
+    }
+    setEnviando(true);
+    try {
+      const url = await uploadBoardBackground(file, user.id);
+      setFundoEnviado(url);
+      setFundo(url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[440px]">
         <form onSubmit={enviar} className="space-y-4">
           <DialogHeader>
             <DialogTitle>Criar quadro</DialogTitle>
@@ -177,6 +208,50 @@ export function NovoProjetoDialog({
                   />
                 </button>
               ))}
+
+              {/* O fundo enviado fica ao lado dos prontos: depois do upload ele
+                  é apenas mais uma opção selecionável. */}
+              {fundoEnviado && (
+                <button
+                  type="button"
+                  onClick={() => setFundo(fundoEnviado)}
+                  aria-label="Usar a imagem enviada"
+                  aria-pressed={fundo === fundoEnviado}
+                  className={cn(
+                    "h-12 w-16 shrink-0 overflow-hidden rounded-md border-2",
+                    fundo === fundoEnviado ? "border-foreground" : "border-transparent",
+                    "transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  )}
+                >
+                  <img src={fundoEnviado} alt="Imagem enviada" className="size-full object-cover" />
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => arquivoRef.current?.click()}
+                disabled={enviando}
+                aria-label="Enviar imagem de fundo"
+                title="Enviar imagem de fundo"
+                className={cn(
+                  "flex h-12 w-16 shrink-0 items-center justify-center rounded-md border-2 border-dashed border-border",
+                  "text-muted-foreground transition-colors hover:border-foreground hover:text-foreground",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-progress",
+                )}
+              >
+                {enviando ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : (
+                  <ImagePlus className="size-4" aria-hidden />
+                )}
+              </button>
+              <input
+                ref={arquivoRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={escolherArquivo}
+              />
             </div>
           </div>
 
@@ -202,8 +277,9 @@ export function NovoProjetoDialog({
             </div>
           </div>
 
-
-          <DialogFooter>
+          {/* Rodapé colado no fim do modal: com a rolagem interna, os botões
+              precisam continuar alcançáveis sem procurar. */}
+          <DialogFooter className="sticky bottom-0 -mx-6 -mb-6 border-t border-border/60 bg-background px-6 py-3">
             <Button
               type="button"
               variant="ghost"
@@ -212,7 +288,7 @@ export function NovoProjetoDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={!valido || salvando}>
+            <Button type="submit" disabled={!valido || salvando || enviando}>
               {salvando ? "Criando…" : "Criar"}
             </Button>
           </DialogFooter>

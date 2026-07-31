@@ -20,6 +20,7 @@ import {
   Eye,
   Plus,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -109,6 +110,8 @@ function Cartao({
   assumindo,
   onConcluir,
   concluindo,
+  onExcluir,
+  excluindo,
   tom = "neutro",
   capa,
   emProjeto,
@@ -141,6 +144,12 @@ function Cartao({
   onConcluir?: (id: string) => void;
   concluindo?: boolean;
   /**
+   * Excluir definitivamente. Só a tela sabe se a demanda mora numa tabela onde
+   * apagar é uma operação legítima — sem este callback o botão não existe.
+   */
+  onExcluir?: (id: string) => void;
+  excluindo?: boolean;
+  /**
    * A CAPA — etiquetas e membros do cartão, lidos em lote pela tela.
    * Opcional de propósito: na Inbox (fonte `demands`) não existe etiqueta de
    * quadro nem membro de cartão, e o cartão fica exatamente como era.
@@ -171,6 +180,7 @@ function Cartao({
 
   const podeAssumir = !responsavel && !!onAssumir && !sobreposicao;
   const podeConcluir = !!onConcluir && !sobreposicao;
+  const podeExcluir = !!onExcluir && !sobreposicao && tom === "concluido";
 
   const direita = (
     <span className="ds-caption flex shrink-0 items-center gap-1.5 text-muted-foreground">
@@ -409,9 +419,42 @@ function Cartao({
               )}
             </div>
           )}
+
+          {/* EXCLUIR — só em etapa de conclusão, e só quando a tela sabe
+              excluir. Trabalho terminado é o único que pode sair sem perder
+              rastro; em qualquer outra etapa isto seria uma armadilha ao lado
+              do arrasto. */}
+          {podeExcluir && (
+            <div className="mt-1 flex justify-end">
+              <button
+                type="button"
+                disabled={excluindo}
+                onPointerDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  if (window.confirm("Tem certeza que deseja excluir esta demanda definitivamente?")) {
+                    onExcluir?.(d.id);
+                  }
+                }}
+                title="Excluir definitivamente"
+                aria-label="Excluir definitivamente"
+                className={cn(
+                  "rounded p-1 text-muted-foreground/60 transition-all duration-200",
+                  "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+                  "hover:text-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  "disabled:cursor-progress",
+                )}
+              >
+                <Trash2 className="size-3.5" aria-hidden />
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
+
     </div>
   );
 }
@@ -627,6 +670,8 @@ function Coluna({
   assumindo,
   onConcluir,
   concluindo,
+  onExcluir,
+  excluindo,
   onCriarCartao,
   criandoCartao,
   capas,
@@ -642,6 +687,8 @@ function Coluna({
   assumindo?: (id: string) => boolean;
   onConcluir?: (id: string) => void;
   concluindo?: (id: string) => boolean;
+  onExcluir?: (id: string) => void;
+  excluindo?: (id: string) => boolean;
   onCriarCartao?: (titulo: string) => void | Promise<void>;
   criandoCartao?: boolean;
   capas?: CapasResolvidas;
@@ -734,6 +781,8 @@ function Coluna({
             assumindo={assumindo?.(d.id)}
             onConcluir={onConcluir}
             concluindo={concluindo?.(d.id)}
+            onExcluir={onExcluir}
+            excluindo={excluindo?.(d.id)}
             tom={tomDaEtapa(grupo.rotulo)}
             capa={capas?.get(d.id)}
             emProjeto={emProjeto}
@@ -806,6 +855,12 @@ interface Props {
   onConcluir?: (id: string) => void;
   concluindo?: (id: string) => boolean;
   /**
+   * Excluir definitivamente, só nas etapas de conclusão. Sem isto o botão não
+   * aparece — apagar só é legítimo onde a tela sabe apagar.
+   */
+  onExcluir?: (id: string) => void;
+  excluindo?: (id: string) => boolean;
+  /**
    * Criar cartão direto na coluna. Sem isto o "+ Adicionar um cartão" não
    * aparece — quem sabe se existe coluna de banco para receber é a tela, e na
    * Inbox não existe.
@@ -837,6 +892,8 @@ function BoardLenteImpl({
   assumindo,
   onConcluir,
   concluindo,
+  onExcluir,
+  excluindo,
   onCriarCartao,
   criandoCartao,
   capas,
@@ -944,6 +1001,8 @@ function BoardLenteImpl({
               assumindo={assumindo}
               onConcluir={onConcluir}
               concluindo={concluindo}
+              onExcluir={onExcluir}
+              excluindo={excluindo}
               onCriarCartao={
                 onCriarCartao
                   ? (titulo) => onCriarCartao({ statusId: g.id, titulo })
