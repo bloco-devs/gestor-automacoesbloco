@@ -107,6 +107,8 @@ function Cartao({
   sobreposicao,
   onAssumir,
   assumindo,
+  onConcluir,
+  concluindo,
   tom = "neutro",
   capa,
 }: {
@@ -124,6 +126,12 @@ function Cartao({
    */
   onAssumir?: (id: string) => void;
   assumindo?: boolean;
+  /**
+   * Concluir direto da capa (estilo Trello). Sem este callback a bolinha não
+   * aparece — quem sabe se existe etapa de conclusão é a tela.
+   */
+  onConcluir?: (id: string) => void;
+  concluindo?: boolean;
   /**
    * A CAPA — etiquetas e membros do cartão, lidos em lote pela tela.
    * Opcional de propósito: na Inbox (fonte `demands`) não existe etiqueta de
