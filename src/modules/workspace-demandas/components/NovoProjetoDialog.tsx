@@ -287,7 +287,7 @@ export function NovoProjetoDialog({
 
           <div className="space-y-2">
             <Label>Ícone</Label>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               {ICONES.map((i) => (
                 <button
                   key={i}
@@ -304,6 +304,49 @@ export function NovoProjetoDialog({
                   {i}
                 </button>
               ))}
+
+              {/* Ícone enviado: depois do upload é só mais uma opção selecionável. */}
+              {iconeEnviado && (
+                <button
+                  type="button"
+                  onClick={() => setIcone(iconeEnviado)}
+                  aria-label="Usar o ícone enviado"
+                  aria-pressed={icone === iconeEnviado}
+                  className={cn(
+                    "size-7 overflow-hidden rounded-md border transition-colors",
+                    icone === iconeEnviado ? "border-foreground" : "border-border",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  )}
+                >
+                  <img src={iconeEnviado} alt="Ícone enviado" className="size-full object-cover" />
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => arquivoIconeRef.current?.click()}
+                disabled={enviandoIcone}
+                aria-label="Enviar ícone personalizado"
+                title="Enviar ícone personalizado"
+                className={cn(
+                  "flex size-7 items-center justify-center rounded-md border border-dashed border-border",
+                  "text-muted-foreground transition-colors hover:border-foreground hover:text-foreground",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-progress",
+                )}
+              >
+                {enviandoIcone ? (
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                ) : (
+                  <ImagePlus className="size-3.5" aria-hidden />
+                )}
+              </button>
+              <input
+                ref={arquivoIconeRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={escolherIcone}
+              />
             </div>
           </div>
 
