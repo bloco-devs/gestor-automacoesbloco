@@ -40,7 +40,7 @@ function ContextoDaInboxImpl({ aguardando }: { aguardando: number }) {
           )}
           title="Demandas que ainda não foram classificadas em um projeto"
         >
-          <span className="truncate">Inbox</span>
+          <span className="truncate">Caixa de Entrada</span>
           <ChevronDown className="size-3 shrink-0 text-muted-foreground" aria-hidden />
         </PopoverTrigger>
         <PopoverContent align="start" className="w-64 p-1">
@@ -53,7 +53,7 @@ function ContextoDaInboxImpl({ aguardando }: { aguardando: number }) {
             )}
           >
             <Check className="size-3.5 shrink-0" aria-hidden />
-            <span className="min-w-0 flex-1 truncate">Inbox</span>
+            <span className="min-w-0 flex-1 truncate">Caixa de Entrada</span>
             <span className="ds-caption shrink-0 tabular-nums text-muted-foreground">{aguardando}</span>
           </button>
           {projetos.map((p) => (
