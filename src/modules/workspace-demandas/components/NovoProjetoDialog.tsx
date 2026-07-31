@@ -123,6 +123,26 @@ export function NovoProjetoDialog({
     }
   }
 
+  async function escolherIcone(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!user?.id) {
+      toast.error("Entre novamente para enviar imagens.");
+      return;
+    }
+    setEnviandoIcone(true);
+    try {
+      const url = await uploadBoardIcon(file, user.id);
+      setIconeEnviado(url);
+      setIcone(url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar o ícone.");
+    } finally {
+      setEnviandoIcone(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl md:max-w-3xl">
