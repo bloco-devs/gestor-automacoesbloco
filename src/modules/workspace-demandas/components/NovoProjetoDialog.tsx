@@ -119,7 +119,7 @@ export function NovoProjetoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[440px]">
+      <DialogContent className="sm:max-w-2xl md:max-w-3xl">
         <form onSubmit={enviar} className="space-y-4">
           <DialogHeader>
             <DialogTitle>Criar quadro</DialogTitle>
