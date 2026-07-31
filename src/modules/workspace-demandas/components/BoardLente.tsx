@@ -112,6 +112,7 @@ function Cartao({
   concluindo,
   onExcluir,
   excluindo,
+  colunaRotulo,
   tom = "neutro",
   capa,
   emProjeto,
@@ -149,6 +150,8 @@ function Cartao({
    */
   onExcluir?: (id: string) => void;
   excluindo?: boolean;
+  /** Nome da coluna onde o cartão está — usado para reconhecer conclusão pelo texto. */
+  colunaRotulo?: string;
   /**
    * A CAPA — etiquetas e membros do cartão, lidos em lote pela tela.
    * Opcional de propósito: na Inbox (fonte `demands`) não existe etiqueta de
@@ -180,7 +183,17 @@ function Cartao({
 
   const podeAssumir = !responsavel && !!onAssumir && !sobreposicao;
   const podeConcluir = !!onConcluir && !sobreposicao;
-  const podeExcluir = !!onExcluir && !sobreposicao && tom === "concluido";
+  // Conclusão reconhecida de duas formas: pelo tom da etapa (regra da paleta) e
+  // pelo próprio nome da coluna, sem depender de acento ou caixa — "Concluída",
+  // "CONCLUIDO" e "Concluídas" contam todas.
+  const nomeDaColuna = (colunaRotulo ?? "").toLowerCase();
+  const colunaDeConclusao =
+    tom === "concluido" ||
+    nomeDaColuna.includes("concluíd") ||
+    nomeDaColuna.includes("concluid") ||
+    nomeDaColuna.includes("finaliz") ||
+    nomeDaColuna.includes("done");
+  const podeExcluir = !!onExcluir && !sobreposicao && colunaDeConclusao;
 
   const direita = (
     <span className="ds-caption flex shrink-0 items-center gap-1.5 text-muted-foreground">
@@ -253,7 +266,9 @@ function Cartao({
         // como objetos que se pega e move. Agora ele tem superfície própria e
         // sobe de leve no hover: a sombra só aparece quando o cursor está nele,
         // que é quando ele de fato pode ser pego.
-        "group rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
+        "group relative rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
+        // Espaço reservado para a lixeira ancorada no canto inferior direito.
+        podeExcluir && "pb-8",
         // FAIXA DE ETAPA — a cor da coluna repetida na borda esquerda do cartão,
         // para que ele continue legível fora do alinhamento da coluna (arrasto,
         // overlay, rolagem que esconde o cabeçalho).
@@ -420,37 +435,35 @@ function Cartao({
             </div>
           )}
 
-          {/* EXCLUIR — só em etapa de conclusão, e só quando a tela sabe
-              excluir. Trabalho terminado é o único que pode sair sem perder
-              rastro; em qualquer outra etapa isto seria uma armadilha ao lado
-              do arrasto. */}
+          {/* EXCLUIR — só em coluna de conclusão, e só quando a tela sabe
+              excluir. Fica ancorado no canto inferior direito do cartão, acima
+              dos demais elementos, para não competir com a meta-informação. */}
           {podeExcluir && (
-            <div className="mt-1 flex justify-end">
-              <button
-                type="button"
-                disabled={excluindo}
-                onPointerDown={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  if (window.confirm("Tem certeza que deseja excluir esta demanda definitivamente?")) {
-                    onExcluir?.(d.id);
-                  }
-                }}
-                title="Excluir definitivamente"
-                aria-label="Excluir definitivamente"
-                className={cn(
-                  "rounded p-1 text-muted-foreground/60 transition-all duration-200",
-                  "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
-                  "hover:text-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                  "disabled:cursor-progress",
-                )}
-              >
-                <Trash2 className="size-3.5" aria-hidden />
-              </button>
-            </div>
+            <button
+              type="button"
+              disabled={excluindo}
+              onPointerDown={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (window.confirm("Tem certeza que deseja excluir esta demanda definitivamente?")) {
+                  onExcluir?.(d.id);
+                }
+              }}
+              title="Excluir definitivamente"
+              aria-label="Excluir definitivamente"
+              className={cn(
+                "absolute bottom-2 right-2 z-10 rounded p-1",
+                "bg-card/80 text-muted-foreground/70 transition-colors duration-200",
+                "hover:text-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                "disabled:cursor-progress",
+              )}
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+            </button>
           )}
+
         </div>
 
       </div>
@@ -784,6 +797,7 @@ function Coluna({
             onExcluir={onExcluir}
             excluindo={excluindo?.(d.id)}
             tom={tomDaEtapa(grupo.rotulo)}
+            colunaRotulo={grupo.rotulo}
             capa={capas?.get(d.id)}
             emProjeto={emProjeto}
 

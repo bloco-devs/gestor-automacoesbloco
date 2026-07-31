@@ -119,7 +119,7 @@ export function NovoProjetoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[440px]">
+      <DialogContent className="sm:max-w-2xl md:max-w-3xl">
         <form onSubmit={enviar} className="space-y-4">
           <DialogHeader>
             <DialogTitle>Criar quadro</DialogTitle>
@@ -173,7 +173,7 @@ export function NovoProjetoDialog({
 
           <div className="space-y-2">
             <Label>Fundo</Label>
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setFundo(null)}
@@ -277,9 +277,8 @@ export function NovoProjetoDialog({
             </div>
           </div>
 
-          {/* Rodapé colado no fim do modal: com a rolagem interna, os botões
-              precisam continuar alcançáveis sem procurar. */}
-          <DialogFooter className="sticky bottom-0 -mx-6 -mb-6 border-t border-border/60 bg-background px-6 py-3">
+          <DialogFooter>
+
             <Button
               type="button"
               variant="ghost"
