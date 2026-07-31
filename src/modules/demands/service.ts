@@ -348,3 +348,25 @@ export async function recordDeflection(input: RecordDeflectionInput): Promise<vo
   }
 }
 
+
+
+/**
+ * O catálogo local de sistemas — a tabela para onde `demands.system_id` aponta.
+ *
+ * Não confundir com `listSolucoes()` de `lib/supabaseData`, que lê
+ * `demanda_solucoes` (as soluções ENTREGUES para uma demanda). São tabelas
+ * diferentes com nomes parecidos, e essa confusão é parte do motivo de
+ * `system_id` ter ficado nulo esse tempo todo.
+ *
+ * RLS: `SELECT` liberado para qualquer usuário autorizado, então o
+ * solicitante consegue ler. Se um dia isso mudar, a consulta volta vazia e o
+ * casamento devolve null — a demanda nasce sem sistema, como já nascia. Falha
+ * degradando, não quebrando.
+ */
+export async function listSistemasDoCatalogo(): Promise<Array<{ id: string; nome: string }>> {
+  const { data, error } = await supabase
+    .from("solucoes" as never)
+    .select("id, nome");
+  if (error) throw error;
+  return (data ?? []) as unknown as Array<{ id: string; nome: string }>;
+}

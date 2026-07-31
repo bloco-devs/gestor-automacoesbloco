@@ -170,7 +170,63 @@ REGRA ESTRITA: o título deve ser extremamente resumido, direto e claro, contend
     }
 
     if (action === "generate_description") {
-      const system = `Com base na conversa abaixo entre o assistente e o solicitante, escreva uma DESCRIÇÃO DA DEMANDA em português, em 1 a 2 parágrafos, em primeira pessoa do solicitante, de forma objetiva e completa. Não inclua perguntas, não use bullet points, não inclua título. Retorne apenas o texto da descrição.`;
+      /**
+       * A DESCRIÇÃO É LIDA POR QUEM VAI CONSERTAR, NÃO POR QUEM PEDIU
+       *
+       * Antes ela saía em primeira pessoa e em prosa corrida: "Estou
+       * enfrentando dificuldades técnicas ao tentar criar uma pop-up, pois o
+       * processo é interrompido por uma mensagem de erro desconhecido..."
+       * Correto, e inútil para trabalhar. O desenvolvedor precisa ler três
+       * linhas para extrair o que cabia em uma, e não consegue colar aquilo
+       * em lugar nenhum sem reescrever antes.
+       *
+       * Quem abriu a demanda já leu o que escreveu — ele não volta aqui para
+       * reler a própria queixa em terceira pessoa. Quem volta é quem vai
+       * resolver.
+       *
+       * O formato fixo existe para ser COLÁVEL: quem for pedir ajuda a uma IA
+       * copia o bloco inteiro e ele já está estruturado. Prosa corrida
+       * obrigaria a reescrever antes de colar, e é isso que faz as pessoas
+       * desistirem de usar o que o sistema produziu.
+       *
+       * "Não inventar" é a parte mais importante. Um passo de reprodução
+       * plausível que a pessoa não descreveu manda o desenvolvedor investigar
+       * um caminho que ninguém percorreu — pior que não ter passo nenhum.
+       */
+      const system = `Com base na conversa abaixo entre o assistente e o solicitante, escreva a descrição TÉCNICA da demanda, em português, para quem vai desenvolver.
+
+Quem lê isto é o desenvolvedor, não quem abriu. Escreva para ele.
+
+Use exatamente este formato, nesta ordem, omitindo as seções sem informação:
+
+**O que acontece**
+Uma ou duas frases, direto. O comportamento observado, sem rodeio e sem
+"o usuário relata que". Ex: "O botão Salvar não responde ao criar POP."
+
+**Como reproduzir**
+Passos numerados, só os que a pessoa DESCREVEU. Se ela não detalhou o
+caminho, escreva "Não detalhado na conversa." e nada mais.
+
+**Comportamento esperado**
+O que deveria acontecer, numa frase.
+
+**Evidências**
+Mensagem de erro exata (entre aspas), print anexado, horário — só o que foi
+mencionado. Omita a seção inteira se não houver nada.
+
+**Pistas técnicas**
+Só se houver base na conversa: tela ou módulo citado, se é sempre ou
+intermitente, se começou depois de alguma mudança. Omita se não houver.
+
+REGRAS
+- Não invente passo, mensagem de erro, versão, navegador ou causa provável.
+  Se a conversa não disse, a seção fica de fora ou diz "não detalhado".
+- Não repita a frase do solicitante palavra por palavra: traduza para
+  comportamento observável.
+- Sem saudação, sem "Prezados", sem "Fico no aguardo", sem primeira pessoa.
+- Não proponha solução nem estime prazo.
+
+Retorne apenas o texto, sem título e sem cercas de código.`;
       const data = await callAI(
         {
           model: modeloPara("conversa"),

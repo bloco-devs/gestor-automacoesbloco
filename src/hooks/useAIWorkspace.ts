@@ -17,6 +17,9 @@ import type { TipoDemanda } from "@/lib/types";
 import { TIPO_DEMANDA_LABEL } from "@/lib/types";
 import { aiOrchestrator, type OrchestratorDecision } from "@/modules/ai";
 import { useAIWorkspaceSnapshot } from "@/modules/context";
+import { useQuery } from "@tanstack/react-query";
+import { listSistemasDoCatalogo } from "@/modules/demands/service";
+import { casarSistema } from "@/modules/demands/casarSistema";
 
 export type ChatRole = "user" | "assistant";
 export type ChatMsg = { role: ChatRole; content: string };
@@ -193,6 +196,25 @@ export function useAIWorkspace() {
   }, []);
 
   /**
+   * O catálogo LOCAL, que e outro do ecossistema. Ver `casarSistema` para o
+   * porquê de existirem dois. Carrega em segundo plano e nunca segura a tela:
+   * falhando, o casamento devolve null e a demanda nasce sem sistema — que é
+   * exatamente como ela nascia antes desta mudança.
+   */
+  const catalogoLocalQ = useQuery({
+    queryKey: ["sistemas", "catalogo-local"],
+    queryFn: listSistemasDoCatalogo,
+    staleTime: 10 * 60_000,
+    retry: 1,
+  });
+
+  const sistemaDoPreview = useMemo<string | null>(() => {
+    const slug = preview?.sistemaAlvoSlug;
+    if (!slug) return null;
+    return sistemas.find((s) => s.id === slug)?.nome ?? null;
+  }, [preview?.sistemaAlvoSlug, sistemas]);
+
+  /**
    * A demanda que a conversa produziu, no formato do domínio.
    *
    * Fica fora do `confirmSubmit` para que o preview possa mostrar exatamente
@@ -241,12 +263,29 @@ export function useAIWorkspace() {
       // A regra do projeto já era "a IA não inventa dado". Aqui ela ganha
       // dente: só passa o que existe no catálogo; qualquer outra coisa vira
       // null, e a demanda nasce sem sistema — que é a verdade.
-      sistemaId: null,
+      /**
+       * AGORA ELE E GRAVADO — E ISSO CONSERTA O CODIGO DO CHAMADO
+       *
+       * Este campo era fixo em `null`, com razao na epoca: a IA devolve um
+       * SLUG do ecossistema e `demands.system_id` e um uuid de `solucoes`.
+       * Mandar um no outro derrubava o insert com 22P02.
+       *
+       * O que ninguem tinha ligado: a funcao `demand_prefixo` do banco monta
+       * o codigo do chamado a partir do sistema. Sem sistema, ela devolve
+       * `REQ`. Entao TODO chamado nascia `REQ-...` — o banco dizendo "nao sei
+       * de que sistema e isso" —, mesmo quando a IA tinha acertado. O acerto
+       * simplesmente nao era gravado em lugar nenhum.
+       *
+       * `casarSistema` faz a ponte pelo nome, que e o unico campo em comum
+       * entre os dois catalogos. Na duvida devolve null: um `REQ` honesto e
+       * melhor que um `RH` numa demanda de obra.
+       */
+      sistemaId: casarSistema(sistemaDoPreview, catalogoLocalQ.data ?? []),
       criteriosDeAceite: criterios,
       origemIa: true,
       confianca: preview.intent?.confidence ?? 0.5,
     };
-  }, [preview, previewScore]);
+  }, [preview, previewScore, sistemaDoPreview, catalogoLocalQ.data]);
 
   /**
    * Confirmar cria uma DEMANDA, não uma solicitação.
@@ -280,12 +319,6 @@ export function useAIWorkspace() {
    * existe na lista continua virando `null`, que e a regra de sempre: a IA
    * nao inventa dado.
    */
-  const sistemaDoPreview = useMemo<string | null>(() => {
-    const slug = preview?.sistemaAlvoSlug;
-    if (!slug) return null;
-    return sistemas.find((s) => s.id === slug)?.nome ?? null;
-  }, [preview?.sistemaAlvoSlug, sistemas]);
-
   const confirmSubmit = useCallback(async () => {
     if (!demandaDoPreview || !user) return;
     setPhase("submitting");
