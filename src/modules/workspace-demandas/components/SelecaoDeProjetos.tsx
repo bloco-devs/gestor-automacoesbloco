@@ -223,7 +223,7 @@ function LinhaDaInbox({ aguardando, onAbrir }: { aguardando: number; onAbrir: ()
       </span>
 
       <span className="flex min-w-0 flex-1 items-baseline gap-2">
-        <span className="truncate text-[13px] font-medium">Inbox</span>
+        <span className="truncate text-[13px] font-medium">Caixa de Entrada</span>
         <span className="ds-caption hidden truncate text-muted-foreground lg:inline">
           Demandas que ainda não foram classificadas em um projeto
         </span>

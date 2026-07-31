@@ -399,8 +399,12 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                 <ul className="space-y-3 border-t pt-3">
                   <li className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Avatar className="size-6 shrink-0">
+                      {/* Fallback só quando não há foto — a inicial é o último recurso. */}
+                      {user?.avatarUrl ? (
+                        <AvatarImage src={user.avatarUrl} alt={user.nome ?? user.email ?? "Autor"} />
+                      ) : null}
                       <AvatarFallback className="text-[10px]">
-                        {(user?.email ?? "?").slice(0, 1).toUpperCase()}
+                        {(user?.nome ?? user?.email ?? "?").slice(0, 1).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <span>

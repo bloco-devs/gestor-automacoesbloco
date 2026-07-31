@@ -106,7 +106,7 @@ function ContextoDoProjetoImpl({ projeto, resumo, onFila, onExcluir, excluindo }
           >
             <Check className="size-3.5 shrink-0 opacity-0" aria-hidden />
             <Inbox className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-            <span className="min-w-0 flex-1 truncate">Inbox</span>
+            <span className="min-w-0 flex-1 truncate">Caixa de Entrada</span>
           </button>
           {projetos.map((p) => {
             const atual = p.id === projeto.id;

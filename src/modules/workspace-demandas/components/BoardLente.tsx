@@ -111,12 +111,20 @@ function Cartao({
   concluindo,
   tom = "neutro",
   capa,
+  emProjeto,
 }: {
   demanda: Demanda;
   capacidades: Capacidades;
   sinais: SinaisUteis;
+  /**
+   * Quadro de projeto (não Helpdesk). No projeto o cartão já vive dentro de um
+   * contexto nomeado: o código de rastreio e o círculo tracejado de "sem
+   * responsável" são ruído — a bolinha de conclusão é a única marca circular.
+   */
+  emProjeto?: boolean;
   /** O tom da etapa onde o cartão está — vira a faixa de cor na borda esquerda. */
   tom?: TomDaEtapa;
+
   onAbrir?: (id: string) => void;
   arrastavel: boolean;
   sobreposicao?: boolean;
@@ -152,7 +160,10 @@ function Cartao({
 
   const meta = [
     sinais.prioridade && d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
-    sinais.referencia ? d.referencia : null,
+    // O código de rastreio é linguagem de Helpdesk: dentro de um quadro de
+    // projeto ninguém cita "#4e6706", cita o título do cartão.
+    !emProjeto && sinais.referencia ? d.referencia : null,
+
   ]
     .filter(Boolean)
     .join(" · ");
@@ -197,9 +208,11 @@ function Cartao({
         >
           {assumindo ? "Assumindo…" : "Assumir"}
         </button>
-      ) : (
+      ) : emProjeto ? null : (
+        /* No projeto a única marca circular do cartão é a bolinha de concluir. */
         <span className="size-4 rounded-full border border-dashed border-border" title="Sem responsável" />
       )}
+
     </span>
   );
 
@@ -617,6 +630,7 @@ function Coluna({
   onCriarCartao,
   criandoCartao,
   capas,
+  emProjeto,
 }: {
   grupo: Grupo;
   capacidades: Capacidades;
@@ -631,6 +645,7 @@ function Coluna({
   onCriarCartao?: (titulo: string) => void | Promise<void>;
   criandoCartao?: boolean;
   capas?: CapasResolvidas;
+  emProjeto?: boolean;
 }) {
 
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
@@ -721,6 +736,7 @@ function Coluna({
             concluindo={concluindo?.(d.id)}
             tom={tomDaEtapa(grupo.rotulo)}
             capa={capas?.get(d.id)}
+            emProjeto={emProjeto}
 
           />
         ))}
@@ -801,6 +817,11 @@ interface Props {
    * é a tela — o board apenas desenha o que recebe.
    */
   capas?: CapasResolvidas;
+  /**
+   * Quadro de projeto: esconde os sinais que só fazem sentido no Helpdesk
+   * (código de rastreio, círculo tracejado de "sem responsável").
+   */
+  emProjeto?: boolean;
 }
 
 function BoardLenteImpl({
@@ -819,6 +840,7 @@ function BoardLenteImpl({
   onCriarCartao,
   criandoCartao,
   capas,
+  emProjeto,
 }: Props) {
 
 
@@ -929,6 +951,7 @@ function BoardLenteImpl({
               }
               criandoCartao={criandoCartao}
               capas={capas}
+              emProjeto={emProjeto}
             />
 
           ),
@@ -943,6 +966,7 @@ function BoardLenteImpl({
               sinais={sinais}
               arrastavel
               sobreposicao
+              emProjeto={emProjeto}
               capa={capas?.get(arrastando.id)}
               tom={tomDaEtapa(
                 grupos.find((g) => g.itens.some((i) => i.id === arrastando.id))?.rotulo ?? "",
