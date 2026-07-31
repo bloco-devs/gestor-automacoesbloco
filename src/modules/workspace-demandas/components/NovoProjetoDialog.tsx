@@ -36,6 +36,21 @@ const CORES = [
 
 const ICONES = ["📋", "🚀", "🎯", "💡", "🛠️", "📊", "🧭", "🏗️"];
 
+/**
+ * Fundos prontos. São seis porque a decisão é estética e reversível: mais que
+ * isso vira catálogo, e catálogo obriga a parar para escolher.
+ */
+const FUNDOS: { label: string; url: string }[] = [
+  { label: "Montanhas ao amanhecer", url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&q=80" },
+  { label: "Floresta de névoa", url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&q=80" },
+  { label: "Ondas do oceano", url: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1200&q=80" },
+  { label: "Dunas de deserto", url: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1200&q=80" },
+  { label: "Gradiente abstrato", url: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=1200&q=80" },
+  { label: "Aurora noturna", url: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1200&q=80" },
+];
+
+const thumb = (url: string) => url.replace("w=1200", "w=200");
+
 export function NovoProjetoDialog({
   open,
   onOpenChange,
@@ -50,6 +65,7 @@ export function NovoProjetoDialog({
   const [nome, setNome] = useState("");
   const [cor, setCor] = useState<string>(CORES[0]);
   const [icone, setIcone] = useState<string>(ICONES[0]);
+  const [fundo, setFundo] = useState<string | null>(null);
 
   // Reabrir com o texto da tentativa anterior confunde: parece que já existe
   // algo salvo. Zera ao fechar.
@@ -58,6 +74,7 @@ export function NovoProjetoDialog({
       setNome("");
       setCor(CORES[0]);
       setIcone(ICONES[0]);
+      setFundo(null);
     }
   }, [open]);
 
@@ -66,12 +83,12 @@ export function NovoProjetoDialog({
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     if (!valido || salvando) return;
-    await onCriar(nome.trim(), { cor, icone });
+    await onCriar(nome.trim(), { cor, icone, background: fundo });
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px]">
+      <DialogContent className="sm:max-w-[440px]">
         <form onSubmit={enviar} className="space-y-4">
           <DialogHeader>
             <DialogTitle>Criar quadro</DialogTitle>
@@ -94,7 +111,7 @@ export function NovoProjetoDialog({
                 id="nome-do-quadro"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                placeholder="Ex.: Automações do Financeiro"
+                placeholder="Nome do seu novo quadro..."
                 maxLength={80}
                 autoFocus
                 required
@@ -124,6 +141,46 @@ export function NovoProjetoDialog({
           </div>
 
           <div className="space-y-2">
+            <Label>Fundo</Label>
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              <button
+                type="button"
+                onClick={() => setFundo(null)}
+                aria-label="Sem imagem de fundo"
+                aria-pressed={fundo === null}
+                className={cn(
+                  "h-12 w-16 shrink-0 rounded-md border-2 bg-muted text-[10px] text-muted-foreground",
+                  fundo === null ? "border-foreground" : "border-transparent",
+                  "transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                )}
+              >
+                Nenhum
+              </button>
+              {FUNDOS.map((f) => (
+                <button
+                  key={f.url}
+                  type="button"
+                  onClick={() => setFundo(f.url)}
+                  aria-label={`Usar o fundo ${f.label}`}
+                  aria-pressed={fundo === f.url}
+                  className={cn(
+                    "h-12 w-16 shrink-0 overflow-hidden rounded-md border-2",
+                    fundo === f.url ? "border-foreground" : "border-transparent",
+                    "transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  )}
+                >
+                  <img
+                    src={thumb(f.url)}
+                    alt={f.label}
+                    loading="lazy"
+                    className="size-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <Label>Ícone</Label>
             <div className="flex flex-wrap gap-1">
               {ICONES.map((i) => (
@@ -144,6 +201,7 @@ export function NovoProjetoDialog({
               ))}
             </div>
           </div>
+
 
           <DialogFooter>
             <Button
