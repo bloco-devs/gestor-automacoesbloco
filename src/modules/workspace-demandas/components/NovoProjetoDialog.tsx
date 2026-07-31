@@ -89,7 +89,9 @@ export function NovoProjetoDialog({
       setIcone(ICONES[0]);
       setFundo(null);
       setFundoEnviado(null);
+      setIconeEnviado(null);
       setEnviando(false);
+      setEnviandoIcone(false);
     }
   }, [open]);
 
@@ -97,7 +99,7 @@ export function NovoProjetoDialog({
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    if (!valido || salvando || enviando) return;
+    if (!valido || salvando || enviando || enviandoIcone) return;
     await onCriar(nome.trim(), { cor, icone, background: fundo });
   }
 
