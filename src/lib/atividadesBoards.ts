@@ -342,6 +342,9 @@ export interface BoardHistoricoItem {
   evento: string;
   payload: Record<string, unknown>;
   createdAt: string;
+  /** Autor resolvido em `profiles` — nulo quando o perfil não existe. */
+  userNome: string | null;
+  userAvatarUrl: string | null;
 }
 
 export async function listBoardHistorico(
@@ -355,7 +358,7 @@ export async function listBoardHistorico(
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return (data ?? []).map(
+  const itens: BoardHistoricoItem[] = (data ?? []).map(
     (r: {
       id: string;
       board_id: string;
@@ -372,8 +375,34 @@ export async function listBoardHistorico(
       evento: r.evento,
       payload: r.payload ?? {},
       createdAt: r.created_at,
+      userNome: null,
+      userAvatarUrl: null,
     }),
   );
+
+  // A foto do autor vem numa segunda consulta em lote: não há FK declarada
+  // para o PostgREST embutir o join, e uma query por linha custaria N chamadas
+  // para desenhar N avatares.
+  const ids = [...new Set(itens.map((i) => i.userId).filter(Boolean))] as string[];
+  if (ids.length === 0) return itens;
+  const { data: perfis } = await sb
+    .from("profiles")
+    .select("id, nome, email, avatar_url")
+    .in("id", ids);
+  const porId = new Map<string, { nome: string | null; avatarUrl: string | null }>(
+    (perfis ?? []).map((p: { id: string; nome: string | null; email: string | null; avatar_url: string | null }) => [
+      p.id,
+      { nome: p.nome || p.email || null, avatarUrl: p.avatar_url ?? null },
+    ]),
+  );
+  return itens.map((i) => {
+    const perfil = i.userId ? porId.get(i.userId) : undefined;
+    return {
+      ...i,
+      userNome: perfil?.nome ?? i.userEmail,
+      userAvatarUrl: perfil?.avatarUrl ?? null,
+    };
+  });
 }
 
 // ===== Q3.5: WIP / Labels favoritas / Reorder labels =====
