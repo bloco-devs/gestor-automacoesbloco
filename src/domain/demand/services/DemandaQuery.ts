@@ -247,9 +247,24 @@ export function agruparPorStatus(demandas: Demanda[]): Grupo[] {
         categoria: d.status.categoria,
       });
   }
-  return [...mapa.values()]
-    .sort((a, b) => ORDEM_CATEGORIA[a.categoria] - ORDEM_CATEGORIA[b.categoria] || a.ordem - b.ordem)
-    .map(({ id, rotulo, itens }) => ({ id, rotulo, itens: ordenarPorAtencao(itens) }));
+  const ordenadas = [...mapa.values()].sort(
+    (a, b) => ORDEM_CATEGORIA[a.categoria] - ORDEM_CATEGORIA[b.categoria] || a.ordem - b.ordem,
+  );
+  /**
+   * A COLUNA DE ENTRADA ORDENA POR CHEGADA
+   *
+   * Nas demais colunas o critério é atenção (risco, prioridade, parada). Na
+   * primeira coluna aberta — o Backlog / A Fazer do help desk — quem chegou
+   * agora precisa aparecer no topo: é a fila de triagem, e uma fila que
+   * embaralha a ordem de chegada faz o pedido novo nascer no meio da lista,
+   * onde ninguém olha.
+   */
+  const entrada = ordenadas.find((g) => g.categoria === "aberta");
+  return ordenadas.map(({ id, rotulo, itens, categoria }) => ({
+    id,
+    rotulo,
+    itens: entrada && id === entrada.id ? ordenarPorChegada(itens) : ordenarPorAtencao(itens),
+  }));
 }
 
 /**
