@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlignLeft, Circle, Loader2, MessageSquare } from "lucide-react";
+import { AlignLeft, CheckCircle2, Circle, Loader2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import {
   createComentario,
@@ -9,9 +9,10 @@ import {
   listComentarios,
   updateCard,
 } from "@/lib/atividades";
+import { tomDaEtapa } from "@/domain/demand";
 import { atividadesKeys } from "@/hooks/useAtividadesBoard";
 import { useAuth } from "@/hooks/useAuth";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
