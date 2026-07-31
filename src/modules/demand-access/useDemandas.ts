@@ -102,6 +102,11 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
             cor: r.cor,
             icone: r.icone,
             capaUrl: capaQ.data ?? null,
+            // O fundo escolhido na criação pode chegar por dois campos: uma
+            // imagem em `background` (URL do Unsplash ou link assinado do
+            // upload) ou uma capa em `cover_url`, que é caminho de bucket e só
+            // vira URL depois de assinada (`capaQ`).
+            fundoUrl: capaQ.data ?? (isBoardImageRef(r.background) ? r.background : null),
           }
         : null;
 
