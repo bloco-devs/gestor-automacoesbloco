@@ -670,6 +670,8 @@ function Coluna({
   assumindo,
   onConcluir,
   concluindo,
+  onExcluir,
+  excluindo,
   onCriarCartao,
   criandoCartao,
   capas,
