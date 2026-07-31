@@ -310,6 +310,39 @@ function Cartao({
             </span>
           )}
           <div className="flex items-start gap-2">
+            {/* CONCLUIR NA CAPA — a bolinha do Trello. Ela só se destaca no
+                hover do cartão (por isso o `group` no container) e para o
+                pointer/click para não abrir o modal nem iniciar o arrasto. */}
+            {podeConcluir && (
+              <button
+                type="button"
+                disabled={concluindo}
+                onPointerDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onConcluir?.(d.id);
+                }}
+                title={d.concluida ? "Concluída" : "Marcar como concluída"}
+                aria-label={d.concluida ? "Concluída" : "Marcar como concluída"}
+                className={cn(
+                  "mt-0.5 shrink-0 rounded-full transition-opacity duration-200",
+                  d.concluida
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+                  "text-muted-foreground hover:text-foreground",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  "disabled:cursor-progress",
+                )}
+              >
+                {d.concluida ? (
+                  <CheckCircle2 className="size-4 text-success" aria-hidden />
+                ) : (
+                  <Circle className="size-4 transition-colors duration-200" aria-hidden />
+                )}
+              </button>
+            )}
 
             <p
               className={cn(
