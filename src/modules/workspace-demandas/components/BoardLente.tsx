@@ -814,6 +814,8 @@ function BoardLenteImpl({
   vazio,
   onAssumir,
   assumindo,
+  onConcluir,
+  concluindo,
   onCriarCartao,
   criandoCartao,
   capas,
