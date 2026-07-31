@@ -366,6 +366,18 @@ export default function WorkspaceDemandas() {
                 emProjeto={emProjeto}
                 onConcluir={emProjeto ? (id) => void concluirCartao(id) : undefined}
                 concluindo={(id) => concluindo.has(id)}
+                onExcluir={
+                  emProjeto
+                    ? (id) => {
+                        void cartaoExcluido.excluir(id).catch((e) =>
+                          toast.error(
+                            e instanceof Error ? e.message : "Não foi possível excluir a demanda.",
+                          ),
+                        );
+                      }
+                    : undefined
+                }
+                excluindo={() => cartaoExcluido.salvando}
                 capas={capas}
                 criandoCartao={cartoes.salvando}
 
