@@ -66,10 +66,15 @@ export function NovoProjetoDialog({
   salvando?: boolean;
   onCriar: (nome: string, identidade: IdentidadeDoProjeto) => void | Promise<void>;
 }) {
+  const { user } = useAuth();
   const [nome, setNome] = useState("");
   const [cor, setCor] = useState<string>(CORES[0]);
   const [icone, setIcone] = useState<string>(ICONES[0]);
   const [fundo, setFundo] = useState<string | null>(null);
+  /** Fundo enviado pelo usuário nesta sessão — vira uma miniatura ao lado das prontas. */
+  const [fundoEnviado, setFundoEnviado] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const arquivoRef = useRef<HTMLInputElement>(null);
 
   // Reabrir com o texto da tentativa anterior confunde: parece que já existe
   // algo salvo. Zera ao fechar.
@@ -79,6 +84,8 @@ export function NovoProjetoDialog({
       setCor(CORES[0]);
       setIcone(ICONES[0]);
       setFundo(null);
+      setFundoEnviado(null);
+      setEnviando(false);
     }
   }, [open]);
 
@@ -86,13 +93,33 @@ export function NovoProjetoDialog({
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    if (!valido || salvando) return;
+    if (!valido || salvando || enviando) return;
     await onCriar(nome.trim(), { cor, icone, background: fundo });
+  }
+
+  async function escolherArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!user?.id) {
+      toast.error("Entre novamente para enviar imagens.");
+      return;
+    }
+    setEnviando(true);
+    try {
+      const url = await uploadBoardBackground(file, user.id);
+      setFundoEnviado(url);
+      setFundo(url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[440px]">
         <form onSubmit={enviar} className="space-y-4">
           <DialogHeader>
             <DialogTitle>Criar quadro</DialogTitle>
