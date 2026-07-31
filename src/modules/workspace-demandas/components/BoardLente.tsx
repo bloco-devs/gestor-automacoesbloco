@@ -143,6 +143,12 @@ function Cartao({
   onConcluir?: (id: string) => void;
   concluindo?: boolean;
   /**
+   * Excluir definitivamente. Só a tela sabe se a demanda mora numa tabela onde
+   * apagar é uma operação legítima — sem este callback o botão não existe.
+   */
+  onExcluir?: (id: string) => void;
+  excluindo?: boolean;
+  /**
    * A CAPA — etiquetas e membros do cartão, lidos em lote pela tela.
    * Opcional de propósito: na Inbox (fonte `demands`) não existe etiqueta de
    * quadro nem membro de cartão, e o cartão fica exatamente como era.
