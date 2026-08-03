@@ -92,6 +92,32 @@ O QUE VOCÊ NÃO FAZ
 - Não pergunta o que ela já respondeu, nem reformula o que ela disse.
 - Não faz pergunta genérica que caberia em qualquer demanda.`;
 
+/**
+ * A CONVERSA VIRA TRANSCRIÇÃO, E NÃO CONVERSA
+ *
+ * Este é o conserto que faltava, e ele não é de redação — é de forma.
+ *
+ * `generate_description` e `generate_title` recebiam o diálogo como MENSAGENS
+ * de chat: `[system, user, assistant, user, ...]`. Com a última sendo da
+ * pessoa, o modelo vê alguém falando com ele agora e responde — "Entendido, é
+ * no Sistema de Obras. Você poderia me dar mais detalhes?". Isso não é o
+ * modelo desobedecendo o prompt: é o formato empurrando com mais força que a
+ * instrução. Um turno de usuário aberto é um convite para conversar.
+ *
+ * Transformando o diálogo em TEXTO dentro de uma única mensagem, a tarefa
+ * deixa de ser "continue esta conversa" e passa a ser "leia esta transcrição
+ * e produza X". Não há mais ninguém esperando resposta — há um documento
+ * esperando processamento.
+ *
+ * O prompt não mudou nesta correção. Ele estava certo desde ontem, e chegava
+ * enfraquecido.
+ */
+function transcrever(messages: ChatMessage[]): string {
+  return messages
+    .map((m) => `${m.role === "user" ? "SOLICITANTE" : "ASSISTENTE"}: ${m.content}`)
+    .join("\n");
+}
+
 function getServiceClient() {
   const url = Deno.env.get("SUPABASE_URL") ?? "";
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -205,7 +231,10 @@ REGRA ESTRITA: o título deve ser extremamente resumido, direto e claro, contend
       const data = await callAI(
         {
           model: modeloPara("conversa"),
-          messages: [{ role: "system", content: system }, ...messages],
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: `TRANSCRIÇÃO DA CONVERSA:\n\n${transcrever(messages)}` },
+          ],
         },
         { acao: "assistente-demanda:generate_title", userId },
       ) as any;
@@ -283,7 +312,10 @@ Retorne apenas o texto, sem título, sem cercas de código e sem markdown.`;
       const data = await callAI(
         {
           model: modeloPara("conversa"),
-          messages: [{ role: "system", content: system }, ...messages],
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: `TRANSCRIÇÃO DA CONVERSA:\n\n${transcrever(messages)}` },
+          ],
         },
         { acao: "assistente-demanda:generate_description", userId },
       ) as any;
