@@ -1,6 +1,8 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import {
   DndContext,
+  pointerWithin,
+  rectIntersection,
   PointerSensor,
   useDroppable,
   useSensor,
@@ -539,7 +541,33 @@ function BoardLenteImpl({
   };
 
   return (
-    <DndContext sensors={sensores} onDragStart={aoIniciar} onDragEnd={aoTerminar} onDragCancel={() => setArrastando(null)}>
+    <DndContext
+      sensors={sensores}
+      /**
+       * COLISÃO PARA ALVOS ANINHADOS — a causa de "não solta na outra coluna"
+       *
+       * O padrão do dnd-kit é `rectIntersection`: escolhe o alvo com maior ÁREA
+       * de sobreposição. Isso funciona quando os alvos têm tamanho parecido.
+       *
+       * Aqui não têm: cada cartão é um alvo dentro de uma coluna que também é
+       * alvo. O retângulo da coluna é dez vezes maior que o do cartão, então a
+       * coluna de origem ganha quase sempre — e o cartão parece não sair do
+       * lugar, mesmo com o cursor sobre outra coluna.
+       *
+       * `pointerWithin` resolve: considera só os alvos em que o PONTEIRO está
+       * dentro. Tamanho deixa de importar e o cartão sob o cursor ganha.
+       *
+       * A reserva existe para a coluna vazia: sem cartão sob o ponteiro,
+       * `pointerWithin` devolve nada, e aí a área volta a ser o critério certo.
+       */
+      collisionDetection={(args) => {
+        const porPonteiro = pointerWithin(args);
+        return porPonteiro.length > 0 ? porPonteiro : rectIntersection(args);
+      }}
+      onDragStart={aoIniciar}
+      onDragEnd={aoTerminar}
+      onDragCancel={() => setArrastando(null)}
+    >
       {/* `contents` deixa o filho herdar a altura do avô sem criar um nível de
           caixa no meio — o DndContext não renderiza DOM, mas este wrapper sim. */}
       <div className="rolagem-discreta flex h-full min-h-0 items-stretch gap-4 overflow-x-auto overflow-y-hidden pb-2">

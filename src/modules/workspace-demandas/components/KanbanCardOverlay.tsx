@@ -68,9 +68,13 @@ export function KanbanCardOverlay({
             "scale-105 rotate-2",
             "shadow-2xl",
             "cursor-grabbing",
+            // O overlay segue o cursor. Se ele capturar evento de ponteiro,
+            // fica entre o cursor e os alvos — e o `pointerWithin` passa a
+            // encontrar o próprio overlay em vez da coluna embaixo.
+            "pointer-events-none",
             // Entrada suave ao iniciar o arrasto
             "transition-transform duration-200 ease-out",
-            "z-50",
+            "z-[9999]",
           )}
         >
           <Cartao

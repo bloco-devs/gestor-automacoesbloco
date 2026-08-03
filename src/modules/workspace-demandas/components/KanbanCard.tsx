@@ -221,7 +221,23 @@ export function Cartao({
    * `d.id` e soltável por `alvo:d.id`. Sem isso, o dnd-kit veria o cartão
    * arrastado como alvo de si mesmo.
    */
-  const alvo = useDroppable({ id: `alvo:${d.id}`, disabled: sobreposicao || isDragging });
+  /**
+   * ID DISTINTO NO OVERLAY — SENÃO SÃO DOIS DROPPABLES COM O MESMO NOME
+   *
+   * `Cartao` é renderizado duas vezes durante o arrasto: na coluna e dentro do
+   * `<DragOverlay>`. Os dois chamavam `useDroppable` com `alvo:${d.id}`.
+   *
+   * `disabled` NÃO remove do registro do dnd-kit — só marca como desabilitado.
+   * Dois registros com o mesmo id deixam a resolução do `over` imprevisível, e
+   * o sintoma é exatamente "o cartão não sai da coluna".
+   *
+   * O prefixo `overlay:` nunca é alvo de nada: o `aoTerminar` só reconhece
+   * `alvo:`. É um id descartável, existindo só para não colidir.
+   */
+  const alvo = useDroppable({
+    id: sobreposicao ? `overlay:${d.id}` : `alvo:${d.id}`,
+    disabled: sobreposicao || isDragging,
+  });
 
   // A escolha vale para todos os cartões e sobrevive à navegação.
   const [labelsExpanded, alternarLabels] = useEtiquetasExpandidas();
