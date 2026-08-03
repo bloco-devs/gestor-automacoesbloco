@@ -13,7 +13,7 @@
  *   BoardLente     ← KanbanCard ✓
  *   KanbanCardOverlay ← KanbanCard ✓
  */
-import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useDraggable } from "@dnd-kit/core";
 import {
   Ban,
   CheckCircle2,
@@ -210,34 +210,6 @@ export function Cartao({
     disabled: !arrastavel || sobreposicao,
   });
 
-  /**
-   * O CARTÃO TAMBÉM É ALVO DE DROP — É ISSO QUE DÁ CONTROLE DE POSIÇÃO
-   *
-   * Sobrevoar um cartão significa "quero ficar ACIMA deste". A coluna continua
-   * sendo alvo, e cair nela (no espaço vazio abaixo dos cartões) significa
-   * "no fim" — que é o gesto natural para quem quer o último lugar.
-   *
-   * O prefixo evita colisão de identificador: o mesmo cartão é arrastável por
-   * `d.id` e soltável por `alvo:d.id`. Sem isso, o dnd-kit veria o cartão
-   * arrastado como alvo de si mesmo.
-   */
-  /**
-   * ID DISTINTO NO OVERLAY — SENÃO SÃO DOIS DROPPABLES COM O MESMO NOME
-   *
-   * `Cartao` é renderizado duas vezes durante o arrasto: na coluna e dentro do
-   * `<DragOverlay>`. Os dois chamavam `useDroppable` com `alvo:${d.id}`.
-   *
-   * `disabled` NÃO remove do registro do dnd-kit — só marca como desabilitado.
-   * Dois registros com o mesmo id deixam a resolução do `over` imprevisível, e
-   * o sintoma é exatamente "o cartão não sai da coluna".
-   *
-   * O prefixo `overlay:` nunca é alvo de nada: o `aoTerminar` só reconhece
-   * `alvo:`. É um id descartável, existindo só para não colidir.
-   */
-  const alvo = useDroppable({
-    id: sobreposicao ? `overlay:${d.id}` : `alvo:${d.id}`,
-    disabled: sobreposicao || isDragging,
-  });
 
   // A escolha vale para todos os cartões e sobrevive à navegação.
   const [labelsExpanded, alternarLabels] = useEtiquetasExpandidas();
@@ -331,15 +303,7 @@ export function Cartao({
        * errou, arrasta de novo. Um alvo invisível transforma cada movimento
        * numa tentativa.
        */
-      data-alvo={alvo.isOver ? "true" : undefined}
-      ref={
-        sobreposicao
-          ? undefined
-          : (no) => {
-              setNodeRef(no);
-              alvo.setNodeRef(no);
-            }
-      }
+      ref={sobreposicao ? undefined : setNodeRef}
       {...(sobreposicao ? {} : listeners)}
       {...(sobreposicao ? {} : attributes)}
       onClick={() => {
@@ -359,10 +323,6 @@ export function Cartao({
       className={cn(
         // PROFUNDIDADE POR SUPERFÍCIE, NÃO POR SOMBRA
         "group relative rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
-        // A guia de destino: barra no topo, na cor de ação, via pseudo-elemento.
-        "before:pointer-events-none before:absolute before:inset-x-1 before:-top-1 before:h-0.5",
-        "before:rounded-full before:bg-primary before:opacity-0 before:transition-opacity",
-        "data-[alvo=true]:before:opacity-100",
         podeExcluir && "pb-8",
         // FAIXA DE ETAPA — borda esquerda colorida pelo tom da coluna.
         "border-l-4",

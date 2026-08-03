@@ -1,8 +1,6 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import {
   DndContext,
-  pointerWithin,
-  rectIntersection,
   PointerSensor,
   useDroppable,
   useSensor,
@@ -492,78 +490,30 @@ function BoardLenteImpl({
   const aoIniciar = (e: DragStartEvent) => setArrastando(porId.get(String(e.active.id)) ?? null);
 
   /**
-   * ONDE O CARTÃO CAI — COLUNA E POSIÇÃO
+   * SÓ A COLUNA, POR ENQUANTO.
    *
-   * Duas formas de soltar, e cada uma diz uma coisa:
-   *   sobre um cartão  → "quero ficar ACIMA deste"
-   *   sobre a coluna   → "quero ficar no fim"
+   * A posição dentro da coluna foi tentada com um droppable por cartão e
+   * `pointerWithin`. Não funcionou, e as duas tentativas de conserto foram
+   * feitas sem poder testar o arrasto de verdade — o que é como se erra duas
+   * vezes seguidas no mesmo lugar.
    *
-   * A segunda é o espaço vazio abaixo da pilha, que é o gesto natural de quem
-   * quer o último lugar. Antes só ela existia, e por isso todo cartão ia para
-   * o fim independente de onde a pessoa soltasse.
-   *
-   * Mandamos a coluna INTEIRA na ordem final, não "o card vai para o índice
-   * 2". Posição relativa cria empate — dois cartões com a mesma ordem ficam na
-   * mão do desempate do banco, e o cartão solto no topo reaparece no meio.
+   * O caminho certo é `@dnd-kit/sortable`, que existe para lista reordenável,
+   * já está instalado, e já funciona em `components/atividades/kanban/`. Fazer
+   * à mão foi o erro; a reescrita vem por ali, com teste em tela.
    */
   const aoTerminar = (e: DragEndEvent) => {
     setArrastando(null);
-    const alvoBruto = e.over?.id ? String(e.over.id) : null;
+    const destino = e.over?.id ? String(e.over.id) : null;
     const demandaId = String(e.active.id);
-    if (!alvoBruto) return;
+    if (!destino) return;
     const atual = porId.get(demandaId);
-    if (!atual) return;
-
-    const sobreCartao = alvoBruto.startsWith("alvo:");
-    const idDoVizinho = sobreCartao ? alvoBruto.slice(5) : null;
-    if (idDoVizinho === demandaId) return;
-
-    // Soltar sobre um cartão herda a coluna DELE: a pessoa aponta para um
-    // lugar, não para um contêiner.
-    const grupoDestino = sobreCartao
-      ? grupos.find((g) => g.itens.some((i) => i.id === idDoVizinho))
-      : grupos.find((g) => g.id === alvoBruto);
-    if (!grupoDestino) return;
-
-    const semOArrastado = grupoDestino.itens.filter((i) => i.id !== demandaId).map((i) => i.id);
-    const posicao = idDoVizinho ? semOArrastado.indexOf(idDoVizinho) : semOArrastado.length;
-    const ordemDaColuna = [...semOArrastado];
-    ordemDaColuna.splice(posicao < 0 ? semOArrastado.length : posicao, 0, demandaId);
-
-    // Nada mudou: mesma coluna e mesma posição. Evita uma escrita à toa e o
-    // piscar de lista que ela provoca.
-    const eraIgual =
-      atual.status.id === grupoDestino.id &&
-      grupoDestino.itens.map((i) => i.id).join("|") === ordemDaColuna.join("|");
-    if (eraIgual) return;
-
-    onMover({ demandaId, statusId: grupoDestino.id, ordem: posicao, ordemDaColuna });
+    if (!atual || atual.status.id === destino) return;
+    onMover({ demandaId, statusId: destino });
   };
 
   return (
     <DndContext
       sensors={sensores}
-      /**
-       * COLISÃO PARA ALVOS ANINHADOS — a causa de "não solta na outra coluna"
-       *
-       * O padrão do dnd-kit é `rectIntersection`: escolhe o alvo com maior ÁREA
-       * de sobreposição. Isso funciona quando os alvos têm tamanho parecido.
-       *
-       * Aqui não têm: cada cartão é um alvo dentro de uma coluna que também é
-       * alvo. O retângulo da coluna é dez vezes maior que o do cartão, então a
-       * coluna de origem ganha quase sempre — e o cartão parece não sair do
-       * lugar, mesmo com o cursor sobre outra coluna.
-       *
-       * `pointerWithin` resolve: considera só os alvos em que o PONTEIRO está
-       * dentro. Tamanho deixa de importar e o cartão sob o cursor ganha.
-       *
-       * A reserva existe para a coluna vazia: sem cartão sob o ponteiro,
-       * `pointerWithin` devolve nada, e aí a área volta a ser o critério certo.
-       */
-      collisionDetection={(args) => {
-        const porPonteiro = pointerWithin(args);
-        return porPonteiro.length > 0 ? porPonteiro : rectIntersection(args);
-      }}
       onDragStart={aoIniciar}
       onDragEnd={aoTerminar}
       onDragCancel={() => setArrastando(null)}
