@@ -16,15 +16,24 @@
  * processos". As pessoas dizem "ritual", "POP", "cadeia de valor". São essas
  * palavras que precisam estar aqui.
  *
- * ATENÇÃO — ESTE ARQUIVO PRECISA DE REVISÃO HUMANA
- * O conteúdo abaixo é um rascunho feito de fora, por dedução a partir dos
- * nomes dos sistemas. Alguns termos provavelmente estão errados e outros
- * importantes estão faltando. Ele foi escrito assim de propósito: corrigir uma
- * lista é muito mais rápido que escrever uma em branco.
+ * DE ONDE VEIO ESTE CONTEÚDO
+ * Cada um dos treze sistemas foi consultado sobre as próprias telas e botões.
+ * O que está aqui não é dedução de fora: são nomes que existem de fato na
+ * interface de cada um.
  *
- * Quem usa cada sistema é quem sabe as palavras. Ao ajustar, o critério é um
- * só: a palavra aparece quando alguém RECLAMA daquele sistema? Se sim, entra.
- * Se é jargão de manual que ninguém fala, não entra.
+ * O QUE FICOU DE FORA — E ISSO É A PARTE MAIS IMPORTANTE
+ * Palavra genérica não entra: Dashboard, Relatórios, Usuários, Ajuda,
+ * Configurações, Salvar, Editar, Fornecedor, Empreendimento. Elas existem em
+ * quase todos os treze, e o casamento aqui é por conteúdo — uma palavra
+ * compartilhada apontaria para treze sistemas ao mesmo tempo, e o desempate
+ * escolheria um deles ao acaso.
+ *
+ * Vocabulário ambíguo é PIOR que vocabulário ausente. Sem a palavra, o Blink
+ * pergunta; com a palavra errada, ele afirma — e afirmar errado manda a
+ * demanda para a fila de outra pessoa. Na dúvida sobre um termo, deixe fora.
+ *
+ * O critério para incluir: a palavra aparece quando alguém reclama daquele
+ * sistema, e só daquele?
  *
  * Sistema que não estiver aqui continua funcionando — só não ganha a ajuda
  * extra. Não é preciso preencher todos para valer a pena.
@@ -42,59 +51,150 @@ export interface SistemaConhecido {
 export const SISTEMAS_CONHECIDOS: SistemaConhecido[] = [
   {
     slug: "processos",
-    faz: "Mapeia e padroniza os processos da empresa. Também chamado de SGPO.",
+    faz: "Guarda os procedimentos escritos da empresa (POPs) e organiza as tarefas do dia (rituais).",
     palavras: [
-      "ritual", "POP", "procedimento", "procedimento operacional", "fluxo",
-      "macroprocesso", "cadeia de valor", "dono do processo", "padronização",
+      "ritual", "rituais", "POP", "POPs", "procedimento operacional",
+      "biblioteca de POPs", "SGPO", "macroprocesso", "propor alteracao",
+      "troubleshooting", "fluxograma", "meus rituais", "ocorrencia",
+      "reagendar ocorrencia", "periodicidade", "sob demanda",
+      "catalogo de rituais",
     ],
   },
   {
     slug: "rh",
-    faz: "Cadastro de colaborador, férias, folha, ponto e documentos de pessoal.",
+    faz: "Cadastro de colaborador, admissao, documentos, exames, vagas, ferias, ponto, PDI e avaliacoes.",
     palavras: [
-      "colaborador", "funcionário", "admissão", "demissão", "desligamento",
-      "férias", "folha", "holerite", "ponto", "cartão de ponto", "EPI",
-      "atestado", "salário",
+      "colaborador", "colaboradores", "admissao", "desligamento", "ferias",
+      "holerite", "PDI", "exame admissional", "exame ocupacional", "ASO",
+      "EPI", "CTPS", "organograma", "descritivo de cargo", "vaga",
+      "banco de candidatos", "banco de talentos", "profiler", "fit cultural",
+      "perfil DISC", "onboarding", "plano 30-60-90", "ciclo de avaliacao",
     ],
   },
   {
     slug: "gestao-comercial",
-    faz: "Pedidos, propostas, clientes e acompanhamento de vendas.",
+    faz: "Corretores, vendas e reservas de unidades, tabela de precos e despesas de marketing.",
     palavras: [
-      "pedido", "proposta", "orçamento", "cliente", "venda", "comissão",
-      "tabela de preço", "desconto",
+      "corretor", "corretores", "comissao", "comissoes", "CRECI",
+      "tabela de vendas", "reserva", "unidade", "pavimento", "torre",
+      "tropa de elite", "mural da tropa", "aniversariantes",
+      "simulacao de pagamento", "mapa de cotacao", "composicao aprovada",
+      "derrubar", "trafego pago", "orulo",
     ],
   },
   {
     slug: "obra",
-    faz: "Acompanhamento de obra: cronograma, medição, diário e equipes em campo.",
+    faz: "Registra a producao diaria da obra e organiza planejamento, folha por producao, qualidade e seguranca.",
     palavras: [
-      "obra", "canteiro", "cronograma", "medição", "diário de obra", "empreiteiro",
-      "etapa da obra", "centro de custo",
+      "produtividade", "captura", "levantamento", "curto prazo", "medio prazo",
+      "PPC", "fechamento mensal", "razao de atraso", "licoes aprendidas",
+      "calculo de remuneracao", "quantitativo", "FVS", "RNC", "PES", "PQO",
+      "APR", "DDS", "PGR", "PCMSO", "PCMAT", "ficha de EPI",
+      "permissao de trabalho", "inspetor", "visita tecnica",
+      "inventario de riscos", "canteiro",
     ],
   },
   {
     slug: "suprimentos",
-    faz: "Compras, cotação, fornecedores e estoque.",
+    faz: "Pedido, cotacao, aprovacao, recebimento, estoque e devolucao dos equipamentos alugados das obras.",
     palavras: [
-      "compra", "cotação", "fornecedor", "estoque", "requisição", "nota fiscal",
-      "recebimento", "almoxarifado",
+      "locacao", "solicitacao de locacao", "proposta vencedora",
+      "aguardando material", "estoque ativo", "kardex", "baixa manual",
+      "inventario fisico", "devolucao", "avaria", "avarias", "almoxarife",
+      "vigencia", "dias restantes",
     ],
   },
   {
     slug: "financeiro",
-    faz: "Contas a pagar e receber, conciliação e fechamento.",
+    faz: "Fluxo de caixa das SPEs, cobranca de inadimplentes e entregas contabeis de cada empresa.",
     palavras: [
-      "boleto", "pagamento", "recebimento", "conciliação", "extrato",
-      "fechamento", "contas a pagar", "contas a receber", "nota",
+      "SPE", "inadimplencia", "regua de cobranca", "recebivel", "recebiveis",
+      "obrigacao", "controle de entregas", "competencia", "escritorio contabil",
+      "balancete", "achado", "aging", "regime tributario", "conciliacao",
+      "projecao de fluxo", "credor", "achados abertos",
+    ],
+  },
+  {
+    slug: "incorporacao",
+    faz: "Acompanha o empreendimento do briefing a entrega: propostas, contratos, medicoes, legalizacao e certidoes.",
+    palavras: [
+      "certidao", "certidoes negativas", "RFP", "solicitacao de proposta",
+      "medicao", "medicoes", "entregavel", "entregaveis", "stakeholder",
+      "legalizacao", "roteiro de etapas", "checklist documental",
+      "interferencia", "BIM", "ata de reuniao", "licao aprendida",
+      "signatario", "modelo de multa", "orgao publico",
+    ],
+  },
+  {
+    slug: "portfolio",
+    faz: "Reune todos os empreendimentos da empresa com numeros, etapa, responsaveis e SPEs.",
+    palavras: [
+      "portfolio", "vincular a existente", "sincronizar com analise",
+      "desvincular", "societario", "estrutura societaria", "TIR media",
+      "VGV total", "distribuicao por etapa", "vincular ao sienge",
+      "ID externo", "mapa interativo",
+    ],
+  },
+  {
+    slug: "viabuilder",
+    faz: "Diz se um terreno vale a pena virar predio e monta o fluxo de caixa e o funding do projeto.",
+    palavras: [
+      "viabuilder", "analise preliminar", "viabilidade dinamica",
+      "matriz de sensibilidade", "areas equivalentes", "curva de obra",
+      "curva de vendas", "exposicao maxima", "capital stack", "funding",
+      "desembolso", "custos indiretos", "custos diretos", "multifase",
+      "defasagem", "indice de aproveitamento", "permuta", "preco fechado",
+      "preco de custo", "auto-dimensionar investidor", "DRE consolidada",
+      "gap total",
+    ],
+  },
+  {
+    slug: "atividades",
+    faz: "Recebe pelo WhatsApp o que cada lider esta fazendo e mostra num quadro para o gestor.",
+    palavras: [
+      "lider", "lideres", "visao do gestor", "explorar por data",
+      "envio automatico", "lembrete vespertino", "horario de envio",
+      "disparar agora", "log de interacoes", "mensagens enviadas",
+      "script para 1:1", "foco da semana", "gargalos",
+      "#atividades", "#minhalista", "#feito",
+    ],
+  },
+  {
+    slug: "crm-house",
+    faz: "Recebe leads das campanhas, distribui entre corretores e cobra as tarefas de follow-up.",
+    palavras: [
+      "lead", "leads", "cadencia", "cadencias", "roleta de vendas", "roleta",
+      "painel de vendas", "etapa do funil", "motivo da perda", "temperatura",
+      "score de propensao", "controle de atividades",
+      "decisao de fim de cadencia", "pausa do lead", "biblioteca de tarefas",
+      "recalcular vencimentos", "importar leads", "duplicado",
+    ],
+  },
+  {
+    slug: "nakhon",
+    faz: "Monta o fluxo de pagamento de uma unidade e gera o contrato/proposta do comprador.",
+    palavras: [
+      "gerador de fluxo", "gerador de contratos", "nakhon", "manaira",
+      "fracao ideal", "parcelas intercaladas", "parcelamento do saldo",
+      "cronograma de pagamentos", "export completo", "segundo comprador",
+      "finalizar proposta", "acessar proposta", "balao", "reforco",
+    ],
+  },
+  {
+    slug: "gestao-projetos",
+    faz: "Leva um empreendimento do briefing do terreno aos documentos para investidores.",
+    palavras: [
+      "desenvolvimento de produto", "briefing", "mix de unidades", "tipologia",
+      "tipologias", "programa de necessidades", "amenidades", "plano macro",
+      "PMBOK", "termo de abertura", "plano de escopo", "DRE evolutiva",
+      "matriz de riscos", "monte carlo", "pitch deck", "one-pager",
+      "business plan", "imagem conceitual", "recalcular tempos", "WBS",
     ],
   },
   {
     slug: "automacoes",
-    faz: "O próprio Gestor de Automações: demandas, chamados e este portal.",
-    palavras: [
-      "demanda", "chamado", "portal", "solicitação", "kanban", "inbox", "Blink",
-    ],
+    faz: "O proprio Gestor de Automacoes: demandas, chamados e este portal.",
+    palavras: ["demanda", "chamado", "portal", "inbox", "Blink", "triagem"],
   },
 ];
 
