@@ -147,6 +147,9 @@ O QUE VOCÊ NÃO FAZ
  * O prompt não mudou nesta correção. Ele estava certo desde ontem, e chegava
  * enfraquecido.
  */
+/** O primeiro rótulo do formato. Serve de partida para o turno do assistente. */
+const PRIMEIRO_ROTULO = "O QUE ACONTECE\n";
+
 function transcrever(messages: ChatMessage[]): string {
   return messages
     .map((m) => `${m.role === "user" ? "SOLICITANTE" : "ASSISTENTE"}: ${m.content}`)
@@ -353,18 +356,56 @@ REGRAS
 - Sem saudação, sem "Prezados", sem "Fico no aguardo", sem primeira pessoa.
 - Não proponha solução nem estime prazo.
 
-Retorne apenas o texto, sem título, sem cercas de código e sem markdown.`;
+Retorne apenas o texto, sem título, sem cercas de código e sem markdown.
+
+NÃO escreva nenhuma frase antes do primeiro rótulo. Nada de "Com base na
+transcrição", "aqui está o resumo" ou qualquer apresentação: a resposta
+COMEÇA em "O QUE ACONTECE".
+
+NÃO invente seções. Use apenas os cinco rótulos acima, e nenhum outro —
+nada de "Resumo do Chamado", "Próximos Passos" ou "Sugestões". Propor o que
+o suporte deve fazer não é descrever a demanda, é decidir por quem vai
+resolvê-la.`;
       const data = await callAI(
         {
           model: modeloPara("conversa"),
+          /**
+           * A TERCEIRA MENSAGEM É A DESCRIÇÃO JÁ COMEÇADA
+           *
+           * Proibir preâmbulo no system não funcionou. O modelo respondia
+           * "Com base na transcrição fornecida, aqui está um resumo
+           * estruturado..." e depois inventava a própria estrutura, com
+           * `### **Resumo do Chamado**` e sugestões de próximos passos — tudo
+           * o que o prompt vetava, em letras claras, duas telas acima.
+           *
+           * Não é desobediência: é que um pedido de resumo puxa com força o
+           * formato genérico de resumo que o modelo viu mil vezes. Instrução
+           * compete com esse hábito; a última mensagem da conversa, não.
+           *
+           * Começando o turno do assistente com o primeiro rótulo, escrever
+           * preâmbulo deixa de ser proibido e passa a ser IMPOSSÍVEL: não há
+           * onde. A continuação natural de "O QUE ACONTECE" é a frase do que
+           * acontece.
+           *
+           * O rótulo é devolvido junto na resposta, porque ele faz parte do
+           * texto final e não da instrução.
+           */
           messages: [
             { role: "system", content: system },
             { role: "user", content: `TRANSCRIÇÃO DA CONVERSA:\n\n${transcrever(messages)}` },
+            { role: "assistant", content: PRIMEIRO_ROTULO },
           ],
         },
         { acao: "assistente-demanda:generate_description", userId },
       ) as any;
-      const description: string = data.choices?.[0]?.message?.content?.trim() ?? "";
+      const bruto: string = data.choices?.[0]?.message?.content ?? "";
+      // Alguns provedores repetem o prefixo ao continuar, outros não. Colar sem
+      // conferir produziria "O QUE ACONTECE" duas vezes na primeira linha.
+      const description: string = (
+        bruto.trimStart().startsWith(PRIMEIRO_ROTULO.trim())
+          ? bruto.trim()
+          : `${PRIMEIRO_ROTULO}${bruto.trimStart()}`.trim()
+      );
       return new Response(JSON.stringify({ description }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
