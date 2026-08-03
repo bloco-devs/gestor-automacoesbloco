@@ -3,6 +3,7 @@
  *
  * Responsabilidades DESTE componente:
  *   • Envolver o `<DragOverlay>` do dnd-kit
+ *   • Separar o `transform` da biblioteca do `transform` do Tailwind (ver §)
  *   • Aplicar as classes de elevação e inclinação (scale, rotate, shadow)
  *   • Garantir `cursor-grabbing` em todo o overlay
  *
@@ -61,34 +62,54 @@ export function KanbanCardOverlay({
   return (
     <DragOverlay dropAnimation={null}>
       {arrastando ? (
-        <div
-          className={cn(
-            "w-[17rem]",
-            // ELEVAÇÃO E INCLINAÇÃO — o cartão "sai da mesa"
-            "scale-105 rotate-2",
-            "shadow-2xl",
-            "cursor-grabbing",
-            // O overlay segue o cursor. Se ele capturar evento de ponteiro,
-            // fica entre o cursor e os alvos — e o `pointerWithin` passa a
-            // encontrar o próprio overlay em vez da coluna embaixo.
-            "pointer-events-none",
-            // Entrada suave ao iniciar o arrasto
-            "transition-transform duration-200 ease-out",
-            "z-[9999]",
-          )}
-        >
-          <Cartao
-            demanda={arrastando}
-            capacidades={capacidades}
-            sinais={sinais}
-            arrastavel
-            sobreposicao
-            emProjeto={emProjeto}
-            capa={capas?.get(arrastando.id)}
-            tom={tomDaEtapa(
-              grupos.find((g) => g.itens.some((i) => i.id === arrastando.id))?.rotulo ?? "",
+        /**
+         * DUAS CAIXAS, E O MOTIVO É UM CONFLITO DE `transform`
+         *
+         * O dnd-kit posiciona o overlay escrevendo `transform: translate3d(...)`
+         * no estilo inline do elemento que ele controla. As utilidades de
+         * transformação do Tailwind — `scale-105`, `rotate-2` — também escrevem
+         * `transform`.
+         *
+         * Duas fontes disputando a mesma propriedade CSS: a que chega depois
+         * apaga a outra. O sintoma é o cartão acompanhar o cursor sem inclinar,
+         * ou inclinar e ficar preso no lugar.
+         *
+         * A separação resolve sem que nenhuma das duas precise saber da outra:
+         *
+         *   externa  → posição (translate injetado pela biblioteca) e camada
+         *   interna  → estética (escala, rotação, sombra)
+         *
+         * `transform` composto em dois elementos aninhados se acumula, então o
+         * resultado visual é o mesmo de aplicar tudo junto — sem a briga.
+         */
+        <div className="pointer-events-none z-[9999]">
+          <div
+            className={cn(
+              "w-[17rem]",
+              // `transform` explícito: garante a propriedade base para as
+              // utilidades de escala e rotação, independente da versão do
+              // Tailwind em uso.
+              "transform",
+              // ELEVAÇÃO E INCLINAÇÃO — o cartão "sai da mesa"
+              "scale-105 rotate-2",
+              "shadow-2xl",
+              "cursor-grabbing",
+              "transition-transform duration-200 ease-out",
             )}
-          />
+          >
+            <Cartao
+              demanda={arrastando}
+              capacidades={capacidades}
+              sinais={sinais}
+              arrastavel
+              sobreposicao
+              emProjeto={emProjeto}
+              capa={capas?.get(arrastando.id)}
+              tom={tomDaEtapa(
+                grupos.find((g) => g.itens.some((i) => i.id === arrastando.id))?.rotulo ?? "",
+              )}
+            />
+          </div>
         </div>
       ) : null}
     </DragOverlay>
