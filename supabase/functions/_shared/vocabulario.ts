@@ -228,7 +228,23 @@ perguntar. Se ela disser "ritual", é o de processos — não pergunte de novo.
 
 ${linhas.join("\n\n")}
 
-Se as palavras apontarem para um sistema com clareza, considere identificado e
-gaste a pergunta em outra coisa. Se apontarem para dois, pergunte entre esses
-dois. Se não apontarem para nenhum, pergunte oferecendo os mais prováveis.`;
+REGRA, NÃO SUGESTÃO
+
+Se uma palavra da pessoa aparece na lista de UM ÚNICO sistema acima, então É
+esse sistema. Não pergunte, não confirme, não ofereça alternativa — afirme e
+use a pergunta para outra coisa.
+
+Exemplo do que NÃO fazer: a pessoa diz "não consigo criar um ritual", e
+"ritual" só existe em Gestão de Processo. Perguntar "é no Processo ou no
+Atividades?" está errado: a resposta já estava na frase dela, e a pergunta
+que sobrava era sobre o erro.
+
+Você vai sentir a tentação de confirmar por precaução, porque "ritual"
+também poderia soar como uma tarefa recorrente de outro sistema. Não
+confirme. Esta lista foi levantada dentro de cada sistema e vale mais que a
+sua dedução sobre o que a palavra poderia significar.
+
+Só pergunte sobre sistema quando: a palavra aparecer em DOIS ou mais
+sistemas (aí pergunte entre esses), ou quando nada do que a pessoa escreveu
+estiver na lista (aí ofereça os mais prováveis).`;
 }
