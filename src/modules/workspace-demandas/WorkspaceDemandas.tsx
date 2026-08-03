@@ -82,6 +82,8 @@ export default function WorkspaceDemandas() {
   const { projetoId } = useParams<{ projetoId: string }>();
   const [params, setParams] = useSearchParams();
   const [busca, setBusca] = useState("");
+  const [filtroMembros, setFiltroMembros] = useState<string[]>([]);
+  const [filtrosEtiquetas, setFiltrosEtiquetas] = useState<string[]>([]);
   const [cartaoAberto, setCartaoAberto] = useState<string | null>(null);
   /**
    * Fechar o painel precisa CONTINUAR fechado.
@@ -147,7 +149,41 @@ export default function WorkspaceDemandas() {
 
   const contagens = useMemo(() => contarFilas(demandas, user?.id ?? null), [demandas, user?.id]);
   const daFila = useMemo(() => aplicarFila(demandas, fila, user?.id ?? null), [demandas, fila, user?.id]);
-  const visiveis = useMemo(() => buscar(daFila, busca), [daFila, busca]);
+
+  /**
+   * A CAPA dos cartões — etiquetas e membros, em lote, só em escopo de
+   * projeto. Na Inbox não existe etiqueta de quadro nem membro de cartão, e
+   * buscar seria pagar uma consulta para receber nada.
+   */
+  const emProjeto = !naInbox && Boolean(projetoId);
+  // IDSVISÍVEIS BASEADO EM daFila (NÃO em visiveis)
+  // Se usássemos `visiveis`, criaríamos dependência circular:
+  //   visiveis → capas → idsVisiveis → visiveis ❌
+  // Usando `daFila`, carregamos capas para todos os cards da fila — ligeiramente
+  // mais amplo, mas evita o loop e garante que os filtros possam funcionar.
+  const idsVisiveis = useMemo(() => daFila.map((d) => d.id), [daFila]);
+  const capas = useCapasDosCards(emProjeto ? idsVisiveis : [], emProjeto);
+
+  const visiveis = useMemo(() => {
+    const comBusca = buscar(daFila, busca);
+    if (filtroMembros.length === 0 && filtrosEtiquetas.length === 0) {
+      return comBusca;
+    }
+    return comBusca.filter((d) => {
+      const capa = capas?.get(d.id);
+      const passaMembros =
+        filtroMembros.length === 0 ||
+        (capa?.membros.some((m) => filtroMembros.includes(m.id)) ?? false);
+      const passaEtiquetas =
+        filtrosEtiquetas.length === 0 ||
+        (capa?.etiquetas.some((e) => filtrosEtiquetas.includes(e.id)) ?? false);
+      return passaMembros && passaEtiquetas;
+    });
+    // `capas` intencionalmente na dependência: o filtro usa os dados dela.
+    // `idsVisiveis` agora depende de `daFila` (não de `visiveis`) para
+    // evitar a dependência circular  visiveis → capas → idsVisiveis → visiveis.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [daFila, busca, filtroMembros, filtrosEtiquetas, capas]);
   const grupos = useMemo(
     () => agrupar(visiveis, lente).filter((grupo) => normalizarEtapa(grupo.rotulo) !== ETAPA_FORA_DO_FLUXO),
     [visiveis, lente],
@@ -170,13 +206,35 @@ export default function WorkspaceDemandas() {
   const sinais = useMemo(() => sinaisUteis(visiveis), [visiveis]);
 
   /**
-   * A CAPA dos cartões — etiquetas e membros, em lote, só em escopo de
-   * projeto. Na Inbox não existe etiqueta de quadro nem membro de cartão, e
-   * buscar seria pagar uma consulta para receber nada.
+   * MEMBROS E ETIQUETAS DISPONÍVEIS — para popular os filtros da barra.
+   * Derivados das capas carregadas; apenas em escopo de projeto (Inbox não
+   * tem capas). Os arrays ficam vazios na Inbox, os botões de filtro somem.
    */
-  const emProjeto = !naInbox && Boolean(projetoId);
-  const idsVisiveis = useMemo(() => visiveis.map((d) => d.id), [visiveis]);
-  const capas = useCapasDosCards(emProjeto ? idsVisiveis : [], emProjeto);
+  const membrosDisponiveis = useMemo(() => {
+    const mapa = new Map<string, { id: string; nome: string; avatarUrl: string | null }>();
+    if (capas) {
+      for (const capa of capas.values()) {
+        for (const m of capa.membros) {
+          if (!mapa.has(m.id)) mapa.set(m.id, m);
+        }
+      }
+    }
+    return Array.from(mapa.values()).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }, [capas]);
+
+  const etiquetasDisponiveis = useMemo(() => {
+    const mapa = new Map<string, { id: string; nome: string | null; cor: string }>();
+    if (capas) {
+      for (const capa of capas.values()) {
+        for (const e of capa.etiquetas) {
+          if (!mapa.has(e.id)) mapa.set(e.id, e);
+        }
+      }
+    }
+    return Array.from(mapa.values()).sort((a, b) =>
+      (a.nome ?? "").localeCompare(b.nome ?? "", "pt-BR"),
+    );
+  }, [capas]);
 
   /**
    * CONCLUIR NA CAPA — a bolinha do cartão.
@@ -352,6 +410,12 @@ export default function WorkspaceDemandas() {
         onBusca={setBusca}
         total={daFila.length}
         filtradas={visiveis.length}
+        membrosDisponiveis={emProjeto ? membrosDisponiveis : []}
+        filtroMembros={filtroMembros}
+        onFiltroMembro={setFiltroMembros}
+        etiquetasDisponiveis={emProjeto ? etiquetasDisponiveis : []}
+        filtrosEtiquetas={filtrosEtiquetas}
+        onFiltroEtiqueta={setFiltrosEtiquetas}
       />
 
       {/*

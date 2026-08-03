@@ -104,7 +104,7 @@ function ListaDeChecklist({ lista, onMudou }: { lista: ChecklistRow; onMudou: ()
 
   const total = lista.itens.length;
   const feitos = lista.itens.filter((i) => i.concluido).length;
-  const pct = total === 0 ? 0 : Math.round((feitos / total) * 100);
+  const pct = total > 0 ? Math.round((feitos / total) * 100) : 0;
 
   return (
     <div className="space-y-2 rounded-lg border p-3">
@@ -112,7 +112,7 @@ function ListaDeChecklist({ lista, onMudou }: { lista: ChecklistRow; onMudou: ()
         <h4 className="text-sm font-medium">{lista.titulo}</h4>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
-            {feitos}/{total}
+            {feitos}/{total} concluídos - {pct}%
           </span>
           <Button
             variant="ghost"

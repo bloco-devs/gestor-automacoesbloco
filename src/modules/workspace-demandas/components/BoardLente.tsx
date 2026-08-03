@@ -1,7 +1,6 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import {
   DndContext,
-  DragOverlay,
   PointerSensor,
   useDroppable,
   useSensor,
@@ -9,37 +8,19 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { useDraggable } from "@dnd-kit/core";
-import {
-  Ban,
-  CheckCircle2,
-  ChevronRight,
-  CircleDot,
-  Circle,
-  Clock,
-  Eye,
-  Plus,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
-
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ChevronRight, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { labelColorStyle } from "@/lib/atividades";
 import { EmptyPanel } from "@/design-system";
-
 import {
-  PRIORIDADE_ROTULO,
-  RISCO_ROTULO,
   type Capacidades,
   type Demanda,
   type Grupo,
   type SinaisUteis,
   tomDaEtapa,
-  type TomDaEtapa,
 } from "@/domain/demand";
-import type { CapaResolvida, CapasResolvidas, EtapaDaFonte } from "@/modules/demand-access";
-import { useEtiquetasExpandidas } from "./card/etiquetasExpandidas";
+import type { CapasResolvidas, EtapaDaFonte } from "@/modules/demand-access";
+import { Cartao, PALETA } from "./KanbanCard";
+import { KanbanCardOverlay } from "./KanbanCardOverlay";
 
 /**
  * A lente de board.
@@ -77,514 +58,14 @@ import { useEtiquetasExpandidas } from "./card/etiquetasExpandidas";
  * Sem o segundo, o cartão imprimia a prioridade sempre: 36 cartões dizendo
  * "Média" gastavam uma linha cada para não informar nada. Quando não sobra
  * nada distintivo para dizer, o cartão perde o rodapé e fica com duas linhas.
+ *
+ * MODULARIDADE
+ * O `Cartao` e a `PALETA` vivem em `KanbanCard.tsx`; o `<DragOverlay>` com a
+ * física Trello vive em `KanbanCardOverlay.tsx`. A divisão existe para evitar
+ * dependência circular: BoardLente ← KanbanCardOverlay ← KanbanCard ✓.
  */
 
-const COR_RISCO: Record<string, string> = {
-  sla_estourado: "bg-destructive",
-  atrasada: "bg-destructive",
-  vence_hoje: "bg-warning",
-  sla_atencao: "bg-warning",
-  parada: "bg-warning/60",
-  vence_em_breve: "bg-info",
-};
-
-function iniciais(nome: string): string {
-  return nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
-}
-
-/** Data curta ("12 mar") — o cartão não tem largura para data completa. */
-function prazoCurto(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
-}
-
-function Cartao({
-  demanda: d,
-  capacidades,
-  sinais,
-  onAbrir,
-  arrastavel,
-  sobreposicao,
-  onAssumir,
-  assumindo,
-  onConcluir,
-  concluindo,
-  onExcluir,
-  excluindo,
-  colunaRotulo,
-  tom = "neutro",
-  capa,
-  emProjeto,
-}: {
-  demanda: Demanda;
-  capacidades: Capacidades;
-  sinais: SinaisUteis;
-  /**
-   * Quadro de projeto (não Helpdesk). No projeto o cartão já vive dentro de um
-   * contexto nomeado: o código de rastreio e o círculo tracejado de "sem
-   * responsável" são ruído — a bolinha de conclusão é a única marca circular.
-   */
-  emProjeto?: boolean;
-  /** O tom da etapa onde o cartão está — vira a faixa de cor na borda esquerda. */
-  tom?: TomDaEtapa;
-
-  onAbrir?: (id: string) => void;
-  arrastavel: boolean;
-  sobreposicao?: boolean;
-  /**
-   * Quem sabe atribuir é a tela — ela conhece a fonte da demanda. Sem este
-   * callback o cartão continua exatamente como era: círculo tracejado.
-   */
-  onAssumir?: (id: string) => void;
-  assumindo?: boolean;
-  /**
-   * Concluir direto da capa (estilo Trello). Sem este callback a bolinha não
-   * aparece — quem sabe se existe etapa de conclusão é a tela.
-   */
-  onConcluir?: (id: string) => void;
-  concluindo?: boolean;
-  /**
-   * Excluir definitivamente. Só a tela sabe se a demanda mora numa tabela onde
-   * apagar é uma operação legítima — sem este callback o botão não existe.
-   */
-  onExcluir?: (id: string) => void;
-  excluindo?: boolean;
-  /** Nome da coluna onde o cartão está — usado para reconhecer conclusão pelo texto. */
-  colunaRotulo?: string;
-  /**
-   * A CAPA — etiquetas e membros do cartão, lidos em lote pela tela.
-   * Opcional de propósito: na Inbox (fonte `demands`) não existe etiqueta de
-   * quadro nem membro de cartão, e o cartão fica exatamente como era.
-   */
-  capa?: CapaResolvida;
-}) {
-
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: d.id,
-    disabled: !arrastavel || sobreposicao,
-  });
-  /**
-   * O CARTÃO TAMBÉM É ALVO DE DROP — É ISSO QUE DÁ CONTROLE DE POSIÇÃO
-   *
-   * Antes só a coluna recebia o drop. O sistema sabia "caiu no Backlog" e nada
-   * sobre a altura, então o cartão ia sempre para o fim. Quem arrasta escolhe
-   * onde solta; o board não perguntava.
-   *
-   * Sobrevoar um cartão significa "quero ficar ACIMA deste". A coluna continua
-   * sendo alvo, e cair nela (no espaço vazio abaixo dos cartões) significa
-   * "no fim" — que é o gesto natural para quem quer o último lugar.
-   *
-   * O prefixo evita colisão de identificador: o mesmo cartão é arrastável por
-   * `d.id` e soltável por `alvo:d.id`. Sem isso, o dnd-kit veria o cartão
-   * arrastado como alvo de si mesmo.
-   */
-  const alvo = useDroppable({ id: `alvo:${d.id}`, disabled: sobreposicao || isDragging });
-  // A escolha vale para todos os cartões e sobrevive à navegação.
-  const [labelsExpanded, alternarLabels] = useEtiquetasExpandidas();
-  const responsavel = d.responsaveis[0];
-
-  const sistemaNome = sinais.sistema ? d.sistema?.nome ?? null : null;
-
-  const meta = [
-    sinais.prioridade && d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
-    // O código de rastreio é linguagem de Helpdesk: dentro de um quadro de
-    // projeto ninguém cita "#4e6706", cita o título do cartão.
-    !emProjeto && sinais.referencia ? d.referencia : null,
-
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-
-  const podeAssumir = !responsavel && !!onAssumir && !sobreposicao;
-  const podeConcluir = !!onConcluir && !sobreposicao;
-  // Conclusão reconhecida de duas formas: pelo tom da etapa (regra da paleta) e
-  // pelo próprio nome da coluna, sem depender de acento ou caixa — "Concluída",
-  // "CONCLUIDO" e "Concluídas" contam todas.
-  const nomeDaColuna = (colunaRotulo ?? "").toLowerCase();
-  const colunaDeConclusao =
-    tom === "concluido" ||
-    nomeDaColuna.includes("concluíd") ||
-    nomeDaColuna.includes("concluid") ||
-    nomeDaColuna.includes("finaliz") ||
-    nomeDaColuna.includes("done");
-  const podeExcluir = !!onExcluir && !sobreposicao && colunaDeConclusao;
-
-  const direita = (
-    <span className="ds-caption flex shrink-0 items-center gap-1.5 text-muted-foreground">
-      {capacidades.ia && d.ia && (
-        <Sparkles className="size-3 shrink-0 text-primary" aria-label="Atendida pela IA" />
-      )}
-      {capacidades.progresso && sinais.progresso && d.progresso && (
-        <span className="tabular-nums">{d.progresso.percentual}%</span>
-      )}
-      {responsavel ? (
-        <Avatar className="size-4" title={responsavel.nome}>
-          {responsavel.avatarUrl && <AvatarImage src={responsavel.avatarUrl} alt={responsavel.nome} />}
-          <AvatarFallback className="bg-muted text-[8px]">{iniciais(responsavel.nome)}</AvatarFallback>
-        </Avatar>
-      ) : podeAssumir ? (
-        /* O drag do dnd-kit escuta pointer, e o cartão inteiro abre no click:
-           parar os dois é o que separa "assumir" de "abrir" ou "arrastar". */
-        <button
-          type="button"
-          disabled={assumindo}
-          onPointerDown={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            onAssumir?.(d.id);
-          }}
-          title="Atribuir esta demanda a você"
-          className={cn(
-            "rounded border border-border/70 bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium leading-none",
-            "text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-            "disabled:cursor-progress disabled:opacity-60",
-          )}
-        >
-          {assumindo ? "Assumindo…" : "Assumir"}
-        </button>
-      ) : emProjeto ? null : (
-        /* No projeto a única marca circular do cartão é a bolinha de concluir. */
-        <span className="size-4 rounded-full border border-dashed border-border" title="Sem responsável" />
-      )}
-
-    </span>
-  );
-
-
-  return (
-    <div
-      data-testid="card-demanda"
-      data-card-id={d.id}
-      data-concluida={d.concluida ? "true" : "false"}
-      data-coluna={colunaRotulo}
-      /**
-       * A linha no topo mostra onde o cartão vai cair.
-       *
-       * Sem ela a pessoa solta às cegas e descobre a posição depois — e se
-       * errou, arrasta de novo. Um alvo invisível transforma cada movimento
-       * numa tentativa.
-       */
-      data-alvo={alvo.isOver ? "true" : undefined}
-      ref={
-        sobreposicao
-          ? undefined
-          : (no) => {
-              setNodeRef(no);
-              alvo.setNodeRef(no);
-            }
-      }
-      {...(sobreposicao ? {} : listeners)}
-      {...(sobreposicao ? {} : attributes)}
-
-      onClick={() => {
-        if (isDragging || sobreposicao) return;
-        onAbrir?.(d.id);
-      }}
-      role={sobreposicao ? undefined : "button"}
-      tabIndex={sobreposicao ? undefined : 0}
-      onKeyDown={(e) => {
-        if (sobreposicao) return;
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onAbrir?.(d.id);
-        }
-      }}
-      aria-label={sobreposicao ? undefined : `Abrir demanda ${d.titulo}`}
-      className={cn(
-        // PROFUNDIDADE POR SUPERFÍCIE, NÃO POR SOMBRA
-        // O cartão era um retângulo de borda fina sobre um fundo quase igual —
-        // num board com seis colunas, a tela lia como uma grade de linhas, não
-        // como objetos que se pega e move. Agora ele tem superfície própria e
-        // sobe de leve no hover: a sombra só aparece quando o cursor está nele,
-        // que é quando ele de fato pode ser pego.
-        "group relative rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
-        // A guia de destino: uma barra no topo, na cor de ação, dizendo "cai
-        // aqui, acima deste cartão". Pseudo-elemento para não empurrar o
-        // layout — a lista não pode saltar enquanto se arrasta, ou o alvo foge
-        // do cursor.
-        "before:pointer-events-none before:absolute before:inset-x-1 before:-top-1 before:h-0.5",
-        "before:rounded-full before:bg-primary before:opacity-0 before:transition-opacity",
-        "data-[alvo=true]:before:opacity-100",
-        // Espaço reservado para a lixeira ancorada no canto inferior direito.
-        podeExcluir && "pb-8",
-        // FAIXA DE ETAPA — a cor da coluna repetida na borda esquerda do cartão,
-        // para que ele continue legível fora do alinhamento da coluna (arrasto,
-        // overlay, rolagem que esconde o cabeçalho).
-        "border-l-4",
-        PALETA[tom].borda,
-        "shadow-[0_1px_2px_hsl(var(--foreground)/0.04)]",
-        "transition-[background-color,border-color,box-shadow,transform] duration-fast ease-standard",
-        "hover:-translate-y-px hover:border-border hover:shadow-elev-2",
-        arrastavel ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
-        "focus-visible:ring-2 focus-visible:ring-ring/50",
-        isDragging && !sobreposicao && "opacity-40",
-        // Arrastando: contorno, não inclinação. O cartão continua sendo um
-        // item de lista que mudou de lugar, não uma ficha de papel girando.
-        sobreposicao && "border-primary/60 ring-1 ring-primary/30",
-        d.concluida && "opacity-60",
-      )}
-    >
-      <div className="flex items-start gap-2">
-        <span
-          aria-hidden
-          className={cn(
-            // Ancorada no topo e do tamanho do título: ela marca a linha que
-            // importa, em vez de flutuar ao lado de um bloco de altura variável.
-            "mt-0.5 h-9 w-1 shrink-0 rounded-full",
-            d.risco ? COR_RISCO[d.risco] : "bg-transparent",
-          )}
-          title={d.risco ? RISCO_ROTULO[d.risco] : undefined}
-        />
-        <div className="min-w-0 flex-1">
-          {(capa?.etiquetas.length ?? 0) > 0 && (
-            /* BARRAS DE ETIQUETA — cor antes de texto, igual ao modal: clique
-               expande para mostrar o nome, com stopPropagation para não abrir
-               o cartão nem iniciar o arrasto. */
-            <button
-              type="button"
-              onPointerDown={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                alternarLabels();
-              }}
-              aria-expanded={labelsExpanded}
-              aria-label={labelsExpanded ? "Recolher etiquetas" : "Expandir etiquetas"}
-              className="mb-1.5 flex flex-wrap items-center gap-1 rounded-md"
-            >
-              {capa!.etiquetas.map((e) => (
-                <span
-                  key={e.id}
-                  title={e.nome ?? "Etiqueta"}
-                  className={cn(
-                    "overflow-hidden whitespace-nowrap rounded-md text-[10px] font-medium leading-tight transition-all duration-300 ease-in-out",
-                    labelsExpanded ? "h-auto w-auto px-2 py-0.5" : "h-2 w-10",
-                  )}
-                  style={labelColorStyle(e.cor)}
-                >
-                  <span
-                    className={cn(
-                      "transition-opacity duration-300 ease-in-out",
-                      labelsExpanded ? "opacity-100" : "opacity-0",
-                    )}
-                  >
-                    {labelsExpanded ? e.nome || "Sem nome" : ""}
-                  </span>
-                </span>
-              ))}
-            </button>
-          )}
-
-          {sistemaNome && (
-            // ETIQUETA DE SISTEMA — estilo Trello: o dev bate o olho e sabe de
-            // qual sistema é a tarefa antes mesmo de ler o título.
-            <span
-              title={`Sistema: ${sistemaNome}`}
-              className="mb-1 inline-flex max-w-full items-center truncate rounded-sm bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
-            >
-              {sistemaNome}
-            </span>
-          )}
-          <div className="flex items-start gap-2">
-            {/* CONCLUIR NA CAPA — a bolinha do Trello. Ela só se destaca no
-                hover do cartão (por isso o `group` no container) e para o
-                pointer/click para não abrir o modal nem iniciar o arrasto. */}
-            {podeConcluir && (
-              <button
-                type="button"
-                disabled={concluindo}
-                onPointerDown={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  onConcluir?.(d.id);
-                }}
-                data-testid="cartao-concluir"
-                data-concluida={d.concluida ? "true" : "false"}
-                title={d.concluida ? "Concluída" : "Marcar como concluída"}
-                aria-label={d.concluida ? "Concluída" : "Marcar como concluída"}
-                className={cn(
-                  "mt-0.5 shrink-0 rounded-full transition-opacity duration-200",
-                  d.concluida
-                    ? "opacity-100"
-                    : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
-                  "text-muted-foreground hover:text-foreground",
-                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                  "disabled:cursor-progress",
-                )}
-              >
-                {d.concluida ? (
-                  <CheckCircle2 className="size-4 text-success" aria-hidden />
-                ) : (
-                  <Circle className="size-4 transition-colors duration-200" aria-hidden />
-                )}
-              </button>
-            )}
-
-            <p
-              className={cn(
-                "line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug",
-                d.concluida && "line-through",
-              )}
-            >
-              {d.titulo}
-            </p>
-            {/* Sem rodapé, os sinais sobem para a linha do título em vez de
-                abrirem uma segunda linha só para eles. */}
-            {!meta && direita}
-          </div>
-          {meta && (
-            <div className="ds-caption mt-1 flex items-center gap-1.5 text-muted-foreground">
-              <span className="truncate">{meta}</span>
-              <span className="ml-auto">{direita}</span>
-            </div>
-          )}
-          {(d.prazo || (capa?.membros.length ?? 0) > 0) && (
-            /* RODAPÉ DA CAPA — prazo à esquerda, quem está nisso à direita.
-               É a linha que responde "para quando" e "com quem" sem abrir o
-               cartão; ela só existe quando há uma das duas coisas. */
-            <div className="mt-1.5 flex items-center gap-2">
-              {d.prazo ? (
-                <span
-                  className="flex items-center gap-1 rounded px-1 py-0.5 text-[11px] text-muted-foreground"
-                  title={`Entrega em ${new Date(d.prazo).toLocaleDateString("pt-BR")}`}
-                >
-                  <Clock className="size-3 shrink-0" aria-hidden />
-                  <span className="tabular-nums">{prazoCurto(d.prazo)}</span>
-                </span>
-              ) : null}
-              {(capa?.membros.length ?? 0) > 0 && (
-                <span className="ml-auto flex items-center -space-x-2">
-                  {capa!.membros.slice(0, 4).map((m) => (
-                    <Avatar key={m.id} className="size-6 border border-card" title={m.nome}>
-                      {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.nome} />}
-                      <AvatarFallback className="bg-muted text-[9px]">
-                        {iniciais(m.nome)}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                  {capa!.membros.length > 4 && (
-                    <span className="flex size-6 items-center justify-center rounded-full border border-card bg-muted text-[9px] font-medium text-muted-foreground">
-                      +{capa!.membros.length - 4}
-                    </span>
-                  )}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* EXCLUIR — só em coluna de conclusão, e só quando a tela sabe
-              excluir. Fica ancorado no canto inferior direito do cartão, acima
-              dos demais elementos, para não competir com a meta-informação. */}
-          {podeExcluir && (
-            <button
-              type="button"
-              disabled={excluindo}
-              onPointerDown={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                if (window.confirm("Tem certeza que deseja excluir esta demanda definitivamente?")) {
-                  onExcluir?.(d.id);
-                }
-              }}
-              data-testid="cartao-excluir"
-              title="Excluir definitivamente"
-              aria-label="Excluir definitivamente"
-              className={cn(
-                "absolute bottom-2 right-2 z-10 rounded p-1",
-                "bg-card/80 text-muted-foreground/70 transition-colors duration-200",
-                "hover:text-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                "disabled:cursor-progress",
-              )}
-            >
-              <Trash2 className="size-3.5" aria-hidden />
-            </button>
-          )}
-
-        </div>
-
-      </div>
-
-    </div>
-  );
-}
-
-/**
- * A TINTA DA COLUNA
- *
- * Cada tom aparece em quatro lugares do cabeçalho — ícone, fundo do ícone,
- * texto e a régua embaixo — e em nenhum outro. O corpo da coluna e os cartões
- * continuam sem cor de estado.
- *
- * Isso é deliberado. Se o cartão também fosse tingido, a cor deixaria de
- * responder "em que etapa isto está?" (que o cartão já responde pela posição)
- * e passaria a competir com os sinais que ELE precisa carregar: risco, SLA,
- * prioridade. Duas informações disputando o mesmo canal, e a mais importante
- * perdendo.
- *
- * O cabeçalho é o lugar certo porque é o que se lê de longe. A pergunta que
- * cor responde bem — "tem muito vermelho neste board?" — é uma pergunta de
- * visão periférica, e visão periférica não lê cartão, lê coluna.
- *
- * As cores saem dos tokens semânticos do sistema, não de valores fixos: elas
- * já têm variante para o tema escuro. As opacidades baixas são o que separa
- * "tinta" de "bloco de cor" — fundo sólido no cabeçalho pesaria mais que os
- * cartões, e o cabeçalho é a moldura, não o conteúdo.
- */
-const PALETA: Record<
-  TomDaEtapa,
-  { icone: typeof Circle; texto: string; fundo: string; regua: string; pastilha: string; borda: string }
-> = {
-  neutro: {
-    icone: Circle,
-    texto: "text-muted-foreground",
-    fundo: "bg-muted",
-    regua: "bg-border",
-    pastilha: "bg-muted text-muted-foreground",
-    borda: "border-l-border",
-  },
-  andamento: {
-    icone: CircleDot,
-    texto: "text-warning",
-    fundo: "bg-warning/10",
-    regua: "bg-warning/50",
-    pastilha: "bg-warning/10 text-warning",
-    borda: "border-l-warning",
-  },
-  revisao: {
-    icone: Eye,
-    texto: "text-info",
-    fundo: "bg-info/10",
-    regua: "bg-info/50",
-    pastilha: "bg-info/10 text-info",
-    borda: "border-l-info",
-  },
-  concluido: {
-    icone: CheckCircle2,
-    texto: "text-success",
-    fundo: "bg-success/10",
-    regua: "bg-success/50",
-    pastilha: "bg-success/10 text-success",
-    borda: "border-l-success",
-  },
-  bloqueado: {
-    icone: Ban,
-    texto: "text-destructive",
-    fundo: "bg-destructive/10",
-    regua: "bg-destructive/50",
-    pastilha: "bg-destructive/10 text-destructive",
-    borda: "border-l-destructive",
-  },
-};
+// ─── Coluna recolhida ─────────────────────────────────────────────────────────
 
 /**
  * A coluna recolhida.
@@ -597,8 +78,7 @@ const PALETA: Record<
 function ColunaRecolhida({ grupo, onExpandir }: { grupo: Grupo; onExpandir: () => void }) {
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
   // Recolher esconde largura, não significado. Sem o tom aqui, a coluna
-  // recolhida viraria a única do board sem estado legível — e recolher passaria
-  // a custar informação, que não é o trato.
+  // recolhida viraria a única do board sem estado legível.
   const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
   const IconeDaEtapa = tinta.icone;
 
@@ -630,14 +110,14 @@ function ColunaRecolhida({ grupo, onExpandir }: { grupo: Grupo; onExpandir: () =
   );
 }
 
+// ─── Compor cartão inline ─────────────────────────────────────────────────────
+
 /**
  * Compor cartão sem sair da coluna.
  *
- * Dentro de um projeto, criar item é a ação mais repetida do dia, e mandá-la
- * para o assistente de IA (que classifica, sugere sistema e abre demanda) é
- * caro para "Revisar contrato". O botão vira campo, Enter grava, Esc desiste, e
- * o campo continua aberto para o próximo — quem está esvaziando a cabeça digita
- * cinco itens seguidos, não um.
+ * Dentro de um projeto, criar item é a ação mais repetida do dia. O botão vira
+ * campo, Enter grava, Esc desiste, e o campo continua aberto para o próximo —
+ * quem está esvaziando a cabeça digita cinco itens seguidos, não um.
  *
  * Só existe onde há coluna de banco para receber: a tela passa o callback
  * apenas em escopo de projeto.
@@ -721,6 +201,8 @@ function ComporCartao({
   );
 }
 
+// ─── Coluna ───────────────────────────────────────────────────────────────────
+
 function Coluna({
   grupo,
   capacidades,
@@ -756,10 +238,8 @@ function Coluna({
   capas?: CapasResolvidas;
   emProjeto?: boolean;
 }) {
-
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
   const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
-
   const IconeDaEtapa = tinta.icone;
 
   return (
@@ -768,23 +248,9 @@ function Coluna({
       data-coluna={grupo.rotulo}
       ref={setNodeRef}
       className={cn(
-        // A coluna preenche a altura do board em vez de calcular a sua a partir
-        // da viewport. `max-h-[calc(100vh-8rem)]` era um chute sobre quanta
-        // moldura existe acima — chute que erra sempre que o cabeçalho muda, e
-        // que deixava o board mais curto que a área disponível. O resultado era
-        // a barra de rolagem horizontal aparecendo no meio da tela, com um vazio
-        // enorme embaixo dela.
-        // COLUNA ELÁSTICA — o fim do "grid vazio"
-        // Com largura fixa de 15rem, seis colunas ocupavam 90rem: numa tela de
-        // 1440px sobrava um terço de cinza à direita, e o board parecia um
-        // formulário mal centralizado. Agora ela cresce para dividir o espaço
-        // disponível e para de crescer aos 22rem — acima disso o cartão fica
-        // largo demais e o título ganha uma linha de 90 caracteres, que é pior
-        // de ler que duas curtas.
-        //
-        // `basis-60` é o piso: quando as colunas não couberem, elas param de
-        // encolher e o board rola na horizontal, que é o comportamento certo
-        // para uma esteira longa.
+        // COLUNA ELÁSTICA — cresce para dividir o espaço disponível.
+        // `basis-60` é o piso: quando as colunas não couberem elas param de
+        // encolher e o board rola na horizontal, que é o comportamento certo.
         "flex h-full min-h-[16rem] flex-1 basis-60 flex-col rounded-lg",
         "min-w-[15rem] max-w-[22rem]",
         "transition-colors duration-base ease-standard",
@@ -795,9 +261,7 @@ function Coluna({
       aria-label={`${grupo.rotulo}, ${grupo.itens.length} demandas`}
       data-total={grupo.itens.length}
     >
-      {/* A contagem vira pastilha em vez de número solto: ela é um dado
-          diferente do nome da coluna, e sem forma própria os dois se leem como
-          uma frase só ("BACKLOG 8"). */}
+      {/* A contagem vira pastilha em vez de número solto. */}
       <header className="mb-2 px-1.5">
         <div className="flex items-center gap-2 pb-2">
           <span
@@ -829,8 +293,7 @@ function Coluna({
           )}
         </div>
         {/* A régua substitui a borda cinza de 1px. Ela faz o mesmo trabalho de
-            separar cabeçalho de conteúdo, e de quebra carrega o tom — é a
-            única marca de cor que sobrevive quando a coluna rola. */}
+            separar cabeçalho de conteúdo, e de quebra carrega o tom. */}
         <div aria-hidden className={cn("h-0.5 w-full rounded-full", tinta.regua)} />
       </header>
       <div className="rolagem-discreta flex-1 space-y-2 overflow-y-auto px-1 pb-2">
@@ -852,15 +315,11 @@ function Coluna({
             colunaRotulo={grupo.rotulo}
             capa={capas?.get(d.id)}
             emProjeto={emProjeto}
-
           />
         ))}
         {grupo.itens.length === 0 && (
-          /* A palavra "Vazio" repetida em cada coluna vazia vira um coro de
-             ruído — quatro rótulos dizendo o que a ausência de cartão já diz.
-             A área tracejada informa a mesma coisa em silêncio, e ainda mostra
-             onde se pode soltar. O texto só aparece quando há um cartão na
-             mão, que é o único momento em que ele ajuda. */
+          /* A área tracejada informa onde se pode soltar em silêncio.
+             O texto só aparece quando há um cartão na mão. */
           <div
             aria-hidden
             className={cn(
@@ -879,10 +338,11 @@ function Coluna({
           <ComporCartao onCriar={onCriarCartao} salvando={criandoCartao} />
         ) : null}
       </div>
-
     </section>
   );
 }
+
+// ─── Props do board ───────────────────────────────────────────────────────────
 
 interface Props {
   grupos: Grupo[];
@@ -914,23 +374,10 @@ interface Props {
    * vazios — é o vazio que informa que ninguém está testando nada.
    */
   etapas?: EtapaDaFonte[];
-  /**
-   * Atribuir a demanda à pessoa logada, direto do cartão. Sem isto o botão
-   * "Assumir" não existe — quem decide se a ação é possível é a tela, porque
-   * é ela que sabe de qual fonte cada demanda veio.
-   */
   onAssumir?: (id: string) => void;
   assumindo?: (id: string) => boolean;
-  /**
-   * Concluir direto da capa. Sem isto a bolinha não aparece — só a tela sabe
-   * se a fonte tem uma etapa de conclusão para onde mover.
-   */
   onConcluir?: (id: string) => void;
   concluindo?: (id: string) => boolean;
-  /**
-   * Excluir definitivamente, só nas etapas de conclusão. Sem isto o botão não
-   * aparece — apagar só é legítimo onde a tela sabe apagar.
-   */
   onExcluir?: (id: string) => void;
   excluindo?: (id: string) => boolean;
   /**
@@ -952,6 +399,8 @@ interface Props {
   emProjeto?: boolean;
 }
 
+// ─── BoardLenteImpl ───────────────────────────────────────────────────────────
+
 function BoardLenteImpl({
   grupos,
   capacidades,
@@ -972,8 +421,6 @@ function BoardLenteImpl({
   capas,
   emProjeto,
 }: Props) {
-
-
   const [arrastando, setArrastando] = useState<Demanda | null>(null);
   const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
   const [jaVistas, setJaVistas] = useState<Set<string>>(new Set());
@@ -1031,7 +478,6 @@ function BoardLenteImpl({
       />
     );
   }
-
 
   const alternar = (id: string) =>
     setRecolhidas((r) => {
@@ -1124,29 +570,20 @@ function BoardLenteImpl({
               capas={capas}
               emProjeto={emProjeto}
             />
-
           ),
         )}
       </div>
-      <DragOverlay dropAnimation={null}>
-        {arrastando ? (
-          <div className="w-[17rem]">
-            <Cartao
-              demanda={arrastando}
-              capacidades={capacidades}
-              sinais={sinais}
-              arrastavel
-              sobreposicao
-              emProjeto={emProjeto}
-              capa={capas?.get(arrastando.id)}
-              tom={tomDaEtapa(
-                grupos.find((g) => g.itens.some((i) => i.id === arrastando.id))?.rotulo ?? "",
-              )}
-            />
 
-          </div>
-        ) : null}
-      </DragOverlay>
+      {/* O DragOverlay com a física Trello vive em KanbanCardOverlay para evitar
+          dependência circular (BoardLente ← KanbanCardOverlay ← KanbanCard). */}
+      <KanbanCardOverlay
+        arrastando={arrastando}
+        capacidades={capacidades}
+        sinais={sinais}
+        grupos={grupos}
+        emProjeto={emProjeto}
+        capas={capas}
+      />
     </DndContext>
   );
 }
