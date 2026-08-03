@@ -50,11 +50,17 @@ export const aiWorkspaceService = {
    * Sem esta lista, a regra correspondente no prompt seria letra morta: o
    * modelo teria a instrução de oferecer nomes e nenhum nome para oferecer.
    */
-  askNext(conversation: Conversation, sistemas?: Array<{ slug: string; nome: string }>) {
+  askNext(
+    conversation: Conversation,
+    sistemas?: Array<{ slug: string; nome: string }>,
+    extra?: { limite?: number; primeiroNome?: string | null },
+  ) {
     return invoke<AssistantNextQuestion>("assistente-demanda", {
       action: "next_question",
       messages: conversation,
       sistemas: sistemas ?? [],
+      limite: extra?.limite ?? 4,
+      primeiroNome: extra?.primeiroNome ?? null,
     });
   },
   generateDescription(conversation: Conversation) {

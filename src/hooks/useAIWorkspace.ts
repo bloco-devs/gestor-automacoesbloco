@@ -57,7 +57,20 @@ export interface AiPreview {
   intent?: OrchestratorDecision["classification"] | null;
 }
 
-const MAX_USER_TURNS = 2;
+/**
+ * QUATRO, E NAO DUAS — A SAUDACAO QUEIMAVA UMA
+ *
+ * Eram duas. O contador conta MENSAGENS do usuario, e "ola" e uma mensagem:
+ * quem cumprimentava antes de explicar o problema chegava ao fim da conversa
+ * com uma pergunta feita, nao duas. E cumprimentar antes de pedir ajuda e o
+ * comportamento normal de quem foi educado a vida inteira.
+ *
+ * Subir para quatro nao alonga a conversa a forca: o modelo devolve `[FIM]`
+ * assim que tem informacao suficiente, e agora ele tem o vocabulario dos
+ * treze sistemas para reconhecer o sistema sem gastar pergunta. O limite e
+ * teto, nao meta.
+ */
+const MAX_USER_TURNS = 4;
 
 export function impactoFor(retorno: number) {
   if (retorno >= 8) return "Alto";
@@ -172,6 +185,11 @@ export function useAIWorkspace() {
         const turn = await aiOrchestrator.runTurn(nextHistory, {
           maxUserTurns: MAX_USER_TURNS,
           workspaceContext,
+          // O limite viaja junto: escrito a mao no prompt, ele desincronizava
+          // do valor real e o modelo se planejava para uma conversa que nao
+          // existia. Foi assim que a primeira pergunta virou a unica.
+          limite: MAX_USER_TURNS,
+          primeiroNome: (user?.nome ?? "").trim().split(/\s+/)[0] || null,
           sistemas: sistemas.map((s) => ({ slug: s.id, nome: s.nome })),
         });
         if (turn.shouldFinalize) {

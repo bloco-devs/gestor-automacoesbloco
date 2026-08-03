@@ -105,7 +105,7 @@ export const aiOrchestrator = {
    */
   async runTurn(
     conversation: Conversation,
-    opts?: { maxUserTurns?: number; workspaceContext?: OrchestratorContext; sistemas?: Array<{ slug: string; nome: string }> },
+    opts?: { maxUserTurns?: number; workspaceContext?: OrchestratorContext; sistemas?: Array<{ slug: string; nome: string }>; limite?: number; primeiroNome?: string | null },
   ): Promise<OrchestratorTurn> {
     const decision = this.decide(conversation, {
       workspaceContext: opts?.workspaceContext,
@@ -117,7 +117,10 @@ export const aiOrchestrator = {
       return { decision, nextQuestion: null, shouldFinalize: true };
     }
 
-    const res = await aiWorkspaceService.askNext(conversation, opts?.sistemas);
+    const res = await aiWorkspaceService.askNext(conversation, opts?.sistemas, {
+      limite: opts?.limite ?? opts?.maxUserTurns,
+      primeiroNome: opts?.primeiroNome ?? null,
+    });
     return {
       decision,
       nextQuestion: res.done ? null : res.question,

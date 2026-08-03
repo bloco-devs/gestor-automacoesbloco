@@ -30,17 +30,30 @@ COMO VOCÊ FALA
 - Quando ela descrever algo trabalhoso ou irritante, reconheça em meia frase e siga. Sem discurso, sem "sinto muito", sem exclamação.
 - Nunca se apresente, não fale de si, não use emoji, não diga que é uma IA. Você é só quem está ajudando.
 
-VOCÊ TEM NO MÁXIMO DUAS PERGUNTAS. NÃO HÁ TERCEIRA.
-Este é o ponto mais importante. Com duas perguntas não existe "começar
-amplo e ir afunilando" — a primeira pergunta já precisa ser a mais útil que
-você conseguiria fazer. Trate cada uma como se fosse a última, porque a
-segunda é.
+ORÇAMENTO DE PERGUNTAS
+O número exato vem no fim deste prompt. Ele é TETO, não meta: devolva
+"[FIM]" no momento em que tiver o suficiente, mesmo que sobrem perguntas.
+Perguntar por perguntar cansa quem só quer registrar um problema.
+
+Cada pergunta precisa valer sozinha. Não conte com uma próxima rodada para
+afunilar — se a conversa acabar ali, o que você tem já precisa dar uma
+demanda executável.
 
 O QUE PERGUNTAR DEPENDE DO TIPO DE PROBLEMA
 
 Se algo NÃO FUNCIONA (erro, trava, não salva, não aparece):
-1. O que acontece na tela. Aparece mensagem de erro? Trava? Não acontece nada?
-2. Acontece sempre ou de vez em quando? Já funcionou antes?
+Pergunte nesta ordem de valor, uma por vez, parando quando já der para
+executar:
+1. O que aparece na tela — mensagem de erro (peça o texto exato), tela
+   branca, trava, ou nada acontece?
+2. Em que ponto exatamente trava: ao abrir a tela, ao preencher, ou ao
+   clicar em salvar/confirmar?
+3. Acontece sempre ou de vez em quando? Já funcionou antes e parou?
+4. Se houver mensagem de erro, peça um print — é a evidência que mais
+   encurta o conserto.
+
+Texto exato de erro e o ponto do fluxo valem mais que qualquer outra
+informação: com os dois, quem for consertar já sabe onde olhar.
 Não pergunte "o que você faz nesse processo" — ela já disse o que estava
 fazendo quando quebrou. Perguntar de novo soa como quem não leu.
 
@@ -51,6 +64,17 @@ Se é TRABALHO MANUAL que ela quer facilitar:
 Se é COISA NOVA que ela quer que exista:
 1. O que ela faz hoje sem isso.
 2. Quem mais precisaria usar.
+
+CUMPRIMENTE PELO NOME, UMA VEZ SÓ
+O nome de quem está falando vem no fim deste prompt. Se a pessoa abrir com
+saudação ("oi", "bom dia", "ola"), responda o cumprimento pelo primeiro nome
+dela e já faça a pergunta na mesma mensagem — não gaste um turno só para
+dizer bom dia.
+
+Exemplo: "Bom dia, André. Você quer relatar um problema em algum sistema ou
+sugerir uma melhoria?"
+
+Depois disso, não cumprimente mais e não repita o nome a cada frase.
 
 A PRIMEIRA PERGUNTA, SE VOCÊ NÃO SABE O SISTEMA
 
@@ -148,11 +172,15 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { action, messages, sistemas } = (await req.json()) as {
+    const { action, messages, sistemas, limite: body_limite, primeiroNome } = (await req.json()) as {
       action: "next_question" | "generate_description" | "generate_title";
       messages: ChatMessage[];
       /** Catálogo do ecossistema. Opcional: sem ele, o Blink não pergunta sobre sistema. */
       sistemas?: Array<{ slug?: string; nome?: string }>;
+      /** Quantas perguntas a tela permite. Escrito a mao no prompt, desincronizava. */
+      limite?: number;
+      /** Primeiro nome de quem esta falando, para o Blink cumprimentar por nome. */
+      primeiroNome?: string | null;
     };
 
 
@@ -197,18 +225,18 @@ Deno.serve(async (req) => {
        * o modelo chuta — foi assim que uma demanda de processos virou outra
        * coisa.
        */
-      const system = `${SYSTEM_BASE}${catalogo}${blocoDeVocabulario(listaDeSistemas)}
+      const limite = typeof body_limite === "number" && body_limite > 0 ? body_limite : 4;
+      const nome = (primeiroNome ?? "").trim();
+      const rodape = `\n\nDADOS DESTA CONVERSA
+Perguntas permitidas: ${limite}. Você já fez ${messages.filter((m) => m.role === "assistant").length}.
+${nome ? `Quem está falando: ${nome}.` : "O nome de quem está falando não foi informado — não invente um."}`;
 
-Você já fez ${messages.filter((m) => m.role === "assistant").length} pergunta(s) e recebeu ${userTurns} resposta(s).
+      const system = `${SYSTEM_BASE}${catalogo}${blocoDeVocabulario(listaDeSistemas)}${rodape}
 
-O limite REAL é 2 perguntas — a tela encerra a conversa aí, e este número
-dizia 4. O modelo se planejava para quatro rodadas, gastava a primeira
-numa pergunta ampla para afunilar depois, e as duas rodadas seguintes
-nunca chegavam. A pergunta larga, que era o começo de um plano, virava a
-única pergunta feita.
+Você recebeu ${userTurns} resposta(s) até agora.
 
-Se já tiver informação suficiente OU já fez 2 perguntas, retorne apenas a
-string especial "[FIM]".
+Se já tiver informação suficiente OU já atingiu o número de perguntas
+permitidas, retorne apenas a string especial "[FIM]".
 Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeração).`;
 
       const data = await callAI(
@@ -219,7 +247,7 @@ Caso contrário, retorne APENAS a próxima pergunta (sem prefixos, sem numeraç�
         { acao: "assistente-demanda:next_question", userId },
       ) as any;
       const content: string = data.choices?.[0]?.message?.content?.trim() ?? "";
-      const done = content.includes("[FIM]") || userTurns >= 4;
+      const done = content.includes("[FIM]") || userTurns >= limite;
       return new Response(JSON.stringify({ done, question: done ? null : content }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
