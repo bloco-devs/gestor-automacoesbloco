@@ -78,7 +78,21 @@ export interface EstadoDemandas {
  */
 export interface AcoesDemanda {
   /** Move para outro status. No quadro é trocar de coluna; em `demands`, trocar o enum. */
-  mover: (params: { demandaId: string; statusId: string; ordem?: number }) => Promise<void>;
+  /**
+   * `ordemDaColuna` e a lista completa de ids da coluna de destino, na ordem
+   * final desejada — inclusive o cartao que esta sendo movido.
+   *
+   * Mandar a coluna inteira, e nao apenas "o card vai para o indice 2", existe
+   * porque posicao relativa gera empate: dois cartoes com a mesma ordem ficam
+   * na mao do desempate do banco, que ninguem controla. Com a sequencia
+   * completa, a ordem e um fato, nao uma negociacao.
+   */
+  mover: (params: {
+    demandaId: string;
+    statusId: string;
+    ordem?: number;
+    ordemDaColuna?: string[];
+  }) => Promise<void>;
   atribuir: (params: { demandaId: string; pessoaId: string | null }) => Promise<void>;
   /**
    * Marca como concluída.

@@ -164,6 +164,22 @@ function Cartao({
     id: d.id,
     disabled: !arrastavel || sobreposicao,
   });
+  /**
+   * O CARTÃO TAMBÉM É ALVO DE DROP — É ISSO QUE DÁ CONTROLE DE POSIÇÃO
+   *
+   * Antes só a coluna recebia o drop. O sistema sabia "caiu no Backlog" e nada
+   * sobre a altura, então o cartão ia sempre para o fim. Quem arrasta escolhe
+   * onde solta; o board não perguntava.
+   *
+   * Sobrevoar um cartão significa "quero ficar ACIMA deste". A coluna continua
+   * sendo alvo, e cair nela (no espaço vazio abaixo dos cartões) significa
+   * "no fim" — que é o gesto natural para quem quer o último lugar.
+   *
+   * O prefixo evita colisão de identificador: o mesmo cartão é arrastável por
+   * `d.id` e soltável por `alvo:d.id`. Sem isso, o dnd-kit veria o cartão
+   * arrastado como alvo de si mesmo.
+   */
+  const alvo = useDroppable({ id: `alvo:${d.id}`, disabled: sobreposicao || isDragging });
   // A escolha vale para todos os cartões e sobrevive à navegação.
   const [labelsExpanded, alternarLabels] = useEtiquetasExpandidas();
   const responsavel = d.responsaveis[0];
@@ -246,7 +262,22 @@ function Cartao({
       data-card-id={d.id}
       data-concluida={d.concluida ? "true" : "false"}
       data-coluna={colunaRotulo}
-      ref={sobreposicao ? undefined : setNodeRef}
+      /**
+       * A linha no topo mostra onde o cartão vai cair.
+       *
+       * Sem ela a pessoa solta às cegas e descobre a posição depois — e se
+       * errou, arrasta de novo. Um alvo invisível transforma cada movimento
+       * numa tentativa.
+       */
+      data-alvo={alvo.isOver ? "true" : undefined}
+      ref={
+        sobreposicao
+          ? undefined
+          : (no) => {
+              setNodeRef(no);
+              alvo.setNodeRef(no);
+            }
+      }
       {...(sobreposicao ? {} : listeners)}
       {...(sobreposicao ? {} : attributes)}
 
@@ -272,6 +303,13 @@ function Cartao({
         // sobe de leve no hover: a sombra só aparece quando o cursor está nele,
         // que é quando ele de fato pode ser pego.
         "group relative rounded-lg border border-border/70 bg-card px-2.5 py-2 outline-none",
+        // A guia de destino: uma barra no topo, na cor de ação, dizendo "cai
+        // aqui, acima deste cartão". Pseudo-elemento para não empurrar o
+        // layout — a lista não pode saltar enquanto se arrasta, ou o alvo foge
+        // do cursor.
+        "before:pointer-events-none before:absolute before:inset-x-1 before:-top-1 before:h-0.5",
+        "before:rounded-full before:bg-primary before:opacity-0 before:transition-opacity",
+        "data-[alvo=true]:before:opacity-100",
         // Espaço reservado para a lixeira ancorada no canto inferior direito.
         podeExcluir && "pb-8",
         // FAIXA DE ETAPA — a cor da coluna repetida na borda esquerda do cartão,
@@ -851,7 +889,14 @@ interface Props {
   capacidades: Capacidades;
   sinais: SinaisUteis;
   onAbrir: (id: string) => void;
-  onMover: (params: { demandaId: string; statusId: string }) => void;
+  onMover: (params: {
+    demandaId: string;
+    statusId: string;
+    /** Índice de destino dentro da coluna. */
+    ordem?: number;
+    /** A coluna de destino inteira, na ordem final. Ver `AcoesDemanda.mover`. */
+    ordemDaColuna?: string[];
+  }) => void;
   podeMover: boolean;
   /** Mesma forma que a `ListaLente` usa — as duas lentes falam a mesma língua. */
   vazio?: { titulo: string; descricao?: string };
@@ -998,14 +1043,53 @@ function BoardLenteImpl({
 
   const aoIniciar = (e: DragStartEvent) => setArrastando(porId.get(String(e.active.id)) ?? null);
 
+  /**
+   * ONDE O CARTÃO CAI — COLUNA E POSIÇÃO
+   *
+   * Duas formas de soltar, e cada uma diz uma coisa:
+   *   sobre um cartão  → "quero ficar ACIMA deste"
+   *   sobre a coluna   → "quero ficar no fim"
+   *
+   * A segunda é o espaço vazio abaixo da pilha, que é o gesto natural de quem
+   * quer o último lugar. Antes só ela existia, e por isso todo cartão ia para
+   * o fim independente de onde a pessoa soltasse.
+   *
+   * Mandamos a coluna INTEIRA na ordem final, não "o card vai para o índice
+   * 2". Posição relativa cria empate — dois cartões com a mesma ordem ficam na
+   * mão do desempate do banco, e o cartão solto no topo reaparece no meio.
+   */
   const aoTerminar = (e: DragEndEvent) => {
     setArrastando(null);
-    const destino = e.over?.id ? String(e.over.id) : null;
+    const alvoBruto = e.over?.id ? String(e.over.id) : null;
     const demandaId = String(e.active.id);
-    if (!destino) return;
+    if (!alvoBruto) return;
     const atual = porId.get(demandaId);
-    if (!atual || atual.status.id === destino) return;
-    onMover({ demandaId, statusId: destino });
+    if (!atual) return;
+
+    const sobreCartao = alvoBruto.startsWith("alvo:");
+    const idDoVizinho = sobreCartao ? alvoBruto.slice(5) : null;
+    if (idDoVizinho === demandaId) return;
+
+    // Soltar sobre um cartão herda a coluna DELE: a pessoa aponta para um
+    // lugar, não para um contêiner.
+    const grupoDestino = sobreCartao
+      ? grupos.find((g) => g.itens.some((i) => i.id === idDoVizinho))
+      : grupos.find((g) => g.id === alvoBruto);
+    if (!grupoDestino) return;
+
+    const semOArrastado = grupoDestino.itens.filter((i) => i.id !== demandaId).map((i) => i.id);
+    const posicao = idDoVizinho ? semOArrastado.indexOf(idDoVizinho) : semOArrastado.length;
+    const ordemDaColuna = [...semOArrastado];
+    ordemDaColuna.splice(posicao < 0 ? semOArrastado.length : posicao, 0, demandaId);
+
+    // Nada mudou: mesma coluna e mesma posição. Evita uma escrita à toa e o
+    // piscar de lista que ela provoca.
+    const eraIgual =
+      atual.status.id === grupoDestino.id &&
+      grupoDestino.itens.map((i) => i.id).join("|") === ordemDaColuna.join("|");
+    if (eraIgual) return;
+
+    onMover({ demandaId, statusId: grupoDestino.id, ordem: posicao, ordemDaColuna });
   };
 
   return (

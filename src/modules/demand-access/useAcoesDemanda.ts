@@ -26,10 +26,21 @@ export function useAcoesDemanda(escopo: Escopo): AcoesDemanda {
   const assignDemand = useAssignDemand();
 
   const mover = useCallback<AcoesDemanda["mover"]>(
-    async ({ demandaId, statusId, ordem }) => {
+    async ({ demandaId, statusId, ordem, ordemDaColuna }) => {
       if (fonte === "atividades") {
         // No quadro, "status" é a coluna. `reorder` já move e reposiciona numa
         // única chamada, com otimismo e rollback herdados.
+        //
+        // Com a coluna inteira em mãos, reescrevemos a sequência dela: cada
+        // card recebe a posição que tem na lista. É o que garante que o card
+        // solto no topo FIQUE no topo — mandar só ele com `ordem: 0` deixaria
+        // dois cards disputando a mesma posição, e o desempate seria do banco.
+        if (ordemDaColuna && ordemDaColuna.length > 0) {
+          await cards.reorder.mutateAsync(
+            ordemDaColuna.map((id, i) => ({ id, colunaId: statusId, ordem: i })),
+          );
+          return;
+        }
         await cards.reorder.mutateAsync([{ id: demandaId, colunaId: statusId, ordem: ordem ?? 0 }]);
         return;
       }

@@ -385,7 +385,11 @@ export default function WorkspaceDemandas() {
                 capacidades={capacidadesVisiveis}
                 sinais={sinais}
                 onAbrir={abrir}
-                onMover={({ demandaId, statusId }) => void acoes.mover({ demandaId, statusId })}
+                // Repassa a POSIÇÃO junto. Antes esta linha desestruturava só
+                // `demandaId` e `statusId`, e a ordem escolhida ao arrastar era
+                // descartada aqui, silenciosamente — o board calculava certo e
+                // ninguém escutava.
+                onMover={(params) => void acoes.mover(params)}
                 podeMover={acoes.podeMover}
                 emProjeto={emProjeto}
                 onConcluir={emProjeto ? (id) => void concluirCartao(id) : undefined}
