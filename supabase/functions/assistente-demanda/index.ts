@@ -3,6 +3,7 @@ import { callAI, IAUsageError } from "../_shared/ia-gateway.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
 import { modeloPara } from "../_shared/modelos.ts";
+import { blocoDeVocabulario } from "../_shared/vocabulario.ts";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -190,7 +191,13 @@ Deno.serve(async (req) => {
             .join("\n")}`
         : "";
 
-      const system = `${SYSTEM_BASE}${catalogo}
+      /**
+       * A lista de nomes diz QUAIS sistemas existem; o vocabulário diz como
+       * reconhecê-los. Sem o segundo, "ritual" e "POP" sao palavras soltas e
+       * o modelo chuta — foi assim que uma demanda de processos virou outra
+       * coisa.
+       */
+      const system = `${SYSTEM_BASE}${catalogo}${blocoDeVocabulario(listaDeSistemas)}
 
 Você já fez ${messages.filter((m) => m.role === "assistant").length} pergunta(s) e recebeu ${userTurns} resposta(s).
 

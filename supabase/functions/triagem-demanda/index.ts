@@ -3,6 +3,7 @@ import { callAI, IAUsageError } from "../_shared/ia-gateway.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
 import { modeloPara } from "../_shared/modelos.ts";
+import { SISTEMAS_CONHECIDOS } from "../_shared/vocabulario.ts";
 
 type SistemaItem = { slug?: string; id?: string; nome?: string; grupo?: string | null };
 type Body = { titulo?: string; descricao?: string; setor?: string; sistemas?: SistemaItem[] };
@@ -43,7 +44,22 @@ function normalizar(texto: string): string {
 }
 
 /** Apelidos comuns por slug conhecido do ecossistema. */
-const APELIDOS: Record<string, string[]> = {
+/**
+ * O vocabulário de `_shared/vocabulario.ts` entra aqui.
+ *
+ * Este mapa e aquele arquivo respondem a mesma pergunta — quais palavras
+ * apontam para qual sistema — e estavam separados, cada um com metade da
+ * resposta. `ritual` estava num e nao no outro, entao a triagem nao reconhecia
+ * o que a conversa reconhecia.
+ *
+ * A juncao acontece em tempo de execucao, e nao por copia: manter duas listas
+ * sincronizadas a mao e como esse defeito nasce.
+ *
+ * Aqui o casamento e por REGEX, nao por modelo. Quando a palavra aparece, o
+ * sistema e identificado sem gastar uma chamada de IA e sem chance de
+ * alucinacao. O modelo so decide o que o texto nao entrega.
+ */
+const APELIDOS_BASE: Record<string, string[]> = {
   rh: ["rh", "recursos humanos", "recurso humano", "departamento pessoal", "dp", "folha", "folha de pagamento", "admissao", "admissoes", "ferias", "colaboradores"],
   processos: ["processos", "processo", "sgpo"],
   obra: ["obra", "obras", "canteiro", "canteiro de obras"],
@@ -116,6 +132,20 @@ function inferirSistema(
 }
 
 
+
+/** Funde os apelidos locais com o vocabulario compartilhado. */
+const APELIDOS: Record<string, string[]> = (() => {
+  const juntos: Record<string, string[]> = {};
+  for (const [slug, termos] of Object.entries(APELIDOS_BASE)) {
+    juntos[slug] = [...termos];
+  }
+  for (const s of SISTEMAS_CONHECIDOS) {
+    const atuais = juntos[s.slug] ?? [];
+    const novos = s.palavras.map((p) => p.toLowerCase());
+    juntos[s.slug] = Array.from(new Set([...atuais, ...novos]));
+  }
+  return juntos;
+})();
 
 function getServiceClient() {
   const url = Deno.env.get("SUPABASE_URL") ?? "";
