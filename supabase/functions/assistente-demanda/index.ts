@@ -148,7 +148,7 @@ O QUE VOCÊ NÃO FAZ
  * enfraquecido.
  */
 /** O primeiro rótulo do formato. Serve de partida para o turno do assistente. */
-const PRIMEIRO_ROTULO = "O QUE ACONTECE\n";
+const PRIMEIRO_ROTULO = "O QUE ACONTECEU?\n";
 
 function transcrever(messages: ChatMessage[]): string {
   return messages
@@ -329,7 +329,7 @@ NÃO use asteriscos, cerquilha, traços de lista nem qualquer marcação: a tela
 mostra o texto como ele vem, e um `**` vira dois asteriscos na cara de quem
 lê. Quebra de linha é a única formatação que funciona aqui.
 
-O QUE ACONTECE
+O QUE ACONTECEU?
 Uma ou duas frases, direto. O comportamento observado, sem rodeio e sem
 "o usuário relata que". Ex: "O botão Salvar não responde ao criar POP."
 
@@ -360,7 +360,7 @@ Retorne apenas o texto, sem título, sem cercas de código e sem markdown.
 
 NÃO escreva nenhuma frase antes do primeiro rótulo. Nada de "Com base na
 transcrição", "aqui está o resumo" ou qualquer apresentação: a resposta
-COMEÇA em "O QUE ACONTECE".
+COMEÇA em "O QUE ACONTECEU?".
 
 NÃO invente seções. Use apenas os cinco rótulos acima, e nenhum outro —
 nada de "Resumo do Chamado", "Próximos Passos" ou "Sugestões". Propor o que
@@ -384,7 +384,7 @@ resolvê-la.`;
            *
            * Começando o turno do assistente com o primeiro rótulo, escrever
            * preâmbulo deixa de ser proibido e passa a ser IMPOSSÍVEL: não há
-           * onde. A continuação natural de "O QUE ACONTECE" é a frase do que
+           * onde. A continuação natural de "O QUE ACONTECEU?" é a frase do que
            * acontece.
            *
            * O rótulo é devolvido junto na resposta, porque ele faz parte do
@@ -400,7 +400,10 @@ resolvê-la.`;
       ) as any;
       const bruto: string = data.choices?.[0]?.message?.content ?? "";
       // Alguns provedores repetem o prefixo ao continuar, outros não. Colar sem
-      // conferir produziria "O QUE ACONTECE" duas vezes na primeira linha.
+      // conferir produziria "O QUE ACONTECEU?" duas vezes na primeira linha.
+      // O rótulo termina em "?" de propósito: o provedor corta o \n final do
+      // prefill, e "O QUE ACONTECE" sem quebra vira "O QUE ACONTECEU?" pela
+      // mão do modelo — era essa emenda que aparecia como "U?" na tela.
       const description: string = (
         bruto.trimStart().startsWith(PRIMEIRO_ROTULO.trim())
           ? bruto.trim()
