@@ -26,3 +26,9 @@ dist-ssr
 # Playwright
 /playwright-report
 /test-results
+
+# arquivos temporarios de transferencia de patch
+*.b64
+*.gz
+*.patch
+supabase/.temp/
