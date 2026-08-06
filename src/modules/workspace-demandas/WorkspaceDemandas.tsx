@@ -480,6 +480,11 @@ export default function WorkspaceDemandas() {
                     ? async ({ statusId, titulo }) => {
                         try {
                           await cartoes.criar({ colunaId: statusId, titulo });
+                          // O cartão nasce sem responsável e sem prazo: em
+                          // qualquer fila que não seja "Todas" ele já nasceria
+                          // filtrado, e a tela parecia não ter criado nada —
+                          // as pessoas repetiam o clique e geravam duplicatas.
+                          if (fila !== "todas") trocar("fila", "todas");
                         } catch (e) {
                           toast.error(
                             e instanceof Error ? e.message : "Não foi possível criar o cartão.",
@@ -488,6 +493,7 @@ export default function WorkspaceDemandas() {
                       }
                     : undefined
                 }
+
 
                 vazio={{
                   titulo: busca ? "Nenhuma demanda encontrada" : "Nada nesta fila",
