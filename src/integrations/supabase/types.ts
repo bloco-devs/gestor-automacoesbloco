@@ -1404,6 +1404,7 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           id: string
+          ordem_manual: number | null
           priority: Database["public"]["Enums"]["demand_priority"]
           sistema_slug: string | null
           sla_due_at: string | null
@@ -1428,6 +1429,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          ordem_manual?: number | null
           priority?: Database["public"]["Enums"]["demand_priority"]
           sistema_slug?: string | null
           sla_due_at?: string | null
@@ -1452,6 +1454,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          ordem_manual?: number | null
           priority?: Database["public"]["Enums"]["demand_priority"]
           sistema_slug?: string | null
           sla_due_at?: string | null
@@ -1911,6 +1914,7 @@ export type Database = {
           nome: string
           notas_tecnicas: string | null
           notas_tecnicas_complexidade: string | null
+          ordem_manual: number | null
           retorno: number
           score: number
           score_final: number | null
@@ -1951,6 +1955,7 @@ export type Database = {
           nome: string
           notas_tecnicas?: string | null
           notas_tecnicas_complexidade?: string | null
+          ordem_manual?: number | null
           retorno?: number
           score?: number
           score_final?: number | null
@@ -1991,6 +1996,7 @@ export type Database = {
           nome?: string
           notas_tecnicas?: string | null
           notas_tecnicas_complexidade?: string | null
+          ordem_manual?: number | null
           retorno?: number
           score?: number
           score_final?: number | null

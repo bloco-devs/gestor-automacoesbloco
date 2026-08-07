@@ -2,7 +2,9 @@ import { useCallback, useMemo } from "react";
 import { useCardMutations } from "@/hooks/useCardMutations";
 import { useAssignDemand, useUpdateDemandStatus } from "@/modules/demands";
 import type { DemandStatus } from "@/modules/demands/types";
+import { ordensDaLista } from "@/modules/workspace-demandas/ordenacao";
 import { projetoDoEscopo, resolverFonte } from "./resolverFonte";
+import { useReordenarFila } from "./useReordenarFila";
 import type { AcoesDemanda, Escopo } from "./types";
 
 /**
@@ -24,6 +26,7 @@ export function useAcoesDemanda(escopo: Escopo): AcoesDemanda {
   const cards = useCardMutations(fonte === "atividades" ? projetoId : null);
   const statusDemand = useUpdateDemandStatus();
   const assignDemand = useAssignDemand();
+  const filaDeDemandas = useReordenarFila("demands", ["demands"]);
 
   const mover = useCallback<AcoesDemanda["mover"]>(
     async ({ demandaId, statusId, ordem, ordemDaColuna }) => {
@@ -44,10 +47,21 @@ export function useAcoesDemanda(escopo: Escopo): AcoesDemanda {
         await cards.reorder.mutateAsync([{ id: demandaId, colunaId: statusId, ordem: ordem ?? 0 }]);
         return;
       }
+
+      /**
+       * Caixa de Entrada (fonte `demands`): a coluna é o enum de status, e a
+       * posição dentro dela mora em `ordem_manual`. As duas escritas são
+       * independentes — trocar de coluna sem reposicionar continua válido, e
+       * reposicionar sem trocar de coluna é o caso novo (arrasto vertical).
+       */
       await statusDemand.mutateAsync({ id: demandaId, status: statusId as DemandStatus });
+      if (ordemDaColuna && ordemDaColuna.length > 0) {
+        await filaDeDemandas.reordenar(ordensDaLista(ordemDaColuna));
+      }
     },
-    [fonte, cards.reorder, statusDemand],
+    [fonte, cards.reorder, statusDemand, filaDeDemandas],
   );
+
 
   const concluir = useCallback<AcoesDemanda["concluir"]>(
     async ({ demandaId }) => {
