@@ -101,6 +101,7 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     atendidaEm: row.atendida_em ?? null,
     atendidaPor: row.atendida_por ?? null,
     consolidadaEm: row.consolidada_em ?? null,
+    ordemManual: row.ordem_manual ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

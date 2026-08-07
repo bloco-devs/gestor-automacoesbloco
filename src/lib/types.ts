@@ -110,6 +110,8 @@ export interface Solicitacao {
   scoreSolicitante: number; // 0-100
   /** Score final com penalização de complexidade técnica (0-100). NULL enquanto dev não avaliou. */
   scoreFinal: number | null; // 0-100 ou null
+  /** Posição escolhida à mão na fila (arrasto). NULL = ordem automática. */
+  ordemManual?: number | null;
   setor?: Setor | string;
   /** @deprecated Use `notasTecnicasComplexidade`. Mantido apenas para leitura de dados legados. */
   notasTecnicas?: string;

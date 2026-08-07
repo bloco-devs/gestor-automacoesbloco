@@ -23,6 +23,7 @@ function toInboxItem(s: Solicitacao): InboxItem {
     sla: s.dataFimPrevista ?? null,
     updatedAt: s.updatedAt,
     createdAt: s.createdAt,
+    ordemManual: s.ordemManual ?? null,
     href: `/solicitacao/${s.id}`,
   };
 }
