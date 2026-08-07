@@ -9,6 +9,7 @@
  *   • status atual (críticos pesam mais)
  *   • se o usuário é o responsável
  */
+import { ordenarPorOrdemManual } from "@/modules/workspace-demandas/ordenacao";
 import type { InboxItem, RankedInboxItem } from "../types";
 import type { PipelineStatus } from "@/lib/types";
 
@@ -96,10 +97,20 @@ export function scoreItem(item: InboxItem, options: RankOptions = {}): RankedInb
   return { ...item, score: Math.round(score), reasons, ageDays };
 }
 
+/**
+ * A fila da Caixa de Entrada.
+ *
+ * O score continua sendo calculado e mostrado — ele é a explicação. O que muda
+ * é a precedência: quem foi arrastado à mão fica onde a pessoa colocou, e o
+ * score volta a mandar apenas entre os itens que ninguém tocou.
+ */
 export function rankInbox(items: InboxItem[], options: RankOptions = {}): RankedInboxItem[] {
-  return items
-    .map((it) => scoreItem(it, options))
-    .sort((a, b) => b.score - a.score);
+  const pontuados = items.map((it) => scoreItem(it, options));
+  return ordenarPorOrdemManual(
+    pontuados,
+    (it) => it.ordemManual,
+    (a, b) => b.score - a.score,
+  );
 }
 
 /**

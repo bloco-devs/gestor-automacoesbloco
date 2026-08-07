@@ -13,7 +13,8 @@
  *   BoardLente     ← KanbanCard ✓
  *   KanbanCardOverlay ← KanbanCard ✓
  */
-import { useDraggable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Ban,
   CheckCircle2,
@@ -160,6 +161,7 @@ export function Cartao({
   onExcluir,
   excluindo,
   colunaRotulo,
+  colunaId,
   tom = "neutro",
   capa,
   emProjeto,
@@ -198,6 +200,8 @@ export function Cartao({
   excluindo?: boolean;
   /** Nome da coluna onde o cartão está — usado para reconhecer conclusão pelo texto. */
   colunaRotulo?: string;
+  /** Id da coluna onde o cartão está — viaja no `data` do sortable. */
+  colunaId?: string;
   /**
    * A CAPA — etiquetas e membros do cartão, lidos em lote pela tela.
    * Opcional de propósito: na Inbox (fonte `demands`) não existe etiqueta de
@@ -205,10 +209,24 @@ export function Cartao({
    */
   capa?: CapaResolvida;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  /**
+   * `useSortable` no lugar de `useDraggable`: é ele que faz os vizinhos
+   * DESLIZAREM para abrir espaço enquanto o cartão está na mão. Sem isto o
+   * arrasto só reconhecia a coluna, e soltar no meio da fila não movia nada.
+   *
+   * `data.colunaId` viaja com o cartão para que o `onDragEnd` saiba, sem
+   * procurar, de qual coluna o alvo do drop veio.
+   */
+  const { attributes, listeners, setNodeRef, isDragging, transform, transition } = useSortable({
     id: d.id,
     disabled: !arrastavel || sobreposicao,
+    data: { tipo: "cartao" as const, colunaId },
   });
+  const estiloDeArrasto = sobreposicao
+    ? undefined
+    : { transform: CSS.Translate.toString(transform), transition };
+
+
 
 
   // A escolha vale para todos os cartões e sobrevive à navegação.
@@ -296,6 +314,7 @@ export function Cartao({
       data-card-id={d.id}
       data-concluida={d.concluida ? "true" : "false"}
       data-coluna={colunaRotulo}
+      style={estiloDeArrasto}
       /**
        * A linha no topo mostra onde o cartão vai cair.
        *

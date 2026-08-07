@@ -7,6 +7,7 @@ import { isBoardImageRef } from "@/lib/atividadesBg";
 import { useDemands, useDemandProfiles } from "@/modules/demands";
 import { STATUS_COLUMNS } from "@/modules/demands/types";
 import { listSolucoes } from "@/lib/supabaseData";
+import { ordenarPorOrdemManual } from "@/lib/ordemManual";
 import {
   fromAtividades,
   fromDemands,
@@ -154,7 +155,15 @@ export function useDemandas(escopo: Escopo): EstadoDemandas {
     const sistemasPorId = new Map<string, Sistema>();
     for (const s of solucoesQ.data ?? []) sistemasPorId.set(s.id, { id: s.id, nome: s.titulo });
 
-    const { demandas } = fromDemands({ demands: demandsList, pessoasPorId, sistemasPorId });
+    /**
+     * A ordem manual entra ANTES do mapeador: quem arrastou decidiu a fila, e
+     * quem nunca foi arrastado mantém a ordem que veio do servidor (chegada).
+     */
+    const naOrdemEscolhida = ordenarPorOrdemManual(
+      demandsList,
+      (d) => (d as { ordem_manual?: number | null }).ordem_manual,
+    );
+    const { demandas } = fromDemands({ demands: naOrdemEscolhida, pessoasPorId, sistemasPorId });
 
     return {
       demandas,

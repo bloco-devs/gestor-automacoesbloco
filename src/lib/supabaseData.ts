@@ -14,6 +14,7 @@ type SolicitacaoRow = {
   score: number;
   score_solicitante: number | null;
   score_final: number | null;
+  ordem_manual?: number | null;
   notas_tecnicas: string | null;
   notas_tecnicas_complexidade: string | null;
   setor: string | null;
@@ -41,7 +42,7 @@ type SolicitacaoRow = {
   consolidada_em: string | null;
 };
 
-const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,score_solicitante,score_final,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em,tipo_demanda,sistema_alvo_slug,match_sugestoes,match_atualizado_em,desfecho,atendida_por_sistema_slug,atendida_url,atendida_em,atendida_por,consolidada_em";
+const SOLICITACAO_COLS = "id,titulo,descricao,frequencia,complexidade,retorno,status,score,score_solicitante,score_final,notas_tecnicas,notas_tecnicas_complexidade,setor,tem_integracao,integracoes,user_id,solicitante_nome,nome,created_at,updated_at,complexidade_dev,data_inicio_prevista,data_fim_prevista,avaliado_por,avaliado_em,tipo_demanda,sistema_alvo_slug,match_sugestoes,match_atualizado_em,desfecho,atendida_por_sistema_slug,atendida_url,atendida_em,atendida_por,consolidada_em,ordem_manual";
 
 
 const SOLUCAO_COLS = "id,solicitacao_id,titulo,descricao,link,created_at,created_by,data_inicio_prevista,data_fim_prevista,responsavel_id";
@@ -100,6 +101,7 @@ function mapSolicitacao(row: SolicitacaoRow): Solicitacao {
     atendidaEm: row.atendida_em ?? null,
     atendidaPor: row.atendida_por ?? null,
     consolidadaEm: row.consolidada_em ?? null,
+    ordemManual: row.ordem_manual ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

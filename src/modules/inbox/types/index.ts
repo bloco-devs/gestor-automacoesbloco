@@ -21,6 +21,11 @@ export interface InboxItem {
   sla?: string | null; // ISO date
   updatedAt: string; // ISO
   createdAt: string;
+  /**
+   * Posição escolhida à mão (arrasto). `null` = nunca foi arrastado, e aí vale
+   * o critério automático de priorização.
+   */
+  ordemManual?: number | null;
   href: string; // rota para "Continuar"
 }
 

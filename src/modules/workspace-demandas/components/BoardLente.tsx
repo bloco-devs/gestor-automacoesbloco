@@ -2,13 +2,16 @@ import { memo, useEffect, useMemo, useState } from "react";
 import {
   DndContext,
   PointerSensor,
+  closestCorners,
   useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { ChevronRight, Plus } from "lucide-react";
+import { inserirNaLista, reordenarLista } from "../ordenacao";
 import { cn } from "@/lib/utils";
 import { EmptyPanel } from "@/design-system";
 import {
@@ -297,26 +300,35 @@ function Coluna({
         <div aria-hidden className={cn("h-0.5 w-full rounded-full", tinta.regua)} />
       </header>
       <div className="rolagem-discreta flex-1 space-y-2 overflow-y-auto px-1 pb-2">
-        {grupo.itens.map((d) => (
-          <Cartao
-            key={d.id}
-            demanda={d}
-            capacidades={capacidades}
-            sinais={sinais}
-            onAbrir={onAbrir}
-            arrastavel={arrastavel}
-            onAssumir={onAssumir}
-            assumindo={assumindo?.(d.id)}
-            onConcluir={onConcluir}
-            concluindo={concluindo?.(d.id)}
-            onExcluir={onExcluir}
-            excluindo={excluindo?.(d.id)}
-            tom={tomDaEtapa(grupo.rotulo)}
-            colunaRotulo={grupo.rotulo}
-            capa={capas?.get(d.id)}
-            emProjeto={emProjeto}
-          />
-        ))}
+        {/* O contexto sortable é POR COLUNA: é ele que faz os vizinhos abrirem
+            espaço na vertical enquanto o cartão está na mão. */}
+        <SortableContext
+          items={grupo.itens.map((d) => d.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {grupo.itens.map((d) => (
+            <Cartao
+              key={d.id}
+              demanda={d}
+              capacidades={capacidades}
+              sinais={sinais}
+              onAbrir={onAbrir}
+              arrastavel={arrastavel}
+              onAssumir={onAssumir}
+              assumindo={assumindo?.(d.id)}
+              onConcluir={onConcluir}
+              concluindo={concluindo?.(d.id)}
+              onExcluir={onExcluir}
+              excluindo={excluindo?.(d.id)}
+              tom={tomDaEtapa(grupo.rotulo)}
+              colunaRotulo={grupo.rotulo}
+              colunaId={grupo.id}
+              capa={capas?.get(d.id)}
+              emProjeto={emProjeto}
+            />
+          ))}
+        </SortableContext>
+
         {grupo.itens.length === 0 && (
           /* A área tracejada informa onde se pode soltar em silêncio.
              O texto só aparece quando há um cartão na mão. */
@@ -490,30 +502,73 @@ function BoardLenteImpl({
   const aoIniciar = (e: DragStartEvent) => setArrastando(porId.get(String(e.active.id)) ?? null);
 
   /**
-   * SÓ A COLUNA, POR ENQUANTO.
+   * ONDE O CARTÃO CAI — COLUNA **E** POSIÇÃO.
    *
-   * A posição dentro da coluna foi tentada com um droppable por cartão e
-   * `pointerWithin`. Não funcionou, e as duas tentativas de conserto foram
-   * feitas sem poder testar o arrasto de verdade — o que é como se erra duas
-   * vezes seguidas no mesmo lugar.
+   * O alvo do drop pode ser duas coisas diferentes, e a distinção é toda a
+   * lógica daqui:
    *
-   * O caminho certo é `@dnd-kit/sortable`, que existe para lista reordenável,
-   * já está instalado, e já funciona em `components/atividades/kanban/`. Fazer
-   * à mão foi o erro; a reescrita vem por ali, com teste em tela.
+   *   • uma COLUNA (o `useDroppable` da `<section>`) → soltou no vazio, vai
+   *     para o fim daquela coluna;
+   *   • um CARTÃO (o `useSortable` de cada cartão) → soltou sobre alguém, entra
+   *     na posição dele.
+   *
+   * Nos dois casos mandamos a coluna de destino INTEIRA, na ordem final
+   * (`ordemDaColuna`). Mandar só o cartão movido com `ordem: 0` deixaria dois
+   * cartões disputando a mesma posição e o desempate seria do banco — a fila
+   * mudaria de aparência a cada recarga.
+   *
+   * O cálculo em si mora em `../ordenacao`, puro e testado.
    */
   const aoTerminar = (e: DragEndEvent) => {
     setArrastando(null);
     const destino = e.over?.id ? String(e.over.id) : null;
     const demandaId = String(e.active.id);
-    if (!destino) return;
+    if (!destino || destino === demandaId) return;
     const atual = porId.get(demandaId);
-    if (!atual || atual.status.id === destino) return;
-    onMover({ demandaId, statusId: destino });
+    if (!atual) return;
+
+    const colunaDoAlvo = colunas.find((c) => c.id === destino);
+    // Soltou sobre um cartão: a coluna dele vem no `data` do sortable, com
+    // busca como rede de segurança.
+    const dadosDoAlvo = e.over?.data.current as { colunaId?: string } | undefined;
+    const colunaDeDestino =
+      colunaDoAlvo ??
+      colunas.find(
+        (c) => c.id === dadosDoAlvo?.colunaId || c.itens.some((d) => d.id === destino),
+      );
+    if (!colunaDeDestino) return;
+
+    const idsDestino = colunaDeDestino.itens.map((d) => d.id);
+    const mesmaColuna = atual.status.id === colunaDeDestino.id;
+
+    // Reordenar dentro da própria coluna.
+    if (mesmaColuna) {
+      // Soltou no corpo da coluna (não sobre um cartão): vai para o fim.
+      const ordemFinal = colunaDoAlvo
+        ? inserirNaLista(idsDestino, demandaId, null)
+        : reordenarLista(idsDestino, demandaId, destino);
+      if (ordemFinal.join("\u0000") === idsDestino.join("\u0000")) return;
+      onMover({ demandaId, statusId: colunaDeDestino.id, ordemDaColuna: ordemFinal });
+      return;
+    }
+
+    // Trocar de coluna, agora já com a posição de inserção correta.
+    const ordemFinal = inserirNaLista(idsDestino, demandaId, colunaDoAlvo ? null : destino);
+    onMover({
+      demandaId,
+      statusId: colunaDeDestino.id,
+      ordem: ordemFinal.indexOf(demandaId),
+      ordemDaColuna: ordemFinal,
+    });
   };
+
 
   return (
     <DndContext
       sensors={sensores}
+      // `closestCorners` é a colisão recomendada para listas verticais: ela
+      // acerta a lacuna entre dois cartões, que é onde a pessoa mira.
+      collisionDetection={closestCorners}
       onDragStart={aoIniciar}
       onDragEnd={aoTerminar}
       onDragCancel={() => setArrastando(null)}
