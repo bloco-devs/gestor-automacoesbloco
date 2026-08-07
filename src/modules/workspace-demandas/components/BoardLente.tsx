@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import {
   DndContext,
+  KeyboardSensor,
   PointerSensor,
   closestCorners,
   useDroppable,
@@ -9,7 +10,11 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { ChevronRight, Plus } from "lucide-react";
 import { inserirNaLista, reordenarLista } from "../ordenacao";
 import { cn } from "@/lib/utils";
