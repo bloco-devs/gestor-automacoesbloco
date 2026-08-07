@@ -224,7 +224,7 @@ export function Cartao({
   });
   const estiloDeArrasto = sobreposicao
     ? undefined
-    : { transform: CSS.Translate.toString(transform), transition };
+    : { transform: CSS.Transform.toString(transform), transition };
 
 
 
@@ -353,7 +353,7 @@ export function Cartao({
         arrastavel ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         "focus-visible:ring-2 focus-visible:ring-ring/50",
         // PLACEHOLDER ESTILO TRELLO — fica invisível mas reserva o espaço exato.
-        isDragging && !sobreposicao && "invisible border-dashed border-white/20 bg-white/5 shadow-none",
+        isDragging && !sobreposicao && "opacity-50",
         // OVERLAY — sem anel extra; a elevação já comunica "na mão".
         sobreposicao && "cursor-grabbing select-none",
         d.concluida && "opacity-60",
