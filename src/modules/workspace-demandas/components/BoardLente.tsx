@@ -436,7 +436,16 @@ function BoardLenteImpl({
   const [arrastando, setArrastando] = useState<Demanda | null>(null);
   const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
   const [jaVistas, setJaVistas] = useState<Set<string>>(new Set());
-  const sensores = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  /**
+   * `distance: 6` é o limiar que separa clique de arrasto: abrir o cartão é a
+   * ação mais frequente, então o gesto de pegar precisa ser deliberado.
+   * O teclado usa o `coordinateGetter` do sortable para navegar a lista na
+   * vertical — sem ele, arrastar por teclado não reordena.
+   */
+  const sensores = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   /**
    * Colunas concluídas começam recolhidas — mas só na primeira vez que
