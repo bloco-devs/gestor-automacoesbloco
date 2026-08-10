@@ -771,8 +771,21 @@ function BoardLenteImpl({
       // acerta a lacuna entre dois cartões, que é onde a pessoa mira.
       collisionDetection={closestCorners}
       onDragStart={aoIniciar}
+      onDragOver={aoPassarPor}
       onDragEnd={aoTerminar}
-      onDragCancel={() => setArrastando(null)}
+      onDragCancel={(e) => {
+        // Cancelou: nada foi gravado, então a reatribuição feita durante o
+        // arrasto tem de ser desfeita — o cartão volta para a origem.
+        const demandaId = String(e.active.id);
+        setArrastando(null);
+        setColunaLocal((mapa) => {
+          if (!mapa.has(demandaId)) return mapa;
+          const proximo = new Map(mapa);
+          proximo.delete(demandaId);
+          return proximo;
+        });
+        setOrdemLocal((mapa) => (mapa.size === 0 ? mapa : new Map()));
+      }}
     >
       {/* `contents` deixa o filho herdar a altura do avô sem criar um nível de
           caixa no meio — o DndContext não renderiza DOM, mas este wrapper sim. */}
