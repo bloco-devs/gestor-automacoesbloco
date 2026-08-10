@@ -484,9 +484,10 @@ function FioImpl({
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               onKeyDown={(e) => {
-                // Enviar com ⌘/Ctrl+Enter. Enter puro quebra linha, porque
-                // resposta de chamado quase sempre tem mais de um parágrafo.
-                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                // Enter envia, como em qualquer mensageiro. Shift+Enter quebra
+                // linha para quem precisa de mais de um parágrafo, e
+                // ⌘/Ctrl+Enter continua valendo por hábito.
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   void enviar();
                 }
