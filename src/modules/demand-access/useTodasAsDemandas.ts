@@ -53,12 +53,31 @@ export interface EstadoTodasAsDemandas {
   erro: Error | null;
 }
 
-export function useTodasAsDemandas(): EstadoTodasAsDemandas {
+export interface OpcoesTodasAsDemandas {
+  /**
+   * ISOLAMENTO DE CONTEXTO
+   *
+   * A fila de triagem (Helpdesk) e o trabalho de um projeto são duas coisas
+   * diferentes: somar as duas enche a fila de chamados com tarefas de Sprint,
+   * que já têm o quadro do projeto como lugar próprio. Quem quer só chamados
+   * passa `false` — e aí as consultas de cartões nem saem do navegador.
+   *
+   * Padrão `true` para não mudar quem já chamava sem opção.
+   */
+  incluirCartoesDeProjeto?: boolean;
+}
+
+export function useTodasAsDemandas(
+  opcoes: OpcoesTodasAsDemandas = {},
+): EstadoTodasAsDemandas {
+  const { incluirCartoesDeProjeto = true } = opcoes;
   const cardsQ = useQuery({
     queryKey: [...atividadesKeys.all, "cards", "todos-os-quadros"],
     queryFn: () => listCards(),
+    enabled: incluirCartoesDeProjeto,
     staleTime: 30_000,
   });
+
   /**
    * ARQUIVAR UM PROJETO PRECISA TIRAR AS DEMANDAS DELE DA FILA
    *
