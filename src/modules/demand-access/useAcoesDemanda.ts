@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCardMutations } from "@/hooks/useCardMutations";
 import { useAssignDemand, useUpdateDemandStatus } from "@/modules/demands";
 import type { DemandStatus } from "@/modules/demands/types";
@@ -20,6 +21,7 @@ import type { AcoesDemanda, Escopo } from "./types";
  * disparam o Workflow Runtime). Nenhuma foi alterada nem duplicada.
  */
 export function useAcoesDemanda(escopo: Escopo): AcoesDemanda {
+  const qc = useQueryClient();
   const fonte = resolverFonte(escopo);
   const projetoId = projetoDoEscopo(escopo);
 
@@ -58,8 +60,21 @@ export function useAcoesDemanda(escopo: Escopo): AcoesDemanda {
       if (ordemDaColuna && ordemDaColuna.length > 0) {
         await filaDeDemandas.reordenar(ordensDaLista(ordemDaColuna));
       }
+      /**
+       * O DETALHE TAMBÉM ENVELHECE.
+       *
+       * O stepper da página da demanda é montado a partir do histórico de
+       * auditoria (`["demanda", id, "auditoria"]`), que é uma consulta
+       * própria — a lista do quadro não a alcança. Sem invalidar aqui, mover
+       * um cartão e abrir o detalhe no segundo seguinte mostrava a etapa
+       * antiga, e a tela parecia não ter gravado nada.
+       */
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["demanda", demandaId, "auditoria"] }),
+        qc.invalidateQueries({ queryKey: ["demanda", demandaId, "comentarios"] }),
+      ]);
     },
-    [fonte, cards.reorder, statusDemand, filaDeDemandas],
+    [fonte, cards.reorder, statusDemand, filaDeDemandas, qc],
   );
 
 

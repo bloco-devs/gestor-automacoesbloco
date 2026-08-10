@@ -718,13 +718,33 @@ function BoardLenteImpl({
     });
   };
 
+  /**
+   * DESISTIR DO ARRASTO — sem deixar a tela mentindo.
+   *
+   * `onDragOver` reatribui o cartão à coluna de destino ENQUANTO a pessoa
+   * arrasta. Se o `onDragEnd` desiste (soltou fora de qualquer coluna, alvo
+   * não resolvido, cartão desconhecido), essa expectativa ficava no mapa para
+   * sempre: o cartão continuava desenhado na coluna nova, nada era gravado e
+   * ninguém era avisado — exatamente o "moveu e não salvou" que só aparecia
+   * ao recarregar. Toda desistência agora limpa o otimismo, como o cancelar.
+   */
+  const desistir = (demandaId: string) => {
+    setColunaLocal((mapa) => {
+      if (!mapa.has(demandaId)) return mapa;
+      const proximo = new Map(mapa);
+      proximo.delete(demandaId);
+      return proximo;
+    });
+    setOrdemLocal((mapa) => (mapa.size === 0 ? mapa : new Map()));
+  };
+
   const aoTerminar = (e: DragEndEvent) => {
     setArrastando(null);
     const destino = e.over?.id ? String(e.over.id) : null;
     const demandaId = String(e.active.id);
-    if (!destino || destino === demandaId) return;
+    if (!destino || destino === demandaId) return desistir(demandaId);
     const atual = porId.get(demandaId);
-    if (!atual) return;
+    if (!atual) return desistir(demandaId);
 
     const colunaDoAlvo = colunas.find((c) => c.id === destino);
     // Soltou sobre um cartão: a coluna dele vem no `data` do sortable, com
@@ -735,7 +755,7 @@ function BoardLenteImpl({
       colunas.find(
         (c) => c.id === dadosDoAlvo?.colunaId || c.itens.some((d) => d.id === destino),
       );
-    if (!colunaDeDestino) return;
+    if (!colunaDeDestino) return desistir(demandaId);
 
     const idsDestino = colunaDeDestino.itens.map((d) => d.id);
     // A coluna de ORIGEM é a que contém o cartão nesta tela — não
@@ -758,7 +778,7 @@ function BoardLenteImpl({
       const precisaGravar =
         ordemFinal.join("\u0000") !== idsDestino.join("\u0000") ||
         (trocaPendente !== undefined && trocaPendente !== atual.status.id);
-      if (!precisaGravar) return;
+      if (!precisaGravar) return desistir(demandaId);
       // ATUALIZAÇÃO OTIMISTA: a tela assume a nova sequência agora, antes da
       // gravação. Sem isto o cartão volta ao lugar de origem e pula depois.
       setOrdemLocal((atualMapa) => new Map(atualMapa).set(colunaDeDestino.id, ordemFinal));
