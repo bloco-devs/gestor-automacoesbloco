@@ -115,7 +115,9 @@ export default function DemandaDetalhe() {
     pessoas,
     internasVisiveis: daEquipe,
     anexos: anexos.anexos,
+    semResponsavel: (demanda?.responsaveis.length ?? 0) === 0,
   });
+
 
   const eventos = useMemo(() => montarFio(fio.eventos, daEquipe), [fio.eventos, daEquipe]);
   const acoesDemanda = useAcoesDemanda(escopo);
