@@ -277,7 +277,8 @@ export function useFioDaDemanda(
           if (!data) return; // o servidor decidiu não responder
           await qc.invalidateQueries({ queryKey: ["demanda", demandaId, "comentarios"] });
         })();
-      }, 1200);
+      }, 1000);
+
     },
     [demandaId, qc, opcoes.semResponsavel],
   );
