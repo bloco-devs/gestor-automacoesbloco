@@ -716,13 +716,26 @@ function BoardLenteImpl({
       const ordemFinal = colunaDoAlvo
         ? inserirNaLista(idsDestino, demandaId, null)
         : reordenarLista(idsDestino, demandaId, destino);
-      if (ordemFinal.join("\u0000") === idsDestino.join("\u0000")) return;
+      // O `onDragOver` pode já ter reatribuído o cartão a esta coluna durante o
+      // arrasto: aí a sequência "não mudou" na tela, mas o STATUS no banco
+      // ainda é o antigo. Só é seguro desistir quando nada mudou de verdade.
+      const trocaPendente = colunaLocal.get(demandaId);
+      const precisaGravar =
+        ordemFinal.join("\u0000") !== idsDestino.join("\u0000") ||
+        (trocaPendente !== undefined && trocaPendente !== atual.status.id);
+      if (!precisaGravar) return;
       // ATUALIZAÇÃO OTIMISTA: a tela assume a nova sequência agora, antes da
       // gravação. Sem isto o cartão volta ao lugar de origem e pula depois.
       setOrdemLocal((atualMapa) => new Map(atualMapa).set(colunaDeDestino.id, ordemFinal));
-      onMover({ demandaId, statusId: colunaDeDestino.id, ordemDaColuna: ordemFinal });
+      onMover({
+        demandaId,
+        statusId: colunaDeDestino.id,
+        ordem: ordemFinal.indexOf(demandaId),
+        ordemDaColuna: ordemFinal,
+      });
       return;
     }
+
 
 
     // Trocar de coluna, agora já com a posição de inserção correta.
