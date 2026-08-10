@@ -39,6 +39,9 @@ import { BoardLente } from "./components/BoardLente";
 import { GanttLente } from "./components/GanttLente";
 import { Copiloto } from "./components/Copiloto";
 import { CardDetailModal } from "./components/CardDetailModal";
+import { SeletorDeFundo } from "./components/SeletorDeFundo";
+import { useFundoDaInbox } from "./components/useFundoDaInbox";
+
 
 const ETAPA_FORA_DO_FLUXO = "homologacao";
 
@@ -103,6 +106,12 @@ export default function WorkspaceDemandas() {
   // rota dos projetos porque, para quem navega, é um destino irmão — mas o
   // escopo é global: não há projeto, e é exatamente esse o ponto.
   const naInbox = ehInbox(projetoId);
+
+  // A Inbox não tem linha no banco onde guardar um fundo; a escolha fica no
+  // navegador de quem escolheu.
+  const { fundo: fundoDaInbox, definirFundo: definirFundoDaInbox } = useFundoDaInbox();
+
+
 
   const escopo: Escopo = useMemo(
     () => (projetoId && !naInbox ? { tipo: "projeto", projetoId } : { tipo: "global" }),
@@ -288,7 +297,11 @@ export default function WorkspaceDemandas() {
   const contextoInbox = (
     <>
       <ContextoDaInbox aguardando={resumo.abertas} />
+      {/* O fundo é decisão de aparência: fica junto do título, no mesmo lugar
+          onde o quadro oferece a dele. */}
+      <SeletorDeFundo valor={fundoDaInbox} onEscolher={definirFundoDaInbox} className="ml-auto" />
       <button
+
         type="button"
         onClick={() => setCopiloto(!copiloto)}
         aria-label={copiloto ? "Ocultar o Blink" : "Mostrar o Blink"}
@@ -378,7 +391,12 @@ export default function WorkspaceDemandas() {
     );
   }
 
+  // Um quadro guarda o fundo no banco; a Inbox, no navegador. Daqui para baixo
+  // é a mesma imagem.
+  const fundoAtual = naInbox ? fundoDaInbox : (projeto?.fundoUrl ?? null);
+
   return (
+
     /*
       O FUNDO DO QUADRO VIVE AQUI, E NÃO NA LENTE
       Quem escolhe a imagem escolhe o clima da tela inteira — barra de trabalho
@@ -392,14 +410,15 @@ export default function WorkspaceDemandas() {
     */
     <div
       className="relative isolate flex h-full min-h-0 flex-col bg-cover bg-center bg-no-repeat"
-      style={projeto?.fundoUrl ? { backgroundImage: `url(${projeto.fundoUrl})` } : undefined}
+      style={fundoAtual ? { backgroundImage: `url(${fundoAtual})` } : undefined}
     >
-      {projeto?.fundoUrl && (
+      {fundoAtual && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 bg-background/70 backdrop-blur-[2px]"
         />
       )}
+
       <BarraDeTrabalho
         fila={fila}
         onFila={(f) => trocar("fila", f)}

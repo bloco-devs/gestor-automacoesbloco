@@ -231,11 +231,37 @@ export default function AppLayout() {
               mini && !isMobile ? "justify-center px-0" : "gap-2.5 px-3.5",
             )}
           >
-            <img
-              src={blocoLogo}
-              alt="Bloco Construções"
-              className="size-7 rounded-md object-cover shrink-0"
-            />
+            {/* RECOLHIDA, A LOGO É O BOTÃO DE EXPANDIR
+                O controle oficial vive no pé da faixa de ícones — longe do olho
+                e da mão de quem acabou de recolher a barra. A logo continua no
+                topo, é o maior alvo visível e não faz nada: transformá-la no
+                mesmo gatilho custa um clique de descoberta em vez de uma
+                caçada. Expandida, ela volta a ser só a marca. */}
+            {mini && !isMobile ? (
+              <button
+                type="button"
+                onClick={() => setMini(false)}
+                title="Expandir barra lateral"
+                aria-label="Expandir barra lateral"
+                aria-expanded={false}
+                className={cn(
+                  "shrink-0 cursor-pointer rounded-md transition-transform duration-fast ease-standard",
+                  "hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                )}
+              >
+                <img
+                  src={blocoLogo}
+                  alt="Bloco Construções"
+                  className="size-7 rounded-md object-cover"
+                />
+              </button>
+            ) : (
+              <img
+                src={blocoLogo}
+                alt="Bloco Construções"
+                className="size-7 rounded-md object-cover shrink-0"
+              />
+            )}
             {(!mini || isMobile) && (
               <div className="min-w-0">
                 <div className="text-[13px] font-brand font-semibold tracking-tight truncate">
@@ -244,6 +270,7 @@ export default function AppLayout() {
               </div>
             )}
           </div>
+
           {/*
             SEM O RODAPÉ, O `flex-1` VIRAVA UM VAZIO DE TELA INTEIRA
             A navegação esticava para ocupar toda a altura porque precisava

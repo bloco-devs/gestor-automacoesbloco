@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { uploadBoardBackground, uploadBoardIcon, isBoardIconUrl } from "@/lib/atividadesBoards";
 import { useAuth } from "@/hooks/useAuth";
 import type { IdentidadeDoProjeto } from "@/modules/demand-access";
+import { FUNDOS, thumb } from "./fundos";
+
 
 /**
  * Um campo obrigatório, de propósito.
@@ -40,20 +42,9 @@ const CORES = [
 
 const ICONES = ["📋", "🚀", "🎯", "💡", "🛠️", "📊", "🧭", "🏗️"];
 
-/**
- * Fundos prontos. São seis porque a decisão é estética e reversível: mais que
- * isso vira catálogo, e catálogo obriga a parar para escolher.
- */
-const FUNDOS: { label: string; url: string }[] = [
-  { label: "Montanhas ao amanhecer", url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&q=80" },
-  { label: "Floresta de névoa", url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&q=80" },
-  { label: "Ondas do oceano", url: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1200&q=80" },
-  { label: "Dunas de deserto", url: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1200&q=80" },
-  { label: "Gradiente abstrato", url: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=1200&q=80" },
-  { label: "Aurora noturna", url: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1200&q=80" },
-];
+// O catálogo de fundos e a miniatura moram em `./fundos`: a Caixa de Entrada
+// usa a mesma lista, e duas cópias divergiriam.
 
-const thumb = (url: string) => url.replace("w=1200", "w=200");
 
 export function NovoProjetoDialog({
   open,
