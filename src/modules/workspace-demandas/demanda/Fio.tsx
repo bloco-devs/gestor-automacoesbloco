@@ -530,7 +530,7 @@ function FioImpl({
               )}
 
               <span className="ml-auto hidden text-[11px] text-muted-foreground/60 sm:inline">
-                ⌘↵ envia
+                ↵ envia · ⇧↵ nova linha
               </span>
 
               <button
