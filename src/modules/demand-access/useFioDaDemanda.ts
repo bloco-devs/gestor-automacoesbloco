@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { listComments, listAuditLogs, createComment } from "@/modules/demands/timeline-service";
+import {
+  listComments,
+  listAuditLogs,
+  createComment,
+  updateComment,
+  deleteComment,
+  type DemandComment,
+} from "@/modules/demands/timeline-service";
 import { getProfilesByIds } from "@/modules/demands/service";
 import { STATUS_COLUMNS, PRIORITY_META } from "@/modules/demands/types";
 import { autorIa, frasePara, type Evento } from "@/domain/demand";
+import { useAuth } from "@/hooks/useAuth";
 import type { Pessoa } from "@/domain/demand";
+
 
 /**
  * O fio de uma demanda — leitura e escrita.
