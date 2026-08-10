@@ -178,7 +178,9 @@ export default function DeveloperWorkspace() {
   }, [etapas, grupos]);
 
   const { mover, movendo } = useMoverDemanda();
+  const qc = useQueryClient();
   const filaDeDemandas = useReordenarFila("demands", ["demands"]);
+
 
   /**
    * POSIÇÃO TAMBÉM É ESCRITA
