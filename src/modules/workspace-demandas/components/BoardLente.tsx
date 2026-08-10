@@ -552,8 +552,36 @@ function BoardLenteImpl({
         return [...daEsteira, ...orfaos];
       })();
 
-    if (ordemLocal.size === 0) return montadas;
-    return montadas.map((g) => {
+    // 1) REATRIBUIÇÃO: o cartão movido já aparece na coluna de destino.
+    const comColuna =
+      colunaLocal.size === 0
+        ? montadas
+        : (() => {
+            const movidos = new Map<string, Demanda[]>();
+            const semOsMovidos = montadas.map((g) => {
+              const ficam: Demanda[] = [];
+              for (const d of g.itens) {
+                const destino = colunaLocal.get(d.id);
+                if (destino && destino !== g.id) {
+                  const fila = movidos.get(destino) ?? [];
+                  fila.push(d);
+                  movidos.set(destino, fila);
+                } else {
+                  ficam.push(d);
+                }
+              }
+              return ficam.length === g.itens.length ? g : { ...g, itens: ficam };
+            });
+            if (movidos.size === 0) return semOsMovidos;
+            return semOsMovidos.map((g) => {
+              const entrando = movidos.get(g.id);
+              return entrando ? { ...g, itens: [...g.itens, ...entrando] } : g;
+            });
+          })();
+
+    // 2) ORDEM: a sequência final de cada coluna mexida.
+    if (ordemLocal.size === 0) return comColuna;
+    return comColuna.map((g) => {
       const ordem = ordemLocal.get(g.id);
       if (!ordem) return g;
       const porIdDaColuna = new Map(g.itens.map((d) => [d.id, d]));
@@ -566,7 +594,8 @@ function BoardLenteImpl({
       return { ...g, itens: [...ordenados, ...porIdDaColuna.values()] };
     });
 
-  }, [etapas, grupos, ordemLocal]);
+  }, [etapas, grupos, ordemLocal, colunaLocal]);
+
 
 
   /**
