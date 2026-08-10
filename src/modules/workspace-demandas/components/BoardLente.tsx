@@ -374,7 +374,11 @@ interface Props {
     ordem?: number;
     /** A coluna de destino inteira, na ordem final. Ver `AcoesDemanda.mover`. */
     ordemDaColuna?: string[];
-  }) => void;
+    // Quem grava pode devolver a promessa da gravação: é ela que permite
+    // desfazer o otimismo quando o servidor recusa. Devolver `void` continua
+    // válido (o board só perde o rollback).
+  }) => void | Promise<void>;
+
   podeMover: boolean;
   /** Mesma forma que a `ListaLente` usa — as duas lentes falam a mesma língua. */
   vazio?: { titulo: string; descricao?: string };
