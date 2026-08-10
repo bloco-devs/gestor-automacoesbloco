@@ -471,22 +471,75 @@ function BoardLenteImpl({
   }, [grupos]);
 
   /**
+   * A ORDEM OTIMISTA — POR QUE ELA PRECISA EXISTIR
+   *
+   * `grupos` vem do servidor. Ao soltar um cartão, a gravação leva alguns
+   * milissegundos e o próximo render ainda traz a ordem antiga: o cartão volta
+   * ao lugar de origem e só depois pula para o novo — o efeito elástico.
+   *
+   * Guardar aqui a sequência final da coluna mexida faz a tela contar a
+   * verdade imediatamente. A entrada é descartada assim que o servidor chega
+   * com essa mesma sequência (ou com outra, se a gravação falhou — nesse caso
+   * a verdade do servidor vence, que é o comportamento correto).
+   */
+  const [ordemLocal, setOrdemLocal] = useState<Map<string, string[]>>(new Map());
+
+  useEffect(() => {
+    setOrdemLocal((atual) => {
+      if (atual.size === 0) return atual;
+      const proximo = new Map(atual);
+      let mudou = false;
+      for (const [colunaId, ordem] of atual) {
+        const grupo = grupos.find((g) => g.id === colunaId);
+        // Coluna que não existe mais, ou já chegou na ordem pedida: solta.
+        const idsDoServidor = grupo?.itens.map((d) => d.id) ?? [];
+        const mesmoConjunto =
+          idsDoServidor.length === ordem.length && idsDoServidor.every((id) => ordem.includes(id));
+        if (!grupo || (mesmoConjunto && idsDoServidor.join("\u0000") === ordem.join("\u0000"))) {
+          proximo.delete(colunaId);
+          mudou = true;
+        }
+      }
+      return mudou ? proximo : atual;
+    });
+  }, [grupos]);
+
+  /**
    * A esteira completa: cada etapa vira coluna, com ou sem cartão dentro.
    * Sem `etapas` o comportamento é o de antes (só o que tem demanda), que é
    * o certo para quem chama sem conhecer a lista de status.
    */
   const colunas = useMemo<Grupo[]>(() => {
-    if (!etapas || etapas.length === 0) return grupos;
-    const porStatus = new Map(grupos.map((g) => [g.id, g]));
-    const daEsteira = etapas.map(
-      (e) => porStatus.get(e.id) ?? { id: e.id, rotulo: e.rotulo, itens: [] },
-    );
-    // Um status fora da esteira (dado antigo, migração) não pode sumir da
-    // tela: some da esteira, some da conta, e ninguém procura o que não vê.
-    const conhecidos = new Set(etapas.map((e) => e.id));
-    const orfaos = grupos.filter((g) => !conhecidos.has(g.id));
-    return [...daEsteira, ...orfaos];
-  }, [etapas, grupos]);
+    const base = !etapas || etapas.length === 0 ? grupos : null;
+    const montadas =
+      base ??
+      (() => {
+        const porStatus = new Map(grupos.map((g) => [g.id, g]));
+        const daEsteira = etapas!.map(
+          (e) => porStatus.get(e.id) ?? { id: e.id, rotulo: e.rotulo, itens: [] },
+        );
+        // Um status fora da esteira (dado antigo, migração) não pode sumir da
+        // tela: some da esteira, some da conta, e ninguém procura o que não vê.
+        const conhecidos = new Set(etapas!.map((e) => e.id));
+        const orfaos = grupos.filter((g) => !conhecidos.has(g.id));
+        return [...daEsteira, ...orfaos];
+      })();
+
+    if (ordemLocal.size === 0) return montadas;
+    return montadas.map((g) => {
+      const ordem = ordemLocal.get(g.id);
+      if (!ordem) return g;
+      const porId = new Map(g.itens.map((d) => [d.id, d]));
+      const ordenados = ordem.flatMap((id) => {
+        const d = porId.get(id);
+        if (d) porId.delete(id);
+        return d ? [d] : [];
+      });
+      // Quem chegou depois do arrasto (cartão novo) entra no fim, nunca sai.
+      return { ...g, itens: [...ordenados, ...porId.values()] };
+    });
+  }, [etapas, grupos, ordemLocal]);
+
 
   /**
    * COLUNAS SÃO ESTRUTURA, NÃO CONTEÚDO
