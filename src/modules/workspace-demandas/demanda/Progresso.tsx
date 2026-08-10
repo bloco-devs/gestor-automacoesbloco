@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { tomDaEtapa, type Etapa, type Progressao } from "@/domain/demand";
+import { tomDaEtapa, type Etapa, type Progressao, type TomDaEtapa } from "@/domain/demand";
 import { PALETA } from "../components/KanbanCard";
 
 /**
@@ -41,8 +41,31 @@ function tempo(dias: number | null): string | null {
   return `${meses} ${meses === 1 ? "mês" : "meses"}`;
 }
 
+/**
+ * A borda do anel, por tom.
+ *
+ * Escrita à mão em vez de derivada de `PALETA.texto` com `replace`: o Tailwind
+ * lê as classes no código-fonte, e uma classe montada em tempo de execução
+ * simplesmente não é gerada — o anel ficaria sem cor.
+ */
+const BORDA_POR_TOM: Record<TomDaEtapa, string> = {
+  neutro: "border-muted-foreground",
+  andamento: "border-warning",
+  revisao: "border-info",
+  concluido: "border-success",
+  bloqueado: "border-destructive",
+};
+
 /** A marca do passo: tamanho legível, e um símbolo por estado. */
-function Marca({ etapa, tinta }: { etapa: Etapa; tinta: (typeof PALETA)[keyof typeof PALETA] }) {
+function Marca({
+  etapa,
+  tinta,
+  tom,
+}: {
+  etapa: Etapa;
+  tinta: (typeof PALETA)[keyof typeof PALETA];
+  tom: TomDaEtapa;
+}) {
   if (etapa.estado === "atual") {
     return (
       <span className="relative flex size-5 shrink-0 items-center justify-center" aria-hidden>
@@ -51,7 +74,7 @@ function Marca({ etapa, tinta }: { etapa: Etapa; tinta: (typeof PALETA)[keyof ty
         <span
           className={cn(
             "flex size-5 items-center justify-center rounded-full border-2 bg-background",
-            tinta.texto.replace("text-", "border-"),
+            BORDA_POR_TOM[tom],
           )}
         >
           <span className={cn("size-2 rounded-full", tinta.regua)} />
@@ -105,7 +128,8 @@ function ProgressoImpl({ progressao: p, className }: { progressao: Progressao; c
       <ol className="flex items-center gap-0" aria-label="Andamento da demanda">
         {p.etapas.map((e, i) => {
           const legenda = tempo(e.dias);
-          const tinta = PALETA[tomDaEtapa(e.rotulo)];
+          const tom = tomDaEtapa(e.rotulo);
+          const tinta = PALETA[tom];
           return (
             <li
               key={e.id}
@@ -116,7 +140,7 @@ function ProgressoImpl({ progressao: p, className }: { progressao: Progressao; c
                 className="flex shrink-0 items-center gap-1.5"
                 title={`${e.rotulo} — ${rotuloDoEstado[e.estado]}${legenda ? `, ${legenda}` : ""}`}
               >
-                <Marca etapa={e} tinta={tinta} />
+                <Marca etapa={e} tinta={tinta} tom={tom} />
                 <span
                   className={cn(
                     "truncate text-[12px] leading-none",
