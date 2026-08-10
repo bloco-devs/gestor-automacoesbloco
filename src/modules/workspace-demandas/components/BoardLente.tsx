@@ -788,7 +788,7 @@ function BoardLenteImpl({
       colunas.find(
         (c) => c.id === dadosDoAlvo?.colunaId || c.itens.some((d) => d.id === destino),
       );
-    if (!colunaDeDestino) return desistir(demandaId);
+    if (!colunaDeDestino) return finalizar(demandaId);
 
     const idsDestino = colunaDeDestino.itens.map((d) => d.id);
     // A coluna de ORIGEM é a que contém o cartão nesta tela — não
