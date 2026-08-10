@@ -58,8 +58,21 @@ export function useAcoesDemanda(escopo: Escopo): AcoesDemanda {
       if (ordemDaColuna && ordemDaColuna.length > 0) {
         await filaDeDemandas.reordenar(ordensDaLista(ordemDaColuna));
       }
+      /**
+       * O DETALHE TAMBÉM ENVELHECE.
+       *
+       * O stepper da página da demanda é montado a partir do histórico de
+       * auditoria (`["demanda", id, "auditoria"]`), que é uma consulta
+       * própria — a lista do quadro não a alcança. Sem invalidar aqui, mover
+       * um cartão e abrir o detalhe no segundo seguinte mostrava a etapa
+       * antiga, e a tela parecia não ter gravado nada.
+       */
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["demanda", demandaId, "auditoria"] }),
+        qc.invalidateQueries({ queryKey: ["demanda", demandaId, "comentarios"] }),
+      ]);
     },
-    [fonte, cards.reorder, statusDemand, filaDeDemandas],
+    [fonte, cards.reorder, statusDemand, filaDeDemandas, qc],
   );
 
 
