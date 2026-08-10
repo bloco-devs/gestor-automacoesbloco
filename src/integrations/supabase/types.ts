@@ -2807,6 +2807,10 @@ export type Database = {
         Args: { _demand_id: string; _user_id?: string }
         Returns: boolean
       }
+      demand_auto_reply_triagem: {
+        Args: { _demand_id: string }
+        Returns: string
+      }
       demand_prefixo: { Args: { _system_id: string }; Returns: string }
       demand_prefixo_slug: { Args: { _slug: string }; Returns: string }
       get_my_role: { Args: never; Returns: string }

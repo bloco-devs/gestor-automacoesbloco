@@ -69,6 +69,12 @@ export function useFioDaDemanda(
      * ordem quase sempre é a explicação.
      */
     anexos?: AnexoNoFio[];
+    /**
+     * A demanda ainda não tem responsável — condição da auto-resposta de
+     * triagem. Vem de fora porque quem carregou a demanda já sabe disso.
+     */
+    semResponsavel?: boolean;
+
   },
 ) {
   const qc = useQueryClient();
@@ -236,14 +242,46 @@ export function useFioDaDemanda(
     return [...falas, ...mudancas, ...enviosDeAnexo];
   }, [comentariosQ.data, auditoriaQ.data, todasAsPessoas, opcoes.anexos, user?.id]);
 
+  /**
+   * AUTO-RESPOSTA DE TRIAGEM
+   *
+   * Quem escreve numa demanda sem responsável não tem como saber se alguém
+   * leu. O aviso do Blink responde essa dúvida — e para de aparecer no
+   * instante em que a demanda ganha dono.
+   *
+   * O insert é feito por `demand_auto_reply_triagem` no banco: a política de
+   * `demand_comments` proíbe o cliente de gravar `is_system = true`, e é bom
+   * que proíba — quem decide se ainda não há responsável é o servidor, não a
+   * tela. A função também recusa repetir o aviso quando ele já é a última
+   * mensagem do fio, o que cobre o usuário que manda três frases seguidas.
+   */
   const comentar = useCallback(
     async (texto: string, interna: boolean) => {
       if (!demandaId) return;
       await createComment(demandaId, texto, interna);
       await qc.invalidateQueries({ queryKey: ["demanda", demandaId, "comentarios"] });
+
+      // Nota interna é conversa da equipe: o aviso de espera não cabe ali.
+      if (interna || !opcoes.semResponsavel) return;
+
+      // A pausa é deliberada: a resposta instantânea parece erro de tela.
+      window.setTimeout(() => {
+        void (async () => {
+          const { data, error } = await supabase.rpc("demand_auto_reply_triagem" as never, {
+            _demand_id: demandaId,
+          } as never);
+          if (error) {
+            console.warn("[fio] auto-resposta de triagem falhou:", error.message);
+            return;
+          }
+          if (!data) return; // o servidor decidiu não responder
+          await qc.invalidateQueries({ queryKey: ["demanda", demandaId, "comentarios"] });
+        })();
+      }, 1200);
     },
-    [demandaId, qc],
+    [demandaId, qc, opcoes.semResponsavel],
   );
+
 
   /**
    * EDITAR E EXCLUIR SÃO OTIMISTAS
