@@ -380,11 +380,25 @@ interface Props {
   /** Só a equipe escreve nota interna; o solicitante nem vê a opção. */
   podeNotaInterna: boolean;
   onComentar: (texto: string, interna: boolean) => Promise<void>;
+  /** Ausentes quando a origem da demanda não guarda comentários editáveis. */
+  onEditarComentario?: (comentarioId: string, texto: string) => Promise<void>;
+  onExcluirComentario?: (comentarioId: string) => Promise<void>;
   onAbrirAnexo?: (anexoId: string) => void;
   vazio: string;
 }
 
-function FioImpl({ eventos, pedido, briefing, podeComentar, podeNotaInterna, onComentar, onAbrirAnexo, vazio }: Props) {
+function FioImpl({
+  eventos,
+  pedido,
+  briefing,
+  podeComentar,
+  podeNotaInterna,
+  onComentar,
+  onEditarComentario,
+  onExcluirComentario,
+  onAbrirAnexo,
+  vazio,
+}: Props) {
   const itens = useMemo(() => dobrarMudancas(eventos), [eventos]);
   const [texto, setTexto] = useState("");
   const [interna, setInterna] = useState(false);
