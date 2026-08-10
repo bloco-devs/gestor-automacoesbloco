@@ -47,9 +47,12 @@ export function useCapasDosCards(cardIds: string[], habilitado = true): CapasRes
     const porUsuario = new Map((equipeQ.data ?? []).map((u) => [u.id, u]));
     const saida: CapasResolvidas = new Map();
     for (const [cardId, capa] of capasQ.data ?? new Map()) {
+      // Um usuário, um avatar: vínculos repetidos (estados antigos) não podem
+      // desenhar a mesma pessoa duas vezes na capa.
+      const idsUnicos = [...new Set<string>(capa.membrosIds as string[])];
       saida.set(cardId, {
         etiquetas: capa.etiquetas,
-        membros: capa.membrosIds.map((id: string) => {
+        membros: idsUnicos.map((id: string) => {
           const u = porUsuario.get(id);
           return { id, nome: u?.nome ?? "Usuário", avatarUrl: u?.avatarUrl ?? null };
         }),
