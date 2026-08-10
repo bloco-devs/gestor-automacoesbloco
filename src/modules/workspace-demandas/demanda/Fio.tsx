@@ -426,7 +426,8 @@ function FioImpl({ eventos, pedido, briefing, podeComentar, podeNotaInterna, onC
         {itens.map((item) => {
           if (item.tipo === "dobra") return <Dobra key={item.id} eventos={item.eventos} />;
           const e = item.evento;
-          if (e.tipo === "fala") return <Fala key={e.id} evento={e} />;
+          if (e.tipo === "fala")
+            return <Fala key={e.id} evento={e} onEditar={onEditarComentario} onExcluir={onExcluirComentario} />;
           if (e.tipo === "anexo") return <Anexo key={e.id} evento={e} onAbrir={onAbrirAnexo} />;
           return <Mudanca key={e.id} evento={e} />;
         })}
