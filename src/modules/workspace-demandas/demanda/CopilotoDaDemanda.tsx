@@ -150,50 +150,46 @@ function CopilotoDaDemandaImpl({
       aria-label="Blink — análise desta demanda"
       className={cn("flex min-h-0 flex-col overflow-y-auto border-l border-border/60", className)}
     >
-      <header className="flex items-center gap-2 border-b border-border/50 px-4 py-2.5">
+      {/* O cabeçalho fica colado no topo enquanto a análise rola: sem ele à
+          vista, os cartões soltos deixam de ter dono e parecem widgets. */}
+      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border/50 bg-background/95 px-4 py-2.5 backdrop-blur">
         <Blink className="size-5 shrink-0" aria-hidden />
         <span className="text-[13px] font-medium">Blink</span>
       </header>
 
-      {/*
-        A RECOMENDAÇÃO VEM PRIMEIRO, E COM PESO
-        Antes ela era o quarto de cinco blocos idênticos — para chegar nela,
-        a pessoa lia diagnóstico, vez e relacionados. Um copiloto que faz você
-        ler três parágrafos antes de dizer o que fazer é um relatório.
+      <div className="flex flex-col gap-4 p-4">
+        {/*
+          A RECOMENDAÇÃO VEM PRIMEIRO, E COM PESO
+          Antes ela era o quarto de cinco blocos idênticos — para chegar nela,
+          a pessoa lia diagnóstico, vez e relacionados. Um copiloto que faz você
+          ler três parágrafos antes de dizer o que fazer é um relatório.
+        */}
+        <Bloco titulo="Próximo passo" destaque>
+          <p className="text-[14px] font-medium leading-snug text-foreground">{proximoPasso}</p>
 
-        Agora é a primeira coisa da coluna, sobre superfície própria e com a
-        ação a um clique. O diagnóstico continua existindo logo abaixo, mas
-        como apoio à decisão — que é o papel dele.
-      */}
-      <section className="border-b border-border/50 bg-muted/30 px-4 py-3.5">
-        <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          Próximo passo
-        </h3>
-        <p className="mt-1.5 text-[14px] font-medium leading-snug text-foreground">{proximoPasso}</p>
+          {/* Cada ação vem com o motivo dela logo abaixo — o par respira junto e
+              se separa do vizinho, senão o agrupamento visual diz o contrário do
+              significado. */}
+          {acoes.length > 0 && (
+            <div className="mt-3 flex flex-col gap-3">
+              {acoes.map((a) => (
+                <div key={a.tipo}>
+                  <Button
+                    size="sm"
+                    disabled={executando}
+                    onClick={() => onAcao(a)}
+                    className="h-8 w-full justify-start text-[12px]"
+                  >
+                    {a.rotulo}
+                  </Button>
+                  <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">{a.motivo}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Bloco>
 
-        {/* Cada ação vem com o motivo dela logo abaixo — o par respira junto e
-            se separa do vizinho, senão o agrupamento visual diz o contrário do
-            significado. */}
-        {acoes.length > 0 && (
-          <div className="mt-3 flex flex-col gap-3">
-            {acoes.map((a) => (
-              <div key={a.tipo}>
-                <Button
-                  size="sm"
-                  disabled={executando}
-                  onClick={() => onAcao(a)}
-                  className="h-8 w-full justify-start text-[12px]"
-                >
-                  {a.rotulo}
-                </Button>
-                <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">{a.motivo}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <Bloco titulo="O que está acontecendo">
+        <Bloco titulo="O que está acontecendo">
         {d.concluida ? (
           <div className="space-y-2">
             <p className="text-muted-foreground">Concluída. Nada pendente.</p>
@@ -207,15 +203,22 @@ function CopilotoDaDemandaImpl({
             )}
           </div>
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
+            {/* Alerta em tinta sutil, não em bloco sólido: a cor precisa
+                chamar atenção sem virar o assunto do painel. */}
             {d.risco && (
-              <li className="flex items-center gap-2">
-                <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-destructive" />
-                {RISCO_ROTULO[d.risco]}
+              <li>
+                <Badge variant="danger" className="text-[11px] font-medium">
+                  {RISCO_ROTULO[d.risco]}
+                </Badge>
               </li>
             )}
             {silencio !== null && silencio >= 3 && (
-              <li className="text-muted-foreground">Sem uma fala há {silencio} dias.</li>
+              <li>
+                <Badge variant="warning" className="text-[11px] font-normal">
+                  Sem uma fala há {silencio} dias
+                </Badge>
+              </li>
             )}
             {d.responsaveis.length === 0 && <li className="text-muted-foreground">Ninguém assumiu.</li>}
             {!d.risco && (silencio === null || silencio < 3) && d.responsaveis.length > 0 && (
@@ -224,6 +227,7 @@ function CopilotoDaDemandaImpl({
           </ul>
         )}
       </Bloco>
+
 
       {!d.concluida && (
         <Bloco titulo="De quem é a vez">
