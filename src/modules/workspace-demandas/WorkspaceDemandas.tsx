@@ -297,7 +297,11 @@ export default function WorkspaceDemandas() {
   const contextoInbox = (
     <>
       <ContextoDaInbox aguardando={resumo.abertas} />
+      {/* O fundo é decisão de aparência: fica junto do título, no mesmo lugar
+          onde o quadro oferece a dele. */}
+      <SeletorDeFundo valor={fundoDaInbox} onEscolher={definirFundoDaInbox} className="ml-auto" />
       <button
+
         type="button"
         onClick={() => setCopiloto(!copiloto)}
         aria-label={copiloto ? "Ocultar o Blink" : "Mostrar o Blink"}
