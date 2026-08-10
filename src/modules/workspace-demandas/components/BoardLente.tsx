@@ -374,7 +374,11 @@ interface Props {
     ordem?: number;
     /** A coluna de destino inteira, na ordem final. Ver `AcoesDemanda.mover`. */
     ordemDaColuna?: string[];
-  }) => void;
+    // Quem grava pode devolver a promessa da gravação: é ela que permite
+    // desfazer o otimismo quando o servidor recusa. Devolver `void` continua
+    // válido (o board só perde o rollback).
+  }) => void | Promise<void>;
+
   podeMover: boolean;
   /** Mesma forma que a `ListaLente` usa — as duas lentes falam a mesma língua. */
   vazio?: { titulo: string; descricao?: string };
@@ -683,6 +687,37 @@ function BoardLenteImpl({
    *
    * O cálculo em si mora em `../ordenacao`, puro e testado.
    */
+  /**
+   * DESFAZER O OTIMISMO QUANDO A GRAVAÇÃO É RECUSADA.
+   *
+   * O estado otimista só era liberado quando o servidor CONCORDAVA. Se a
+   * gravação falhasse, o cartão ficava desenhado na coluna nova para sempre —
+   * a tela mentia até alguém recarregar a página. Aqui, no rejeito, apagamos a
+   * expectativa desse cartão e a sequência das duas colunas envolvidas: sem
+   * expectativa, a verdade do servidor volta a valer imediatamente.
+   */
+  const gravar = (
+    params: { demandaId: string; statusId: string; ordem?: number; ordemDaColuna?: string[] },
+    colunasMexidas: string[],
+  ) => {
+    const resultado = onMover(params);
+    if (!resultado || typeof resultado.then !== "function") return;
+    void resultado.catch(() => {
+      setColunaLocal((mapa) => {
+        if (!mapa.has(params.demandaId)) return mapa;
+        const proximo = new Map(mapa);
+        proximo.delete(params.demandaId);
+        return proximo;
+      });
+      setOrdemLocal((mapa) => {
+        if (!colunasMexidas.some((id) => mapa.has(id))) return mapa;
+        const proximo = new Map(mapa);
+        for (const id of colunasMexidas) proximo.delete(id);
+        return proximo;
+      });
+    });
+  };
+
   const aoTerminar = (e: DragEndEvent) => {
     setArrastando(null);
     const destino = e.over?.id ? String(e.over.id) : null;
@@ -727,12 +762,15 @@ function BoardLenteImpl({
       // ATUALIZAÇÃO OTIMISTA: a tela assume a nova sequência agora, antes da
       // gravação. Sem isto o cartão volta ao lugar de origem e pula depois.
       setOrdemLocal((atualMapa) => new Map(atualMapa).set(colunaDeDestino.id, ordemFinal));
-      onMover({
-        demandaId,
-        statusId: colunaDeDestino.id,
-        ordem: ordemFinal.indexOf(demandaId),
-        ordemDaColuna: ordemFinal,
-      });
+      gravar(
+        {
+          demandaId,
+          statusId: colunaDeDestino.id,
+          ordem: ordemFinal.indexOf(demandaId),
+          ordemDaColuna: ordemFinal,
+        },
+        [colunaDeDestino.id, atual.status.id],
+      );
       return;
     }
 
@@ -754,13 +792,17 @@ function BoardLenteImpl({
       }
       return proximo;
     });
-    onMover({
-      demandaId,
-      statusId: colunaDeDestino.id,
-      ordem: ordemFinal.indexOf(demandaId),
-      ordemDaColuna: ordemFinal,
-    });
+    gravar(
+      {
+        demandaId,
+        statusId: colunaDeDestino.id,
+        ordem: ordemFinal.indexOf(demandaId),
+        ordemDaColuna: ordemFinal,
+      },
+      [colunaDeDestino.id, colunaDeOrigem?.id ?? atual.status.id],
+    );
   };
+
 
 
 
