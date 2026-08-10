@@ -474,7 +474,20 @@ export default function WorkspaceDemandas() {
                 // `demandaId` e `statusId`, e a ordem escolhida ao arrastar era
                 // descartada aqui, silenciosamente — o board calculava certo e
                 // ninguém escutava.
-                onMover={(params) => void acoes.mover(params)}
+                //
+                // A promessa é DEVOLVIDA (não mais descartada com `void`): é
+                // ela que o board usa para desfazer o otimismo quando a
+                // gravação é recusada. Sem isso o cartão ficava parecendo
+                // movido sem ter sido, e ninguém era avisado.
+                onMover={(params) =>
+                  acoes.mover(params).catch((e) => {
+                    toast.error(
+                      e instanceof Error ? e.message : "Não foi possível mover esta demanda.",
+                    );
+                    throw e;
+                  })
+                }
+
                 podeMover={acoes.podeMover}
                 emProjeto={emProjeto}
                 onConcluir={emProjeto ? (id) => void concluirCartao(id) : undefined}
