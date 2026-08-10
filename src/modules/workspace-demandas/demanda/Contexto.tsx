@@ -100,7 +100,10 @@ function ContextoImpl({
 
         Sobrou o que de fato é consulta: quem, quando, onde.
       */}
-      <dl className="px-4 py-2">
+      {/* Superfície própria, como os cartões do painel do Blink: o retrato da
+          demanda é um assunto fechado, e não a continuação da tela em volta. */}
+      <dl className="m-4 rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+
         {capacidades.complexidade && d.complexidade && (
           <Linha rotulo="Complexidade">{COMPLEXIDADE_ROTULO[d.complexidade]}</Linha>
         )}
