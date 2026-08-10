@@ -227,6 +227,19 @@ export function Cartao({
     ? undefined
     : { transform: CSS.Transform.toString(transform), transition };
 
+  /**
+   * MEMBROS SEM DUPLICATA — um usuário, uma foto.
+   * Estados antigos deixaram o mesmo responsável repetido no payload; a capa
+   * não pode desenhar duas vezes a mesma pessoa. Deduplicação por id,
+   * preservando a ordem de chegada.
+   */
+  const membros = useMemo(() => {
+    const porId = new Map<string, NonNullable<typeof capa>["membros"][number]>();
+    for (const m of capa?.membros ?? []) if (!porId.has(m.id)) porId.set(m.id, m);
+    return [...porId.values()];
+  }, [capa?.membros]);
+
+
 
 
 
