@@ -482,7 +482,7 @@ export function Cartao({
             </div>
           )}
 
-          {(d.prazo || (capa?.membros.length ?? 0) > 0) && (
+          {(d.prazo || membros.length > 0) && (
             <div className="mt-1.5 flex items-center gap-2">
               {d.prazo ? (
                 <span
@@ -493,9 +493,9 @@ export function Cartao({
                   <span className="tabular-nums">{prazoCurto(d.prazo)}</span>
                 </span>
               ) : null}
-              {(capa?.membros.length ?? 0) > 0 && (
+              {membros.length > 0 && (
                 <span className="ml-auto flex items-center -space-x-2">
-                  {capa!.membros.slice(0, 4).map((m) => (
+                  {membros.slice(0, 4).map((m) => (
                     <Avatar key={m.id} className="size-6 border border-card" title={m.nome}>
                       {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.nome} />}
                       <AvatarFallback className="bg-muted text-[9px]">
@@ -503,9 +503,9 @@ export function Cartao({
                       </AvatarFallback>
                     </Avatar>
                   ))}
-                  {capa!.membros.length > 4 && (
+                  {membros.length > 4 && (
                     <span className="flex size-6 items-center justify-center rounded-full border border-card bg-muted text-[9px] font-medium text-muted-foreground">
-                      +{capa!.membros.length - 4}
+                      +{membros.length - 4}
                     </span>
                   )}
                 </span>
