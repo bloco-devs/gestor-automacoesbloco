@@ -7,9 +7,12 @@ export interface DemandComment {
   content: string;
   is_internal: boolean;
   is_ai?: boolean;
+  /** Aviso automático (boas-vindas da triagem). Ninguém edita nem exclui. */
+  is_system?: boolean;
   created_at: string;
   updated_at: string;
 }
+
 
 export interface DemandAuditLog {
   id: string;
