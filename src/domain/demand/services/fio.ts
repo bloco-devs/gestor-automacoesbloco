@@ -33,6 +33,11 @@ export type TipoDeEvento = "fala" | "mudanca" | "anexo";
 export interface AutorDoEvento extends Pessoa {
   /** Marca de origem. Não muda o peso da mensagem, só como ela é identificada. */
   ia: boolean;
+  /**
+   * Aviso automático do sistema (ex.: a confirmação de que a demanda entrou na
+   * fila). Não é pessoa nem IA: ninguém escreveu, ninguém responde por ele.
+   */
+  sistema?: boolean;
 }
 
 export interface Evento {
@@ -45,11 +50,21 @@ export interface Evento {
   /** Só em `anexo`: permite abrir o arquivo direto do fio. */
   anexoId?: string;
   /**
+   * Só em `fala` vinda de comentário: o id da linha, para editar e excluir.
+   * O pedido original e as mudanças não têm — não são comentários.
+   */
+  comentarioId?: string;
+  /** Verdadeiro só quando quem está lendo é o autor da fala. */
+  editavel?: boolean;
+  /** Preenchido quando a fala foi alterada depois de enviada. */
+  editadoEm?: string | null;
+  /**
    * Nota interna: visível para a equipe, não para quem abriu a demanda.
    * Sempre `false` em `mudanca`.
    */
   interna: boolean;
 }
+
 
 const AUTOR_IA: AutorDoEvento = {
   id: "ia",

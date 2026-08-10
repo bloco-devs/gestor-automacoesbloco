@@ -1,9 +1,31 @@
 import { memo, useMemo, useState } from "react";
-import { ChevronDown, Loader2, Lock, LockOpen, Paperclip, SendHorizontal } from "lucide-react";
+import {
+  Bot,
+  ChevronDown,
+  Loader2,
+  Lock,
+  LockOpen,
+  Paperclip,
+  Pencil,
+  SendHorizontal,
+  Trash2,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+
 import { dobrarMudancas, representanteDaDobra } from "@/domain/demand";
 import type { Briefing as DadosDoBriefing, Evento } from "@/domain/demand";
 import { Briefing } from "./Briefing";
@@ -151,11 +173,62 @@ function Anexo({ evento, onAbrir }: { evento: Evento; onAbrir?: (anexoId: string
   );
 }
 
-function Fala({ evento }: { evento: Evento }) {
+/**
+ * Uma fala do fio.
+ *
+ * AS AÇÕES SÓ APARECEM NO HOVER, E SÓ PARA QUEM ESCREVEU
+ * Lápis e lixeira visíveis em toda mensagem transformam a conversa numa
+ * planilha de linhas editáveis. Escondidos até o mouse chegar, eles existem
+ * quando se precisa deles e desaparecem quando se está lendo. `focus-within`
+ * mantém a promessa para quem navega por teclado — ali o hover não acontece.
+ */
+function Fala({
+  evento,
+  onEditar,
+  onExcluir,
+}: {
+  evento: Evento;
+  onEditar?: (comentarioId: string, texto: string) => Promise<void>;
+  onExcluir?: (comentarioId: string) => Promise<void>;
+}) {
   const ia = evento.autor?.ia ?? false;
+  const sistema = evento.autor?.sistema ?? false;
+  const podeAgir = !!evento.comentarioId && !!evento.editavel && (!!onEditar || !!onExcluir);
+
+  const [editando, setEditando] = useState(false);
+  const [rascunho, setRascunho] = useState(evento.texto);
+  const [salvando, setSalvando] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+
+  const salvar = async () => {
+    const t = rascunho.trim();
+    if (!t || !evento.comentarioId || !onEditar || salvando) return;
+    setSalvando(true);
+    try {
+      await onEditar(evento.comentarioId, t);
+      setEditando(false);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
   return (
-    <li className={cn("flex gap-3 py-3", evento.interna && "rounded-md bg-warning/5 px-2 -mx-2")}>
-      {ia ? (
+    <li
+      className={cn(
+        "group/fala flex gap-3 py-3",
+        evento.interna && "rounded-md bg-warning/5 px-2 -mx-2",
+      )}
+    >
+      {sistema ? (
+        /* O aviso automático não tem rosto porque não tem autor. O ícone diz
+           "isto veio do sistema" sem se disfarçar de pessoa nem de IA. */
+        <span
+          className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
+          aria-label="Sistema"
+        >
+          <Bot className="size-3.5" aria-hidden />
+        </span>
+      ) : ia ? (
         /* Quem fala no fio tem rosto: as pessoas têm avatar, e o Blink
            tinha um ícone de brilho. Um símbolo abstrato ao lado de fotos faz
            a IA parecer um carimbo do sistema, não um participante. */
@@ -174,21 +247,119 @@ function Fala({ evento }: { evento: Evento }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="text-[13px] font-medium">{evento.autor?.nome ?? "Alguém"}</span>
+          {sistema && (
+            <Badge variant="neutral" className="text-[10px] font-normal">
+              automático
+            </Badge>
+          )}
           {evento.interna && (
             <span className="inline-flex items-center gap-1 text-[11px] text-warning">
               <Lock className="size-3" aria-hidden />
               nota interna
             </span>
           )}
-          <time className="ml-auto shrink-0 text-[12px] tabular-nums text-muted-foreground" dateTime={evento.em}>
-            {quando(evento.em)}
-          </time>
+
+          <span className="ml-auto flex shrink-0 items-center gap-1">
+            {podeAgir && !editando && (
+              <span
+                className={cn(
+                  "flex items-center gap-0.5 opacity-0 transition-opacity",
+                  "group-hover/fala:opacity-100 focus-within:opacity-100",
+                )}
+              >
+                {onEditar && (
+                  <button
+                    type="button"
+                    aria-label="Editar comentário"
+                    title="Editar"
+                    onClick={() => {
+                      setRascunho(evento.texto);
+                      setEditando(true);
+                    }}
+                    className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  >
+                    <Pencil className="size-3" aria-hidden />
+                  </button>
+                )}
+                {onExcluir && (
+                  <button
+                    type="button"
+                    aria-label="Excluir comentário"
+                    title="Excluir"
+                    onClick={() => setConfirmando(true)}
+                    className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  >
+                    <Trash2 className="size-3" aria-hidden />
+                  </button>
+                )}
+              </span>
+            )}
+            <time className="text-[12px] tabular-nums text-muted-foreground" dateTime={evento.em}>
+              {quando(evento.em)}
+              {evento.editadoEm ? " · editado" : ""}
+            </time>
+          </span>
         </div>
-        <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-relaxed">{evento.texto}</p>
+
+        {editando ? (
+          <div className="mt-1.5 space-y-1.5">
+            <Textarea
+              value={rascunho}
+              autoFocus
+              onChange={(e) => setRascunho(e.target.value)}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  void salvar();
+                }
+                if (e.key === "Escape") setEditando(false);
+              }}
+              aria-label="Editar o texto do comentário"
+              className="min-h-[64px] resize-none text-[13px] leading-relaxed"
+            />
+            <div className="flex items-center gap-2">
+              <Button size="sm" className="h-7 text-[12px]" disabled={!rascunho.trim() || salvando} onClick={() => void salvar()}>
+                {salvando ? <Loader2 className="size-3 animate-spin" aria-hidden /> : "Salvar"}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-[12px]"
+                onClick={() => setEditando(false)}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-relaxed">{evento.texto}</p>
+        )}
       </div>
+
+      <AlertDialog open={confirmando} onOpenChange={setConfirmando}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir este comentário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ele sai da conversa para todos. Não é possível desfazer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Manter</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (evento.comentarioId && onExcluir) void onExcluir(evento.comentarioId);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </li>
   );
 }
+
 
 interface Props {
   eventos: Evento[];
@@ -209,11 +380,25 @@ interface Props {
   /** Só a equipe escreve nota interna; o solicitante nem vê a opção. */
   podeNotaInterna: boolean;
   onComentar: (texto: string, interna: boolean) => Promise<void>;
+  /** Ausentes quando a origem da demanda não guarda comentários editáveis. */
+  onEditarComentario?: (comentarioId: string, texto: string) => Promise<void>;
+  onExcluirComentario?: (comentarioId: string) => Promise<void>;
   onAbrirAnexo?: (anexoId: string) => void;
   vazio: string;
 }
 
-function FioImpl({ eventos, pedido, briefing, podeComentar, podeNotaInterna, onComentar, onAbrirAnexo, vazio }: Props) {
+function FioImpl({
+  eventos,
+  pedido,
+  briefing,
+  podeComentar,
+  podeNotaInterna,
+  onComentar,
+  onEditarComentario,
+  onExcluirComentario,
+  onAbrirAnexo,
+  vazio,
+}: Props) {
   const itens = useMemo(() => dobrarMudancas(eventos), [eventos]);
   const [texto, setTexto] = useState("");
   const [interna, setInterna] = useState(false);
@@ -255,7 +440,8 @@ function FioImpl({ eventos, pedido, briefing, podeComentar, podeNotaInterna, onC
         {itens.map((item) => {
           if (item.tipo === "dobra") return <Dobra key={item.id} eventos={item.eventos} />;
           const e = item.evento;
-          if (e.tipo === "fala") return <Fala key={e.id} evento={e} />;
+          if (e.tipo === "fala")
+            return <Fala key={e.id} evento={e} onEditar={onEditarComentario} onExcluir={onExcluirComentario} />;
           if (e.tipo === "anexo") return <Anexo key={e.id} evento={e} onAbrir={onAbrirAnexo} />;
           return <Mudanca key={e.id} evento={e} />;
         })}

@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { listComments, listAuditLogs, createComment } from "@/modules/demands/timeline-service";
+import {
+  listComments,
+  listAuditLogs,
+  createComment,
+  updateComment,
+  deleteComment,
+  type DemandComment,
+} from "@/modules/demands/timeline-service";
 import { getProfilesByIds } from "@/modules/demands/service";
 import { STATUS_COLUMNS, PRIORITY_META } from "@/modules/demands/types";
 import { autorIa, frasePara, type Evento } from "@/domain/demand";
+import { useAuth } from "@/hooks/useAuth";
 import type { Pessoa } from "@/domain/demand";
+
 
 /**
  * O fio de uma demanda — leitura e escrita.
@@ -63,7 +72,10 @@ export function useFioDaDemanda(
   },
 ) {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const { habilitado, pessoas } = opcoes;
+  const chaveComentarios = ["demanda", demandaId, "comentarios"] as const;
+
 
   const comentariosQ = useQuery({
     queryKey: ["demanda", demandaId, "comentarios"],
@@ -174,15 +186,25 @@ export function useFioDaDemanda(
       tipo: "fala" as const,
       // A IA responde como participante, com o mesmo peso de uma pessoa. O que
       // a distingue é a marca, não um lugar separado na tela.
-      autor: c.is_ai
-        ? autorIa()
-        : c.user_id
-          ? { ...(todasAsPessoas.get(c.user_id) ?? { id: c.user_id, nome: "Alguém", avatarUrl: null }), ia: false }
-          : null,
+      // O aviso automático da triagem não é participante: ele é o sistema
+      // avisando, e precisa parecer isso — senão quem abriu responde a ele.
+      autor: c.is_system
+        ? { id: "sistema", nome: "Sistema", avatarUrl: null, ia: false, sistema: true }
+        : c.is_ai
+          ? autorIa()
+          : c.user_id
+            ? { ...(todasAsPessoas.get(c.user_id) ?? { id: c.user_id, nome: "Alguém", avatarUrl: null }), ia: false }
+            : null,
       em: c.created_at,
       texto: c.content,
       interna: c.is_internal,
+      comentarioId: c.id,
+      // Só o autor edita e exclui. A política do banco diz o mesmo; aqui é só
+      // para não desenhar um botão que vai falhar.
+      editavel: !c.is_system && !c.is_ai && !!c.user_id && c.user_id === user?.id,
+      editadoEm: c.updated_at !== c.created_at ? c.updated_at : null,
     }));
+
 
     const mudancas: Evento[] = (auditoriaQ.data ?? []).map((a) => ({
       id: `a:${a.id}`,
@@ -208,7 +230,7 @@ export function useFioDaDemanda(
     }));
 
     return [...falas, ...mudancas, ...enviosDeAnexo];
-  }, [comentariosQ.data, auditoriaQ.data, todasAsPessoas, opcoes.anexos]);
+  }, [comentariosQ.data, auditoriaQ.data, todasAsPessoas, opcoes.anexos, user?.id]);
 
   const comentar = useCallback(
     async (texto: string, interna: boolean) => {
@@ -219,11 +241,61 @@ export function useFioDaDemanda(
     [demandaId, qc],
   );
 
+  /**
+   * EDITAR E EXCLUIR SÃO OTIMISTAS
+   *
+   * Corrigir uma palavra e esperar meio segundo pelo servidor faz a pessoa
+   * duvidar se salvou. A lista muda na hora e volta ao estado anterior se o
+   * banco recusar — a única resposta honesta quando a permissão não existe.
+   */
+  const editarComentario = useCallback(
+    async (comentarioId: string, texto: string) => {
+      const antes = qc.getQueryData<DemandComment[]>(chaveComentarios);
+      qc.setQueryData<DemandComment[]>(chaveComentarios, (prev) =>
+        (prev ?? []).map((c) =>
+          c.id === comentarioId ? { ...c, content: texto, updated_at: new Date().toISOString() } : c,
+        ),
+      );
+      try {
+        await updateComment(comentarioId, texto);
+      } catch (e) {
+        if (antes) qc.setQueryData(chaveComentarios, antes);
+        throw e;
+      }
+      await qc.invalidateQueries({ queryKey: chaveComentarios });
+    },
+    // A chave é derivada de `demandaId`; listá-la inteira criaria um novo array
+    // a cada render e refaria o callback sem motivo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [demandaId, qc],
+  );
+
+  const excluirComentario = useCallback(
+    async (comentarioId: string) => {
+      const antes = qc.getQueryData<DemandComment[]>(chaveComentarios);
+      qc.setQueryData<DemandComment[]>(chaveComentarios, (prev) =>
+        (prev ?? []).filter((c) => c.id !== comentarioId),
+      );
+      try {
+        await deleteComment(comentarioId);
+      } catch (e) {
+        if (antes) qc.setQueryData(chaveComentarios, antes);
+        throw e;
+      }
+      await qc.invalidateQueries({ queryKey: chaveComentarios });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [demandaId, qc],
+  );
+
   return {
     eventos,
     carregando: comentariosQ.isLoading || auditoriaQ.isLoading,
     erro: (comentariosQ.error as Error | null) ?? (auditoriaQ.error as Error | null) ?? null,
     comentar,
+    editarComentario,
+    excluirComentario,
     podeComentar: habilitado,
+
   };
 }
