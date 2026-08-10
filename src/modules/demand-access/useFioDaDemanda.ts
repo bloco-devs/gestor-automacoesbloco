@@ -72,7 +72,10 @@ export function useFioDaDemanda(
   },
 ) {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const { habilitado, pessoas } = opcoes;
+  const chaveComentarios = ["demanda", demandaId, "comentarios"] as const;
+
 
   const comentariosQ = useQuery({
     queryKey: ["demanda", demandaId, "comentarios"],
