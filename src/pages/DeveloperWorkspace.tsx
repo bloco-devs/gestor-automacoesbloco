@@ -110,7 +110,13 @@ function normalizar(rotulo: string): string {
 export default function DeveloperWorkspace() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { demandas, projetoPorDemanda, capacidades, carregando } = useTodasAsDemandas();
+  // Esta é a fila de TRIAGEM: só chamados. Tarefas de projeto/Sprint vivem no
+  // quadro do projeto (`/workspace/demandas/:projeto`) — somá-las aqui inflava
+  // contadores e misturava dois contextos de trabalho diferentes.
+  const { demandas, projetoPorDemanda, capacidades, carregando } = useTodasAsDemandas({
+    incluirCartoesDeProjeto: false,
+  });
+
   const [fila, setFila] = usePreferencia<FilaId>("hoje:fila", FILA_PADRAO, ehFila);
 
   const contagens = useMemo(() => contarFilas(demandas, user?.id ?? null), [demandas, user?.id]);

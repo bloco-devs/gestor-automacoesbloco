@@ -53,12 +53,31 @@ export interface EstadoTodasAsDemandas {
   erro: Error | null;
 }
 
-export function useTodasAsDemandas(): EstadoTodasAsDemandas {
+export interface OpcoesTodasAsDemandas {
+  /**
+   * ISOLAMENTO DE CONTEXTO
+   *
+   * A fila de triagem (Helpdesk) e o trabalho de um projeto são duas coisas
+   * diferentes: somar as duas enche a fila de chamados com tarefas de Sprint,
+   * que já têm o quadro do projeto como lugar próprio. Quem quer só chamados
+   * passa `false` — e aí as consultas de cartões nem saem do navegador.
+   *
+   * Padrão `true` para não mudar quem já chamava sem opção.
+   */
+  incluirCartoesDeProjeto?: boolean;
+}
+
+export function useTodasAsDemandas(
+  opcoes: OpcoesTodasAsDemandas = {},
+): EstadoTodasAsDemandas {
+  const { incluirCartoesDeProjeto = true } = opcoes;
   const cardsQ = useQuery({
     queryKey: [...atividadesKeys.all, "cards", "todos-os-quadros"],
     queryFn: () => listCards(),
+    enabled: incluirCartoesDeProjeto,
     staleTime: 30_000,
   });
+
   /**
    * ARQUIVAR UM PROJETO PRECISA TIRAR AS DEMANDAS DELE DA FILA
    *
@@ -76,28 +95,34 @@ export function useTodasAsDemandas(): EstadoTodasAsDemandas {
   const boardsQ = useQuery({
     queryKey: ["atividades", "boards-resumo"],
     queryFn: listBoardsResumo,
+    enabled: incluirCartoesDeProjeto,
     staleTime: 60_000,
   });
   const colunasQ = useQuery({
     queryKey: [...atividadesKeys.all, "colunas", "todos-os-quadros"],
     queryFn: () => listColunas(),
+    enabled: incluirCartoesDeProjeto,
     staleTime: 30_000,
   });
   const labelsQ = useQuery({
     queryKey: [...atividadesKeys.all, "labels", "todos-os-quadros"],
     queryFn: () => listLabels(),
+    enabled: incluirCartoesDeProjeto,
     staleTime: 30_000,
   });
   const personasQ = useQuery({
     queryKey: atividadesKeys.personas(),
     queryFn: listPersonas,
+    enabled: incluirCartoesDeProjeto,
     staleTime: 5 * 60_000,
   });
   const responsaveisQ = useQuery({
     queryKey: atividadesKeys.responsaveis(),
     queryFn: listAssignableUsers,
+    enabled: incluirCartoesDeProjeto,
     staleTime: 5 * 60_000,
   });
+
   const solucoesQ = useQuery({
     queryKey: atividadesKeys.solucoes(),
     queryFn: listSolucoes,
@@ -115,7 +140,9 @@ export function useTodasAsDemandas(): EstadoTodasAsDemandas {
 
   const demandas = useMemo<Demanda[]>(() => {
     const { demandas: dasAtividades } = fromAtividades({
-      cards: (cardsQ.data ?? []).filter((c) => !quadrosArquivados.has(c.boardId)),
+      cards: incluirCartoesDeProjeto
+        ? (cardsQ.data ?? []).filter((c) => !quadrosArquivados.has(c.boardId))
+        : [],
       colunas: colunasQ.data ?? [],
       labels: labelsQ.data ?? [],
       personas: personasQ.data ?? [],
@@ -144,6 +171,7 @@ export function useTodasAsDemandas(): EstadoTodasAsDemandas {
 
     return [...dasAtividades, ...dasDemands];
   }, [
+    incluirCartoesDeProjeto,
     cardsQ.data,
     colunasQ.data,
     labelsQ.data,
@@ -157,12 +185,14 @@ export function useTodasAsDemandas(): EstadoTodasAsDemandas {
 
   const projetoPorDemanda = useMemo(() => {
     const mapa = new Map<string, string>();
+    if (!incluirCartoesDeProjeto) return mapa;
     for (const card of cardsQ.data ?? []) {
       if (quadrosArquivados.has(card.boardId)) continue;
       mapa.set(card.id, card.boardId);
     }
     return mapa;
-  }, [cardsQ.data]);
+  }, [incluirCartoesDeProjeto, cardsQ.data, quadrosArquivados]);
+
 
   const carregando =
     cardsQ.isLoading ||

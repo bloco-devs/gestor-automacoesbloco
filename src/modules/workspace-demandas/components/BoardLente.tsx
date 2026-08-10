@@ -483,6 +483,18 @@ function BoardLenteImpl({
    * a verdade do servidor vence, que é o comportamento correto).
    */
   const [ordemLocal, setOrdemLocal] = useState<Map<string, string[]>>(new Map());
+  /**
+   * A COLUNA OTIMISTA — o mesmo princípio, para o movimento HORIZONTAL.
+   *
+   * `ordemLocal` só conserta a sequência dentro de uma coluna. Ao soltar numa
+   * coluna diferente, o próximo render ainda traz o cartão no grupo antigo:
+   * ele volta para a origem e só pula para o destino quando o servidor chega.
+   *
+   * Este mapa (demandaId -> colunaId de destino) faz a tela reatribuir o
+   * cartão na hora. A entrada é descartada quando o servidor concorda — ou
+   * quando ele discorda, e aí a verdade dele vence.
+   */
+  const [colunaLocal, setColunaLocal] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     setOrdemLocal((atual) => {
@@ -502,7 +514,22 @@ function BoardLenteImpl({
       }
       return mudou ? proximo : atual;
     });
+    setColunaLocal((atual) => {
+      if (atual.size === 0) return atual;
+      const proximo = new Map(atual);
+      let mudou = false;
+      for (const [demandaId, colunaId] of atual) {
+        const grupoDoServidor = grupos.find((g) => g.itens.some((d) => d.id === demandaId));
+        // Chegou onde pedimos, ou o cartão/coluna sumiu: solta a expectativa.
+        if (!grupoDoServidor || grupoDoServidor.id === colunaId) {
+          proximo.delete(demandaId);
+          mudou = true;
+        }
+      }
+      return mudou ? proximo : atual;
+    });
   }, [grupos]);
+
 
   /**
    * A esteira completa: cada etapa vira coluna, com ou sem cartão dentro.
@@ -525,8 +552,36 @@ function BoardLenteImpl({
         return [...daEsteira, ...orfaos];
       })();
 
-    if (ordemLocal.size === 0) return montadas;
-    return montadas.map((g) => {
+    // 1) REATRIBUIÇÃO: o cartão movido já aparece na coluna de destino.
+    const comColuna =
+      colunaLocal.size === 0
+        ? montadas
+        : (() => {
+            const movidos = new Map<string, Demanda[]>();
+            const semOsMovidos = montadas.map((g) => {
+              const ficam: Demanda[] = [];
+              for (const d of g.itens) {
+                const destino = colunaLocal.get(d.id);
+                if (destino && destino !== g.id) {
+                  const fila = movidos.get(destino) ?? [];
+                  fila.push(d);
+                  movidos.set(destino, fila);
+                } else {
+                  ficam.push(d);
+                }
+              }
+              return ficam.length === g.itens.length ? g : { ...g, itens: ficam };
+            });
+            if (movidos.size === 0) return semOsMovidos;
+            return semOsMovidos.map((g) => {
+              const entrando = movidos.get(g.id);
+              return entrando ? { ...g, itens: [...g.itens, ...entrando] } : g;
+            });
+          })();
+
+    // 2) ORDEM: a sequência final de cada coluna mexida.
+    if (ordemLocal.size === 0) return comColuna;
+    return comColuna.map((g) => {
       const ordem = ordemLocal.get(g.id);
       if (!ordem) return g;
       const porIdDaColuna = new Map(g.itens.map((d) => [d.id, d]));
@@ -539,7 +594,8 @@ function BoardLenteImpl({
       return { ...g, itens: [...ordenados, ...porIdDaColuna.values()] };
     });
 
-  }, [etapas, grupos, ordemLocal]);
+  }, [etapas, grupos, ordemLocal, colunaLocal]);
+
 
 
   /**
@@ -631,6 +687,20 @@ function BoardLenteImpl({
 
     // Trocar de coluna, agora já com a posição de inserção correta.
     const ordemFinal = inserirNaLista(idsDestino, demandaId, colunaDoAlvo ? null : destino);
+    // ATUALIZAÇÃO OTIMISTA INTER-COLUNAS: o cartão sai da origem e entra no
+    // destino na posição exata, antes da gravação. Sem isto ele voltaria para
+    // a coluna de origem até o servidor responder (o snap-back).
+    setColunaLocal((mapa) => new Map(mapa).set(demandaId, colunaDeDestino.id));
+    setOrdemLocal((mapa) => {
+      const proximo = new Map(mapa).set(colunaDeDestino.id, ordemFinal);
+      if (colunaDeOrigem) {
+        proximo.set(
+          colunaDeOrigem.id,
+          colunaDeOrigem.itens.map((d) => d.id).filter((id) => id !== demandaId),
+        );
+      }
+      return proximo;
+    });
     onMover({
       demandaId,
       statusId: colunaDeDestino.id,
@@ -638,6 +708,7 @@ function BoardLenteImpl({
       ordemDaColuna: ordemFinal,
     });
   };
+
 
 
   return (
