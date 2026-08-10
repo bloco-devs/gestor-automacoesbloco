@@ -56,6 +56,29 @@ export async function createComment(
   if (error) throw error;
   return data as unknown as DemandComment;
 }
+/**
+ * Corrigir o que já foi dito.
+ *
+ * A autorização não mora aqui: a política `Author updates own comments` só
+ * deixa passar a linha do próprio autor, e recusa avisos do sistema. Se a
+ * interface falhar em esconder o botão, o banco continua correto.
+ */
+export async function updateComment(id: string, content: string): Promise<DemandComment> {
+  const { data, error } = await supabase
+    .from("demand_comments" as never)
+    .update({ content, updated_at: new Date().toISOString() } as never)
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as unknown as DemandComment;
+}
+
+export async function deleteComment(id: string): Promise<void> {
+  const { error } = await supabase.from("demand_comments" as never).delete().eq("id", id);
+  if (error) throw error;
+}
+
 
 export async function listAuditLogs(demandId: string): Promise<DemandAuditLog[]> {
   const { data, error } = await supabase
