@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import {
@@ -626,6 +627,45 @@ function BoardLenteImpl({
   const aoIniciar = (e: DragStartEvent) => setArrastando(porId.get(String(e.active.id)) ?? null);
 
   /**
+   * O EFEITO TRELLO — A TROCA DE COLUNA ACONTECE **DURANTE** O ARRASTO.
+   *
+   * Sem isto o cartão só muda de coluna quando é solto: a pessoa atravessa a
+   * fronteira e nada se move. Aqui, ao cruzar para outra coluna, o estado
+   * otimista já reatribui o cartão — ele sai da origem, entra no destino na
+   * posição sob o cursor, e o `verticalListSortingStrategy` da coluna nova
+   * abre espaço na hora. Nada é gravado: a mutação continua só no `onDragEnd`.
+   */
+  const aoPassarPor = (e: DragOverEvent) => {
+    const alvo = e.over?.id ? String(e.over.id) : null;
+    const demandaId = String(e.active.id);
+    if (!alvo || alvo === demandaId) return;
+
+    const colunaDeOrigem = colunas.find((c) => c.itens.some((d) => d.id === demandaId));
+    if (!colunaDeOrigem) return;
+
+    const colunaDoAlvo = colunas.find((c) => c.id === alvo);
+    const dadosDoAlvo = e.over?.data.current as { colunaId?: string } | undefined;
+    const colunaDeDestino =
+      colunaDoAlvo ??
+      colunas.find((c) => c.id === dadosDoAlvo?.colunaId || c.itens.some((d) => d.id === alvo));
+    if (!colunaDeDestino || colunaDeDestino.id === colunaDeOrigem.id) return;
+
+    const idsDestino = colunaDeDestino.itens.map((d) => d.id);
+    const ordemFinal = inserirNaLista(idsDestino, demandaId, colunaDoAlvo ? null : alvo);
+    setColunaLocal((mapa) => new Map(mapa).set(demandaId, colunaDeDestino.id));
+    setOrdemLocal((mapa) =>
+      new Map(mapa)
+        .set(colunaDeDestino.id, ordemFinal)
+        .set(
+          colunaDeOrigem.id,
+          colunaDeOrigem.itens.map((d) => d.id).filter((id) => id !== demandaId),
+        ),
+    );
+  };
+
+
+
+  /**
    * ONDE O CARTÃO CAI — COLUNA **E** POSIÇÃO.
    *
    * O alvo do drop pode ser duas coisas diferentes, e a distinção é toda a
@@ -676,13 +716,26 @@ function BoardLenteImpl({
       const ordemFinal = colunaDoAlvo
         ? inserirNaLista(idsDestino, demandaId, null)
         : reordenarLista(idsDestino, demandaId, destino);
-      if (ordemFinal.join("\u0000") === idsDestino.join("\u0000")) return;
+      // O `onDragOver` pode já ter reatribuído o cartão a esta coluna durante o
+      // arrasto: aí a sequência "não mudou" na tela, mas o STATUS no banco
+      // ainda é o antigo. Só é seguro desistir quando nada mudou de verdade.
+      const trocaPendente = colunaLocal.get(demandaId);
+      const precisaGravar =
+        ordemFinal.join("\u0000") !== idsDestino.join("\u0000") ||
+        (trocaPendente !== undefined && trocaPendente !== atual.status.id);
+      if (!precisaGravar) return;
       // ATUALIZAÇÃO OTIMISTA: a tela assume a nova sequência agora, antes da
       // gravação. Sem isto o cartão volta ao lugar de origem e pula depois.
       setOrdemLocal((atualMapa) => new Map(atualMapa).set(colunaDeDestino.id, ordemFinal));
-      onMover({ demandaId, statusId: colunaDeDestino.id, ordemDaColuna: ordemFinal });
+      onMover({
+        demandaId,
+        statusId: colunaDeDestino.id,
+        ordem: ordemFinal.indexOf(demandaId),
+        ordemDaColuna: ordemFinal,
+      });
       return;
     }
+
 
 
     // Trocar de coluna, agora já com a posição de inserção correta.
@@ -718,8 +771,21 @@ function BoardLenteImpl({
       // acerta a lacuna entre dois cartões, que é onde a pessoa mira.
       collisionDetection={closestCorners}
       onDragStart={aoIniciar}
+      onDragOver={aoPassarPor}
       onDragEnd={aoTerminar}
-      onDragCancel={() => setArrastando(null)}
+      onDragCancel={(e) => {
+        // Cancelou: nada foi gravado, então a reatribuição feita durante o
+        // arrasto tem de ser desfeita — o cartão volta para a origem.
+        const demandaId = String(e.active.id);
+        setArrastando(null);
+        setColunaLocal((mapa) => {
+          if (!mapa.has(demandaId)) return mapa;
+          const proximo = new Map(mapa);
+          proximo.delete(demandaId);
+          return proximo;
+        });
+        setOrdemLocal((mapa) => (mapa.size === 0 ? mapa : new Map()));
+      }}
     >
       {/* `contents` deixa o filho herdar a altura do avô sem criar um nível de
           caixa no meio — o DndContext não renderiza DOM, mas este wrapper sim. */}
