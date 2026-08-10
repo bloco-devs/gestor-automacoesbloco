@@ -483,6 +483,18 @@ function BoardLenteImpl({
    * a verdade do servidor vence, que é o comportamento correto).
    */
   const [ordemLocal, setOrdemLocal] = useState<Map<string, string[]>>(new Map());
+  /**
+   * A COLUNA OTIMISTA — o mesmo princípio, para o movimento HORIZONTAL.
+   *
+   * `ordemLocal` só conserta a sequência dentro de uma coluna. Ao soltar numa
+   * coluna diferente, o próximo render ainda traz o cartão no grupo antigo:
+   * ele volta para a origem e só pula para o destino quando o servidor chega.
+   *
+   * Este mapa (demandaId -> colunaId de destino) faz a tela reatribuir o
+   * cartão na hora. A entrada é descartada quando o servidor concorda — ou
+   * quando ele discorda, e aí a verdade dele vence.
+   */
+  const [colunaLocal, setColunaLocal] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     setOrdemLocal((atual) => {
@@ -502,7 +514,22 @@ function BoardLenteImpl({
       }
       return mudou ? proximo : atual;
     });
+    setColunaLocal((atual) => {
+      if (atual.size === 0) return atual;
+      const proximo = new Map(atual);
+      let mudou = false;
+      for (const [demandaId, colunaId] of atual) {
+        const grupoDoServidor = grupos.find((g) => g.itens.some((d) => d.id === demandaId));
+        // Chegou onde pedimos, ou o cartão/coluna sumiu: solta a expectativa.
+        if (!grupoDoServidor || grupoDoServidor.id === colunaId) {
+          proximo.delete(demandaId);
+          mudou = true;
+        }
+      }
+      return mudou ? proximo : atual;
+    });
   }, [grupos]);
+
 
   /**
    * A esteira completa: cada etapa vira coluna, com ou sem cartão dentro.
