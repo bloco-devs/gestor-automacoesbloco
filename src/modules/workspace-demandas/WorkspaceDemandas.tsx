@@ -107,6 +107,12 @@ export default function WorkspaceDemandas() {
   // escopo é global: não há projeto, e é exatamente esse o ponto.
   const naInbox = ehInbox(projetoId);
 
+  // A Inbox não tem linha no banco onde guardar um fundo; a escolha fica no
+  // navegador de quem escolheu.
+  const { fundo: fundoDaInbox, definirFundo: definirFundoDaInbox } = useFundoDaInbox();
+
+
+
   const escopo: Escopo = useMemo(
     () => (projetoId && !naInbox ? { tipo: "projeto", projetoId } : { tipo: "global" }),
     [projetoId, naInbox],
