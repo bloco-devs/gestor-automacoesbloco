@@ -2,10 +2,18 @@ import { useRef, useState } from "react";
 import { ImagePlus, Image as ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { uploadBoardBackground } from "@/lib/atividadesBoards";
 import { useAuth } from "@/hooks/useAuth";
 import { FUNDOS, thumb } from "./fundos";
+
 
 /**
  * O seletor de fundo, fora do diálogo de criação.
