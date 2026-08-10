@@ -417,6 +417,8 @@ export default function DemandaDetalhe() {
               podeComentar={fio.podeComentar}
               podeNotaInterna={daEquipe}
               onComentar={fio.comentar}
+              onEditarComentario={fio.editarComentario}
+              onExcluirComentario={fio.excluirComentario}
               vazio="Ninguém falou nada ainda. Escreva a primeira mensagem."
             />
           ) : (
