@@ -246,7 +246,9 @@ function Fala({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <span className="text-[13px] font-medium">{evento.autor?.nome ?? "Alguém"}</span>
+          <span className="text-[13px] font-medium">
+            {sistema ? "Blink" : (evento.autor?.nome ?? "Alguém")}
+          </span>
           {sistema && (
             <Badge variant="neutral" className="text-[10px] font-normal">
               automático
@@ -482,9 +484,10 @@ function FioImpl({
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               onKeyDown={(e) => {
-                // Enviar com ⌘/Ctrl+Enter. Enter puro quebra linha, porque
-                // resposta de chamado quase sempre tem mais de um parágrafo.
-                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                // Enter envia, como em qualquer mensageiro. Shift+Enter quebra
+                // linha para quem precisa de mais de um parágrafo, e
+                // ⌘/Ctrl+Enter continua valendo por hábito.
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   void enviar();
                 }
@@ -527,7 +530,7 @@ function FioImpl({
               )}
 
               <span className="ml-auto hidden text-[11px] text-muted-foreground/60 sm:inline">
-                ⌘↵ envia
+                ↵ envia · ⇧↵ nova linha
               </span>
 
               <button

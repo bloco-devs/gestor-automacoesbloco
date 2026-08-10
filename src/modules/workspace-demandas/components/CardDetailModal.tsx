@@ -4,10 +4,12 @@ import { AlignLeft, CheckCircle2, Circle, Loader2, MessageSquare } from "lucide-
 import { toast } from "sonner";
 import {
   createComentario,
+  deleteComentario,
   getCardById,
   listColunas,
   listComentarios,
   updateCard,
+  updateComentario,
 } from "@/lib/atividades";
 import { tomDaEtapa } from "@/domain/demand";
 import { atividadesKeys } from "@/hooks/useAtividadesBoard";
@@ -23,6 +25,7 @@ import { CardDueDateBotao, CardDueDateResumo } from "./card/CardDueDate";
 import { CardChecklistBotao, CardChecklistCorpo } from "./card/CardChecklist";
 import { CardMembersBotao, CardMembersResumo } from "./card/CardMembers";
 import { CardAttachmentsBotao, CardAttachmentsCorpo } from "./card/CardAttachments";
+import { CardComentario } from "./card/CardComentario";
 
 /**
  * Modal de detalhe do cartão — layout espelhando o Trello novo:
@@ -164,6 +167,39 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
       toast.error("Não foi possível publicar o comentário.");
     },
   });
+
+  /**
+   * Editar e excluir o próprio comentário — a mesma regra do fio da demanda:
+   * quem escreveu pode corrigir e apagar, mais ninguém. O erro é dito em voz
+   * alta porque a política do banco pode recusar o que a tela permitiu.
+   */
+  const editarComentario = useCallback(
+    async (id: string, texto: string) => {
+      try {
+        await updateComentario(id, texto);
+        await qc.invalidateQueries({ queryKey: ["atividades", "comentarios", cardId] });
+      } catch (e) {
+        console.error("[CardDetailModal] falha ao editar comentário", { id, e });
+        toast.error("Não foi possível editar o comentário.");
+      }
+    },
+    [cardId, qc],
+  );
+
+  const excluirComentario = useCallback(
+    async (id: string) => {
+      try {
+        await deleteComentario(id);
+        await qc.invalidateQueries({ queryKey: ["atividades", "comentarios", cardId] });
+      } catch (e) {
+        console.error("[CardDetailModal] falha ao excluir comentário", { id, e });
+        toast.error("Não foi possível excluir o comentário.");
+      }
+    },
+    [cardId, qc],
+  );
+
+
 
   /**
    * Concluir = mover para a coluna de conclusão (e marcar o campo `concluido`,
@@ -371,26 +407,13 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
 
               <ul className="space-y-3">
                 {(comentarios.data ?? []).map((c) => (
-                  <li key={c.id} className="flex gap-2">
-                    <Avatar className="size-7 shrink-0">
-                      {/* A foto quando existe; a inicial só como último recurso. */}
-                      {c.autorAvatarUrl ? (
-                        <AvatarImage src={c.autorAvatarUrl} alt={c.autorNome ?? "Autor"} />
-                      ) : null}
-                      <AvatarFallback className="text-[10px]">
-                        {(c.autorNome ?? "?").trim().slice(0, 1).toUpperCase() || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1 rounded-lg border bg-muted/30 p-3">
-                      <p className="text-xs text-muted-foreground">
-                        {c.autorNome ? <span className="font-medium text-foreground">{c.autorNome}</span> : null}
-                        {c.autorNome ? " · " : null}
-                        {new Date(c.createdAt).toLocaleString("pt-BR")}
-                      </p>
-                      <p className="mt-1 whitespace-pre-wrap text-sm">{c.texto}</p>
-
-                    </div>
-                  </li>
+                  <CardComentario
+                    key={c.id}
+                    comentario={c}
+                    podeAgir={!!user?.id && c.userId === user.id}
+                    onEditar={editarComentario}
+                    onExcluir={excluirComentario}
+                  />
                 ))}
                 {comentarios.data?.length === 0 && (
                   <li className="text-sm text-muted-foreground">Nenhum comentário ainda.</li>

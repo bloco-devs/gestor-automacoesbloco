@@ -188,13 +188,17 @@ export function useFioDaDemanda(
       // a distingue é a marca, não um lugar separado na tela.
       // O aviso automático da triagem não é participante: ele é o sistema
       // avisando, e precisa parecer isso — senão quem abriu responde a ele.
-      autor: c.is_system
-        ? { id: "sistema", nome: "Sistema", avatarUrl: null, ia: false, sistema: true }
-        : c.is_ai
-          ? autorIa()
-          : c.user_id
-            ? { ...(todasAsPessoas.get(c.user_id) ?? { id: c.user_id, nome: "Alguém", avatarUrl: null }), ia: false }
-            : null,
+      // Sem autor e sem marca de IA é o sistema falando: o aviso da triagem
+      // nasce com `user_id` nulo. Deduzir isso aqui evita o "Alguém" com
+      // avatar de interrogação quando a coluna `is_system` não vem.
+      autor:
+        c.is_system || (!c.user_id && !c.is_ai)
+          ? { id: "sistema", nome: "Blink", avatarUrl: null, ia: false, sistema: true }
+          : c.is_ai
+            ? autorIa()
+            : c.user_id
+              ? { ...(todasAsPessoas.get(c.user_id) ?? { id: c.user_id, nome: "Alguém", avatarUrl: null }), ia: false }
+              : null,
       em: c.created_at,
       texto: c.content,
       interna: c.is_internal,
