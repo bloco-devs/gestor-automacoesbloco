@@ -4,10 +4,12 @@ import { AlignLeft, CheckCircle2, Circle, Loader2, MessageSquare } from "lucide-
 import { toast } from "sonner";
 import {
   createComentario,
+  deleteComentario,
   getCardById,
   listColunas,
   listComentarios,
   updateCard,
+  updateComentario,
 } from "@/lib/atividades";
 import { tomDaEtapa } from "@/domain/demand";
 import { atividadesKeys } from "@/hooks/useAtividadesBoard";
