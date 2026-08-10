@@ -140,7 +140,9 @@ export function useTodasAsDemandas(
 
   const demandas = useMemo<Demanda[]>(() => {
     const { demandas: dasAtividades } = fromAtividades({
-      cards: (cardsQ.data ?? []).filter((c) => !quadrosArquivados.has(c.boardId)),
+      cards: incluirCartoesDeProjeto
+        ? (cardsQ.data ?? []).filter((c) => !quadrosArquivados.has(c.boardId))
+        : [],
       colunas: colunasQ.data ?? [],
       labels: labelsQ.data ?? [],
       personas: personasQ.data ?? [],
@@ -169,6 +171,7 @@ export function useTodasAsDemandas(
 
     return [...dasAtividades, ...dasDemands];
   }, [
+    incluirCartoesDeProjeto,
     cardsQ.data,
     colunasQ.data,
     labelsQ.data,
@@ -182,12 +185,14 @@ export function useTodasAsDemandas(
 
   const projetoPorDemanda = useMemo(() => {
     const mapa = new Map<string, string>();
+    if (!incluirCartoesDeProjeto) return mapa;
     for (const card of cardsQ.data ?? []) {
       if (quadrosArquivados.has(card.boardId)) continue;
       mapa.set(card.id, card.boardId);
     }
     return mapa;
-  }, [cardsQ.data]);
+  }, [incluirCartoesDeProjeto, cardsQ.data, quadrosArquivados]);
+
 
   const carregando =
     cardsQ.isLoading ||
