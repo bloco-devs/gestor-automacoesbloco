@@ -220,14 +220,16 @@ function Fala({
       )}
     >
       {sistema ? (
-        /* O aviso automático não tem rosto porque não tem autor. O ícone diz
-           "isto veio do sistema" sem se disfarçar de pessoa nem de IA. */
+        /* O aviso automático vem do Blink: mesmo rosto da IA no fio e da
+           lateral direita. Quem diz "isto é automático" é o selo ao lado do
+           nome, não um ícone genérico de robô. */
         <span
-          className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
-          aria-label="Sistema"
+          className="mt-0.5 size-7 shrink-0 overflow-hidden rounded-full bg-muted/50"
+          aria-label="Blink"
         >
-          <Bot className="size-3.5" aria-hidden />
+          <Blink className="size-full" />
         </span>
+
       ) : ia ? (
         /* Quem fala no fio tem rosto: as pessoas têm avatar, e o Blink
            tinha um ícone de brilho. Um símbolo abstrato ao lado de fotos faz
