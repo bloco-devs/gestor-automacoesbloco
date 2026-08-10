@@ -687,6 +687,20 @@ function BoardLenteImpl({
 
     // Trocar de coluna, agora já com a posição de inserção correta.
     const ordemFinal = inserirNaLista(idsDestino, demandaId, colunaDoAlvo ? null : destino);
+    // ATUALIZAÇÃO OTIMISTA INTER-COLUNAS: o cartão sai da origem e entra no
+    // destino na posição exata, antes da gravação. Sem isto ele voltaria para
+    // a coluna de origem até o servidor responder (o snap-back).
+    setColunaLocal((mapa) => new Map(mapa).set(demandaId, colunaDeDestino.id));
+    setOrdemLocal((mapa) => {
+      const proximo = new Map(mapa).set(colunaDeDestino.id, ordemFinal);
+      if (colunaDeOrigem) {
+        proximo.set(
+          colunaDeOrigem.id,
+          colunaDeOrigem.itens.map((d) => d.id).filter((id) => id !== demandaId),
+        );
+      }
+      return proximo;
+    });
     onMover({
       demandaId,
       statusId: colunaDeDestino.id,
@@ -694,6 +708,7 @@ function BoardLenteImpl({
       ordemDaColuna: ordemFinal,
     });
   };
+
 
 
   return (
