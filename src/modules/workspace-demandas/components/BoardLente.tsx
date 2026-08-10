@@ -529,15 +529,16 @@ function BoardLenteImpl({
     return montadas.map((g) => {
       const ordem = ordemLocal.get(g.id);
       if (!ordem) return g;
-      const porId = new Map(g.itens.map((d) => [d.id, d]));
+      const porIdDaColuna = new Map(g.itens.map((d) => [d.id, d]));
       const ordenados = ordem.flatMap((id) => {
-        const d = porId.get(id);
-        if (d) porId.delete(id);
+        const d = porIdDaColuna.get(id);
+        if (d) porIdDaColuna.delete(id);
         return d ? [d] : [];
       });
       // Quem chegou depois do arrasto (cartão novo) entra no fim, nunca sai.
-      return { ...g, itens: [...ordenados, ...porId.values()] };
+      return { ...g, itens: [...ordenados, ...porIdDaColuna.values()] };
     });
+
   }, [etapas, grupos, ordemLocal]);
 
 
