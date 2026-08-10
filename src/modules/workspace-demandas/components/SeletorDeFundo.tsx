@@ -51,19 +51,25 @@ export function SeletorDeFundo({
 
   return (
     <Popover>
-      <PopoverTrigger
-        className={cn(
-          "inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs",
-          "text-muted-foreground transition-colors hover:text-foreground",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-          className,
-        )}
-        title="Alterar o fundo"
-        aria-label="Alterar o fundo"
-      >
-        <ImageIcon className="size-3.5" aria-hidden />
-        <span className="hidden sm:inline">Fundo</span>
-      </PopoverTrigger>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                aria-label="Alterar papel de parede"
+                className={cn("size-7 shrink-0 text-muted-foreground hover:text-foreground", className)}
+              >
+                <ImageIcon className="size-4" aria-hidden />
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Alterar papel de parede</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
       <PopoverContent align="end" className="w-72">
         <p className="ds-caption mb-2 text-muted-foreground">Fundo</p>
         <div className="flex flex-wrap gap-2">
