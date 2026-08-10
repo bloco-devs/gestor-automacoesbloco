@@ -186,15 +186,25 @@ export function useFioDaDemanda(
       tipo: "fala" as const,
       // A IA responde como participante, com o mesmo peso de uma pessoa. O que
       // a distingue é a marca, não um lugar separado na tela.
-      autor: c.is_ai
-        ? autorIa()
-        : c.user_id
-          ? { ...(todasAsPessoas.get(c.user_id) ?? { id: c.user_id, nome: "Alguém", avatarUrl: null }), ia: false }
-          : null,
+      // O aviso automático da triagem não é participante: ele é o sistema
+      // avisando, e precisa parecer isso — senão quem abriu responde a ele.
+      autor: c.is_system
+        ? { id: "sistema", nome: "Sistema", avatarUrl: null, ia: false, sistema: true }
+        : c.is_ai
+          ? autorIa()
+          : c.user_id
+            ? { ...(todasAsPessoas.get(c.user_id) ?? { id: c.user_id, nome: "Alguém", avatarUrl: null }), ia: false }
+            : null,
       em: c.created_at,
       texto: c.content,
       interna: c.is_internal,
+      comentarioId: c.id,
+      // Só o autor edita e exclui. A política do banco diz o mesmo; aqui é só
+      // para não desenhar um botão que vai falhar.
+      editavel: !c.is_system && !c.is_ai && !!c.user_id && c.user_id === user?.id,
+      editadoEm: c.updated_at !== c.created_at ? c.updated_at : null,
     }));
+
 
     const mudancas: Evento[] = (auditoriaQ.data ?? []).map((a) => ({
       id: `a:${a.id}`,
