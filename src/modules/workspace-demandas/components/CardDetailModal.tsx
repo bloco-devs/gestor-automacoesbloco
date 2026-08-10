@@ -25,6 +25,7 @@ import { CardDueDateBotao, CardDueDateResumo } from "./card/CardDueDate";
 import { CardChecklistBotao, CardChecklistCorpo } from "./card/CardChecklist";
 import { CardMembersBotao, CardMembersResumo } from "./card/CardMembers";
 import { CardAttachmentsBotao, CardAttachmentsCorpo } from "./card/CardAttachments";
+import { CardComentario } from "./card/CardComentario";
 
 /**
  * Modal de detalhe do cartão — layout espelhando o Trello novo:
