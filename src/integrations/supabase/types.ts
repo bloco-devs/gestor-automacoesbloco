@@ -1202,6 +1202,7 @@ export type Database = {
           id: string
           is_ai: boolean
           is_internal: boolean
+          is_system: boolean
           updated_at: string
           user_id: string | null
         }
@@ -1212,6 +1213,7 @@ export type Database = {
           id?: string
           is_ai?: boolean
           is_internal?: boolean
+          is_system?: boolean
           updated_at?: string
           user_id?: string | null
         }
@@ -1222,6 +1224,7 @@ export type Database = {
           id?: string
           is_ai?: boolean
           is_internal?: boolean
+          is_system?: boolean
           updated_at?: string
           user_id?: string | null
         }
