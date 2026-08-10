@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, type ReactNode } from "react";
 import { Activity, CalendarRange, Columns3, GanttChart, Search, Tag, Users, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -95,6 +95,8 @@ interface Props {
   etiquetasDisponiveis?: EtiquetaFiltro[];
   filtrosEtiquetas?: string[];
   onFiltroEtiqueta?: (ids: string[]) => void;
+  /** Ações extra (ex.: papel de parede) no mesmo grupo dos ícones de lente. */
+  acoes?: ReactNode;
 }
 
 // ─── Sub-componentes dos filtros ──────────────────────────────────────────────
@@ -282,6 +284,7 @@ function BarraDeTrabalhoImpl({
   etiquetasDisponiveis = [],
   filtrosEtiquetas = [],
   onFiltroEtiqueta,
+  acoes,
 }: Props) {
   const temFiltrosAvancados = membrosDisponiveis.length > 0 || etiquetasDisponiveis.length > 0;
   const temQualquerFiltro = busca || filtroMembros.length > 0 || filtrosEtiquetas.length > 0;
@@ -350,6 +353,13 @@ function BarraDeTrabalhoImpl({
             );
           })}
         </div>
+
+        {acoes && (
+          <>
+            <span className="mx-1.5 h-4 w-px shrink-0 bg-border" aria-hidden />
+            <div className="flex shrink-0 items-center gap-0.5">{acoes}</div>
+          </>
+        )}
 
         {/* Filtros avançados: Membros e Etiquetas — só em escopo de projeto */}
         {temFiltrosAvancados && (
