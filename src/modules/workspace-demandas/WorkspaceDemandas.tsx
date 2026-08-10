@@ -297,9 +297,6 @@ export default function WorkspaceDemandas() {
   const contextoInbox = (
     <>
       <ContextoDaInbox aguardando={resumo.abertas} />
-      {/* O fundo é decisão de aparência: fica junto do título, no mesmo lugar
-          onde o quadro oferece a dele. */}
-      <SeletorDeFundo valor={fundoDaInbox} onEscolher={definirFundoDaInbox} className="ml-auto" />
       <button
 
         type="button"
@@ -415,7 +412,7 @@ export default function WorkspaceDemandas() {
       {fundoAtual && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-background/70 backdrop-blur-[2px]"
+          className="pointer-events-none absolute inset-0 -z-10 bg-black/15"
         />
       )}
 
@@ -435,6 +432,11 @@ export default function WorkspaceDemandas() {
         etiquetasDisponiveis={emProjeto ? etiquetasDisponiveis : []}
         filtrosEtiquetas={filtrosEtiquetas}
         onFiltroEtiqueta={setFiltrosEtiquetas}
+        acoes={
+          naInbox ? (
+            <SeletorDeFundo valor={fundoDaInbox} onEscolher={definirFundoDaInbox} />
+          ) : null
+        }
       />
 
       {/*
