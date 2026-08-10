@@ -22,15 +22,26 @@ export async function salvarOrdemManual(
   if (itens.length === 0) return;
   const erros = await Promise.all(
     itens.map(async ({ id, ordem }) => {
-      const { error } = await supabase
+      // `.select("id")` não é decoração: RLS negando um UPDATE devolve SUCESSO
+      // com zero linhas. Sem contar as linhas, a fila era reordenada só na
+      // tela e voltava ao lugar no próximo refetch — em silêncio.
+      const { data, error } = await supabase
         .from(tabela as never)
         .update({ ordem_manual: ordem } as never)
-        .eq("id", id);
-      return error;
+        .eq("id", id)
+        .select("id");
+      if (error) return error;
+      if (!data || (data as unknown[]).length === 0) {
+        return new Error(
+          "Não foi possível reordenar esta fila. Você pode não ter permissão para alterá-la.",
+        );
+      }
+      return null;
     }),
   );
   const primeiro = erros.find((e) => e);
   if (primeiro) throw primeiro;
 }
+
 
 export { ordenarPorOrdemManual } from "@/modules/workspace-demandas/ordenacao";
