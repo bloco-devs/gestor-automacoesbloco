@@ -169,6 +169,39 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
   });
 
   /**
+   * Editar e excluir o próprio comentário — a mesma regra do fio da demanda:
+   * quem escreveu pode corrigir e apagar, mais ninguém. O erro é dito em voz
+   * alta porque a política do banco pode recusar o que a tela permitiu.
+   */
+  const editarComentario = useCallback(
+    async (id: string, texto: string) => {
+      try {
+        await updateComentario(id, texto);
+        await qc.invalidateQueries({ queryKey: ["atividades", "comentarios", cardId] });
+      } catch (e) {
+        console.error("[CardDetailModal] falha ao editar comentário", { id, e });
+        toast.error("Não foi possível editar o comentário.");
+      }
+    },
+    [cardId, qc],
+  );
+
+  const excluirComentario = useCallback(
+    async (id: string) => {
+      try {
+        await deleteComentario(id);
+        await qc.invalidateQueries({ queryKey: ["atividades", "comentarios", cardId] });
+      } catch (e) {
+        console.error("[CardDetailModal] falha ao excluir comentário", { id, e });
+        toast.error("Não foi possível excluir o comentário.");
+      }
+    },
+    [cardId, qc],
+  );
+
+
+
+  /**
    * Concluir = mover para a coluna de conclusão (e marcar o campo `concluido`,
    * que é o que a capa do cartão lê). Reabrir desfaz apenas o campo: devolver
    * o cartão para uma coluna anterior é decisão de quem trabalha nele.
