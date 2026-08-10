@@ -230,7 +230,7 @@ export function useFioDaDemanda(
     }));
 
     return [...falas, ...mudancas, ...enviosDeAnexo];
-  }, [comentariosQ.data, auditoriaQ.data, todasAsPessoas, opcoes.anexos]);
+  }, [comentariosQ.data, auditoriaQ.data, todasAsPessoas, opcoes.anexos, user?.id]);
 
   const comentar = useCallback(
     async (texto: string, interna: boolean) => {
@@ -241,11 +241,61 @@ export function useFioDaDemanda(
     [demandaId, qc],
   );
 
+  /**
+   * EDITAR E EXCLUIR SÃO OTIMISTAS
+   *
+   * Corrigir uma palavra e esperar meio segundo pelo servidor faz a pessoa
+   * duvidar se salvou. A lista muda na hora e volta ao estado anterior se o
+   * banco recusar — a única resposta honesta quando a permissão não existe.
+   */
+  const editarComentario = useCallback(
+    async (comentarioId: string, texto: string) => {
+      const antes = qc.getQueryData<DemandComment[]>(chaveComentarios);
+      qc.setQueryData<DemandComment[]>(chaveComentarios, (prev) =>
+        (prev ?? []).map((c) =>
+          c.id === comentarioId ? { ...c, content: texto, updated_at: new Date().toISOString() } : c,
+        ),
+      );
+      try {
+        await updateComment(comentarioId, texto);
+      } catch (e) {
+        if (antes) qc.setQueryData(chaveComentarios, antes);
+        throw e;
+      }
+      await qc.invalidateQueries({ queryKey: chaveComentarios });
+    },
+    // A chave é derivada de `demandaId`; listá-la inteira criaria um novo array
+    // a cada render e refaria o callback sem motivo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [demandaId, qc],
+  );
+
+  const excluirComentario = useCallback(
+    async (comentarioId: string) => {
+      const antes = qc.getQueryData<DemandComment[]>(chaveComentarios);
+      qc.setQueryData<DemandComment[]>(chaveComentarios, (prev) =>
+        (prev ?? []).filter((c) => c.id !== comentarioId),
+      );
+      try {
+        await deleteComment(comentarioId);
+      } catch (e) {
+        if (antes) qc.setQueryData(chaveComentarios, antes);
+        throw e;
+      }
+      await qc.invalidateQueries({ queryKey: chaveComentarios });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [demandaId, qc],
+  );
+
   return {
     eventos,
     carregando: comentariosQ.isLoading || auditoriaQ.isLoading,
     erro: (comentariosQ.error as Error | null) ?? (auditoriaQ.error as Error | null) ?? null,
     comentar,
+    editarComentario,
+    excluirComentario,
     podeComentar: habilitado,
+
   };
 }
