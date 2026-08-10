@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { uploadBoardBackground, uploadBoardIcon, isBoardIconUrl } from "@/lib/atividadesBoards";
 import { useAuth } from "@/hooks/useAuth";
 import type { IdentidadeDoProjeto } from "@/modules/demand-access";
+import { FUNDOS, thumb } from "./fundos";
+
 
 /**
  * Um campo obrigatório, de propósito.
