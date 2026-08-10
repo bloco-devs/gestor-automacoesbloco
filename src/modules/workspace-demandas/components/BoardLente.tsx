@@ -627,6 +627,45 @@ function BoardLenteImpl({
   const aoIniciar = (e: DragStartEvent) => setArrastando(porId.get(String(e.active.id)) ?? null);
 
   /**
+   * O EFEITO TRELLO — A TROCA DE COLUNA ACONTECE **DURANTE** O ARRASTO.
+   *
+   * Sem isto o cartão só muda de coluna quando é solto: a pessoa atravessa a
+   * fronteira e nada se move. Aqui, ao cruzar para outra coluna, o estado
+   * otimista já reatribui o cartão — ele sai da origem, entra no destino na
+   * posição sob o cursor, e o `verticalListSortingStrategy` da coluna nova
+   * abre espaço na hora. Nada é gravado: a mutação continua só no `onDragEnd`.
+   */
+  const aoPassarPor = (e: DragOverEvent) => {
+    const alvo = e.over?.id ? String(e.over.id) : null;
+    const demandaId = String(e.active.id);
+    if (!alvo || alvo === demandaId) return;
+
+    const colunaDeOrigem = colunas.find((c) => c.itens.some((d) => d.id === demandaId));
+    if (!colunaDeOrigem) return;
+
+    const colunaDoAlvo = colunas.find((c) => c.id === alvo);
+    const dadosDoAlvo = e.over?.data.current as { colunaId?: string } | undefined;
+    const colunaDeDestino =
+      colunaDoAlvo ??
+      colunas.find((c) => c.id === dadosDoAlvo?.colunaId || c.itens.some((d) => d.id === alvo));
+    if (!colunaDeDestino || colunaDeDestino.id === colunaDeOrigem.id) return;
+
+    const idsDestino = colunaDeDestino.itens.map((d) => d.id);
+    const ordemFinal = inserirNaLista(idsDestino, demandaId, colunaDoAlvo ? null : alvo);
+    setColunaLocal((mapa) => new Map(mapa).set(demandaId, colunaDeDestino.id));
+    setOrdemLocal((mapa) =>
+      new Map(mapa)
+        .set(colunaDeDestino.id, ordemFinal)
+        .set(
+          colunaDeOrigem.id,
+          colunaDeOrigem.itens.map((d) => d.id).filter((id) => id !== demandaId),
+        ),
+    );
+  };
+
+
+
+  /**
    * ONDE O CARTÃO CAI — COLUNA **E** POSIÇÃO.
    *
    * O alvo do drop pode ser duas coisas diferentes, e a distinção é toda a
