@@ -241,30 +241,34 @@ export default function DeveloperWorkspace() {
       const grupoDeOrigem = grupos.find((g) => g.itens.some((d) => d.id === demandaId));
       const mesmaEtapa = grupoDeOrigem?.id === statusId;
 
+      // A promessa é DEVOLVIDA: é ela que o board usa para desfazer o otimismo
+      // quando a gravação é recusada. Avisamos e relançamos.
       const aoFalhar = (e: unknown) => {
         toast({
           title: "Não deu para mover",
           description: e instanceof Error ? e.message : "Tente de novo em instantes.",
           variant: "destructive",
         });
+        throw e;
       };
 
       // Arrasto vertical: nada de trocar de etapa (trocar para a MESMA etapa
       // desmarcaria a conclusão de um cartão da faixa de concluídos).
       if (mesmaEtapa) {
         if (ordemDaColuna && ordemDaColuna.length > 0) {
-          void gravarOrdem(statusId, ordemDaColuna).catch(aoFalhar);
+          return gravarOrdem(statusId, ordemDaColuna).catch(aoFalhar);
         }
         return;
       }
 
-      void mover(demandaId, projetoPorDemanda.get(demandaId) ?? null, rotulo)
+      return mover(demandaId, projetoPorDemanda.get(demandaId) ?? null, rotulo)
         .then(() => {
           if (ordemDaColuna && ordemDaColuna.length > 0) {
             return gravarOrdem(statusId, ordemDaColuna);
           }
         })
         .catch(aoFalhar);
+
     },
     [gravarOrdem, grupos, mover, movendo, projetoPorDemanda, rotuloPorStatusId],
   );
