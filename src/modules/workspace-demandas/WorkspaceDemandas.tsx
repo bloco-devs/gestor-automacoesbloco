@@ -391,7 +391,12 @@ export default function WorkspaceDemandas() {
     );
   }
 
+  // Um quadro guarda o fundo no banco; a Inbox, no navegador. Daqui para baixo
+  // é a mesma imagem.
+  const fundoAtual = naInbox ? fundoDaInbox : (projeto?.fundoUrl ?? null);
+
   return (
+
     /*
       O FUNDO DO QUADRO VIVE AQUI, E NÃO NA LENTE
       Quem escolhe a imagem escolhe o clima da tela inteira — barra de trabalho
