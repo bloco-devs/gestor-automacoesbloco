@@ -223,13 +223,45 @@ const ORDEM_CATEGORIA: Record<StatusCategoria, number> = {
  * agrupar; quem trabalha dentro de uma fonte só (Board) não chama, e nada
  * muda para ele.
  */
+/** Rótulo -> forma comparável: sem acento, sem caixa, sem espaço em volta. */
+function chaveDoRotulo(rotulo: string): string {
+  return rotulo
+    .trim()
+    .toLocaleLowerCase("pt-BR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/** Rótulo canônico das colunas de conclusão. */
+export const ROTULO_CONCLUIDO = "Concluído";
+
+const VARIANTES_CONCLUIDO = ["conclu", "finaliz", "entregue", "pronto", "feito", "done", "encerrad"];
+
+/**
+ * "Concluído" e "Concluída" são a MESMA coluna.
+ *
+ * O quadro soma duas fontes: a coluna "Concluído" de um quadro e o grupo
+ * "Concluída" das demandas encerradas. Comparados letra a letra, são rótulos
+ * diferentes — e a tela desenhava duas colunas finais lado a lado. Colapsar as
+ * variantes numa chave só é o que faz existir uma coluna de conclusão apenas.
+ */
+function ehConclusao(chave: string): boolean {
+  return VARIANTES_CONCLUIDO.some((v) => chave.includes(v));
+}
+
 export function unirGruposHomonimos(grupos: Grupo[]): Grupo[] {
   const porRotulo = new Map<string, Grupo>();
   for (const g of grupos) {
-    const chave = g.rotulo.trim().toLocaleLowerCase("pt-BR");
+    const base = chaveDoRotulo(g.rotulo);
+    const conclusao = ehConclusao(base);
+    const chave = conclusao ? "\u0000concluido" : base;
     const existente = porRotulo.get(chave);
     if (!existente) {
-      porRotulo.set(chave, { ...g, itens: [...g.itens] });
+      porRotulo.set(chave, {
+        ...g,
+        rotulo: conclusao ? ROTULO_CONCLUIDO : g.rotulo,
+        itens: [...g.itens],
+      });
       continue;
     }
     existente.itens.push(...g.itens);
@@ -239,6 +271,7 @@ export function unirGruposHomonimos(grupos: Grupo[]): Grupo[] {
   }
   return [...porRotulo.values()].map((g) => ({ ...g, itens: ordenarPorAtencao(g.itens) }));
 }
+
 
 /** Lista e Board: agrupa por status, na ordem da esteira. */
 export function agruparPorStatus(demandas: Demanda[]): Grupo[] {
