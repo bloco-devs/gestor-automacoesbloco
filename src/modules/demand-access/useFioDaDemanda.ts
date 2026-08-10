@@ -69,6 +69,12 @@ export function useFioDaDemanda(
      * ordem quase sempre é a explicação.
      */
     anexos?: AnexoNoFio[];
+    /**
+     * A demanda ainda não tem responsável — condição da auto-resposta de
+     * triagem. Vem de fora porque quem carregou a demanda já sabe disso.
+     */
+    semResponsavel?: boolean;
+
   },
 ) {
   const qc = useQueryClient();
