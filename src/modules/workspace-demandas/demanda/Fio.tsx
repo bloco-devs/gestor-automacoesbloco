@@ -246,7 +246,9 @@ function Fala({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <span className="text-[13px] font-medium">{evento.autor?.nome ?? "Alguém"}</span>
+          <span className="text-[13px] font-medium">
+            {sistema ? "Blink" : (evento.autor?.nome ?? "Alguém")}
+          </span>
           {sistema && (
             <Badge variant="neutral" className="text-[10px] font-normal">
               automático
