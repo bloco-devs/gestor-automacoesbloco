@@ -78,17 +78,33 @@ const ETIQUETA: Record<Relacionado["genero"], string> = {
 };
 
 /**
- * O painel eram seis blocos separados por 12px e uma linha fina — na prática,
- * um texto corrido de assuntos diferentes. Cada bloco responde a uma pergunta
+ * O painel eram seis blocos separados por uma linha fina — na prática, um
+ * texto corrido de assuntos diferentes. Cada bloco responde a uma pergunta
  * distinta ("o que está acontecendo", "de quem é a vez", "próximo passo"), e
  * sem intervalo entre elas a pessoa lê tudo como um parágrafo só.
  *
- * Mais ar em volta, e o título com peso próprio para funcionar como âncora de
- * varredura — é por ele que se acha a seção certa sem ler as outras.
+ * Agora cada pergunta é um cartão com borda própria e ar em volta. A separação
+ * passa a ser física, não sugerida: dá para pular uma seção inteira com o olho
+ * sem precisar ler a primeira linha dela para saber que ali começa outro
+ * assunto.
  */
-function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Bloco({
+  titulo,
+  children,
+  destaque,
+}: {
+  titulo: string;
+  children: React.ReactNode;
+  /** Reservado ao cartão de decisão — só ele ganha superfície tingida. */
+  destaque?: boolean;
+}) {
   return (
-    <section className="border-b border-border/50 px-4 py-4 last:border-b-0">
+    <section
+      className={cn(
+        "rounded-xl border border-border/50 p-4 shadow-sm",
+        destaque ? "bg-muted/40" : "bg-card",
+      )}
+    >
       <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/90">
         {titulo}
       </h3>
@@ -96,6 +112,7 @@ function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode
     </section>
   );
 }
+
 
 function CopilotoDaDemandaImpl({
   demanda: d,
