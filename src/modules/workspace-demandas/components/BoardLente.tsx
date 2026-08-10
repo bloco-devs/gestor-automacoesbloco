@@ -607,7 +607,12 @@ function BoardLenteImpl({
     if (!colunaDeDestino) return;
 
     const idsDestino = colunaDeDestino.itens.map((d) => d.id);
-    const mesmaColuna = atual.status.id === colunaDeDestino.id;
+    // A coluna de ORIGEM é a que contém o cartão nesta tela — não
+    // `atual.status.id`. Colunas fundidas (a de conclusão soma duas fontes)
+    // têm id de uma das metades, e comparar pelo status faria um arrasto
+    // dentro da própria coluna parecer troca de coluna.
+    const colunaDeOrigem = colunas.find((c) => c.itens.some((d) => d.id === demandaId));
+    const mesmaColuna = (colunaDeOrigem?.id ?? atual.status.id) === colunaDeDestino.id;
 
     // Reordenar dentro da própria coluna.
     if (mesmaColuna) {
@@ -616,9 +621,13 @@ function BoardLenteImpl({
         ? inserirNaLista(idsDestino, demandaId, null)
         : reordenarLista(idsDestino, demandaId, destino);
       if (ordemFinal.join("\u0000") === idsDestino.join("\u0000")) return;
+      // ATUALIZAÇÃO OTIMISTA: a tela assume a nova sequência agora, antes da
+      // gravação. Sem isto o cartão volta ao lugar de origem e pula depois.
+      setOrdemLocal((atualMapa) => new Map(atualMapa).set(colunaDeDestino.id, ordemFinal));
       onMover({ demandaId, statusId: colunaDeDestino.id, ordemDaColuna: ordemFinal });
       return;
     }
+
 
     // Trocar de coluna, agora já com a posição de inserção correta.
     const ordemFinal = inserirNaLista(idsDestino, demandaId, colunaDoAlvo ? null : destino);
