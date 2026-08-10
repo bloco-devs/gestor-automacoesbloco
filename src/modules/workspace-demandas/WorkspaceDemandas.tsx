@@ -405,14 +405,15 @@ export default function WorkspaceDemandas() {
     */
     <div
       className="relative isolate flex h-full min-h-0 flex-col bg-cover bg-center bg-no-repeat"
-      style={projeto?.fundoUrl ? { backgroundImage: `url(${projeto.fundoUrl})` } : undefined}
+      style={fundoAtual ? { backgroundImage: `url(${fundoAtual})` } : undefined}
     >
-      {projeto?.fundoUrl && (
+      {fundoAtual && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 bg-background/70 backdrop-blur-[2px]"
         />
       )}
+
       <BarraDeTrabalho
         fila={fila}
         onFila={(f) => trocar("fila", f)}
