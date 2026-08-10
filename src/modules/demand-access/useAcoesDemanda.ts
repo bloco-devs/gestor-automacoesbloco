@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCardMutations } from "@/hooks/useCardMutations";
 import { useAssignDemand, useUpdateDemandStatus } from "@/modules/demands";
 import type { DemandStatus } from "@/modules/demands/types";
@@ -20,6 +21,7 @@ import type { AcoesDemanda, Escopo } from "./types";
  * disparam o Workflow Runtime). Nenhuma foi alterada nem duplicada.
  */
 export function useAcoesDemanda(escopo: Escopo): AcoesDemanda {
+  const qc = useQueryClient();
   const fonte = resolverFonte(escopo);
   const projetoId = projetoDoEscopo(escopo);
 
