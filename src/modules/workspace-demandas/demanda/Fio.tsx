@@ -1,9 +1,31 @@
 import { memo, useMemo, useState } from "react";
-import { ChevronDown, Loader2, Lock, LockOpen, Paperclip, SendHorizontal } from "lucide-react";
+import {
+  Bot,
+  ChevronDown,
+  Loader2,
+  Lock,
+  LockOpen,
+  Paperclip,
+  Pencil,
+  SendHorizontal,
+  Trash2,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+
 import { dobrarMudancas, representanteDaDobra } from "@/domain/demand";
 import type { Briefing as DadosDoBriefing, Evento } from "@/domain/demand";
 import { Briefing } from "./Briefing";
