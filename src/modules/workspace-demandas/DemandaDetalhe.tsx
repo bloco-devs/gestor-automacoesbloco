@@ -362,7 +362,7 @@ export default function DemandaDetalhe() {
         </div>
 
         {/* Onde ela está, em menos de um segundo. Vem da auditoria: zero IA. */}
-        {progressao && <Progresso progressao={progressao} className="mt-3" />}
+        {progressao && <Progresso progressao={progressao} className="mt-2.5 pl-9" />}
       </header>
 
       {/*

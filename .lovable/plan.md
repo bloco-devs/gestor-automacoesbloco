@@ -7,7 +7,6 @@ Refatorar a linha de progresso do topo da página de detalhes da demanda para um
 - Linha horizontal conectando todas as etapas. O trecho que chega a uma etapa cumprida fica na cor de sucesso; o restante fica cinza.
 - Etapa cumprida: círculo preenchido com cor de sucesso e ícone de check.
 - Etapa atual: círculo maior, borda na cor primária, fundo claro, rótulo em negrito e a etiqueta de tempo ("hoje", "3 dias") logo abaixo do círculo.
-- Etapa atual com sinal de vida: anel exterior absoluto na cor primária com `animate-ping` (opacidade baixa) mais um `animate-pulse` suave no círculo, para o olho ir direto a onde a demanda está. Respeita `motion-reduce` desativando a animação.
 - Etapas futuras: círculo e texto em cinza (tokens `muted`).
 - Etapa pulada continua distinta (círculo vazado tracejado + rótulo riscado) — pintar de verde o que ninguém fez seria informação falsa.
 - Container próprio com respiro e separador (`py-4 border-b`), separando o stepper do conteúdo abaixo.
