@@ -95,28 +95,34 @@ export function useTodasAsDemandas(
   const boardsQ = useQuery({
     queryKey: ["atividades", "boards-resumo"],
     queryFn: listBoardsResumo,
+    enabled: incluirCartoesDeProjeto,
     staleTime: 60_000,
   });
   const colunasQ = useQuery({
     queryKey: [...atividadesKeys.all, "colunas", "todos-os-quadros"],
     queryFn: () => listColunas(),
+    enabled: incluirCartoesDeProjeto,
     staleTime: 30_000,
   });
   const labelsQ = useQuery({
     queryKey: [...atividadesKeys.all, "labels", "todos-os-quadros"],
     queryFn: () => listLabels(),
+    enabled: incluirCartoesDeProjeto,
     staleTime: 30_000,
   });
   const personasQ = useQuery({
     queryKey: atividadesKeys.personas(),
     queryFn: listPersonas,
+    enabled: incluirCartoesDeProjeto,
     staleTime: 5 * 60_000,
   });
   const responsaveisQ = useQuery({
     queryKey: atividadesKeys.responsaveis(),
     queryFn: listAssignableUsers,
+    enabled: incluirCartoesDeProjeto,
     staleTime: 5 * 60_000,
   });
+
   const solucoesQ = useQuery({
     queryKey: atividadesKeys.solucoes(),
     queryFn: listSolucoes,
