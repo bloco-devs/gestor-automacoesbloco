@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from "react";
 import {
-  Bot,
   ChevronDown,
+
   Loader2,
   Lock,
   LockOpen,
