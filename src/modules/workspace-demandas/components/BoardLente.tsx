@@ -719,32 +719,65 @@ function BoardLenteImpl({
   };
 
   /**
-   * DESISTIR DO ARRASTO — sem deixar a tela mentindo.
+   * DESISTIR DO ARRASTO — sem deixar a tela mentindo E sem apagar o resto.
    *
-   * `onDragOver` reatribui o cartão à coluna de destino ENQUANTO a pessoa
-   * arrasta. Se o `onDragEnd` desiste (soltou fora de qualquer coluna, alvo
-   * não resolvido, cartão desconhecido), essa expectativa ficava no mapa para
-   * sempre: o cartão continuava desenhado na coluna nova, nada era gravado e
-   * ninguém era avisado — exatamente o "moveu e não salvou" que só aparecia
-   * ao recarregar. Toda desistência agora limpa o otimismo, como o cancelar.
+   * Limpa APENAS a expectativa deste cartão e a sequência das duas colunas que
+   * ele tocou. Apagar o mapa inteiro (como antes) derrubava o otimismo de
+   * movimentos ainda em gravação — o board voltava tudo ao servidor.
    */
   const desistir = (demandaId: string) => {
+    const pendente = colunaLocal.get(demandaId);
+    const daTela = colunas.find((c) => c.itens.some((d) => d.id === demandaId))?.id;
+    const origem = porId.get(demandaId)?.status.id;
     setColunaLocal((mapa) => {
       if (!mapa.has(demandaId)) return mapa;
       const proximo = new Map(mapa);
       proximo.delete(demandaId);
       return proximo;
     });
-    setOrdemLocal((mapa) => (mapa.size === 0 ? mapa : new Map()));
+    setOrdemLocal((mapa) => {
+      const alvos = [pendente, daTela, origem].filter((id): id is string => Boolean(id));
+      if (!alvos.some((id) => mapa.has(id))) return mapa;
+      const proximo = new Map(mapa);
+      for (const id of alvos) proximo.delete(id);
+      return proximo;
+    });
+  };
+
+  /**
+   * FECHAR O ARRASTO QUANDO O DROP NÃO TEM ALVO ÚTIL.
+   *
+   * O `onDragOver` já reatribuiu o cartão à coluna de destino durante o gesto.
+   * No instante do drop, o alvo da colisão frequentemente é o PRÓPRIO cartão
+   * arrastado (ele está sob o cursor) — e tratar isso como desistência
+   * desmanchava a troca já visível e não gravava nada: o snap-back instantâneo
+   * sem aviso. Se há troca pendente, ela é a intenção da pessoa: gravamos.
+   */
+  const finalizar = (demandaId: string) => {
+    const pendente = colunaLocal.get(demandaId);
+    const atual = porId.get(demandaId);
+    if (!pendente || !atual || pendente === atual.status.id) return desistir(demandaId);
+    const colunaDeDestino = colunas.find((c) => c.id === pendente);
+    const ordemFinal = colunaDeDestino ? colunaDeDestino.itens.map((d) => d.id) : [demandaId];
+    gravar(
+      {
+        demandaId,
+        statusId: pendente,
+        ordem: Math.max(ordemFinal.indexOf(demandaId), 0),
+        ordemDaColuna: ordemFinal,
+      },
+      [pendente, atual.status.id],
+    );
   };
 
   const aoTerminar = (e: DragEndEvent) => {
     setArrastando(null);
     const destino = e.over?.id ? String(e.over.id) : null;
     const demandaId = String(e.active.id);
-    if (!destino || destino === demandaId) return desistir(demandaId);
+    if (!destino || destino === demandaId) return finalizar(demandaId);
     const atual = porId.get(demandaId);
     if (!atual) return desistir(demandaId);
+
 
     const colunaDoAlvo = colunas.find((c) => c.id === destino);
     // Soltou sobre um cartão: a coluna dele vem no `data` do sortable, com
@@ -755,7 +788,7 @@ function BoardLenteImpl({
       colunas.find(
         (c) => c.id === dadosDoAlvo?.colunaId || c.itens.some((d) => d.id === destino),
       );
-    if (!colunaDeDestino) return desistir(demandaId);
+    if (!colunaDeDestino) return finalizar(demandaId);
 
     const idsDestino = colunaDeDestino.itens.map((d) => d.id);
     // A coluna de ORIGEM é a que contém o cartão nesta tela — não
