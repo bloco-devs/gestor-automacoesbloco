@@ -412,7 +412,7 @@ export default function WorkspaceDemandas() {
       {fundoAtual && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-black/15"
+          className="pointer-events-none absolute inset-0 -z-10 bg-black/20 backdrop-blur-[1.5px]"
         />
       )}
 
