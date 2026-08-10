@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useTodasAsDemandas,
@@ -7,6 +8,7 @@ import {
   useMoverDemanda,
   type EtapaDaFonte,
 } from "@/modules/demand-access";
+import { useReordenarFila } from "@/modules/demand-access/useReordenarFila";
 import {
   FILAS,
   type FilaId,
@@ -21,6 +23,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePreferencia } from "@/hooks/usePreferencia";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { reorderCardsBulk } from "@/lib/atividades";
+import { atividadesKeys } from "@/hooks/useAtividadesBoard";
+import { ordensDaLista } from "@/modules/workspace-demandas/ordenacao";
+
 
 // v2: a chave subiu de versão junto com a mudança de padrão. Quem já tinha
 // "todas" gravado continuaria abrindo com o backlog inteiro — a escolha
