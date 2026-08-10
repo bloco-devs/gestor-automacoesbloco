@@ -39,6 +39,9 @@ import { BoardLente } from "./components/BoardLente";
 import { GanttLente } from "./components/GanttLente";
 import { Copiloto } from "./components/Copiloto";
 import { CardDetailModal } from "./components/CardDetailModal";
+import { SeletorDeFundo } from "./components/SeletorDeFundo";
+import { useFundoDaInbox } from "./components/useFundoDaInbox";
+
 
 const ETAPA_FORA_DO_FLUXO = "homologacao";
 
