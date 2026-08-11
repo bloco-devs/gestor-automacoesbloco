@@ -194,6 +194,13 @@ export function Cartao({
   onAssumir?: (id: string) => void;
   assumindo?: boolean;
   /**
+   * Devolver a demanda para "sem responsável". Sem este callback o avatar é só
+   * um avatar — quem sabe se a fonte aceita a escrita é a tela.
+   */
+  onDesassumir?: (id: string) => void;
+  desassumindo?: boolean;
+
+  /**
    * Concluir direto da capa (estilo Trello). Sem este callback a bolinha não
    * aparece — quem sabe se existe etapa de conclusão é a tela.
    */
