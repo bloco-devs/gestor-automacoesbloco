@@ -25,9 +25,12 @@ import {
   Eye,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+
 import { labelColorStyle } from "@/lib/atividades";
 import {
   PRIORIDADE_ROTULO,
