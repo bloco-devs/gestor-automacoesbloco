@@ -131,6 +131,8 @@ function CopilotoDaDemandaImpl({
   onAbrir,
   onAcao,
   executando,
+  onRemoverResponsavel,
+  removendoResponsavel,
   className,
 }: Props) {
   const silencio = diasSemFala(eventos);
