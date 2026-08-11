@@ -456,6 +456,18 @@ export default function DemandaDetalhe() {
           onAcao={(a) => void executarAcao(a)}
           onGerarArtigo={d.concluida && rascunho ? () => setRascunhoAberto(true) : undefined}
           executando={acoesDemanda.executando}
+          onRemoverResponsavel={
+            daEquipe
+              ? () => {
+                  void desassumir(d.id, projetoId).catch((e: unknown) =>
+                    toast.error(
+                      e instanceof Error ? e.message : "Não foi possível remover a atribuição.",
+                    ),
+                  );
+                }
+              : undefined
+          }
+          removendoResponsavel={assumindo(d.id)}
           className="border-l-0"
         />
 
