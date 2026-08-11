@@ -101,7 +101,33 @@ export function useAssumirDemanda(): AssumirDemanda {
     [assignDemand, marcar, qc],
   );
 
+  const desassumir = useCallback<AssumirDemanda["desassumir"]>(
+    async (demandaId, projetoId) => {
+      marcar(demandaId, true);
+      // Otimismo primeiro: o avatar sai e o "Assumir" volta no mesmo frame.
+      limparResponsavelNoCache(qc, demandaId, projetoId);
+      try {
+        if (projetoId) {
+          await updateCard(demandaId, { responsavelIds: [] });
+          await qc.invalidateQueries({ queryKey: atividadesKeys.all });
+          return;
+        }
+        await assignDemand.mutateAsync({ id: demandaId, assigned_to: null });
+      } catch (e) {
+        // O refetch devolve a verdade do servidor — nada de rollback à mão.
+        await qc.invalidateQueries({
+          queryKey: projetoId ? atividadesKeys.all : ["demands"],
+        });
+        throw e;
+      } finally {
+        marcar(demandaId, false);
+      }
+    },
+    [assignDemand, marcar, qc],
+  );
+
   const assumindo = useCallback((demandaId: string) => emVoo.has(demandaId), [emVoo]);
 
-  return { assumir, assumindo };
+  return { assumir, desassumir, assumindo };
+
 }
