@@ -33,6 +33,7 @@ const TYPE_STYLES: Record<AppNotification["type"], string> = {
   assigned: "border-l-info",
   status_change: "border-l-warning",
   system: "border-l-muted-foreground",
+  new_comment: "border-l-primary",
 };
 
 export function NotificationsDrawer() {

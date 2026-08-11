@@ -33,6 +33,7 @@ import { fromUnifiedNav } from "@/components/sidebar/fromUnifiedNav";
 import { getNavigation } from "@/modules/navigation";
 import { useEcossistemaAutoSync } from "@/modules/ecossistema";
 import { attachGlobalErrorHandlers } from "@/modules/errors";
+import { useRealtimeNotifications } from "@/modules/realtime-notifications";
 
 const SIDEBAR_MIN = 176;
 const SIDEBAR_MAX = 480;
