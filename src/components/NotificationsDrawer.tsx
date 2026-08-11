@@ -1,5 +1,5 @@
-import { Bell, Check, CheckCheck, Trash2, X } from "lucide-react";
-import { useMemo } from "react";
+import { Bell, Check, CheckCheck, Trash2, Volume2, VolumeX, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import {
   useMarkNotificationsRead,
   useNotifications,
 } from "@/modules/notifications";
+import { definirSom, somLigado } from "@/modules/realtime-notifications";
 import type { AppNotification, GrupoDeNotificacoes } from "@/modules/notifications";
 
 function timeAgo(iso: string): string {
