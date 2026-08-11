@@ -221,6 +221,8 @@ function Coluna({
   onRecolher,
   onAssumir,
   assumindo,
+  onDesassumir,
+  desassumindo,
   onConcluir,
   concluindo,
   onExcluir,
@@ -238,6 +240,8 @@ function Coluna({
   onRecolher?: () => void;
   onAssumir?: (id: string) => void;
   assumindo?: (id: string) => boolean;
+  onDesassumir?: (id: string) => void;
+  desassumindo?: (id: string) => boolean;
   onConcluir?: (id: string) => void;
   concluindo?: (id: string) => boolean;
   onExcluir?: (id: string) => void;
@@ -322,6 +326,8 @@ function Coluna({
               arrastavel={arrastavel}
               onAssumir={onAssumir}
               assumindo={assumindo?.(d.id)}
+              onDesassumir={onDesassumir}
+              desassumindo={desassumindo?.(d.id)}
               onConcluir={onConcluir}
               concluindo={concluindo?.(d.id)}
               onExcluir={onExcluir}
@@ -398,6 +404,8 @@ interface Props {
   etapas?: EtapaDaFonte[];
   onAssumir?: (id: string) => void;
   assumindo?: (id: string) => boolean;
+  onDesassumir?: (id: string) => void;
+  desassumindo?: (id: string) => boolean;
   onConcluir?: (id: string) => void;
   concluindo?: (id: string) => boolean;
   onExcluir?: (id: string) => void;
@@ -434,6 +442,8 @@ function BoardLenteImpl({
   vazio,
   onAssumir,
   assumindo,
+  onDesassumir,
+  desassumindo,
   onConcluir,
   concluindo,
   onExcluir,
@@ -899,6 +909,8 @@ function BoardLenteImpl({
               onRecolher={g.concluido ? () => alternar(g.id) : undefined}
               onAssumir={onAssumir}
               assumindo={assumindo}
+              onDesassumir={onDesassumir}
+              desassumindo={desassumindo}
               onConcluir={onConcluir}
               concluindo={concluindo}
               onExcluir={onExcluir}

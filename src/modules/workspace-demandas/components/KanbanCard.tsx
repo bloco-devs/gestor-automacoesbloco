@@ -25,9 +25,12 @@ import {
   Eye,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+
 import { labelColorStyle } from "@/lib/atividades";
 import {
   PRIORIDADE_ROTULO,
@@ -157,6 +160,9 @@ export function Cartao({
   sobreposicao,
   onAssumir,
   assumindo,
+  onDesassumir,
+  desassumindo,
+
   onConcluir,
   concluindo,
   onExcluir,
@@ -187,6 +193,13 @@ export function Cartao({
    */
   onAssumir?: (id: string) => void;
   assumindo?: boolean;
+  /**
+   * Devolver a demanda para "sem responsável". Sem este callback o avatar é só
+   * um avatar — quem sabe se a fonte aceita a escrita é a tela.
+   */
+  onDesassumir?: (id: string) => void;
+  desassumindo?: boolean;
+
   /**
    * Concluir direto da capa (estilo Trello). Sem este callback a bolinha não
    * aparece — quem sabe se existe etapa de conclusão é a tela.
@@ -281,14 +294,47 @@ export function Cartao({
         <span className="tabular-nums">{d.progresso.percentual}%</span>
       )}
       {responsavel ? (
-        <Avatar className="size-4" title={responsavel.nome}>
-          {responsavel.avatarUrl && (
-            <AvatarImage src={responsavel.avatarUrl} alt={responsavel.nome} />
+        /* O bloco do responsável revela o "x" só no hover: o cartão continua
+           limpo, e a remoção fica a um clique de quem está com o rato ali. */
+        <span className="group/resp relative inline-flex items-center">
+          <Avatar className="size-4" title={responsavel.nome}>
+            {responsavel.avatarUrl && (
+              <AvatarImage src={responsavel.avatarUrl} alt={responsavel.nome} />
+            )}
+            <AvatarFallback className="bg-muted text-[8px]">
+              {iniciais(responsavel.nome)}
+            </AvatarFallback>
+          </Avatar>
+          {onDesassumir && !sobreposicao && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  disabled={desassumindo}
+                  aria-label="Remover atribuição"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onDesassumir(d.id);
+                  }}
+                  className={cn(
+                    "absolute -right-1.5 -top-1.5 grid size-3.5 place-items-center rounded-full",
+                    "border border-border bg-background text-muted-foreground shadow-sm",
+                    "opacity-0 transition-opacity group-hover/resp:opacity-100 focus-visible:opacity-100",
+                    "hover:text-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                    "disabled:cursor-progress",
+                  )}
+                >
+                  <X className="size-2.5" aria-hidden />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">Remover atribuição</TooltipContent>
+            </Tooltip>
           )}
-          <AvatarFallback className="bg-muted text-[8px]">
-            {iniciais(responsavel.nome)}
-          </AvatarFallback>
-        </Avatar>
+        </span>
+
       ) : podeAssumir ? (
         /* O drag do dnd-kit escuta pointer, e o cartão inteiro abre no click:
            parar os dois é o que separa "assumir" de "abrir" ou "arrastar". */

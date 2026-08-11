@@ -1,5 +1,8 @@
 import { memo } from "react";
+import { X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import {
   COMPLEXIDADE_ROTULO,
   participantes,
@@ -56,16 +59,50 @@ function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode
   );
 }
 
-function Gente({ pessoas }: { pessoas: { id: string; nome: string; avatarUrl: string | null }[] }) {
+/**
+ * O bloco de gente. Quando `onRemover` existe, cada pessoa ganha um "x" que
+ * só aparece no hover — a linha continua sendo leitura, e a ação fica onde o
+ * olho já está, sem competir com o nome.
+ */
+function Gente({
+  pessoas,
+  onRemover,
+  removendo,
+}: {
+  pessoas: { id: string; nome: string; avatarUrl: string | null }[];
+  onRemover?: (pessoaId: string) => void;
+  removendo?: boolean;
+}) {
   return (
     <span className="flex flex-wrap items-center gap-1.5">
       {pessoas.map((p) => (
-        <span key={p.id} className="inline-flex items-center gap-1.5">
+        <span key={p.id} className="group/resp inline-flex items-center gap-1.5">
           <Avatar className="size-4">
             {p.avatarUrl && <AvatarImage src={p.avatarUrl} alt="" />}
             <AvatarFallback className="bg-muted text-[8px]">{iniciais(p.nome)}</AvatarFallback>
           </Avatar>
           {p.nome}
+          {onRemover && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  disabled={removendo}
+                  aria-label="Remover atribuição"
+                  onClick={() => onRemover(p.id)}
+                  className={cn(
+                    "grid size-4 place-items-center rounded-full text-muted-foreground",
+                    "opacity-0 transition-opacity group-hover/resp:opacity-100 focus-visible:opacity-100",
+                    "hover:text-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                    "disabled:cursor-progress",
+                  )}
+                >
+                  <X className="size-3" aria-hidden />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">Remover atribuição</TooltipContent>
+            </Tooltip>
+          )}
         </span>
       ))}
     </span>
@@ -77,11 +114,16 @@ function ContextoImpl({
   capacidades,
   eventos,
   className,
+  onRemoverResponsavel,
+  removendoResponsavel,
 }: {
   demanda: Demanda;
   capacidades: Capacidades;
   eventos: Evento[];
   className?: string;
+  /** Sem este callback o responsável é só leitura — a tela decide se pode escrever. */
+  onRemoverResponsavel?: (pessoaId: string) => void;
+  removendoResponsavel?: boolean;
 }) {
   const gente = participantes(eventos);
 
@@ -111,7 +153,11 @@ function ContextoImpl({
 
         <Linha rotulo="Responsável">
           {d.responsaveis.length > 0 ? (
-            <Gente pessoas={d.responsaveis} />
+            <Gente
+              pessoas={d.responsaveis}
+              onRemover={onRemoverResponsavel}
+              removendo={removendoResponsavel}
+            />
           ) : (
             <span className="text-muted-foreground">Ninguém ainda</span>
           )}
