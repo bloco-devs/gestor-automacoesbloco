@@ -44,6 +44,7 @@ export function NotificationsDrawer() {
   const remover = useDeleteNotifications();
   const limparLidas = useClearReadNotifications();
   const navigate = useNavigate();
+  const [comSom, setComSom] = useState(() => somLigado());
 
   const list = notifications ?? [];
   const grupos = useMemo(() => agruparNotificacoes(list), [list]);
