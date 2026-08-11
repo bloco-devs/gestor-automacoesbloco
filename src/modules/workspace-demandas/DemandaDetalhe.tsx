@@ -9,6 +9,7 @@ import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
 import { cn } from "@/lib/utils";
 import {
   useAcoesDemanda,
+  useAssumirDemanda,
   useAnexos,
   useChecklist,
   useConhecimento,
@@ -121,6 +122,12 @@ export default function DemandaDetalhe() {
 
   const eventos = useMemo(() => montarFio(fio.eventos, daEquipe), [fio.eventos, daEquipe]);
   const acoesDemanda = useAcoesDemanda(escopo);
+  /**
+   * A MESMA escrita dos cartões do quadro — nada de mutação nova.
+   * `desassumir` já decide a fonte pelo `projetoId` e limpa o cache na hora,
+   * então o avatar sai da tela antes da resposta do Supabase.
+   */
+  const { desassumir, assumindo } = useAssumirDemanda();
   const checklist = useChecklist(id ?? null, capacidades.progresso && capacidades.comentarios);
   const conhecimento = useConhecimento(demanda ?? null, demandas, !!demanda);
   const { publicar } = usePublicarArtigo();
@@ -479,7 +486,24 @@ export default function DemandaDetalhe() {
             Uma seção só — não dez — porque trocar leitura por cliques não
             reduz esforço, apenas o transfere. */}
         <Secao id="detalhes" titulo="Detalhes">
-          <Contexto demanda={d} capacidades={capacidades} eventos={eventos} className="-mx-4" />
+          <Contexto
+            demanda={d}
+            capacidades={capacidades}
+            eventos={eventos}
+            className="-mx-4"
+            onRemoverResponsavel={
+              daEquipe
+                ? () => {
+                    void desassumir(d.id, projetoId).catch((e: unknown) =>
+                      toast.error(
+                        e instanceof Error ? e.message : "Não foi possível remover a atribuição.",
+                      ),
+                    );
+                  }
+                : undefined
+            }
+            removendoResponsavel={assumindo(d.id)}
+          />
         </Secao>
         </div>
         )}
