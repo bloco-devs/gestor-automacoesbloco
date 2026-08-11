@@ -246,6 +246,56 @@ function CopilotoDaDemandaImpl({
         </Bloco>
       )}
 
+      {/* RESPONSÁVEL À VISTA
+          Antes isto só existia dentro de "Detalhes", fechado — quem assumiu por
+          engano não achava como devolver. Aqui o nome e o "x" ficam no mesmo
+          lugar onde se decide o que fazer. */}
+      {d.responsaveis.length > 0 && (
+        <Bloco titulo="Responsável">
+          <ul className="space-y-1.5">
+            {d.responsaveis.map((p) => (
+              <li key={p.id} className="flex items-center gap-2">
+                <Avatar className="size-5">
+                  {p.avatarUrl && <AvatarImage src={p.avatarUrl} alt="" />}
+                  <AvatarFallback className="bg-muted text-[9px]">
+                    {p.nome
+                      .split(/\s+/)
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((n) => n[0]?.toUpperCase())
+                      .join("")}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="min-w-0 flex-1 truncate">{p.nome}</span>
+                {onRemoverResponsavel && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={removendoResponsavel}
+                        aria-label="Remover atribuição"
+                        onClick={() => onRemoverResponsavel(p.id)}
+                        className={cn(
+                          "grid size-5 shrink-0 place-items-center rounded-full",
+                          "text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive",
+                          "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                          "disabled:cursor-progress disabled:opacity-60",
+                        )}
+                      >
+                        <X className="size-3.5" aria-hidden />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Remover atribuição</TooltipContent>
+                  </Tooltip>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Bloco>
+      )}
+
+
+
       {parecidas.length > 0 && (
         <Bloco titulo="Já se sabe disso">
           <ul className="space-y-2">
