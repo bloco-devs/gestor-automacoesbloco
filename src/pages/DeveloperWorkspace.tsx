@@ -279,7 +279,7 @@ export default function DeveloperWorkspace() {
    * pelo mapa que a própria tela já tinha: com projeto é cartão de quadro, sem
    * projeto é ticket da fila global. O cartão não sabe nada disso.
    */
-  const { assumir, assumindo } = useAssumirDemanda();
+  const { assumir, desassumir, assumindo } = useAssumirDemanda();
   const aoAssumir = useCallback(
     (id: string) => {
       if (!user?.id) return;
@@ -292,6 +292,20 @@ export default function DeveloperWorkspace() {
       });
     },
     [assumir, projetoPorDemanda, user?.id],
+  );
+
+  /** A volta de assumir — mesma decisão de fonte, mesma escrita. */
+  const aoDesassumir = useCallback(
+    (id: string) => {
+      void desassumir(id, projetoPorDemanda.get(id) ?? null).catch((e: unknown) => {
+        toast({
+          title: "Não deu para remover a atribuição",
+          description: e instanceof Error ? e.message : "Tente de novo em instantes.",
+          variant: "destructive",
+        });
+      });
+    },
+    [desassumir, projetoPorDemanda],
   );
 
   return (
@@ -345,6 +359,8 @@ export default function DeveloperWorkspace() {
             podeMover
             onAssumir={user?.id ? aoAssumir : undefined}
             assumindo={assumindo}
+            onDesassumir={aoDesassumir}
+            desassumindo={assumindo}
             vazio={{
               titulo:
                 fila === "minhas"
