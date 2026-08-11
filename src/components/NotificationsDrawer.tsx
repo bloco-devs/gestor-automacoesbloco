@@ -1,5 +1,5 @@
-import { Bell, Check, CheckCheck, Trash2, X } from "lucide-react";
-import { useMemo } from "react";
+import { Bell, Check, CheckCheck, Trash2, Volume2, VolumeX, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import {
   useMarkNotificationsRead,
   useNotifications,
 } from "@/modules/notifications";
+import { definirSom, somLigado } from "@/modules/realtime-notifications";
 import type { AppNotification, GrupoDeNotificacoes } from "@/modules/notifications";
 
 function timeAgo(iso: string): string {
@@ -33,6 +34,7 @@ const TYPE_STYLES: Record<AppNotification["type"], string> = {
   assigned: "border-l-info",
   status_change: "border-l-warning",
   system: "border-l-muted-foreground",
+  new_comment: "border-l-primary",
 };
 
 export function NotificationsDrawer() {
@@ -42,6 +44,7 @@ export function NotificationsDrawer() {
   const remover = useDeleteNotifications();
   const limparLidas = useClearReadNotifications();
   const navigate = useNavigate();
+  const [comSom, setComSom] = useState(() => somLigado());
 
   const list = notifications ?? [];
   const grupos = useMemo(() => agruparNotificacoes(list), [list]);
@@ -87,6 +90,24 @@ export function NotificationsDrawer() {
         <div className="flex items-center justify-between px-3 py-2 border-b">
           <div className="text-sm font-medium">Notificações</div>
           <div className="flex items-center gap-0.5">
+            {/* O som avisa quem está em outra tela; num escritório aberto ele
+                incomoda. A escolha é do ambiente, não da conta — por isso mora
+                no navegador. */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 text-muted-foreground"
+              onClick={() => {
+                const proximo = !comSom;
+                definirSom(proximo);
+                setComSom(proximo);
+              }}
+              title={comSom ? "Silenciar o som dos avisos" : "Ativar o som dos avisos"}
+              aria-label={comSom ? "Silenciar o som dos avisos" : "Ativar o som dos avisos"}
+              aria-pressed={comSom}
+            >
+              {comSom ? <Volume2 className="size-3.5" /> : <VolumeX className="size-3.5" />}
+            </Button>
             <Button
               variant="ghost"
               size="sm"

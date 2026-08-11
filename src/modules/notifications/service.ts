@@ -25,7 +25,7 @@ export interface AppNotification {
   user_id: string;
   title: string;
   message: string;
-  type: "sla_alert" | "assigned" | "status_change" | "system";
+  type: "sla_alert" | "assigned" | "status_change" | "system" | "new_comment";
   read: boolean;
   link_url: string | null;
   created_at: string;

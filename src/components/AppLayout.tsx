@@ -33,6 +33,7 @@ import { fromUnifiedNav } from "@/components/sidebar/fromUnifiedNav";
 import { getNavigation } from "@/modules/navigation";
 import { useEcossistemaAutoSync } from "@/modules/ecossistema";
 import { attachGlobalErrorHandlers } from "@/modules/errors";
+import { useRealtimeNotifications } from "@/modules/realtime-notifications";
 
 const SIDEBAR_MIN = 176;
 const SIDEBAR_MAX = 480;
@@ -50,6 +51,10 @@ export default function AppLayout() {
 
   // F018.3 — auto-sync do Ecossistema (Realtime → reprocessar-matches, debounced)
   useEcossistemaAutoSync(!!user);
+  // Avisos de nova mensagem no fio: som + toast, uma assinatura só para todo
+  // o app (o layout é o único ponto que monta uma vez por sessão).
+  useRealtimeNotifications(!!user);
+
   // FEATURE 023 — Error Center (captura global uma única vez)
   useEffect(() => { attachGlobalErrorHandlers(); }, []);
   const isBuilderRole = user?.role === "builder";
