@@ -160,6 +160,9 @@ export function Cartao({
   sobreposicao,
   onAssumir,
   assumindo,
+  onDesassumir,
+  desassumindo,
+
   onConcluir,
   concluindo,
   onExcluir,
