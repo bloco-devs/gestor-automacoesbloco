@@ -68,6 +68,12 @@ interface Props {
   /** Cada ação é executada pela porta de escrita; este painel só dispara. */
   onAcao: (acao: AcaoSugerida) => void;
   executando: boolean;
+  /**
+   * Remover a atribuição do responsável. Sem este callback o bloco é leitura —
+   * quem sabe se a fonte aceita escrita é a tela.
+   */
+  onRemoverResponsavel?: (pessoaId: string) => void;
+  removendoResponsavel?: boolean;
   className?: string;
 }
 
