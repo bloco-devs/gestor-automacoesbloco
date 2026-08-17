@@ -2867,6 +2867,7 @@ export type Database = {
           role: string
         }[]
       }
+      uuid_ou_nulo: { Args: { _texto: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user"
