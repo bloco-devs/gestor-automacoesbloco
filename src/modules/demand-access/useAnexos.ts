@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { addAttachment, getAttachmentSignedUrl, listAttachments } from "@/modules/demands/service";
+import { getAttachmentSignedUrl, listAttachments } from "@/modules/demands/service";
+import { enviarVarios } from "@/modules/demands/anexos";
 import { generoDe, ordenarAnexos, type Anexo } from "@/domain/demand";
 
 /**
@@ -68,24 +68,30 @@ export function useAnexos(demandaId: string | null, habilitado: boolean) {
     [base, urlsQ.data],
   );
 
+  /**
+   * ELE DEVOLVE O PLACAR EM VEZ DE LANÇAR — E ISSO É O CONSERTO
+   *
+   * Antes, `enviar` lançava. Quem chama é `onEnviar={(a) => void anexos.enviar(a)}`
+   * em `DemandaDetalhe`, e `void` numa promise rejeitada é uma rejeição sem
+   * dono: o spinner parava, o anexo não aparecia, o console ficava limpo e a
+   * pessoa concluía "o sistema não deixa anexar" — que é literalmente o
+   * relato que abriu este conserto. Um erro que ninguém vê não é um erro
+   * tratado, é um erro escondido.
+   *
+   * Devolvendo `{ anexados, falhas }` a tela é obrigada a decidir o que dizer,
+   * e o caso parcial (quatro prints sobem, um é grande demais) para de ser
+   * "tudo ou nada".
+   */
   const enviar = useCallback(
-    async (arquivos: File[]) => {
-      if (!demandaId || arquivos.length === 0) return;
+    async (arquivos: File[]): Promise<{ anexados: number; falhas: string[] }> => {
+      if (!demandaId || arquivos.length === 0) return { anexados: 0, falhas: [] };
       setEnviando(true);
       try {
-        for (const arquivo of arquivos) {
-          const caminho = `${demandaId}/${crypto.randomUUID()}-${arquivo.name}`;
-          const { error } = await supabase.storage
-            .from("demand-attachments")
-            .upload(caminho, arquivo, { upsert: false, contentType: arquivo.type });
-          if (error) throw error;
-          await addAttachment(demandaId, {
-            file_url: caminho,
-            file_type: arquivo.type || null,
-            file_name: arquivo.name,
-          });
+        const placar = await enviarVarios(demandaId, arquivos);
+        if (placar.anexados > 0) {
+          await qc.invalidateQueries({ queryKey: ["demanda", demandaId, "anexos"] });
         }
-        await qc.invalidateQueries({ queryKey: ["demanda", demandaId, "anexos"] });
+        return placar;
       } finally {
         setEnviando(false);
       }

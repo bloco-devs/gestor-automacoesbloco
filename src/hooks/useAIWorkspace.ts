@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useEcossistemaSistemas } from "@/hooks/useEcossistemaSistemas";
 import { salvarMatchEcossistema } from "@/lib/supabaseData";
-import { useCriarDemanda } from "@/modules/demand-access";
+import { useAnexosDoRascunho, useCriarDemanda } from "@/modules/demand-access";
 import {
   complexidadeDeEscala,
   criteriosMinimos,
@@ -107,6 +107,24 @@ export function useAIWorkspace() {
   const [preview, setPreview] = useState<AiPreview | null>(null);
   const cancelled = useRef(false);
 
+  /**
+   * O QUE A PESSOA ANEXOU ENQUANTO CONVERSAVA
+   *
+   * Os arquivos já estão no storage (ver `useAnexosDoRascunho`) — o que falta é
+   * a demanda a que eles pertencem, e ela só nasce em `confirmSubmit`.
+   */
+  const anexos = useAnexosDoRascunho();
+
+  /**
+   * Quais anexos a IA já sabe que existem.
+   *
+   * A conversa é a única memória do modelo: um arquivo anexado que não aparece
+   * em nenhuma mensagem é, para ele, um arquivo que não existe — e ele
+   * continuaria pedindo por escrito o que já está anexado ao lado. Cada anexo
+   * é citado UMA vez, na próxima mensagem que a pessoa mandar.
+   */
+  const anexosCitados = useRef<Set<string>>(new Set());
+
   const userTurns = useMemo(() => messages.filter((m) => m.role === "user").length, [messages]);
 
   const previewScore = useMemo(
@@ -123,8 +141,12 @@ export function useAIWorkspace() {
     setMessages([]);
     setThinking(false);
     setPreview(null);
+    // Recomeçar a conversa descarta os arquivos dela. Mantê-los faria a próxima
+    // demanda nascer com o print de um problema que a pessoa desistiu de contar.
+    anexos.limpar();
+    anexosCitados.current = new Set();
     setTimeout(() => (cancelled.current = false), 50);
-  }, []);
+  }, [anexos]);
 
   const finalize = useCallback(
     async (history: ChatMsg[]) => {
@@ -177,7 +199,20 @@ export function useAIWorkspace() {
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || thinking) return;
-      const nextHistory: ChatMsg[] = [...messages, { role: "user", content: trimmed }];
+
+      // Os anexos novos viajam junto da mensagem, como uma linha em português.
+      // Não é metadado: é a frase que a pessoa diria ("mandei o print do erro"),
+      // e é o que impede o modelo de pedir de novo o que já está anexado.
+      const novos = anexos.itens.filter((a) => !anexosCitados.current.has(a.id));
+      for (const a of novos) anexosCitados.current.add(a.id);
+      const conteudo =
+        novos.length > 0
+          ? `${trimmed}\n\n[Anexei ${novos.length === 1 ? "o arquivo" : "os arquivos"}: ${novos
+              .map((a) => a.nome)
+              .join(", ")}]`
+          : trimmed;
+
+      const nextHistory: ChatMsg[] = [...messages, { role: "user", content: conteudo }];
       setMessages(nextHistory);
       if (phase === "welcome") setPhase("chatting");
       setThinking(true);
@@ -210,12 +245,29 @@ export function useAIWorkspace() {
         setThinking(false);
       }
     },
-    [finalize, messages, phase, thinking, toast, workspaceContext],
+    [anexos.itens, finalize, messages, phase, thinking, toast, workspaceContext],
   );
 
   const updatePreview = useCallback((patch: Partial<AiPreview>) => {
     setPreview((p) => (p ? { ...p, ...patch } : p));
   }, []);
+
+  /**
+   * Anexar durante a conversa.
+   *
+   * O erro é dito por arquivo e no ato — não guardado para a confirmação. Quem
+   * arrasta um vídeo de 40 MB precisa saber disso enquanto ainda tem a tela do
+   * gerenciador de arquivos aberta, não três perguntas depois.
+   */
+  const anexar = useCallback(
+    async (arquivos: File[]) => {
+      const { falhas } = await anexos.anexar(arquivos);
+      for (const f of falhas) {
+        toast({ title: "Não consegui anexar", description: f, variant: "destructive" });
+      }
+    },
+    [anexos, toast],
+  );
 
   /**
    * O catálogo LOCAL, que e outro do ecossistema. Ver `casarSistema` para o
@@ -349,6 +401,33 @@ export function useAIWorkspace() {
     try {
       const { id } = await criar(demandaDoPreview);
 
+      /**
+       * O ANEXO ENTRA ANTES DE A TELA MUDAR — E É POR ISSO QUE ELE É ESPERADO
+       *
+       * Tudo o mais aqui é `void`: casar ecossistema, disparar webhook. Este
+       * `await` é a exceção, e de propósito. A promessa desta fatia é que o
+       * print chegue junto da PRIMEIRA mensagem, não algum tempo depois — quem
+       * abre a demanda no segundo seguinte precisa encontrar o arquivo lá. São
+       * dois ou três `insert` numa demanda que acabou de nascer; o custo é
+       * milissegundos, e o que se compra é a demanda nunca aparecer sem o
+       * anexo que a pessoa acabou de mandar.
+       *
+       * `promover` não lança: anexo que falhou vira aviso, e a demanda — que já
+       * existe e já tem a conversa inteira — segue para a tela dela. Perder a
+       * demanda por causa de um arquivo seria trocar o todo pela parte.
+       */
+      const { anexados, falhas } = await anexos.promover(id);
+      if (falhas.length > 0) {
+        toast({
+          title:
+            anexados > 0
+              ? "Demanda criada, mas nem todo anexo subiu"
+              : "Demanda criada — os anexos não subiram",
+          description: `${falhas[0]} Você pode reenviar pela tela da demanda.`,
+          variant: "destructive",
+        });
+      }
+
       // O casamento com o ecossistema continua acontecendo, em segundo plano:
       // ele enriquece o contexto e nunca deve segurar a confirmação de quem
       // acabou de descrever um problema.
@@ -369,7 +448,13 @@ export function useAIWorkspace() {
         }
       })();
 
-      toast({ title: "Demanda criada", description: "Você pode acompanhar o andamento por aqui." });
+      toast({
+        title: "Demanda criada",
+        description:
+          anexados > 0
+            ? `${anexados === 1 ? "Seu anexo foi enviado" : `${anexados} anexos foram enviados`} junto. Você pode acompanhar o andamento por aqui.`
+            : "Você pode acompanhar o andamento por aqui.",
+      });
       // Vai para a demanda, não para uma lista: a pessoa acabou de descrever
       // um problema e quer ver o que virou disso.
       navigate(`/demandas/${id}`);
@@ -378,7 +463,7 @@ export function useAIWorkspace() {
       toast({ title: "Falha ao criar a demanda", description: msg, variant: "destructive" });
       setPhase("preview");
     }
-  }, [criar, demandaDoPreview, navigate, preview, toast, user]);
+  }, [anexos, criar, demandaDoPreview, navigate, preview, toast, user]);
 
   return {
     phase,
@@ -391,6 +476,11 @@ export function useAIWorkspace() {
     demandaDoPreview,
     sistemaDoPreview,
     sistemas,
+    /** Os anexos da conversa, já no storage, à espera da demanda. */
+    anexos: anexos.itens,
+    anexandoArquivo: anexos.enviando,
+    anexar,
+    removerAnexo: anexos.remover,
     sendMessage,
     updatePreview,
     confirmSubmit,

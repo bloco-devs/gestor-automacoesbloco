@@ -29,6 +29,10 @@ export default function AIWorkspace() {
     previewScore,
     demandaDoPreview,
     sistemaDoPreview,
+    anexos,
+    anexandoArquivo,
+    anexar,
+    removerAnexo,
     sendMessage,
     updatePreview,
     confirmSubmit,
@@ -75,6 +79,10 @@ export default function AIWorkspace() {
               disabled={thinking}
               loading={thinking}
               placeholder="Ou simplesmente escreva sua demanda aqui…"
+              onAnexar={(arquivos) => void anexar(arquivos)}
+              anexos={anexos}
+              onRemoverAnexo={removerAnexo}
+              enviandoAnexo={anexandoArquivo}
             />
             <ConversationFooter turnsUsed={0} maxTurns={maxUserTurns} phase={phase} />
           </div>
@@ -109,6 +117,10 @@ export default function AIWorkspace() {
               disabled={thinking}
               loading={thinking}
               placeholder="Continue a conversa…"
+              onAnexar={(arquivos) => void anexar(arquivos)}
+              anexos={anexos}
+              onRemoverAnexo={removerAnexo}
+              enviandoAnexo={anexandoArquivo}
             />
           )}
           <ConversationFooter turnsUsed={userTurns} maxTurns={maxUserTurns} phase={phase} />
@@ -119,6 +131,7 @@ export default function AIWorkspace() {
         <PreviewDaDemanda
             nova={demandaDoPreview}
             sistemaNome={sistemaDoPreview}
+            anexos={anexos}
             onConfirmar={confirmSubmit}
             onVoltarParaConversa={goBackToChat}
             enviando={phase === "submitting"}

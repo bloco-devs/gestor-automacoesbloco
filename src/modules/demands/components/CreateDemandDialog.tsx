@@ -23,7 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAddAttachment, useAutoRespondDemand, useCreateDemand, useTriageDemand, useUserWorkloads } from "../hooks";
+import { useAutoRespondDemand, useCreateDemand, useTriageDemand, useUserWorkloads } from "../hooks";
+import { ACEITA_NO_SELETOR, enviarVarios, validarArquivo } from "../anexos";
 import {
   COMPLEXITY_META,
   PRIORITY_META,
@@ -44,7 +45,6 @@ const UNASSIGNED = "__none__";
 export function CreateDemandDialog({ open, onOpenChange }: Props) {
   const { toast } = useToast();
   const create = useCreateDemand();
-  const addAtt = useAddAttachment();
   const triage = useTriageDemand();
   const autoRespond = useAutoRespondDemand();
   const { data: workloads = [] } = useUserWorkloads(open);
@@ -133,21 +133,16 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
         assigned_to,
       });
 
-      for (const file of files) {
-        const path = `${demand.id}/${crypto.randomUUID()}-${file.name}`;
-        const { error: upErr } = await supabase.storage
-          .from("demand-attachments")
-          .upload(path, file, { upsert: false, contentType: file.type });
-        if (upErr) throw upErr;
-        await addAtt.mutateAsync({
-          demandId: demand.id,
-          file_url: path,
-          file_type: file.type,
-          file_name: file.name,
-        });
-      }
+      // Anexo que falha não desfaz a demanda — ver o mesmo trecho no
+      // NewTicketDialog para o porquê (a demanda já existe neste ponto).
+      const { anexados, falhas } = await enviarVarios(demand.id, files);
 
-      toast({ title: "Demanda criada com sucesso" });
+      toast({
+        title: "Demanda criada com sucesso",
+        description:
+          falhas.length > 0 ? `${anexados} de ${files.length} anexos enviados. ${falhas[0]}` : undefined,
+        variant: falhas.length > 0 ? "destructive" : undefined,
+      });
 
       // Agente Autônomo Nível 1: se ficou sem responsável, tenta responder
       // via Base de Conhecimento (fire-and-forget; falhas não bloqueiam).
@@ -322,11 +317,17 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
               <input
                 type="file"
                 multiple
-                accept="image/*,application/pdf"
+                accept={ACEITA_NO_SELETOR}
                 className="hidden"
                 onChange={(e) => {
-                  const list = Array.from(e.target.files ?? []);
-                  setFiles((prev) => [...prev, ...list]);
+                  // Recusa no ato da escolha, não no envio: ver NewTicketDialog.
+                  const bons: File[] = [];
+                  for (const f of Array.from(e.target.files ?? [])) {
+                    const problema = validarArquivo(f);
+                    if (problema) toast({ title: problema, variant: "destructive" });
+                    else bons.push(f);
+                  }
+                  setFiles((prev) => [...prev, ...bons]);
                   e.target.value = "";
                 }}
               />

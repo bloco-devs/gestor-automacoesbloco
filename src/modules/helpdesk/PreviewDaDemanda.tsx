@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { ChevronDown, Loader2, Sparkles } from "lucide-react";
+import { ChevronDown, Loader2, Paperclip, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,15 @@ interface Props {
   nova: NovaDemanda;
   /** O nome do sistema, já resolvido: esta tela não consulta nada. */
   sistemaNome: string | null;
+  /**
+   * O que a pessoa anexou durante a conversa e vai junto na criação.
+   *
+   * Aparece aqui pela regra que abre este arquivo: preview que mostra uma coisa
+   * e grava outra é pior que não ter preview. A barra de conversa some nesta
+   * fase, e com ela sumiriam as fichas dos arquivos — a pessoa confirmaria sem
+   * ver que o print que ela mandou está incluído.
+   */
+  anexos?: Array<{ id: string; nome: string }>;
   onConfirmar: () => void;
   onVoltarParaConversa: () => void;
   enviando: boolean;
@@ -54,7 +63,14 @@ function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode
   );
 }
 
-function PreviewDaDemandaImpl({ nova, sistemaNome, onConfirmar, onVoltarParaConversa, enviando }: Props) {
+function PreviewDaDemandaImpl({
+  nova,
+  sistemaNome,
+  anexos = [],
+  onConfirmar,
+  onVoltarParaConversa,
+  enviando,
+}: Props) {
   const [detalhes, setDetalhes] = useState(false);
   const problemas = problemasDe(nova);
   const insegura = nova.confianca < 0.6;
@@ -101,6 +117,25 @@ function PreviewDaDemandaImpl({ nova, sistemaNome, onConfirmar, onVoltarParaConv
             ))}
           </ul>
         </div>
+
+        {anexos.length > 0 && (
+          <div className="mt-4">
+            <p className="text-[12px] text-muted-foreground">Vai junto</p>
+            <ul className="mt-1.5 flex flex-wrap gap-1.5">
+              {anexos.map((a) => (
+                <li
+                  key={a.id}
+                  className="flex max-w-[15rem] items-center gap-1.5 rounded-lg border border-border/70 bg-muted/40 px-2 py-1 text-[12px]"
+                >
+                  <Paperclip className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                  <span className="truncate" title={a.nome}>
+                    {a.nome}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {insegura && (
           <p className="mt-4 rounded-md bg-warning/10 px-3 py-2 text-[13px] text-warning-foreground">

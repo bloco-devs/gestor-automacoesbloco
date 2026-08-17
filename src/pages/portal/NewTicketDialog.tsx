@@ -20,11 +20,11 @@ import type { KnowledgeItem } from "@/modules/knowledge";
 import { DuplicatePreventionPanel } from "@/components/portal/DuplicatePreventionPanel";
 import { markDemandIgnoredSuggestion } from "@/modules/ecossistema";
 import {
-  useAddAttachment,
   useAutoRespondDemand,
   useCreateDemand,
   useRecordDeflection,
 } from "@/modules/demands/hooks";
+import { ACEITA_NO_SELETOR, enviarVarios, validarArquivo } from "@/modules/demands/anexos";
 import { useEffect } from "react";
 
 interface Props {
@@ -43,7 +43,6 @@ interface Props {
 export function NewTicketDialog({ open, onOpenChange }: Props) {
   const { toast } = useToast();
   const create = useCreateDemand();
-  const addAtt = useAddAttachment();
   const autoRespond = useAutoRespondDemand();
   const recordDeflect = useRecordDeflection();
 
@@ -112,21 +111,24 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
         markDemandIgnoredSuggestion(demand.id);
       }
 
-      for (const file of files) {
-        const path = `${demand.id}/${crypto.randomUUID()}-${file.name}`;
-        const { error: upErr } = await supabase.storage
-          .from("demand-attachments")
-          .upload(path, file, { upsert: false, contentType: file.type });
-        if (upErr) throw upErr;
-        await addAtt.mutateAsync({
-          demandId: demand.id,
-          file_url: path,
-          file_type: file.type,
-          file_name: file.name,
-        });
-      }
+      /**
+       * O ANEXO NÃO PODE DERRUBAR A DEMANDA
+       *
+       * Antes, um `throw` no upload abortava o `handleSubmit` DEPOIS de a
+       * demanda já estar criada: o usuário via "Erro ao enviar", o diálogo não
+       * fechava, ele tentava de novo — e abria a segunda demanda idêntica. A
+       * demanda existe; o que falhou foi o anexo, e é isso que a mensagem diz.
+       */
+      const { anexados, falhas } = await enviarVarios(demand.id, files);
 
-      toast({ title: "Demanda registrada!", description: "Você poderá acompanhá-la no portal." });
+      toast({
+        title: "Demanda registrada!",
+        description:
+          falhas.length > 0
+            ? `${anexados} de ${files.length} anexos enviados. ${falhas[0]} Você pode reenviar pela tela da demanda.`
+            : "Você poderá acompanhá-la no portal.",
+        variant: falhas.length > 0 ? "destructive" : undefined,
+      });
 
       // Aciona Agente Autônomo IA Nível 1 (portal sempre cria sem responsável).
       void autoRespond.mutateAsync(demand.id);
@@ -231,11 +233,21 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
               <input
                 type="file"
                 multiple
-                accept="image/*,application/pdf"
+                accept={ACEITA_NO_SELETOR}
                 className="hidden"
                 onChange={(e) => {
-                  const list = Array.from(e.target.files ?? []);
-                  setFiles((prev) => [...prev, ...list]);
+                  // Recusar aqui, e não depois do envio: o tamanho e o tipo já
+                  // são conhecidos no instante da escolha, e descobrir que o
+                  // arquivo não serve só ao apertar "Enviar demanda" é perder a
+                  // demanda inteira por causa de um anexo.
+                  const escolhidos = Array.from(e.target.files ?? []);
+                  const bons: File[] = [];
+                  for (const f of escolhidos) {
+                    const problema = validarArquivo(f);
+                    if (problema) toast({ title: problema, variant: "destructive" });
+                    else bons.push(f);
+                  }
+                  setFiles((prev) => [...prev, ...bons]);
                   e.target.value = "";
                 }}
               />

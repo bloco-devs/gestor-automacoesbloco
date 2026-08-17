@@ -490,7 +490,16 @@ export default function DemandaDetalhe() {
           anexos={anexos.anexos}
           podeAnexar={anexos.podeAnexar}
           enviando={anexos.enviando}
-          onEnviar={(arquivos) => void anexos.enviar(arquivos)}
+          onEnviar={(arquivos) => {
+            /* O resultado do envio precisa chegar na tela. Ver o comentário de
+               `enviar` em useAnexos: era aqui que a falha morria. */
+            void anexos.enviar(arquivos).then(({ anexados, falhas }) => {
+              if (anexados > 0) {
+                toast.success(anexados === 1 ? "Anexo enviado." : `${anexados} anexos enviados.`);
+              }
+              for (const f of falhas) toast.error(f);
+            });
+          }}
         />
 
         {/* A ÚNICA seção fechada. Quem, quando, sistema, etiquetas: dados que
