@@ -31,6 +31,10 @@ export function PortalQuickCreate() {
     previewScore,
     demandaDoPreview,
     sistemaDoPreview,
+    anexos,
+    anexandoArquivo,
+    anexar,
+    removerAnexo,
     sendMessage,
     updatePreview,
     confirmSubmit,
@@ -73,6 +77,10 @@ export function PortalQuickCreate() {
               disabled={thinking || processing}
               loading={thinking}
               placeholder="Escreva sua resposta…"
+              onAnexar={(arquivos) => void anexar(arquivos)}
+              anexos={anexos}
+              onRemoverAnexo={removerAnexo}
+              enviandoAnexo={anexandoArquivo}
             />
             <ConversationFooter turnsUsed={userTurns} maxTurns={maxUserTurns} phase={phase} />
           </>
@@ -81,6 +89,7 @@ export function PortalQuickCreate() {
           <PreviewDaDemanda
             nova={demandaDoPreview}
             sistemaNome={sistemaDoPreview}
+            anexos={anexos}
             onConfirmar={confirmSubmit}
             onVoltarParaConversa={goBackToChat}
             enviando={submitting}
