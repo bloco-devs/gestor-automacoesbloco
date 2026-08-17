@@ -73,6 +73,10 @@ export function PortalQuickCreate() {
               disabled={thinking || processing}
               loading={thinking}
               placeholder="Escreva sua resposta…"
+              onAnexar={(arquivos) => void anexar(arquivos)}
+              anexos={anexos}
+              onRemoverAnexo={removerAnexo}
+              enviandoAnexo={anexandoArquivo}
             />
             <ConversationFooter turnsUsed={userTurns} maxTurns={maxUserTurns} phase={phase} />
           </>
