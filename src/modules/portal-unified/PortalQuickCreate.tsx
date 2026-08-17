@@ -89,6 +89,7 @@ export function PortalQuickCreate() {
           <PreviewDaDemanda
             nova={demandaDoPreview}
             sistemaNome={sistemaDoPreview}
+            anexos={anexos}
             onConfirmar={confirmSubmit}
             onVoltarParaConversa={goBackToChat}
             enviando={submitting}
