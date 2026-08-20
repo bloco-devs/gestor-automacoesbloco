@@ -1715,6 +1715,86 @@ export type Database = {
           },
         ]
       }
+      notificacao_email_fila: {
+        Row: {
+          created_at: string
+          dados: Json
+          demanda_id: string | null
+          destinatario_email: string
+          destinatario_id: string | null
+          enviado_em: string | null
+          evento: string
+          id: string
+          situacao: string
+          tentativas: number
+          ultimo_erro: string | null
+        }
+        Insert: {
+          created_at?: string
+          dados?: Json
+          demanda_id?: string | null
+          destinatario_email: string
+          destinatario_id?: string | null
+          enviado_em?: string | null
+          evento: string
+          id?: string
+          situacao?: string
+          tentativas?: number
+          ultimo_erro?: string | null
+        }
+        Update: {
+          created_at?: string
+          dados?: Json
+          demanda_id?: string | null
+          destinatario_email?: string
+          destinatario_id?: string | null
+          enviado_em?: string | null
+          evento?: string
+          id?: string
+          situacao?: string
+          tentativas?: number
+          ultimo_erro?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacao_email_fila_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notificacao_preferencias: {
+        Row: {
+          created_at: string
+          email_ativo: boolean
+          email_concluida: boolean
+          email_demanda_criada: boolean
+          email_mudanca_status: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_ativo?: boolean
+          email_concluida?: boolean
+          email_demanda_criada?: boolean
+          email_mudanca_status?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_ativo?: boolean
+          email_concluida?: boolean
+          email_demanda_criada?: boolean
+          email_mudanca_status?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           created_at: string
@@ -2866,6 +2946,10 @@ export type Database = {
           nome: string
           role: string
         }[]
+      }
+      rotulo_humano_status: {
+        Args: { s: Database["public"]["Enums"]["demand_status"] }
+        Returns: string
       }
       uuid_ou_nulo: { Args: { _texto: string }; Returns: string }
     }
