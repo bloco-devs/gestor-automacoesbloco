@@ -57,7 +57,7 @@ const CARTOES: Cartao[] = [
     href: "/relatorios/remuneracao",
     icone: Coins,
     capacidade: "remuneracao.ver_propria",
-    pronto: false,
+    pronto: true,
   },
   {
     id: "fechamentos",

@@ -68,3 +68,15 @@ export type {
 export { default as Classificacao } from "./components/Classificacao";
 export { buscarApuracao } from "./services/relatorios-data";
 export type { LinhaDaApuracao } from "./services/relatorios-data";
+
+// Etapa 5 — apuração do ciclo
+export { default as Apuracao } from "./components/Apuracao";
+export {
+  buscarPendenciasDoCiclo,
+  buscarResultadoDoCiclo,
+  fecharCiclo,
+  formatarPercentual,
+  formatarReais,
+  reabrirCiclo,
+} from "./services/apuracao-data";
+export type { PendenciasDoCiclo, ResultadoDoCiclo } from "./services/apuracao-data";

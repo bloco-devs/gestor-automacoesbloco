@@ -69,6 +69,9 @@ const FechamentoTecnico = lazy(
 const Classificacao = lazy(
   () => import(/* webpackChunkName: "relatorios" */ "./pages/Classificacao"),
 );
+const Apuracao = lazy(
+  () => import(/* webpackChunkName: "relatorios" */ "./pages/Apuracao"),
+);
 const ObservabilidadeIA = lazy(() => import(/* webpackChunkName: "ai" */ "./pages/ObservabilidadeIA"));
 const Inbox = lazy(() => import(/* webpackChunkName: "workspace" */ "./pages/Inbox"));
 const Operacoes = lazy(() => import(/* webpackChunkName: "operations" */ "./pages/Operacoes"));
@@ -501,6 +504,7 @@ const AppRoutes = () => {
           <Route path="/relatorios/pendencias" element={<PendenciasDeFechamento />} />
           <Route path="/relatorios/fechamento/:demandaId" element={<FechamentoTecnico />} />
           <Route path="/relatorios/classificacao" element={<Classificacao />} />
+          <Route path="/relatorios/remuneracao" element={<Apuracao />} />
         </Route>
 
 
