@@ -374,7 +374,36 @@ function FechamentoTecnicoImpl() {
           </Section>
 
           {/* ---------------------------------------------------------- */}
-          <Section title="Tempo trabalhado">
+          <Section title="Período e tempo">
+            {/* As duas datas ficam SEMPRE visíveis. Elas estavam dentro do
+                bloco recolhido atrás de "Lançar horas trabalhadas" — rótulo
+                que não as descreve, então ninguém iria procurar data ali. São
+                dois campos pequenos; esconder custava mais confusão do que
+                economizava espaço. */}
+            <div className="mb-3 flex flex-wrap gap-4">
+              <div>
+                <Label className="text-[12px]">Data de início do trabalho</Label>
+                <Input
+                  type="date"
+                  className="mt-1"
+                  value={campos.data_inicio ?? ""}
+                  onChange={(e) => set("data_inicio")(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-[12px]">Data de conclusão</Label>
+                <Input
+                  type="date"
+                  className="mt-1"
+                  value={campos.data_conclusao_declarada ?? ""}
+                  onChange={(e) => set("data_conclusao_declarada")(e.target.value)}
+                />
+                <p className="ds-caption mt-1 text-muted-foreground">
+                  Só para o relato. A data que vale na apuração vem do histórico da demanda.
+                </p>
+              </div>
+            </div>
+
             {!tempoAberto && minutos === 0 ? (
               <button
                 type="button"
@@ -461,29 +490,13 @@ function FechamentoTecnicoImpl() {
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-4">
-                <div>
-                  <Label className="text-[12px]">Data de início do trabalho</Label>
-                  <Input
-                    type="date"
-                    className="mt-1"
-                    value={campos.data_inicio ?? ""}
-                    onChange={(e) => set("data_inicio")(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label className="text-[12px]">Data de conclusão</Label>
-                  <Input
-                    type="date"
-                    className="mt-1"
-                    value={campos.data_conclusao_declarada ?? ""}
-                    onChange={(e) => set("data_conclusao_declarada")(e.target.value)}
-                  />
-                  <p className="ds-caption mt-1 text-muted-foreground">
-                    Só para o relato. A data que vale na apuração vem do histórico da demanda.
-                  </p>
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => setTempoAberto(false)}
+                className="self-start text-[13px] text-muted-foreground hover:text-foreground"
+              >
+                Recolher
+              </button>
             </div>
             )}
           </Section>
