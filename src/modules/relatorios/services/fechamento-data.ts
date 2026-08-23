@@ -284,6 +284,8 @@ export interface EventoDeClassificacao {
   motivo_da_alteracao: string | null;
   alterado_por_email: string | null;
   alterado_em: string;
+  /** Quem classificou é o responsável pela demanda. */
+  autoclassificada: boolean;
 }
 
 export async function buscarHistoricoDeClassificacao(
@@ -292,7 +294,7 @@ export async function buscarHistoricoDeClassificacao(
   const { data, error } = await supabase
     .from("relatorio_classificacao_historico" as never)
     .select(
-      "id, origem, classificacao_de, classificacao_para, pontos_de, pontos_para, justificativa, motivo_da_alteracao, alterado_por_email, alterado_em",
+      "id, origem, classificacao_de, classificacao_para, pontos_de, pontos_para, justificativa, motivo_da_alteracao, alterado_por_email, alterado_em, autoclassificada",
     )
     .eq("demanda_id", demandaId)
     .order("alterado_em", { ascending: false });

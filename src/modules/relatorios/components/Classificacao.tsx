@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Clock,
   History,
+  Info,
   Scale,
 } from "lucide-react";
 import { EmptyPanel, KpiRow, PageHeader, PageShell, Section, StatCard } from "@/design-system";
@@ -25,6 +26,7 @@ import {
 } from "../services/fechamento-data";
 import { buscarTiposDeClassificacao } from "../services/relatorios-data";
 import { formatarData } from "../services/relatorios-service";
+import { useAuth } from "@/hooks/useAuth";
 
 /**
  * O texto que fica na tela de quem decide.
@@ -37,16 +39,30 @@ import { formatarData } from "../services/relatorios-service";
 const CRITERIO =
   "Considere escopo, complexidade técnica, impacto, risco, componentes afetados, integrações, alterações de banco, segurança e testes. O tempo aparece abaixo como contexto — ele não define a classificação, e usar IA ou automação não torna uma entrega complexa mais fácil.";
 
+/**
+ * O aviso que aparece quando a pessoa classifica a própria entrega.
+ *
+ * Não é advertência nem desconfiança: é transparência sobre o que fica
+ * registrado. O dono decidiu que os desenvolvedores classificam o próprio
+ * trabalho, e a justificativa passa a ser a única coisa que sustenta a decisão
+ * para quem conferir depois. Quem escreve merece saber disso na hora.
+ */
+const AVISO_PROPRIA =
+  "Esta é a sua entrega. Você pode classificá-la — o sistema registra que foi autoclassificação, e a sua justificativa é o que vai sustentar a decisão numa revisão futura.";
+
 function Cartao({
   item,
   tipos,
   aoClassificar,
   salvando,
+  euSou,
 }: {
   item: ParaClassificar;
   tipos: Array<{ codigo: string; rotulo: string; pontos: number }>;
   aoClassificar: (codigo: string, justificativa: string, motivo?: string) => void;
   salvando: boolean;
+  /** Id de quem está logado, para saber se a entrega é da própria pessoa. */
+  euSou: string | null;
 }) {
   const [aberto, setAberto] = useState(false);
   const [escolha, setEscolha] = useState<string | null>(null);
@@ -62,6 +78,7 @@ function Cartao({
 
   const curta = justificativa.trim().length < 15;
   const precisaMotivo = item.ja_classificada && motivo.trim().length < 10;
+  const minha = !!euSou && item.responsavel_id === euSou;
 
   return (
     <div className="rounded-2xl border">
@@ -136,6 +153,13 @@ function Cartao({
           </div>
 
           {/* --------------------------------------------------------- */}
+          {minha && (
+            <div className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3 text-[13px]">
+              <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <p className="text-muted-foreground">{AVISO_PROPRIA}</p>
+            </div>
+          )}
+
           <div>
             <Label>Classificação</Label>
             <p className="ds-caption mb-2 mt-0.5 text-muted-foreground">{CRITERIO}</p>
@@ -229,6 +253,11 @@ function Cartao({
                             ? `${h.classificacao_de} (${h.pontos_de}) → ${h.classificacao_para} (${h.pontos_para})`
                             : `${h.classificacao_para} — ${h.pontos_para} pontos`}
                         </span>
+                        {h.autoclassificada && (
+                          <Badge variant="outline" className="font-normal">
+                            própria entrega
+                          </Badge>
+                        )}
                         <span className="ml-auto text-muted-foreground">
                           {formatarData(h.alterado_em, true)}
                         </span>
@@ -259,6 +288,7 @@ function Cartao({
 
 function ClassificacaoImpl() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [aba, setAba] = useState<"aguardando" | "classificadas">("aguardando");
 
   const tipos = useQuery({
@@ -378,6 +408,7 @@ function ClassificacaoImpl() {
                 item={item}
                 tipos={tipos.data ?? []}
                 salvando={acao.isPending}
+                euSou={user?.id ?? null}
                 aoClassificar={(codigo, justificativa, motivo) =>
                   acao.mutate({ demanda: item.demanda_id, codigo, justificativa, motivo })
                 }
