@@ -346,7 +346,7 @@ function ClassificacaoImpl() {
       toast.error("Não foi possível classificar", { description: e.message }),
   });
 
-  const todas = lista.data ?? [];
+  const todas = useMemo(() => lista.data ?? [], [lista.data]);
   const aguardando = useMemo(() => todas.filter((i) => !i.ja_classificada), [todas]);
   const classificadas = useMemo(() => todas.filter((i) => i.ja_classificada), [todas]);
   const visiveis = aba === "aguardando" ? aguardando : classificadas;

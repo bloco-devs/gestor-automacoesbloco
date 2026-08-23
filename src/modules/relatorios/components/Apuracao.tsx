@@ -1,16 +1,17 @@
 import { memo, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertTriangle,
+  ClipboardList,
   CheckCircle2,
   Coins,
   Info,
   Lock,
   LockOpen,
-  Target,
+  Scale,
   TriangleAlert,
 } from "lucide-react";
-import { EmptyPanel, KpiRow, PageHeader, PageShell, Section, StatCard } from "@/design-system";
+import { EmptyPanel, PageHeader, PageShell, Section } from "@/design-system";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,9 +44,11 @@ import {
 import {
   buscarApuracao,
   buscarCiclos,
+  buscarFaixas,
   buscarImplementacoes,
   buscarMinhasCapacidades,
 } from "../services/relatorios-data";
+import MedidorDaMeta from "./MedidorDaMeta";
 import { formatarData } from "../services/relatorios-service";
 import { formatarDuracao } from "../services/fechamento-data";
 
@@ -53,6 +56,7 @@ const TODOS = "__todos__";
 
 function Apurar() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [cicloId, setCicloId] = useState<string | null>(null);
   const [sistema, setSistema] = useState<string | null>(null);
   const [pessoa, setPessoa] = useState<string | null>(null);
@@ -72,6 +76,14 @@ function Apurar() {
     queryKey: ["relatorio", "ciclos"],
     queryFn: buscarCiclos,
     staleTime: 60_000,
+  });
+
+  // As faixas alimentam as marcas do medidor. Vêm do banco: se o RH mudar a
+  // régua, o desenho muda com ela — nenhum limiar está no código da tela.
+  const faixas = useQuery({
+    queryKey: ["relatorio", "faixas"],
+    queryFn: buscarFaixas,
+    staleTime: 300_000,
   });
 
   useEffect(() => {
@@ -137,8 +149,10 @@ function Apurar() {
 
   const r = resultado.data;
   const p = pendencias.data;
-  const pessoas = porPessoa.data ?? [];
-  const linhas = detalhe.data ?? [];
+  // `?? []` cria array novo a cada render, o que anula o useMemo abaixo.
+  // Estabilizar aqui é o que faz a memoização valer alguma coisa.
+  const pessoas = useMemo(() => porPessoa.data ?? [], [porPessoa.data]);
+  const linhas = useMemo(() => detalhe.data ?? [], [detalhe.data]);
 
   const sistemasDoCiclo = useMemo(
     () => [...new Set(linhas.map((l) => l.sistema_slug).filter(Boolean))] as string[],
@@ -212,11 +226,14 @@ function Apurar() {
       />
 
       {/* ============================================================
-          A PERGUNTA 1: QUANTOS PONTOS A EQUIPE FEZ?
-          Fica no topo, em número grande, antes de qualquer detalhe.
+          A PERGUNTA 1: QUANTOS PONTOS A EQUIPE FEZ, E QUANTO FALTA?
+
+          Antes eram quatro números do mesmo tamanho e o leitor dividia de
+          cabeça. Agora o medidor mostra a régua inteira: onde a equipe está,
+          onde ficam os degraus e quanto cada um paga.
           ============================================================ */}
       {resultado.isLoading || !r ? (
-        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-52 w-full" />
       ) : (
         <Section
           title={r.ciclo_rotulo}
@@ -233,66 +250,40 @@ function Apurar() {
               {r.congelado && (
                 <span className="ds-caption inline-flex items-center gap-1 text-muted-foreground">
                   <Lock className="size-3" aria-hidden />
-                  resultado congelado
+                  congelado
                 </span>
               )}
             </div>
           }
         >
-          <KpiRow>
-            <StatCard label="Pontos realizados" value={r.pontos} icon={Coins} />
-            <StatCard label="Meta da equipe" value={r.meta_pontos} icon={Target} />
-            <StatCard
-              label="Alcance"
-              value={formatarPercentual(r.percentual)}
-              tone={
-                (r.percentual ?? 0) >= 100 ? "success"
-                : (r.percentual ?? 0) >= 80 ? "neutral"
-                : "warning"
-              }
-              hint={`${r.entregas} entrega${r.entregas === 1 ? "" : "s"} elegível${r.entregas === 1 ? "" : "eis"}`}
-            />
-            <StatCard
-              label="Remuneração"
-              value={r.faixa_indefinida ? "a definir" : formatarReais(r.valor_reais)}
-              tone={r.faixa_indefinida ? "warning" : "neutral"}
-              hint={r.faixa_indefinida ? undefined : (r.faixa_rotulo ?? undefined)}
-            />
-          </KpiRow>
+          <MedidorDaMeta
+            pontos={r.pontos}
+            meta={r.meta_pontos}
+            percentual={r.percentual}
+            faixas={faixas.data ?? []}
+            indefinida={r.faixa_indefinida}
+            faixaRotulo={r.faixa_rotulo}
+            valorReais={r.valor_reais}
+          />
 
-          <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
-            <span>
-              <span className="text-muted-foreground">Fácil:</span> {r.facil} × 50 ={" "}
-              <span className="tabular-nums">{r.facil * 50}</span>
-            </span>
-            <span>
-              <span className="text-muted-foreground">Médio:</span> {r.media} × 100 ={" "}
-              <span className="tabular-nums">{r.media * 100}</span>
-            </span>
-            <span>
-              <span className="text-muted-foreground">Difícil:</span> {r.dificil} × 200 ={" "}
-              <span className="tabular-nums">{r.dificil * 200}</span>
-            </span>
-          </div>
-
-          {/* A LACUNA, quando acontece. É o único lugar da tela onde um valor
-              deveria estar e não está — então precisa explicar por quê, e de
-              quem depende a decisão. */}
-          {r.faixa_indefinida && (
-            <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-warning/40 bg-warning/10 p-3 text-[13px]">
-              <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
-              <div>
-                <p className="font-medium">Faixa de remuneração não definida</p>
-                <p className="text-muted-foreground">
-                  O alcance de {formatarPercentual(r.percentual)} cai num intervalo sem regra
-                  cadastrada — as faixas conhecidas vão até 100% e retomam em 120%.{" "}
-                  <strong>Necessária definição do RH.</strong>
-                </p>
-                <p className="mt-1 text-muted-foreground">
-                  Os pontos estão apurados e corretos. O que falta é quanto esse alcance vale em
-                  reais — o sistema não preenche isso por conta própria.
-                </p>
-              </div>
+          {/* A composição dos pontos. Só aparece quando existe ponto — três
+              linhas de "0 × 50 = 0" não informam nada. */}
+          {r.pontos > 0 && (
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
+              {[
+                ["Fácil", r.facil, 50],
+                ["Médio", r.media, 100],
+                ["Difícil", r.dificil, 200],
+              ]
+                .filter(([, q]) => (q as number) > 0)
+                .map(([rot, q, v]) => (
+                  <span key={rot as string}>
+                    <span className="text-muted-foreground">{rot}:</span> {q} × {v} ={" "}
+                    <span className="font-medium tabular-nums">
+                      {(q as number) * (v as number)}
+                    </span>
+                  </span>
+                ))}
             </div>
           )}
         </Section>
@@ -302,37 +293,77 @@ function Apurar() {
           POR QUE O NÚMERO NÃO FECHA COM O TOTAL DE CONCLUÍDAS
           ============================================================ */}
       {p && p.concluidas_no_ciclo > p.elegiveis && (
-        <Section title="Pendências do ciclo">
-          <div className="flex items-start gap-2.5 rounded-lg border bg-muted/40 p-3 text-[13px]">
-            <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-            <div className="flex-1">
-              <p>
-                <strong>{p.concluidas_no_ciclo}</strong> demandas foram concluídas neste ciclo, mas
-                só <strong>{p.elegiveis}</strong> entraram na apuração. A diferença:
-              </p>
-              <ul className="mt-2 flex flex-col gap-1 text-muted-foreground">
-                {p.sem_fechamento > 0 && (
-                  <li>
-                    <strong className="text-foreground">{p.sem_fechamento}</strong> sem fechamento
-                    técnico registrado
-                  </li>
-                )}
-                {p.sem_classificacao > 0 && (
-                  <li>
-                    <strong className="text-foreground">{p.sem_classificacao}</strong> com
-                    fechamento, aguardando classificação
-                  </li>
-                )}
-                {p.sem_data_confiavel > 0 && (
-                  <li>
-                    <strong className="text-foreground">{p.sem_data_confiavel}</strong> sem data de
-                    conclusão confirmável
-                  </li>
-                )}
-              </ul>
-              <p className="mt-2 text-muted-foreground">
-                Nenhuma foi apagada nem escondida — todas continuam no relatório técnico.
-              </p>
+        <Section title={p.elegiveis === 0 ? "O que falta para apurar" : "Pendências do ciclo"}>
+          <div
+            className={[
+              "rounded-lg border p-4",
+              // Quando NADA foi apurado, isto deixa de ser nota de rodapé e
+              // passa a ser a única coisa a fazer na tela.
+              p.elegiveis === 0
+                ? "border-warning/40 bg-warning/10"
+                : "bg-muted/40",
+            ].join(" ")}
+          >
+            <div className="flex items-start gap-2.5">
+              {p.elegiveis === 0 ? (
+                <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+              ) : (
+                <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+              )}
+              <div className="flex-1 text-[13px]">
+                <p className="font-medium">
+                  {p.elegiveis === 0
+                    ? `${p.concluidas_no_ciclo} entregas concluídas, nenhuma apurada ainda`
+                    : `${p.concluidas_no_ciclo} concluídas, ${p.elegiveis} apuradas`}
+                </p>
+
+                <ul className="mt-2 flex flex-col gap-1 text-muted-foreground">
+                  {p.sem_fechamento > 0 && (
+                    <li>
+                      <strong className="text-foreground tabular-nums">{p.sem_fechamento}</strong>{" "}
+                      sem fechamento técnico registrado
+                    </li>
+                  )}
+                  {p.sem_classificacao > 0 && (
+                    <li>
+                      <strong className="text-foreground tabular-nums">{p.sem_classificacao}</strong>{" "}
+                      com fechamento, aguardando classificação
+                    </li>
+                  )}
+                  {p.sem_data_confiavel > 0 && (
+                    <li>
+                      <strong className="text-foreground tabular-nums">{p.sem_data_confiavel}</strong>{" "}
+                      sem data de conclusão confirmável
+                    </li>
+                  )}
+                </ul>
+
+                <p className="mt-2 text-muted-foreground">
+                  Nada foi apagado nem escondido — tudo continua no relatório técnico.
+                </p>
+
+                {/* Caminho para resolver, no lugar onde o problema aparece. */}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {p.sem_fechamento > 0 && (
+                    <Button
+                      size="sm"
+                      variant={p.elegiveis === 0 ? "default" : "outline"}
+                      onClick={() => navigate("/relatorios/pendencias")}
+                    >
+                      Registrar fechamentos
+                    </Button>
+                  )}
+                  {p.sem_classificacao > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate("/relatorios/classificacao")}
+                    >
+                      Classificar
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </Section>
@@ -462,7 +493,11 @@ function Apurar() {
         {detalhe.isLoading ? (
           <Skeleton className="h-32 w-full" />
         ) : linhas.length === 0 ? (
-          <EmptyPanel icon={AlertTriangle} title="Nenhuma entrega com esses filtros" />
+          <EmptyPanel
+            icon={Coins}
+            title="Nenhuma entrega com esses filtros"
+            description="Ajuste os filtros acima, ou veja o relatório técnico para o período inteiro."
+          />
         ) : (
           <div className="overflow-x-auto rounded-lg border">
             <Table>

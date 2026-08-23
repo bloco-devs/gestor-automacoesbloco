@@ -147,7 +147,7 @@ export function useRelatorioImplementacoes() {
     staleTime: STALE,
   });
 
-  const linhas = consulta.data ?? [];
+  const linhas = useMemo(() => consulta.data ?? [], [consulta.data]);
 
   return {
     filtros,
