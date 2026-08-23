@@ -39,3 +39,27 @@ export type {
   ResultadoDaFaixa,
   TipoDeClassificacao,
 } from "./types";
+
+// Etapa 3 — fechamento técnico, tempo e classificação
+export { default as PendenciasDeFechamento } from "./components/PendenciasDeFechamento";
+export { default as FechamentoTecnico } from "./components/FechamentoTecnico";
+
+export {
+  adicionarIntervalo,
+  buscarFechamento,
+  buscarIntervalos,
+  buscarParaClassificar,
+  buscarPendencias,
+  classificar,
+  formatarDuracao,
+  removerIntervalo,
+  salvarFechamento,
+  somarMinutos,
+} from "./services/fechamento-data";
+
+export type {
+  FechamentoTecnico as DadosDoFechamento,
+  Intervalo,
+  ParaClassificar,
+  Pendencia,
+} from "./services/fechamento-data";

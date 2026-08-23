@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BarChart3, CalendarClock, Coins, FileSearch, Lock } from "lucide-react";
+import { ArrowRight, BarChart3, CalendarClock, ClipboardList, Coins, FileSearch, Lock } from "lucide-react";
 import { EmptyPanel, PageHeader, PageShell, Section } from "@/design-system";
 import { Badge } from "@/components/ui/badge";
 import { buscarCiclos, buscarMinhasCapacidades } from "../services/relatorios-data";
@@ -26,6 +26,16 @@ const CARTOES: Cartao[] = [
       "O que foi entregue por período, sistema e pessoa. Períodos cronológicos, do dia 1 ao último dia do mês.",
     href: "/relatorios/implementacoes",
     icone: FileSearch,
+    capacidade: "relatorios.ver",
+    pronto: true,
+  },
+  {
+    id: "pendencias",
+    titulo: "Pendências de fechamento",
+    descricao:
+      "Entregas concluídas que ainda não têm o relato técnico registrado. É o que falta para elas poderem ser classificadas.",
+    href: "/relatorios/pendencias",
+    icone: ClipboardList,
     capacidade: "relatorios.ver",
     pronto: true,
   },
