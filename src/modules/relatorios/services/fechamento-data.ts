@@ -246,6 +246,15 @@ export interface ParaClassificar {
   tarefas_total: number;
   anexos: number;
   ja_classificada: boolean;
+  /** A decisão atual. Nulos quando ninguém classificou ainda. */
+  classificacao: string | null;
+  rotulo: string | null;
+  pontos: number | null;
+  justificativa: string | null;
+  classificada_por: string | null;
+  classificada_em: string | null;
+  autoclassificada: boolean;
+  vezes_alterada: number;
 }
 
 export async function buscarParaClassificar(): Promise<ParaClassificar[]> {

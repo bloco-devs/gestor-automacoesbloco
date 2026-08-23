@@ -65,7 +65,9 @@ function Cartao({
   euSou: string | null;
 }) {
   const [aberto, setAberto] = useState(false);
-  const [escolha, setEscolha] = useState<string | null>(null);
+  // Começa no que já está gravado. Abrir um cartão classificado com os três
+  // botões em branco fazia parecer que a decisão tinha sumido.
+  const [escolha, setEscolha] = useState<string | null>(item.classificacao);
   const [justificativa, setJustificativa] = useState("");
   const [motivo, setMotivo] = useState("");
   const [verHistorico, setVerHistorico] = useState(false);
@@ -106,8 +108,21 @@ function Cartao({
             )}
           </div>
         </div>
+        {/* A DECISÃO, e não só o fato de existir uma.
+            Antes o selo dizia apenas "classificada" — a informação que
+            importa, qual foi e quanto valeu, exigia abrir o histórico. */}
         {item.ja_classificada ? (
-          <Badge className="shrink-0 font-normal">classificada</Badge>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <Badge className="font-normal">
+              {item.rotulo} · {item.pontos} pontos
+            </Badge>
+            <span className="ds-caption text-muted-foreground">
+              {item.autoclassificada ? "própria entrega" : "por outra pessoa"}
+              {item.vezes_alterada > 0
+                ? ` · alterada ${item.vezes_alterada}×`
+                : ""}
+            </span>
+          </div>
         ) : (
           <Badge variant="outline" className="shrink-0 font-normal">
             aguardando
@@ -153,6 +168,19 @@ function Cartao({
           </div>
 
           {/* --------------------------------------------------------- */}
+          {item.ja_classificada && item.justificativa && (
+            <div className="rounded-lg border-l-2 border-l-foreground/30 bg-muted/40 p-3 text-[13px]">
+              <span className="ds-label text-muted-foreground">
+                Por que {item.rotulo} ({item.pontos} pontos)
+              </span>
+              <p className="mt-0.5 whitespace-pre-wrap">{item.justificativa}</p>
+              <p className="ds-caption mt-1.5 text-muted-foreground">
+                {item.classificada_por}
+                {item.classificada_em ? ` · ${formatarData(item.classificada_em, true)}` : ""}
+              </p>
+            </div>
+          )}
+
           {minha && (
             <div className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3 text-[13px]">
               <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -322,6 +350,7 @@ function ClassificacaoImpl() {
   const aguardando = useMemo(() => todas.filter((i) => !i.ja_classificada), [todas]);
   const classificadas = useMemo(() => todas.filter((i) => i.ja_classificada), [todas]);
   const visiveis = aba === "aguardando" ? aguardando : classificadas;
+  const autoclassificadas = classificadas.filter((i) => i.autoclassificada).length;
 
   return (
     <PageShell maxWidth="xl">
@@ -340,14 +369,15 @@ function ClassificacaoImpl() {
             icon={CheckCircle2}
             tone={classificadas.length > 0 ? "success" : "neutral"}
           />
-          {/* Não somo pontos aqui: esta consulta não devolve a classificação
-              de cada linha, só se ela existe. Somar exigiria adivinhar, e o
-              total correto está na apuração do ciclo. */}
           <StatCard
-            label="Sem tempo lançado"
-            value={todas.filter((i) => i.minutos_lancados === 0).length}
-            icon={Clock}
-            hint="não impede classificar — é só contexto a menos"
+            label="Pontos atribuídos"
+            value={classificadas.reduce((s, i) => s + (i.pontos ?? 0), 0)}
+            icon={Scale}
+            hint={
+              autoclassificadas > 0
+                ? `${autoclassificadas} classificada${autoclassificadas > 1 ? "s" : ""} pelo próprio autor`
+                : "nenhuma autoclassificação"
+            }
           />
         </KpiRow>
       </Section>
