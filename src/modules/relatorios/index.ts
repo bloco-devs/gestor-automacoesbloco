@@ -63,3 +63,8 @@ export type {
   ParaClassificar,
   Pendencia,
 } from "./services/fechamento-data";
+
+// Etapa 4
+export { default as Classificacao } from "./components/Classificacao";
+export { buscarApuracao } from "./services/relatorios-data";
+export type { LinhaDaApuracao } from "./services/relatorios-data";

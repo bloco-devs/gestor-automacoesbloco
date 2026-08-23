@@ -7,6 +7,7 @@ import {
   Layers,
   Paperclip,
   RefreshCw,
+  Scale,
   Users,
 } from "lucide-react";
 import {
@@ -75,6 +76,11 @@ function RelatorioImplementacoesImpl() {
       Título: l.titulo,
       Sistema: l.sistema_slug ?? "Não identificado",
       Categoria: TIPO_ROTULO[l.tipo] ?? l.tipo,
+      Classificação: l.classificacao_rotulo ?? "Não classificada",
+      Pontos: l.pontos ?? "",
+      "Justificativa da classificação": l.justificativa ?? "",
+      Ciclo: l.ciclo_rotulo ?? "Fora de ciclo",
+      "Fechamento técnico": l.fechamento === "concluido" ? "Registrado" : "Pendente",
       Responsável: l.responsavel_nome ?? "Sem responsável",
       Solicitante: l.solicitante_nome ?? "—",
       Aberta: formatarData(l.criada_em),
@@ -189,6 +195,42 @@ function RelatorioImplementacoesImpl() {
             </Select>
           </div>
 
+          <div className="min-w-[160px]">
+            <label className="ds-label mb-1.5 block text-muted-foreground">Classificação</label>
+            <Select
+              value={r.filtros.classificacao ?? TODOS}
+              onValueChange={(v) =>
+                r.setFiltros((f) => ({ ...f, classificacao: v === TODOS ? null : v }))
+              }
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODOS}>Todas</SelectItem>
+                <SelectItem value="facil">Fácil</SelectItem>
+                <SelectItem value="media">Médio</SelectItem>
+                <SelectItem value="dificil">Difícil</SelectItem>
+                <SelectItem value="sem_classificacao">Sem classificação</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="min-w-[160px]">
+            <label className="ds-label mb-1.5 block text-muted-foreground">Fechamento</label>
+            <Select
+              value={r.filtros.fechamento ?? TODOS}
+              onValueChange={(v) =>
+                r.setFiltros((f) => ({ ...f, fechamento: v === TODOS ? null : v }))
+              }
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODOS}>Todos</SelectItem>
+                <SelectItem value="registrado">Registrado</SelectItem>
+                <SelectItem value="pendente">Pendente</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="min-w-[200px] flex-1">
             <label className="ds-label mb-1.5 block text-muted-foreground">Buscar</label>
             <Input
@@ -213,15 +255,29 @@ function RelatorioImplementacoesImpl() {
           <StatCard label="Sistemas envolvidos" value={r.resumo.sistemas} icon={Layers} />
           <StatCard label="Pessoas" value={r.resumo.responsaveis} icon={Users} />
           <StatCard
-            label="Com evidência"
-            value={`${r.resumo.comEvidencia}/${r.resumo.total || 0}`}
-            icon={Paperclip}
-            hint="anexo ou comentário registrado"
-            tone={
-              r.resumo.total > 0 && r.resumo.comEvidencia === r.resumo.total ? "success" : "neutral"
+            label="Pontos"
+            value={r.resumo.pontos}
+            icon={Scale}
+            hint={
+              r.resumo.semClassificacao > 0
+                ? `${r.resumo.semClassificacao} sem classificação — não contam`
+                : "todas classificadas"
             }
+            tone={r.resumo.semClassificacao > 0 ? "warning" : "success"}
           />
         </KpiRow>
+
+        {r.resumo.porClassificacao.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
+            {r.resumo.porClassificacao.map((c) => (
+              <span key={c.codigo}>
+                <span className="text-muted-foreground">{c.rotulo}:</span> {c.quantidade} ×{" "}
+                {c.quantidade > 0 ? c.pontos / c.quantidade : 0} ={" "}
+                <span className="font-medium tabular-nums">{c.pontos}</span>
+              </span>
+            ))}
+          </div>
+        )}
       </Section>
 
       {r.resumo.porSistema.length > 0 && (
@@ -284,7 +340,8 @@ function RelatorioImplementacoesImpl() {
                   <TableHead className="w-[130px]">Sistema</TableHead>
                   <TableHead className="w-[150px]">Responsável</TableHead>
                   <TableHead className="w-[110px]">Concluída</TableHead>
-                  <TableHead className="w-[90px] text-right">Tarefas</TableHead>
+                  <TableHead className="w-[120px]">Classificação</TableHead>
+                  <TableHead className="w-[70px] text-right">Pontos</TableHead>
                   <TableHead className="w-[90px] text-right">Evidência</TableHead>
                 </TableRow>
               </TableHeader>
@@ -316,8 +373,25 @@ function RelatorioImplementacoesImpl() {
                           <span className="ml-1 text-muted-foreground" title="Data inferida">*</span>
                         )}
                       </TableCell>
+                      <TableCell>
+                        {l.classificacao_rotulo ? (
+                          <Badge variant="secondary" className="font-normal">
+                            {l.classificacao_rotulo}
+                          </Badge>
+                        ) : l.fechamento !== "concluido" ? (
+                          <span className="text-[12px] text-muted-foreground">
+                            sem fechamento
+                          </span>
+                        ) : (
+                          <span className="text-[12px] text-muted-foreground">
+                            aguardando
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right tabular-nums text-[13px]">
-                        {l.tarefas_total > 0 ? `${l.tarefas_feitas}/${l.tarefas_total}` : "—"}
+                        {/* Sem classificação NÃO vira 0. Zero é um valor; a
+                            ausência de decisão é outra coisa. */}
+                        {l.pontos ?? <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-[13px]">
                         {l.anexos + l.comentarios > 0 ? (
@@ -330,7 +404,7 @@ function RelatorioImplementacoesImpl() {
 
                     {expandida === l.demanda_id && (
                       <TableRow key={`${l.demanda_id}-detalhe`} className="bg-muted/30">
-                        <TableCell colSpan={7} className="text-[13px]">
+                        <TableCell colSpan={8} className="text-[13px]">
                           <div className="flex flex-col gap-2 py-1">
                             <div>
                               <span className="ds-label text-muted-foreground">
@@ -353,15 +427,37 @@ function RelatorioImplementacoesImpl() {
                               <span className="ds-label">Origem da data: </span>
                               {l.evidencia ?? "Não identificada."}
                             </div>
-                            {/*
-                              O fechamento técnico (problema, solução, o que foi
-                              alterado, testes, resultado) ainda não existe — é a
-                              etapa seguinte. Enquanto não existir, esta tela não
-                              inventa esses campos: ela diz que não há.
-                            */}
-                            <p className="text-muted-foreground">
-                              Fechamento técnico ainda não preenchido para esta demanda.
-                            </p>
+                            {l.fechamento !== "concluido" ? (
+                              <p className="text-muted-foreground">
+                                Fechamento técnico ainda não registrado. Sem ele a entrega não
+                                pode ser classificada.
+                              </p>
+                            ) : l.justificativa ? (
+                              <div>
+                                <span className="ds-label text-muted-foreground">
+                                  Por que {l.classificacao_rotulo} ({l.pontos} pontos)
+                                </span>
+                                <p className="mt-0.5 whitespace-pre-wrap">{l.justificativa}</p>
+                                {l.classificada_por && (
+                                  <p className="ds-caption mt-1 text-muted-foreground">
+                                    por {l.classificada_por}
+                                    {l.classificada_em
+                                      ? ` em ${formatarData(l.classificada_em)}`
+                                      : ""}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-muted-foreground">
+                                Fechamento registrado, aguardando classificação.
+                              </p>
+                            )}
+                            {l.ciclo_rotulo && (
+                              <p className="text-muted-foreground">
+                                <span className="ds-label">Ciclo: </span>
+                                {l.ciclo_rotulo}
+                              </p>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

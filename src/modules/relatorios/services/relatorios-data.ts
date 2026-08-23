@@ -39,6 +39,17 @@ export interface LinhaDeImplementacao {
   tarefas_feitas: number;
   comentarios: number;
   anexos: number;
+  /** 'sem_registro' | 'rascunho' | 'concluido' */
+  fechamento: string;
+  /** Nulo enquanto ninguém classificou — e nulo não é zero. */
+  classificacao: string | null;
+  classificacao_rotulo: string | null;
+  pontos: number | null;
+  justificativa: string | null;
+  classificada_por: string | null;
+  classificada_em: string | null;
+  minutos_lancados: number;
+  ciclo_rotulo: string | null;
 }
 
 export interface FiltrosDaConsulta {
@@ -47,6 +58,9 @@ export interface FiltrosDaConsulta {
   sistema?: string | null;
   responsavel?: string | null;
   busca?: string | null;
+  classificacao?: string | null;
+  /** 'todos' | 'registrado' | 'pendente' */
+  fechamento?: string | null;
 }
 
 export async function buscarImplementacoes(f: FiltrosDaConsulta): Promise<LinhaDeImplementacao[]> {
@@ -56,9 +70,42 @@ export async function buscarImplementacoes(f: FiltrosDaConsulta): Promise<LinhaD
     _sistema: f.sistema ?? null,
     _responsavel: f.responsavel ?? null,
     _busca: f.busca ?? null,
+    _classificacao: f.classificacao ?? null,
+    _fechamento: f.fechamento ?? null,
   } as never);
   if (error) throw error;
   return (data ?? []) as unknown as LinhaDeImplementacao[];
+}
+
+// ---------------------------------------------------------------------------
+// Apuração do ciclo
+// ---------------------------------------------------------------------------
+
+export interface LinhaDaApuracao {
+  pessoa_id: string;
+  pessoa_nome: string | null;
+  pessoa_email: string | null;
+  entregas: number;
+  classificadas: number;
+  sem_classificacao: number;
+  sem_fechamento: number;
+  facil: number;
+  media: number;
+  dificil: number;
+  pontos: number;
+}
+
+/**
+ * Resumo por pessoa de um ciclo. Devolve PONTOS, não reais — a conversão
+ * depende da faixa, e a faixa tem lacuna declarada entre 100,01% e 119,99%.
+ * Quem resolve isso é a tela, dizendo "Faixa de remuneração não definida".
+ */
+export async function buscarApuracao(cicloId: string): Promise<LinhaDaApuracao[]> {
+  const { data, error } = await supabase.rpc("relatorio_apuracao_do_ciclo" as never, {
+    _ciclo_id: cicloId,
+  } as never);
+  if (error) throw error;
+  return (data ?? []) as unknown as LinhaDaApuracao[];
 }
 
 export interface OpcaoDeFiltro {
