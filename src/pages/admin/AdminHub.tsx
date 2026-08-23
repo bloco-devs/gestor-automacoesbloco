@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Activity, BarChart3, BookOpen, Boxes, Cog, Inbox, LayoutDashboard, ListChecks, Radar, ShieldCheck, Sparkles, Users, Webhook, Workflow } from "lucide-react";
+import { Activity, BarChart3, BookOpen, Boxes, Cog, Inbox, LayoutDashboard, ListChecks, Mail, Radar, ShieldCheck, Sparkles, Users, Webhook, Workflow } from "lucide-react";
 import { PageShell, PageHeader, Section } from "@/design-system";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +41,7 @@ const GROUPS: Group[] = [
       { label: "Workflows", description: "Editor visual de automações.", href: "/admin/workflows", icon: Workflow },
       { label: "Execuções", description: "Logs de execução do runtime.", href: "/admin/workflows/execucoes", icon: ListChecks },
       { label: "Webhooks", description: "Integrações de saída.", href: "/admin/configuracoes/webhooks", icon: Webhook },
+      { label: "Avisos por e-mail", description: "Fila de envio aos solicitantes.", href: "/admin/notificacoes-email", icon: Mail },
     ],
   },
   {

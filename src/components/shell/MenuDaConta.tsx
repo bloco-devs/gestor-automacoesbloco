@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Compass, HelpCircle, LogOut, Repeat, Settings2, UserRound } from "lucide-react";
+import { Bell, Compass, FileSearch, HelpCircle, LogOut, Repeat, Settings2, UserRound } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,6 +98,22 @@ export function MenuDaConta({ className, ehDaEquipe, aoRefazerTour }: Props) {
           <DropdownMenuItem onSelect={() => navigate("/perfil")} className="menu-item-animado gap-2 text-[13px]">
             <UserRound className="size-3.5" aria-hidden />
             Meu perfil
+          </DropdownMenuItem>
+
+          {/* O rodapé de todo email aponta para cá. Quem clicou de lá chega
+              direto; quem quer desligar sem ter um email à mão precisa de um
+              caminho pela interface, e este é o menu onde já se procura. */}
+          <DropdownMenuItem onSelect={() => navigate("/preferencias")} className="menu-item-animado gap-2 text-[13px]">
+            <Bell className="size-3.5" aria-hidden />
+            Preferências de aviso
+          </DropdownMenuItem>
+
+          {/* Fica no menu da conta, e não na barra lateral de admin, porque
+              quem mais usa é o RH — que é `requester` e não enxerga aquele
+              menu. A própria tela avisa quando a pessoa não tem acesso. */}
+          <DropdownMenuItem onSelect={() => navigate("/relatorios")} className="menu-item-animado gap-2 text-[13px]">
+            <FileSearch className="size-3.5" aria-hidden />
+            Relatórios
           </DropdownMenuItem>
 
           {ehDaEquipe && (

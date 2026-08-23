@@ -1,4 +1,4 @@
-import { Activity, BarChart3, BookOpen, Briefcase, Clock, Code2, GanttChartSquare, Gauge, GitMerge, HelpCircle, Headphones, Inbox, Layers, FolderKanban, KanbanSquare, LayoutDashboard, LifeBuoy, List, ListTodo, MessageCircleQuestion, Network, Plus, Plug, Repeat, Settings, Shield, Sparkles, Zap } from "lucide-react";
+import { Activity, BarChart3, BookOpen, Briefcase, Clock, Code2, FileSearch, GanttChartSquare, Gauge, GitMerge, HelpCircle, Headphones, Inbox, Layers, FolderKanban, KanbanSquare, LayoutDashboard, LifeBuoy, List, ListTodo, Mail, MessageCircleQuestion, Network, Plus, Plug, Repeat, Settings, Shield, Sparkles, Zap } from "lucide-react";
 
 export type NavItem = {
   to?: string;
@@ -72,6 +72,8 @@ export const devGroups: NavGroup[] = [
       { to: "/admin/integrations", label: "Integrações", icon: Plug, matchPrefix: "/admin/integrations" },
       { to: "/admin/configuracoes/sla", label: "Configuração de SLA", icon: Clock },
       { to: "/admin/configuracoes/webhooks", label: "Webhooks & Integrações", icon: Repeat },
+      { to: "/admin/notificacoes-email", label: "Avisos por E-mail", icon: Mail },
+      { to: "/relatorios", label: "Relatórios", icon: FileSearch, matchPrefix: "/relatorios" },
       { to: "/configuracoes", label: "Configurações", icon: Settings },
     ],
   },

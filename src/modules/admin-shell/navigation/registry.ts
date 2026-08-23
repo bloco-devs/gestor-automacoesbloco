@@ -13,6 +13,7 @@ import {
   KeyRound,
   LayoutDashboard,
   ListChecks,
+  Mail,
   Network,
   PlusCircle,
   Radar,
@@ -324,6 +325,14 @@ export const ADMIN_NAV: AdminNavItem[] = [
     description: "Tempos de atendimento por prioridade.",
     href: "/admin/configuracoes/sla",
     icon: ShieldCheck,
+  },
+  {
+    id: "notificacoes-email",
+    group: "operacional",
+    label: "Avisos por e-mail",
+    description: "O que foi enviado aos solicitantes, e o que falhou.",
+    href: "/admin/notificacoes-email",
+    icon: Mail,
   },
   {
     id: "portal",

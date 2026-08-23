@@ -55,6 +55,11 @@ const AtividadesBoard = lazy(() => import(/* webpackChunkName: "atividades" */ "
 const ImportarQuadro = lazy(() => import(/* webpackChunkName: "atividades" */ "./pages/atividades/importar/ImportarQuadro"));
 const Ajuda = lazy(() => import("./pages/Ajuda"));
 const MeuPerfil = lazy(() => import("./pages/MeuPerfil"));
+const Preferencias = lazy(() => import("./pages/Preferencias"));
+const Relatorios = lazy(() => import(/* webpackChunkName: "relatorios" */ "./pages/Relatorios"));
+const RelatorioImplementacoes = lazy(
+  () => import(/* webpackChunkName: "relatorios" */ "./pages/RelatorioImplementacoes"),
+);
 const ObservabilidadeIA = lazy(() => import(/* webpackChunkName: "ai" */ "./pages/ObservabilidadeIA"));
 const Inbox = lazy(() => import(/* webpackChunkName: "workspace" */ "./pages/Inbox"));
 const Operacoes = lazy(() => import(/* webpackChunkName: "operations" */ "./pages/Operacoes"));
@@ -71,6 +76,7 @@ const Demandas = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admi
 const AdminDashboard = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Dashboard"));
 const SLAPolicies = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SLAPolicies"));
 const WebhooksAdmin = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Webhooks"));
+const NotificacoesEmailAdmin = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/NotificacoesEmail"));
 const WorkflowsPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/Workflows"));
 const WorkflowEditorPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/WorkflowEditor"));
 const WorkflowExecutionsPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/WorkflowExecutions"));
@@ -308,6 +314,7 @@ const AppRoutes = () => {
           <Route path="/admin/dashboard" element={<ProtectedRoute role="developer"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/configuracoes/sla" element={<ProtectedRoute role="developer"><SLAPolicies /></ProtectedRoute>} />
           <Route path="/admin/configuracoes/webhooks" element={<ProtectedRoute role="developer"><WebhooksAdmin /></ProtectedRoute>} />
+          <Route path="/admin/notificacoes-email" element={<ProtectedRoute role="developer"><NotificacoesEmailAdmin /></ProtectedRoute>} />
           <Route path="/admin/workflows" element={<ProtectedRoute role="developer"><WorkflowsPage /></ProtectedRoute>} />
           <Route path="/admin/workflows/novo" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
           <Route path="/admin/workflows/execucoes" element={<ProtectedRoute role="developer"><WorkflowExecutionsPage /></ProtectedRoute>} />
@@ -465,6 +472,23 @@ const AppRoutes = () => {
           {/* Compartilhado */}
           <Route path="/ajuda" element={<Ajuda />} />
           <Route path="/perfil" element={<MeuPerfil />} />
+          {/* O rodapé de todo email aponta para cá — não pode exigir papel. */}
+          <Route path="/preferencias" element={<Preferencias />} />
+
+          {/*
+            RELATÓRIOS — sem `role` no guarda, de propósito.
+
+            Quem vê o quê é decidido por CAPACIDADE, não por papel: a pessoa do
+            RH é `requester` e precisa continuar sendo, porque abre chamado
+            como todo mundo. Exigir `role="developer"` aqui a trancaria para
+            fora do único lugar que ela precisa usar.
+
+            A porta de verdade está no banco: as funções conferem a capacidade
+            por dentro e recusam quem não tem. A tela mostra "sem acesso" em
+            vez de dar erro.
+          */}
+          <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/relatorios/implementacoes" element={<RelatorioImplementacoes />} />
         </Route>
 
 
