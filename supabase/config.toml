@@ -45,3 +45,8 @@ verify_jwt = true
 
 [functions.importer-run]
 verify_jwt = true
+
+# Drena a fila de avisos por email. Não é pública: o cron chama com a service
+# role key no Authorization, que passa na verificação como qualquer outro JWT.
+[functions.notificacao-email-fila]
+verify_jwt = true
