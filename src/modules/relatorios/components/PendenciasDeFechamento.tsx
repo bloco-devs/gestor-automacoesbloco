@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { buscarPendencias, buscarRegistradas, formatarDuracao } from "../services/fechamento-data";
 import { formatarData } from "../services/relatorios-service";
+import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 
 const SITUACAO: Record<string, { rotulo: string; variante: "outline" | "secondary" }> = {
   sem_registro: { rotulo: "não iniciado", variante: "outline" },
@@ -47,6 +48,7 @@ function PendenciasDeFechamentoImpl() {
   return (
     <PageShell>
       <PageHeader
+        breadcrumb={<VoltarParaRelatorios />}
         title="Pendências de fechamento técnico"
         subtitle="Entregas concluídas que ainda não têm o relato registrado. A demanda continua concluída — o que falta é o registro para ela poder ser classificada."
         icon={<ClipboardList className="size-6" aria-hidden />}

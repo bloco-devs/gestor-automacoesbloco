@@ -26,6 +26,7 @@ import {
 } from "../services/fechamento-data";
 import { buscarTiposDeClassificacao } from "../services/relatorios-data";
 import { formatarData } from "../services/relatorios-service";
+import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 import { useAuth } from "@/hooks/useAuth";
 
 /**
@@ -355,6 +356,7 @@ function ClassificacaoImpl() {
   return (
     <PageShell maxWidth="xl">
       <PageHeader
+        breadcrumb={<VoltarParaRelatorios />}
         title="Classificação"
         subtitle="Fácil, Médio ou Difícil, decidido por gente. O tempo entra como contexto — nunca como fórmula."
         icon={<Scale className="size-6" aria-hidden />}

@@ -49,6 +49,7 @@ import {
   buscarMinhasCapacidades,
 } from "../services/relatorios-data";
 import MedidorDaMeta from "./MedidorDaMeta";
+import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 import { formatarData } from "../services/relatorios-service";
 import { formatarDuracao } from "../services/fechamento-data";
 
@@ -203,6 +204,7 @@ function Apurar() {
   return (
     <PageShell>
       <PageHeader
+        breadcrumb={<VoltarParaRelatorios />}
         title="Apuração da remuneração variável"
         subtitle="Ciclo do dia 20 ao dia 19. Só entram entregas com data confirmada, fechamento registrado e classificação definida."
         icon={<Coins className="size-6" aria-hidden />}
@@ -233,30 +235,29 @@ function Apurar() {
           onde ficam os degraus e quanto cada um paga.
           ============================================================ */}
       {resultado.isLoading || !r ? (
-        <Skeleton className="h-52 w-full" />
+        <Skeleton className="h-64 w-full" />
       ) : (
-        <Section
-          title={r.ciclo_rotulo}
-          description={`${formatarData(r.inicio)} a ${formatarData(
-            new Date(new Date(r.fim).getTime() - 1).toISOString(),
-          )}`}
-          actions={
-            <div className="flex items-center gap-2">
-              <Badge variant={r.congelado ? "default" : "outline"} className="font-normal">
-                {r.situacao === "aberto" ? "aberto" :
-                 r.situacao === "em_analise" ? "em apuração" :
-                 r.situacao === "fechado" ? "fechado" : "aprovado"}
-              </Badge>
-              {r.congelado && (
-                <span className="ds-caption inline-flex items-center gap-1 text-muted-foreground">
-                  <Lock className="size-3" aria-hidden />
-                  congelado
-                </span>
-              )}
-            </div>
-          }
-        >
+        <>
           <MedidorDaMeta
+            rotulo={r.ciclo_rotulo}
+            periodo={`${formatarData(r.inicio)} a ${formatarData(
+              new Date(new Date(r.fim).getTime() - 1).toISOString(),
+            )}`}
+            situacao={
+              <div className="flex items-center gap-2">
+                <Badge variant={r.congelado ? "default" : "outline"} className="font-normal">
+                  {r.situacao === "aberto" ? "aberto" :
+                   r.situacao === "em_analise" ? "em apuração" :
+                   r.situacao === "fechado" ? "fechado" : "aprovado"}
+                </Badge>
+                {r.congelado && (
+                  <span className="ds-caption inline-flex items-center gap-1 text-muted-foreground">
+                    <Lock className="size-3" aria-hidden />
+                    congelado
+                  </span>
+                )}
+              </div>
+            }
             pontos={r.pontos}
             meta={r.meta_pontos}
             percentual={r.percentual}
@@ -266,10 +267,10 @@ function Apurar() {
             valorReais={r.valor_reais}
           />
 
-          {/* A composição dos pontos. Só aparece quando existe ponto — três
-              linhas de "0 × 50 = 0" não informam nada. */}
+          {/* A composição só aparece quando existe ponto — três linhas de
+              "0 × 50 = 0" ocupam a tela sem informar. */}
           {r.pontos > 0 && (
-            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
+            <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
               {[
                 ["Fácil", r.facil, 50],
                 ["Médio", r.media, 100],
@@ -286,7 +287,7 @@ function Apurar() {
                 ))}
             </div>
           )}
-        </Section>
+        </>
       )}
 
       {/* ============================================================

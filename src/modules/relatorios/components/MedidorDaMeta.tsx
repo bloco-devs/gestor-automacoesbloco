@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, type ReactNode } from "react";
 import { formatarPercentual, formatarReais } from "../services/apuracao-data";
 import type { Faixa } from "../types";
 
@@ -26,6 +26,11 @@ import type { Faixa } from "../types";
  */
 
 interface Props {
+  /** Rótulo e janela do ciclo. Ficam dentro do cartão, e não num título de
+   *  seção acima dele — ali colidiam com o subtítulo da página. */
+  rotulo: string;
+  periodo: string;
+  situacao: ReactNode;
   pontos: number;
   meta: number;
   percentual: number | null;
@@ -37,6 +42,9 @@ interface Props {
 }
 
 function MedidorImpl({
+  rotulo,
+  periodo,
+  situacao,
   pontos,
   meta,
   percentual,
@@ -47,11 +55,25 @@ function MedidorImpl({
 }: Props) {
   const pct = percentual ?? 0;
 
-  // A régua vai até 120% ou até onde a equipe chegou, o que for maior — com
-  // uma folga para o marcador não colar na borda. Sem isso, um ciclo de 340%
-  // empurraria tudo para fora da tela.
-  const teto = Math.max(120, Math.ceil(pct / 20) * 20) * 1.05;
+  // A régua vai até o último degrau ou até onde a equipe chegou, o que for
+  // maior, com folga de 15% à direita. A folga não é estética: sem ela o
+  // marcador de 120% cai a 95% da largura e a legenda, centrada, vaza para
+  // fora da caixa — foi exatamente o que aconteceu.
+  const ultimoDegrau = Math.max(120, ...faixas.map((f) => f.percentualMin));
+  const teto = Math.max(ultimoDegrau, Math.ceil(pct / 20) * 20) * 1.15;
   const posicao = (v: number) => Math.min(100, (v / teto) * 100);
+
+  /**
+   * Ancoragem consciente da borda.
+   *
+   * `-translate-x-1/2` centra a legenda no marcador, o que é certo no meio da
+   * régua e errado nas pontas: metade do texto sai da caixa. Perto das bordas
+   * a legenda passa a se alinhar por dentro.
+   */
+  const ancora = (posPct: number) =>
+    posPct < 6 ? "translate-x-0 items-start"
+    : posPct > 94 ? "-translate-x-full items-end"
+    : "-translate-x-1/2 items-center";
 
   // Só as faixas com um degrau visível interessam ao desenho. A primeira
   // (0–80%) é o chão, não um marco.
@@ -89,6 +111,14 @@ function MedidorImpl({
 
   return (
     <div className="rounded-2xl border bg-card p-5">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b pb-4">
+        <div>
+          <span className="ds-h3">{rotulo}</span>
+          <span className="ds-caption ml-2 text-muted-foreground">{periodo}</span>
+        </div>
+        {situacao}
+      </div>
+
       {/* O número que domina. Tudo o resto é contexto dele. */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -151,7 +181,7 @@ function MedidorImpl({
           {marcos.map((m) => (
             <div
               key={m.pct}
-              className="absolute flex -translate-x-1/2 flex-col items-center whitespace-nowrap"
+              className={`absolute flex flex-col whitespace-nowrap ${ancora(posicao(m.pct))}`}
               style={{ left: `${posicao(m.pct)}%` }}
             >
               <span

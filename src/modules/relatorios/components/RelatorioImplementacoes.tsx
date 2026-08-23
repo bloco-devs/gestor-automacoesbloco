@@ -40,6 +40,7 @@ import {
 import { toCsv, downloadCsv } from "@/modules/analytics/utils/csv";
 import { useRelatorioImplementacoes } from "../hooks/useRelatorioImplementacoes";
 import { formatarData } from "../services/relatorios-service";
+import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 import type { AtalhoDePeriodo } from "../types";
 
 const ATALHOS: Array<{ valor: AtalhoDePeriodo; rotulo: string }> = [
@@ -99,6 +100,7 @@ function RelatorioImplementacoesImpl() {
   return (
     <PageShell>
       <PageHeader
+        breadcrumb={<VoltarParaRelatorios />}
         title="Relatório de Implementações"
         subtitle="O que foi entregue, por sistema e por pessoa. Períodos cronológicos — o corte do dia 19 vale só para a apuração da folha."
         icon={<FileSearch className="size-6" aria-hidden />}

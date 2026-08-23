@@ -81,3 +81,4 @@ export {
 } from "./services/apuracao-data";
 export type { PendenciasDoCiclo, ResultadoDoCiclo } from "./services/apuracao-data";
 export { default as MedidorDaMeta } from "./components/MedidorDaMeta";
+export { VoltarParaRelatorios } from "./components/VoltarParaRelatorios";

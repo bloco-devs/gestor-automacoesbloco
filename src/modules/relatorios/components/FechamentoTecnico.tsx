@@ -31,6 +31,7 @@ import {
   type RascunhoDeFechamento,
 } from "../services/fechamento-data";
 import { formatarData } from "../services/relatorios-service";
+import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 
 /** Os quatro que o banco exige para marcar como concluído. */
 const OBRIGATORIOS = [
@@ -220,14 +221,7 @@ function FechamentoTecnicoImpl() {
     <PageShell maxWidth="xl">
       <PageHeader
         breadcrumb={
-          <button
-            type="button"
-            onClick={() => navigate("/relatorios/pendencias")}
-            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" aria-hidden />
-            Pendências
-          </button>
+          <VoltarParaRelatorios para="/relatorios/pendencias" rotulo="Pendências" />
         }
         title="Fechamento técnico"
         subtitle={
