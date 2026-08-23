@@ -34,6 +34,42 @@ export async function buscarPendencias(pessoa?: string | null): Promise<Pendenci
   return (data ?? []) as unknown as Pendencia[];
 }
 
+/**
+ * As que JÁ têm fechamento registrado.
+ *
+ * Existe porque a fila de pendências, por definição, só mostra o que falta —
+ * então ao registrar uma, ela desaparecia da tela e parecia perdida. Uma lista
+ * que some sem dizer para onde foi é pior que uma lista longa.
+ */
+export interface Registrada {
+  demanda_id: string;
+  ticket_code: string;
+  titulo: string;
+  sistema_slug: string | null;
+  responsavel_nome: string | null;
+  concluida_em: string;
+  minutos_lancados: number;
+  ja_classificada: boolean;
+}
+
+export async function buscarRegistradas(): Promise<Registrada[]> {
+  const { data, error } = await supabase.rpc(
+    "relatorio_pendencias_de_classificacao" as never,
+    {} as never,
+  );
+  if (error) throw error;
+  return ((data ?? []) as unknown as ParaClassificar[]).map((r) => ({
+    demanda_id: r.demanda_id,
+    ticket_code: r.ticket_code,
+    titulo: r.titulo,
+    sistema_slug: r.sistema_slug,
+    responsavel_nome: r.responsavel_nome,
+    concluida_em: r.concluida_em,
+    minutos_lancados: r.minutos_lancados,
+    ja_classificada: r.ja_classificada,
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // O fechamento técnico
 // ---------------------------------------------------------------------------

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   CheckCircle2,
+  ChevronDown,
   ClipboardList,
   Info,
   Plus,
@@ -82,6 +83,9 @@ function FechamentoTecnicoImpl() {
   const [novoInicio, setNovoInicio] = useState("");
   const [novoFim, setNovoFim] = useState("");
   const [novaObs, setNovaObs] = useState("");
+  const [opcionaisAbertos, setOpcionaisAbertos] = useState(false);
+  const [tempoAberto, setTempoAberto] = useState(false);
+  const [acabouDeRegistrar, setAcabouDeRegistrar] = useState(false);
 
   // A demanda vem por consulta comum. Quem preenche o fechamento é o
   // responsável, então a política por dono já o autoriza. Se por algum motivo
@@ -160,10 +164,14 @@ function FechamentoTecnicoImpl() {
     onSuccess: (_d, situacao) => {
       void qc.invalidateQueries({ queryKey: ["relatorio"] });
       if (situacao === "concluido") {
-        toast.success("Fechamento técnico registrado", {
-          description: "A entrega já pode ser classificada.",
-        });
-        navigate("/relatorios/pendencias");
+        // NÃO navega para longe.
+        //
+        // A primeira versão jogava de volta na fila de pendências — onde a
+        // demanda acabava de sair da lista. O efeito era a entrega
+        // desaparecer da tela sem dizer para onde foi, e parecer perdida.
+        // Agora a confirmação acontece aqui, onde a pessoa estava.
+        setAcabouDeRegistrar(true);
+        toast.success("Fechamento registrado");
       } else {
         toast.success("Rascunho salvo");
       }
@@ -196,6 +204,10 @@ function FechamentoTecnicoImpl() {
   const faltando = OBRIGATORIOS.filter(
     (o) => !(campos[o.campo] ?? "").toString().trim(),
   ).map((o) => o.rotulo);
+
+  const opcionaisPreenchidos = OPCIONAIS.filter(
+    (o) => (campos[o.campo] ?? "").toString().trim(),
+  ).length;
 
   const carregando = fechamento.isLoading || demanda.isLoading;
   const jaConcluido = fechamento.data?.situacao === "concluido";
@@ -281,24 +293,56 @@ function FechamentoTecnicoImpl() {
             </div>
           </Section>
 
-          <Section
-            title="Quando se aplicar"
-            description="Deixe em branco o que não houve nesta entrega. Campo vazio aqui significa 'não teve', e o relatório vai escrever isso — não é lacuna."
-          >
-            <div className="flex flex-col gap-4">
-              {OPCIONAIS.map((o) => (
-                <div key={o.campo}>
-                  <Label>{o.rotulo}</Label>
-                  <Textarea
-                    rows={2}
-                    className="mt-1.5"
-                    value={(campos[o.campo] ?? "") as string}
-                    onChange={(e) => set(o.campo)(e.target.value)}
-                    placeholder="Não se aplica"
-                  />
-                </div>
-              ))}
-            </div>
+          {/* Fechados por padrão.
+              A primeira versão mostrava os 21 campos abertos de uma vez, e a
+              reação foi "muitos campos" — com razão. Nenhum destes é
+              necessário, e a maioria não se aplica na maioria das entregas, mas
+              todos ocupavam a tela como se fossem trabalho a fazer. */}
+          <Section title="Detalhes técnicos">
+            {!opcionaisAbertos ? (
+              <button
+                type="button"
+                onClick={() => setOpcionaisAbertos(true)}
+                className="flex w-full items-center gap-2 rounded-lg border border-dashed px-3 py-2.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <ChevronDown className="size-4 shrink-0" aria-hidden />
+                <span>
+                  Acrescentar detalhes
+                  {opcionaisPreenchidos > 0 && (
+                    <span className="ml-1 text-foreground">
+                      — {opcionaisPreenchidos} preenchido{opcionaisPreenchidos > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </span>
+                <span className="ml-auto text-[12px]">opcional</span>
+              </button>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <p className="ds-caption text-muted-foreground">
+                  Deixe em branco o que não houve nesta entrega. Vazio aqui significa "não teve",
+                  e o relatório escreve isso — não é lacuna.
+                </p>
+                {OPCIONAIS.map((o) => (
+                  <div key={o.campo}>
+                    <Label>{o.rotulo}</Label>
+                    <Textarea
+                      rows={2}
+                      className="mt-1.5"
+                      value={(campos[o.campo] ?? "") as string}
+                      onChange={(e) => set(o.campo)(e.target.value)}
+                      placeholder="Não se aplica"
+                    />
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setOpcionaisAbertos(false)}
+                  className="self-start text-[13px] text-muted-foreground hover:text-foreground"
+                >
+                  Recolher
+                </button>
+              </div>
+            )}
           </Section>
 
           <Section title="Sistemas afetados e evidências">
@@ -330,11 +374,23 @@ function FechamentoTecnicoImpl() {
           </Section>
 
           {/* ---------------------------------------------------------- */}
-          <Section
-            title="Tempo trabalhado"
-            description="Informação de apoio para quem vai classificar. Não define Fácil, Médio ou Difícil — nenhuma conta do sistema transforma horas em pontos."
-          >
+          <Section title="Tempo trabalhado">
+            {!tempoAberto && minutos === 0 ? (
+              <button
+                type="button"
+                onClick={() => setTempoAberto(true)}
+                className="flex w-full items-center gap-2 rounded-lg border border-dashed px-3 py-2.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <ChevronDown className="size-4 shrink-0" aria-hidden />
+                <span>Lançar horas trabalhadas</span>
+                <span className="ml-auto text-[12px]">opcional</span>
+              </button>
+            ) : (
             <div className="flex flex-col gap-3">
+              <p className="ds-caption text-muted-foreground">
+                Informação de apoio para quem vai classificar. Não define Fácil, Médio ou
+                Difícil — nenhuma conta do sistema transforma horas em pontos.
+              </p>
               <div className="flex flex-wrap items-end gap-2">
                 <div>
                   <Label className="text-[12px]">Início</Label>
@@ -429,10 +485,44 @@ function FechamentoTecnicoImpl() {
                 </div>
               </div>
             </div>
+            )}
           </Section>
 
           {/* ---------------------------------------------------------- */}
           <Section title="">
+            {/* Onde a entrega foi parar. A pessoa fica na tela em que estava,
+                vê a confirmação, e escolhe para onde ir — em vez de ser
+                despejada numa lista de onde o item acabou de sair. */}
+            {acabouDeRegistrar && (
+              <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-success/40 bg-success/10 p-3 text-[13px]">
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
+                <div className="flex-1">
+                  <p className="font-medium">Registrado</p>
+                  <p className="text-muted-foreground">
+                    Esta entrega saiu da fila de pendências e está em{" "}
+                    <strong>Registradas</strong>, pronta para ser classificada. O texto continua
+                    editável aqui.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate("/relatorios/pendencias")}
+                    >
+                      Voltar para a fila
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => navigate("/relatorios/implementacoes")}
+                    >
+                      Ver no relatório
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {faltando.length > 0 && (
               <div className="mb-3 flex items-start gap-2 rounded-lg border bg-muted/40 p-3 text-[13px]">
                 <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
