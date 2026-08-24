@@ -39,6 +39,7 @@ import { Anexos } from "./demanda/Anexos";
 import { RascunhoDeArtigo } from "./demanda/RascunhoDeArtigo";
 import { Fio } from "./demanda/Fio";
 import { CopilotoDaDemanda } from "./demanda/CopilotoDaDemanda";
+import { StatusStepper } from "./demanda/StatusStepper";
 
 const ETAPA_FORA_DO_FLUXO = "homologacao";
 
@@ -311,7 +312,6 @@ export default function DemandaDetalhe() {
    */
   const identidade = [
     capacidades.tipo && d.tipo ? TIPO_ROTULO[d.tipo] : null,
-    d.sistema?.nome ?? null,
     d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
   ].filter(Boolean) as string[];
 
@@ -329,12 +329,36 @@ export default function DemandaDetalhe() {
             <ArrowLeft className="size-4" aria-hidden />
           </Button>
           <div className="min-w-0 flex-1">
-            <h1 className="flex min-w-0 items-baseline gap-2">
-              <span className="shrink-0 text-[13px] tabular-nums text-muted-foreground">{d.referencia}</span>
-              <span className={cn("text-[17px] font-medium leading-snug", d.concluida && "line-through")}>
-                {d.titulo}
-              </span>
-            </h1>
+            {d.sistema?.nome && (
+              <div className="mb-1 flex items-center gap-2">
+                <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                  Sistema: {d.sistema.nome}
+                </span>
+              </div>
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h1 className="flex min-w-0 flex-1 items-baseline gap-2">
+                <span className="shrink-0 text-[13px] tabular-nums text-muted-foreground">{d.referencia}</span>
+                <span className={cn("text-[17px] font-medium leading-snug", d.concluida && "line-through")}>
+                  {d.titulo}
+                </span>
+              </h1>
+
+              {/* DEMANDA 7: Alterar status diretamente dentro da demanda */}
+              <StatusStepper
+                statusAtualId={d.status.id}
+                etapas={etapas.filter((e) => normalizarEtapa(e.rotulo) !== ETAPA_FORA_DO_FLUXO)}
+                onMoverStatus={async (novoStatusId) => {
+                  try {
+                    await acoesDemanda.mover({ demandaId: d.id, statusId: novoStatusId });
+                    toast.success("Status atualizado com sucesso.");
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Não foi possível alterar o status.");
+                  }
+                }}
+              />
+            </div>
+
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted-foreground">
               {identidade.map((item, i) => (
                 <span key={item} className="flex items-center gap-2">

@@ -5,31 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 import type { ChatMsg } from "@/hooks/useAIWorkspace";
 
 interface Props {
-  message: ChatMsg;
-  /**
-   * Só a fala mais recente ganha o Blink em movimento.
-   *
-   * Animar todos os avatares faria uma conversa longa virar uma parede de
-   * cabeças flutuando, cada uma no seu tempo — e o olho persegue movimento
-   * antes de ler texto. Mexer só o último é o que a palavra "interagindo"
-   * quer dizer: ele reage ao que acabou de acontecer, não fica performando
-   * o histórico inteiro.
-   */
+  message: ChatMsg & { timestamp?: string };
   vivo?: boolean;
 }
 
-/**
- * QUEM ESTÁ FALANDO PRECISA TER ROSTO
- *
- * Antes: dois ícones genéricos do mesmo conjunto — um robô e uma silhueta de
- * pessoa. Nenhum dos dois dizia quem era. A silhueta era a mesma para todo
- * mundo, mesmo para quem já tinha subido uma foto de perfil; o robô era o
- * mesmo de qualquer aplicativo.
- *
- * Agora a IA tem o rosto do Blink, constante em toda conversa, e a pessoa vê
- * a própria foto quando tem uma. Sem foto, as iniciais — que ainda são dela,
- * ao contrário de uma silhueta anônima.
- */
 function iniciaisDe(nome: string | undefined): string {
   return (nome || "?")
     .split(/\s+/)
@@ -39,42 +18,50 @@ function iniciaisDe(nome: string | undefined): string {
     .join("");
 }
 
+function horaFormatada(): string {
+  return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
 export const ConversationMessage = memo(function ConversationMessage({ message, vivo }: Props) {
   const { user } = useAuth();
   const isUser = message.role === "user";
+  const time = message.timestamp || horaFormatada();
 
   return (
-    <div className={cn("flex gap-3", isUser ? "justify-end" : "justify-start")}>
-      {!isUser && (
-        // Mesmo diâmetro da foto de quem está do outro lado: dois
-        // interlocutores com pesos visuais diferentes fazem um parecer
-        // secundário. O Blink ocupa o círculo inteiro, sem moldura — a foto
-        // da pessoa também não tem.
-        <span className="mt-1 size-9 shrink-0 overflow-hidden rounded-full bg-muted/50">
+    <div className={cn("flex gap-3 px-1 my-1.5", isUser ? "flex-row-reverse" : "flex-row")}>
+      {!isUser ? (
+        <span className="mt-0.5 size-8 shrink-0 overflow-hidden rounded-full border border-border/80 bg-background shadow-xs">
           <Blink className="size-full" animado={vivo} />
         </span>
-      )}
-      <div
-        className={cn(
-          "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words",
-          isUser
-            ? "bg-primary text-primary-foreground rounded-br-sm"
-            : "bg-muted text-foreground rounded-bl-sm",
-        )}
-      >
-        {message.content}
-      </div>
-      {isUser && (
-        <span className="mt-1 size-9 shrink-0 overflow-hidden rounded-full">
+      ) : (
+        <span className="mt-0.5 size-8 shrink-0 overflow-hidden rounded-full border border-border/80 bg-muted">
           {user?.avatarUrl ? (
-            <img src={user.avatarUrl} alt={user.nome} className="size-full object-cover" />
+            <img src={user.avatarUrl} alt={user.nome ?? "Usuário"} className="size-full object-cover" />
           ) : (
-            <span className="flex size-full items-center justify-center bg-muted text-[11px] font-medium text-muted-foreground">
+            <span className="flex size-full items-center justify-center text-[10px] font-bold text-muted-foreground">
               {iniciaisDe(user?.nome)}
             </span>
           )}
         </span>
       )}
+
+      <div className={cn("flex max-w-[80%] flex-col gap-1", isUser ? "items-end" : "items-start")}>
+        <div className="flex items-center gap-2 px-1 text-[11px] font-medium text-muted-foreground">
+          <span>{isUser ? "Você" : "Blink (Atendente)"}</span>
+          <span className="text-[10px] opacity-70">{time}</span>
+        </div>
+
+        <div
+          className={cn(
+            "rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-xs",
+            isUser
+              ? "bg-primary text-primary-foreground rounded-tr-xs font-normal"
+              : "bg-card border border-border/80 text-foreground rounded-tl-xs",
+          )}
+        >
+          {message.content}
+        </div>
+      </div>
     </div>
   );
 });

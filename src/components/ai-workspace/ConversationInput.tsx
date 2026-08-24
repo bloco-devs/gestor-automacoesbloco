@@ -202,13 +202,19 @@ export const ConversationInput = memo(function ConversationInput({
 
         <Button
           type="button"
-          size="icon"
           onClick={submit}
           disabled={disabled || !value.trim()}
           aria-label="Enviar mensagem"
-          className="size-10 shrink-0 rounded-xl"
+          className="h-10 px-4 shrink-0 rounded-xl gap-2 font-semibold shadow-xs"
         >
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <SendHorizontal className="size-4" />}
+          {loading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <>
+              <SendHorizontal className="size-4" />
+              <span className="hidden sm:inline">Enviar</span>
+            </>
+          )}
         </Button>
       </div>
     </div>
