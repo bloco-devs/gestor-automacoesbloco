@@ -75,12 +75,40 @@ describe("ciclo de apuração 20 → 19", () => {
     expect(partesEmSaoPaulo(j.fim)).toMatchObject({ ano: 2027, mes: 1, dia: 20 });
   });
 
-  it("começa e termina sempre no dia 20, em qualquer mês", () => {
+  /**
+   * ESTE TESTE MUDOU DE AFIRMAÇÃO, e a diferença é o ponto.
+   *
+   * Antes ele dizia "começa e termina sempre no dia 20, em qualquer mês" — o
+   * que transformava uma decisão administrativa do RH em invariante do
+   * sistema. Um teste assim não protege nada: ele reprova a mudança correta no
+   * dia em que o RH definir 01/09 → 30/09, e faz o desenvolvedor da vez achar
+   * que quebrou algo quando na verdade acertou.
+   *
+   * O que se testa agora é o contrato real: `janelaDoCiclo` é a SUGESTÃO de
+   * uma janela 20 → 19 para preencher formulário. O período de um ciclo de
+   * verdade vem de `relatorio_ciclo.inicio`/`fim`, e está exercitado em
+   * `ciclos.test.ts` com três janelas diferentes.
+   */
+  it("a sugestão 20→19 é consistente em qualquer mês", () => {
     for (let mes = 1; mes <= 12; mes++) {
       const j = janelaDoCiclo(2026, mes);
       expect(partesEmSaoPaulo(j.inicio).dia).toBe(20);
       expect(partesEmSaoPaulo(j.fim).dia).toBe(20);
     }
+  });
+
+  it("é sugestão, não regra: o ciclo real usa as datas configuradas", () => {
+    // Uma janela que o RH poderia definir amanhã, sem tocar em código. Se
+    // alguém reintroduzir a regra fixa, isto quebra — que é o alarme.
+    const mesCheio = {
+      inicio: deSaoPauloParaUtc(2026, 9, 1).toISOString(),
+      fim: deSaoPauloParaUtc(2026, 10, 1).toISOString(),
+    };
+    expect(dentroDoCiclo("2026-09-01T03:00:00.000Z", mesCheio)).toBe(true);
+    expect(dentroDoCiclo("2026-09-30T23:00:00.000Z", mesCheio)).toBe(true);
+    // 19/09 não tem nada de especial numa janela de mês cheio.
+    expect(dentroDoCiclo("2026-09-20T03:00:00.000Z", mesCheio)).toBe(true);
+    expect(dentroDoCiclo("2026-10-01T03:00:00.000Z", mesCheio)).toBe(false);
   });
 
   // As bordas. Cada linha aqui é dinheiro de alguém.

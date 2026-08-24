@@ -72,6 +72,9 @@ const Classificacao = lazy(
 const Apuracao = lazy(
   () => import(/* webpackChunkName: "relatorios" */ "./pages/Apuracao"),
 );
+const GestaoDeCiclos = lazy(
+  () => import(/* webpackChunkName: "relatorios" */ "./pages/GestaoDeCiclos"),
+);
 const RelatorioExecutivo = lazy(
   () => import(/* webpackChunkName: "relatorios" */ "./pages/RelatorioExecutivo"),
 );
@@ -508,6 +511,7 @@ const AppRoutes = () => {
           <Route path="/relatorios/fechamento/:demandaId" element={<FechamentoTecnico />} />
           <Route path="/relatorios/classificacao" element={<Classificacao />} />
           <Route path="/relatorios/remuneracao" element={<Apuracao />} />
+          <Route path="/relatorios/ciclos" element={<GestaoDeCiclos />} />
           <Route path="/relatorios/executivo" element={<RelatorioExecutivo />} />
         </Route>
 

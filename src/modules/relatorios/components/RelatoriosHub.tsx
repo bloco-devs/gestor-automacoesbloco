@@ -13,7 +13,15 @@ interface Cartao {
   descricao: string;
   href: string;
   icone: typeof FileSearch;
-  capacidade: string;
+  /**
+   * Uma capacidade, ou várias alternativas.
+   *
+   * Virou lista por causa da gestão de ciclos: quem só administra e quem só
+   * consulta chegam pela mesma porta, e a RPC aceita as duas. Com um valor
+   * único, quem tivesse apenas `remuneracao.administrar` não enxergaria o
+   * cartão da tela que ele é justamente o encarregado de operar.
+   */
+  capacidade: string | string[];
   /** Quando falso, o cartão aparece marcado como ainda não construído. */
   pronto: boolean;
 }
@@ -63,7 +71,7 @@ const CARTOES: Cartao[] = [
     id: "remuneracao",
     titulo: "Remuneração variável",
     descricao:
-      "Apuração por ciclo, do dia 20 ao dia 19. Pontos, meta da equipe, alcance e faixa.",
+      "Pontos, meta da equipe, alcance e faixa, no período definido pelo ciclo em apuração.",
     href: "/relatorios/remuneracao",
     icone: Coins,
     capacidade: "remuneracao.ver_propria",
@@ -71,12 +79,13 @@ const CARTOES: Cartao[] = [
   },
   {
     id: "fechamentos",
-    titulo: "Histórico de ciclos",
-    descricao: "Ciclos anteriores, o que entrou em cada um e o resultado congelado na aprovação.",
+    titulo: "Gestão de ciclos",
+    descricao:
+      "Criar e editar períodos de apuração, ver o que entrou em cada um, fechar e reabrir.",
     href: "/relatorios/ciclos",
     icone: CalendarClock,
-    capacidade: "remuneracao.ver_todas",
-    pronto: false,
+    capacidade: ["remuneracao.ver_todas", "remuneracao.administrar"],
+    pronto: true,
   },
   {
     id: "painel",
@@ -105,7 +114,8 @@ function RelatoriosHubImpl() {
   });
 
   const minhas = new Set(capacidades.data ?? []);
-  const podeVer = (c: Cartao) => minhas.has(c.capacidade);
+  const podeVer = (c: Cartao) =>
+    Array.isArray(c.capacidade) ? c.capacidade.some((x) => minhas.has(x)) : minhas.has(c.capacidade);
   const cicloAtual = ciclos.data?.[0];
 
   // Sem nenhuma capacidade não há o que mostrar — e é melhor dizer isso do que

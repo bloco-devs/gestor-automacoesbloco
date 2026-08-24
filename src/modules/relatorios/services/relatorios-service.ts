@@ -83,21 +83,88 @@ export function deSaoPauloParaUtc(
 }
 
 // ---------------------------------------------------------------------------
-// Ciclo de apuração — 20 → 19
+// Ciclo de apuração — período configurável
 // ---------------------------------------------------------------------------
 
 /**
- * A janela do ciclo de um mês de referência.
+ * SUGESTÃO de janela no formato 20 → 19. Não é a regra do sistema.
  *
- *   referência setembro/2026  →  [20/08/2026 00:00, 20/09/2026 00:00)
+ *   sugestão para setembro/2026  →  [20/08/2026 00:00, 20/09/2026 00:00)
  *
- * Espelha exatamente `relatorio_ciclo_janela` no banco. O banco continua
- * sendo a autoridade — isto existe para prévia na tela e para teste.
+ * O QUE ESTA FUNÇÃO NÃO É
+ *
+ * Ela não determina o período de ciclo nenhum. Quem determina é a linha em
+ * `relatorio_ciclo`, com `inicio` e `fim` gravados — e todo o motor de
+ * apuração lê de lá, nunca daqui.
+ *
+ * O ciclo de setembro/2026 usa 20/08 → 19/09 por um motivo administrativo
+ * específico: a folha de agosto já tinha fechado quando o programa de
+ * remuneração variável começou a valer, então o RH definiu que a primeira
+ * apuração cobriria a partir do dia 20. É a configuração DAQUELE ciclo. O RH
+ * pode criar 01/09 → 30/09 amanhã, e nada no código precisa mudar.
+ *
+ * Isto existe para dois usos honestos: preencher o formulário de criação de
+ * ciclo com um palpite razoável quando o padrão for esse, e permitir teste
+ * sem Postgres. Espelha `relatorio_ciclo_janela`, que também é conveniência.
  */
 export function janelaDoCiclo(ano: number, mes: number): Periodo {
   const inicio = deSaoPauloParaUtc(mes === 1 ? ano - 1 : ano, mes === 1 ? 12 : mes - 1, 20);
   const fim = deSaoPauloParaUtc(ano, mes, 20);
   return { inicio, fim, rotulo: `${nomeDoMes(mes)}/${ano}` };
+}
+
+/**
+ * A BORDA DIREITA, TRADUZIDA.
+ *
+ * O banco guarda `fim` EXCLUSIVO: para o ciclo que termina em 19/09, o valor
+ * gravado é 20/09 00:00. É o que evita o buraco entre 19/09 23:59:59 e o dia
+ * seguinte, e o que faz `>= inicio AND < fim` funcionar sem exceção.
+ *
+ * Mas ninguém do RH pensa assim. Quem preenche o formulário sabe dizer "o
+ * ciclo vai até 19 de setembro" e ficaria confuso — ou erraria por um dia —
+ * ao ter que digitar 20. Estas duas funções são a tradução, e existem em um
+ * lugar só para que a conversão não seja refeita, com sinal trocado, em cada
+ * tela que precisar dela.
+ *
+ *   ultimoDiaIncluido('2026-09-20T03:00:00Z')  →  '2026-09-19'
+ *   limiteExclusivo('2026-09-19')              →  20/09 00:00 em São Paulo
+ */
+export function ultimoDiaIncluido(fimIso: string): string {
+  return diaLocalDe(new Date(new Date(fimIso).getTime() - 1000).toISOString());
+}
+
+/**
+ * O dia em São Paulo de um instante, como 'YYYY-MM-DD'.
+ *
+ * Serve para a borda ESQUERDA, que é inclusiva e portanto não precisa de
+ * ajuste: `inicio` já é o primeiro instante do primeiro dia. Existe separada
+ * de `ultimoDiaIncluido` porque as duas bordas são assimétricas — e escrever
+ * `ultimoDiaIncluido(inicio + 1s)` para obter o primeiro dia funciona, mas
+ * lido depois parece erro, e convida alguém a "consertar" tirando o segundo.
+ */
+export function diaLocalDe(iso: string): string {
+  const p = partesEmSaoPaulo(new Date(iso));
+  return `${p.ano}-${String(p.mes).padStart(2, "0")}-${String(p.dia).padStart(2, "0")}`;
+}
+
+/** Recebe o último dia que ENTRA e devolve o limite exclusivo, em UTC. */
+export function limiteExclusivo(ultimoDia: string): string {
+  const [a, m, d] = ultimoDia.split("-").map(Number);
+  // Somar um dia via Date puro erraria na virada do horário de verão; passar
+  // `dia + 1` para o conversor deixa o Postgres-equivalente resolver a data.
+  return deSaoPauloParaUtc(a, m, d + 1).toISOString();
+}
+
+/** Primeiro instante de um dia local, em UTC. */
+export function primeiroInstante(dia: string): string {
+  const [a, m, d] = dia.split("-").map(Number);
+  return deSaoPauloParaUtc(a, m, d).toISOString();
+}
+
+/** Formata um dia local 'YYYY-MM-DD' para leitura. */
+export function diaParaTexto(dia: string): string {
+  const [a, m, d] = dia.split("-");
+  return `${d}/${m}/${a}`;
 }
 
 /** `inicio <= momento < fim`. O dia 19 inteiro entra; o dia 20 não. */

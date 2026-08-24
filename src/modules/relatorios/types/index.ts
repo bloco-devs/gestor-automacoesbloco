@@ -4,12 +4,18 @@
  * Duas coisas convivem aqui e NÃO se misturam:
  *
  *   HISTÓRICO TÉCNICO — períodos cronológicos normais (dia, semana, mês
- *   inteiro, ano). Mostra tudo que foi feito, inclusive depois do dia 19.
+ *   inteiro, ano). Mostra tudo que foi feito, sem recorte de pagamento.
  *
- *   APURAÇÃO DA FOLHA — ciclo 20 → 19. Só o que é elegível, com data
- *   confirmada e classificação definida por gente.
+ *   APURAÇÃO DA FOLHA — a janela configurada no ciclo, seja ela qual for. Só
+ *   o que é elegível, com data confirmada e classificação definida por gente.
  *
- * O dia 19 é corte de folha, não fim do histórico.
+ * O corte da apuração não é fim do histórico: uma entrega fora do ciclo
+ * continua existindo no relatório técnico, só não gera ponto naquele ciclo.
+ *
+ * E o corte NÃO é uma regra fixa do sistema. O ciclo de setembro/2026 vai de
+ * 20/08 a 19/09 porque a folha de agosto já estava fechada quando o programa
+ * começou — decisão administrativa do RH, gravada em `relatorio_ciclo`, e
+ * alterável pela tela de Gestão de Ciclos sem tocar em código.
  */
 
 /** Fuso de todos os cortes de data. Nunca usar offset fixo. */
