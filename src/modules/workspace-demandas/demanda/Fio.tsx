@@ -9,7 +9,7 @@ import {
   SendHorizontal,
   Trash2,
   Plus,
-  Image,
+  Image as ImageIcon,
   FileText,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -391,6 +391,14 @@ interface Props {
   onEditarComentario?: (comentarioId: string, texto: string) => Promise<void>;
   onExcluirComentario?: (comentarioId: string) => Promise<void>;
   onAbrirAnexo?: (anexoId: string) => void;
+  /**
+   * Anexar de dentro da conversa.
+   *
+   * Ausente quando a origem da demanda não guarda anexo — aí o botão nem
+   * aparece, em vez de aparecer e falhar.
+   */
+  onAnexar?: (arquivos: File[]) => void;
+  anexando?: boolean;
   vazio: string;
 }
 
@@ -404,6 +412,8 @@ function FioImpl({
   onEditarComentario,
   onExcluirComentario,
   onAbrirAnexo,
+  onAnexar,
+  anexando = false,
   vazio,
 }: Props) {
   const eventosFiltrados = useMemo(() => {
@@ -418,6 +428,49 @@ function FioImpl({
   const [popoverAberto, setPopoverAberto] = useState(false);
   const seletorMedia = useRef<HTMLInputElement>(null);
   const seletorDoc = useRef<HTMLInputElement>(null);
+
+  /**
+   * COLAR PRINT DIRETO NA CONVERSA.
+   *
+   * É o caminho mais usado no suporte: a pessoa dá um print, aperta Ctrl+V e
+   * espera que funcione. Sem isto ela precisa salvar em arquivo, achar a pasta
+   * e usar o seletor — três passos para o que devia ser um.
+   *
+   * `preventDefault` só quando há arquivo no clipboard: colar TEXTO tem que
+   * continuar funcionando normalmente, e interceptar tudo quebraria o uso
+   * comum para resolver o raro.
+   */
+  const aoColar = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!onAnexar) return;
+    const arquivos = Array.from(e.clipboardData?.files ?? []);
+    if (arquivos.length === 0) return;
+    e.preventDefault();
+    // Print colado chega sem nome útil ("image.png"). Um nome com data e hora
+    // evita meia dúzia de "image.png" indistinguíveis na lista de anexos.
+    const agora = new Date();
+    const carimbo = [
+      agora.getFullYear(),
+      String(agora.getMonth() + 1).padStart(2, "0"),
+      String(agora.getDate()).padStart(2, "0"),
+      String(agora.getHours()).padStart(2, "0"),
+      String(agora.getMinutes()).padStart(2, "0"),
+    ].join("");
+    onAnexar(
+      arquivos.map((f) =>
+        /^image\.\w+$/i.test(f.name) || !f.name
+          ? new File([f], `print-${carimbo}.${(f.type.split("/")[1] || "png")}`, { type: f.type })
+          : f,
+      ),
+    );
+  };
+
+  const aoEscolherArquivos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivos = Array.from(e.target.files ?? []);
+    if (arquivos.length > 0) onAnexar?.(arquivos);
+    // Zera para que escolher o MESMO arquivo de novo dispare o evento.
+    e.target.value = "";
+    setPopoverAberto(false);
+  };
 
   const enviar = async () => {
     const t = texto.trim();
@@ -502,6 +555,7 @@ function FioImpl({
                   void enviar();
                 }
               }}
+              onPaste={aoColar}
               data-fio-resposta
               placeholder={interna ? "Escreva uma nota interna (visível apenas para a equipe)…" : "Digite sua resposta para o solicitante…"}
               aria-label="Escrever no fio da demanda"
@@ -513,6 +567,90 @@ function FioImpl({
 
             <div className="flex items-center justify-between border-t border-border/40 px-3 py-2">
               <div className="flex items-center gap-2">
+                {onAnexar && (
+                  <Popover open={popoverAberto} onOpenChange={setPopoverAberto}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={anexando}
+                        aria-label="Anexar arquivo"
+                        title="Anexar arquivo — ou cole um print com Ctrl+V"
+                        className={cn(
+                          "inline-flex size-8 items-center justify-center rounded-lg transition-colors",
+                          "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                          "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+                          "disabled:cursor-not-allowed disabled:opacity-50",
+                        )}
+                      >
+                        {anexando ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden />
+                        ) : (
+                          <Plus className="size-4" aria-hidden />
+                        )}
+                      </button>
+                    </PopoverTrigger>
+
+                    {/* Duas opções, não seis.
+                        O seletor do sistema já deixa navegar; oferecer "câmera",
+                        "contato" e "localização" como um mensageiro de celular
+                        seria copiar a forma sem copiar a necessidade. Aqui só
+                        existem dois casos: documento e imagem. */}
+                    <PopoverContent align="start" side="top" className="w-56 p-1.5">
+                      <button
+                        type="button"
+                        onClick={() => seletorDoc.current?.click()}
+                        className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-accent"
+                      >
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                          <FileText className="size-4" aria-hidden />
+                        </span>
+                        <span>
+                          <span className="block font-medium">Documento</span>
+                          <span className="block text-[11px] text-muted-foreground">
+                            PDF, Word, Excel, texto
+                          </span>
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => seletorMedia.current?.click()}
+                        className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-accent"
+                      >
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                          <ImageIcon className="size-4" aria-hidden />
+                        </span>
+                        <span>
+                          <span className="block font-medium">Fotos e vídeos</span>
+                          <span className="block text-[11px] text-muted-foreground">
+                            ou cole um print com Ctrl+V
+                          </span>
+                        </span>
+                      </button>
+                    </PopoverContent>
+                  </Popover>
+                )}
+
+                {/* Fora do Popover de propósito: dentro dele, fechar o menu
+                    desmontaria o input antes do diálogo do sistema devolver o
+                    arquivo, e o onChange nunca dispararia. */}
+                <input
+                  ref={seletorDoc}
+                  type="file"
+                  multiple
+                  hidden
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.log,.md,.zip,application/pdf"
+                  onChange={aoEscolherArquivos}
+                />
+                <input
+                  ref={seletorMedia}
+                  type="file"
+                  multiple
+                  hidden
+                  accept="image/*,video/mp4,video/webm,video/quicktime"
+                  onChange={aoEscolherArquivos}
+                />
+
                 {podeNotaInterna && (
                   <button
                     type="button"

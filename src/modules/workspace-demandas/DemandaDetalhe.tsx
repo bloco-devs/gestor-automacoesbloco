@@ -110,9 +110,28 @@ export default function DemandaDetalhe() {
     return m;
   }, [demandas]);
 
-  // Quem abriu não vê nota interna. É a única regra de visibilidade do fio, e
-  // ela mora aqui porque é permissão, não domínio.
-  const daEquipe = user?.role === "developer" || !!user?.isAdministrador;
+  /**
+   * Quem abriu não vê nota interna. É a única regra de visibilidade do fio, e
+   * ela mora aqui porque é permissão, não domínio.
+   *
+   * O `|| user.isAdministrador` SAIU DAQUI, e o motivo importa.
+   *
+   * `setViewAs` — o "Trocar de perfil" — muda apenas `role`; `isAdministrador`
+   * continua verdadeiro. Com o `||`, um administrador que escolhia ver como
+   * solicitante continuava enxergando nota interna: `false || true`. A
+   * pré-visualização mentia exatamente sobre a coisa que ela existe para
+   * verificar.
+   *
+   * E o termo era redundante: `useAuth` já mapeia `administrador` para
+   * `role: "developer"`, então um administrador de verdade passa pelo primeiro
+   * teste. O `||` não somava permissão nenhuma — só sabotava o preview.
+   *
+   * Vale registrar o que NÃO era o problema: a RLS de `demand_comments` está
+   * correta e sempre esteve. Um solicitante de verdade nunca leu nota interna,
+   * porque o banco não devolve a linha. O defeito era só a tela mostrando ao
+   * administrador o que ele já podia ver, num modo que prometia o contrário.
+   */
+  const daEquipe = user?.role === "developer";
 
   const anexos = useAnexos(id ?? null, capacidades.comentarios);
 
@@ -472,6 +491,24 @@ export default function DemandaDetalhe() {
               onComentar={fio.comentar}
               onEditarComentario={fio.editarComentario}
               onExcluirComentario={fio.excluirComentario}
+              /* Anexar de dentro da conversa, com o mesmo caminho de upload
+                 do painel de anexos — mesma validação, mesmo placar, mesmos
+                 avisos. Duas portas para a mesma sala, não duas salas. */
+              onAnexar={
+                anexos.podeAnexar
+                  ? (arquivos) => {
+                      void anexos.enviar(arquivos).then(({ anexados, falhas }) => {
+                        if (anexados > 0) {
+                          toast.success(
+                            anexados === 1 ? "Anexo enviado." : `${anexados} anexos enviados.`,
+                          );
+                        }
+                        for (const f of falhas) toast.error(f);
+                      });
+                    }
+                  : undefined
+              }
+              anexando={anexos.enviando}
               vazio="Ninguém falou nada ainda. Escreva a primeira mensagem."
             />
           ) : (
