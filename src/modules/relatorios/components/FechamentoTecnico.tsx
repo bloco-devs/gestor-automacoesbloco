@@ -25,6 +25,7 @@ import {
   buscarFechamento,
   buscarIntervalos,
   formatarDuracao,
+  buscarResolucaoDoFio,
   removerIntervalo,
   salvarFechamento,
   somarMinutos,
@@ -69,6 +70,18 @@ const OPCIONAIS = [
   { campo: "seguranca_rls" as const, rotulo: "Segurança e permissões (RLS)", dica: "" },
   { campo: "testes_realizados" as const, rotulo: "Testes realizados", dica: "" },
   { campo: "observacoes" as const, rotulo: "Observações", dica: "" },
+];
+
+/**
+ * Para onde uma fala do fio pode ser mandada. São os quatro que o banco exige,
+ * mais testes — que é onde costuma cair "testei e funcionou".
+ */
+const DESTINOS = [
+  { campo: "problema_identificado" as const, curto: "problema" },
+  { campo: "solucao_implementada" as const, curto: "solução" },
+  { campo: "o_que_foi_alterado" as const, curto: "alterado" },
+  { campo: "resultado_obtido" as const, curto: "resultado" },
+  { campo: "testes_realizados" as const, curto: "testes" },
 ];
 
 type Campos = RascunhoDeFechamento;
@@ -121,6 +134,36 @@ function FechamentoTecnicoImpl() {
     queryFn: () => buscarIntervalos(demandaId),
     enabled: !!demandaId,
   });
+
+  /**
+   * O que a equipe já escreveu no fio desta demanda.
+   *
+   * Existe porque o relato do trabalho quase sempre já foi escrito — no dia em
+   * que o trabalho aconteceu, para o solicitante ler. Exigir que a pessoa
+   * redigite tudo semanas depois é o que fez 45 de 46 fechamentos ficarem em
+   * branco, e sem fechamento não há classificação nem pontos.
+   *
+   * Só leitura, e nada entra em campo nenhum sozinho: cada fala tem um botão e
+   * é a pessoa que decide para onde vai. É a diferença entre buscar e inventar.
+   */
+  const fio = useQuery({
+    queryKey: ["relatorio", "fio", demandaId],
+    queryFn: () => buscarResolucaoDoFio(demandaId),
+    enabled: !!demandaId,
+    // Erro aqui não pode derrubar o formulário — quem não for da equipe recebe
+    // exceção da função, e ainda assim tem de conseguir preencher à mão.
+    retry: false,
+  });
+
+  /** Acrescenta a fala ao campo, sem nunca sobrescrever o que já está lá. */
+  function mandarPara(campo: (typeof DESTINOS)[number]["campo"], texto: string) {
+    setCampos((c) => {
+      const atual = (c[campo] as string | null | undefined)?.trim() ?? "";
+      if (atual.includes(texto.trim())) return c;
+      return { ...c, [campo]: atual ? `${atual}\n\n${texto.trim()}` : texto.trim() };
+    });
+    toast.success(`Adicionado em ${DESTINOS.find((d) => d.campo === campo)?.curto}`);
+  }
 
   // Carrega o que já existe; se não existe, semeia "o que foi solicitado" com
   // a descrição original da demanda. Semear é cópia de texto que alguém já
@@ -259,6 +302,58 @@ function FechamentoTecnicoImpl() {
               placeholder="Não informado."
             />
           </Section>
+
+          {/* O QUE JÁ FOI ESCRITO.
+              Fica acima do relato de propósito: a pessoa vê o que já existe
+              antes de começar a digitar, e não depois. */}
+          {fio.data && fio.data.length > 0 && (
+            <Section
+              title="O que vocês escreveram nesta demanda"
+              description="As últimas falas da equipe no fio. Clique para levar o texto ao campo — dá para editar depois, e nada é gravado até você salvar."
+            >
+              <div className="flex flex-col gap-2">
+                {fio.data.map((f) => (
+                  <div
+                    key={f.comentario_id}
+                    className="rounded-md border border-border bg-muted/30 p-3"
+                  >
+                    <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="ds-label text-foreground">
+                        {f.autor_nome ?? f.autor_email ?? "Equipe"}
+                      </span>
+                      <span className="ds-caption text-muted-foreground">
+                        {formatarData(f.escrito_em)}
+                      </span>
+                      {/* Marcar é obrigatório: nota interna que o dev aceite
+                          vira campo do fechamento, e o fechamento o RH lê. Sem
+                          o aviso, alguém publica sem perceber que publicou. */}
+                      {f.interna && (
+                        <Badge variant="outline" className="text-[10px]">
+                          nota interna — não visível ao solicitante
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="whitespace-pre-wrap text-[13px]">{f.texto}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-1">
+                      <span className="ds-caption mr-1 text-muted-foreground">Usar em:</span>
+                      {DESTINOS.map((d) => (
+                        <Button
+                          key={d.campo}
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-6 px-2 text-[11px]"
+                          onClick={() => mandarPara(d.campo, f.texto)}
+                        >
+                          {d.curto}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
 
           <Section
             title="O relato técnico"

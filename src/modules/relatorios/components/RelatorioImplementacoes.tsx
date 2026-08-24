@@ -44,6 +44,7 @@ import { nomeCurto } from "../nomes";
 import { formatarReferenciaComSigla, obterEstiloDoSistema } from "@/domain/demand";
 import { cn } from "@/lib/utils";
 import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
+import type { LinhaDeImplementacao } from "../services/relatorios-data";
 import type { AtalhoDePeriodo } from "../types";
 
 const ATALHOS: Array<{ valor: AtalhoDePeriodo; rotulo: string }> = [
@@ -58,6 +59,79 @@ const ATALHOS: Array<{ valor: AtalhoDePeriodo; rotulo: string }> = [
   { valor: "ano_anterior", rotulo: "Ano anterior" },
   { valor: "personalizado", rotulo: "Personalizado" },
 ];
+
+/**
+ * O relato técnico dentro da linha expandida.
+ *
+ * A ordem é a de quem lê de fora e precisa entender a entrega sem ter
+ * participado dela: qual era o problema, o que foi feito, o que mudou, no que
+ * deu. Os quatro primeiros são obrigatórios para concluir o fechamento, então
+ * numa entrega registrada eles sempre existem — os demais aparecem só quando
+ * se aplicam, porque nem toda entrega mexe em banco, integração ou RLS.
+ */
+const CAMPOS_DO_RELATO: Array<{ chave: keyof LinhaDeImplementacao; rotulo: string }> = [
+  { chave: "fechamento_problema", rotulo: "Qual era o problema" },
+  { chave: "fechamento_solucao", rotulo: "Como foi resolvido" },
+  { chave: "fechamento_alterado", rotulo: "O que foi alterado" },
+  { chave: "fechamento_resultado", rotulo: "Resultado obtido" },
+  { chave: "fechamento_funcionalidades", rotulo: "Funcionalidades implementadas" },
+  { chave: "fechamento_integracoes", rotulo: "Integrações" },
+  { chave: "fechamento_banco", rotulo: "Alterações no banco" },
+  { chave: "fechamento_seguranca", rotulo: "Segurança e permissões" },
+  { chave: "fechamento_testes", rotulo: "Como foi testado" },
+  { chave: "fechamento_observacoes", rotulo: "Observações" },
+];
+
+function RelatoTecnico({ l }: { l: LinhaDeImplementacao }) {
+  const preenchidos = CAMPOS_DO_RELATO.filter((c) => {
+    const v = l[c.chave];
+    return typeof v === "string" && v.trim().length > 0;
+  });
+
+  if (preenchidos.length === 0) return null;
+
+  return (
+    <div className="rounded-md border border-border bg-background p-3">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <span className="ds-label text-foreground">Relato técnico</span>
+        {l.fechamento_por && (
+          <span className="ds-caption text-muted-foreground">
+            registrado por {l.fechamento_por}
+            {l.fechamento_em ? ` em ${formatarData(l.fechamento_em)}` : ""}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-col gap-2">
+        {preenchidos.map((c) => (
+          <div key={String(c.chave)}>
+            <span className="ds-label text-muted-foreground">{c.rotulo}</span>
+            <p className="mt-0.5 whitespace-pre-wrap">{String(l[c.chave]).trim()}</p>
+          </div>
+        ))}
+        {l.fechamento_evidencias && l.fechamento_evidencias.length > 0 && (
+          <div>
+            <span className="ds-label text-muted-foreground">Evidências</span>
+            <ul className="mt-0.5 flex flex-col gap-0.5">
+              {l.fechamento_evidencias.map((link) => (
+                <li key={link} className="truncate">
+                  {/* Link externo colado por pessoa: sem confiança implícita. */}
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-primary underline underline-offset-2"
+                  >
+                    {link}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const TIPO_ROTULO: Record<string, string> = {
   bug: "Correção",
@@ -83,6 +157,14 @@ function RelatorioImplementacoesImpl() {
       Classificação: l.classificacao_rotulo ?? "Não classificada",
       Pontos: l.pontos ?? "",
       "Justificativa da classificação": l.justificativa ?? "",
+      // O relato vai junto: a planilha é o que sai da tela e circula, e sem
+      // isto ela dizia quantos pontos a entrega valeu sem dizer o que foi
+      // entregue. Os quatro campos obrigatórios do fechamento, nada além —
+      // nota interna não passa por aqui.
+      "Qual era o problema": l.fechamento_problema ?? "",
+      "Como foi resolvido": l.fechamento_solucao ?? "",
+      "O que foi alterado": l.fechamento_alterado ?? "",
+      "Resultado obtido": l.fechamento_resultado ?? "",
       Ciclo: l.ciclo_rotulo ?? "Fora de ciclo",
       "Fechamento técnico": l.fechamento === "concluido" ? "Registrado" : "Pendente",
       Responsável: l.responsavel_nome ?? "Sem responsável",
@@ -443,6 +525,7 @@ function RelatorioImplementacoesImpl() {
                               <span className="ds-label">Origem da data: </span>
                               {l.evidencia ?? "Não identificada."}
                             </div>
+                            <RelatoTecnico l={l} />
                             {l.fechamento !== "concluido" ? (
                               <p className="text-muted-foreground">
                                 Fechamento técnico ainda não registrado. Sem ele a entrega não

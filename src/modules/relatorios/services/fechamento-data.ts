@@ -58,7 +58,13 @@ export async function buscarRegistradas(): Promise<Registrada[]> {
     {} as never,
   );
   if (error) throw error;
-  return ((data ?? []) as unknown as ParaClassificar[]).map((r) => ({
+  return ((data ?? []) as unknown as ParaClassificar[])
+    // A RPC passou a devolver TODAS as concluídas, não só as que já têm
+    // relato — foi o que destravou a fila. Aqui a aba é "Registradas", então
+    // o filtro que antes vinha do INNER JOIN precisa existir de novo, agora
+    // explícito.
+    .filter((r) => r.fechamento === "concluido")
+    .map((r) => ({
     demanda_id: r.demanda_id,
     ticket_code: r.ticket_code,
     titulo: r.titulo,
@@ -104,6 +110,40 @@ export async function buscarFechamento(demandaId: string): Promise<FechamentoTec
     .maybeSingle();
   if (error) throw error;
   return (data as unknown as FechamentoTecnico) ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// O que a equipe escreveu no fio
+// ---------------------------------------------------------------------------
+
+export interface FalaDoFio {
+  comentario_id: string;
+  autor_nome: string | null;
+  autor_email: string | null;
+  escrito_em: string;
+  interna: boolean;
+  texto: string;
+}
+
+/**
+ * As últimas falas da equipe na demanda, para o formulário oferecer como
+ * sugestão em vez de exigir que a pessoa redigite o que já escreveu.
+ *
+ * Isto NÃO preenche nada sozinho. Devolve texto para a tela mostrar; o campo
+ * do fechamento só existe depois que alguém revisou e salvou. A diferença
+ * importa: o fechamento é a base da classificação, que é a base da
+ * remuneração, e o que sustenta isso é ter passado por uma pessoa.
+ *
+ * Pode conter nota interna — a função exige `is_equipe()` no banco por causa
+ * disso. A tela precisa marcar quais são, senão alguém aceita uma sem perceber
+ * e ela vai parar no relatório que o RH lê.
+ */
+export async function buscarResolucaoDoFio(demandaId: string): Promise<FalaDoFio[]> {
+  const { data, error } = await supabase.rpc("relatorio_resolucao_do_fio" as never, {
+    _demanda_id: demandaId,
+  } as never);
+  if (error) throw error;
+  return (data ?? []) as unknown as FalaDoFio[];
 }
 
 export type RascunhoDeFechamento = Partial<Omit<FechamentoTecnico, "demanda_id" | "updated_at">>;
@@ -255,77 +295,48 @@ export interface ParaClassificar {
   classificada_em: string | null;
   autoclassificada: boolean;
   vezes_alterada: number;
+  /** 'sem_registro' | 'rascunho' | 'concluido'. Só 'concluido' deixa classificar. */
+  fechamento: "sem_registro" | "rascunho" | "concluido";
+  /** Falas da equipe no fio. > 0 significa que dá para montar o relato do que já foi escrito. */
+  falas_no_fio: number;
 }
 
+/**
+ * A fila de classificação.
+ *
+ * ERRATA — o que estava aqui antes e por que saiu.
+ *
+ * Havia um `try/catch` com um "fallback" que, quando a RPC devolvia lista
+ * vazia, ia buscar as demandas direto na tabela. Ele nunca funcionou, por dois
+ * motivos independentes:
+ *
+ *   1. Pedia a coluna `is_completed`, que não existe em `demands`. O PostgREST
+ *      responde 400 a coluna desconhecida, então `errDem` vinha setado e a
+ *      função saía no `return []` da linha seguinte. O fallback inteiro era
+ *      inalcançável.
+ *   2. Lia a tabela `relatorio_classificacoes`, no plural. A tabela é
+ *      `relatorio_classificacao`, singular. Mesmo se o passo 1 passasse, toda
+ *      demanda apareceria como não classificada — inclusive as classificadas.
+ *
+ * E se tivesse funcionado teria sido pior que não funcionar: usava
+ * `updated_at` como data de conclusão. `updated_at` muda a cada edição de
+ * título, comentário ou anexo. Como é a data de conclusão que decide a qual
+ * ciclo a demanda pertence, e o ciclo decide remuneração, um comentário em
+ * demanda antiga a moveria para o ciclo corrente e ela seria paga de novo.
+ *
+ * A fila vazia nunca foi problema de leitura. Era o INNER JOIN no fechamento
+ * técnico, do lado do banco, corrigido em 20260824160000.
+ */
 export async function buscarParaClassificar(): Promise<ParaClassificar[]> {
-  try {
-    const { data, error } = await supabase.rpc(
-      "relatorio_pendencias_de_classificacao" as never,
-      {} as never,
-    );
-    const lista = data as any[] | null;
-    if (!error && Array.isArray(lista) && lista.length > 0) {
-      return lista as unknown as ParaClassificar[];
-    }
-  } catch (e) {
-    console.warn("RPC relatorio_pendencias_de_classificacao fallback triggered:", e);
-  }
-
-  // Fallback direto: busca todas as demandas concluídas no banco
-  const { data: demandas, error: errDem } = await supabase
-    .from("demands")
-    .select("id, ticket_code, title, sistema_slug, created_at, assigned_to, updated_at, status, is_completed")
-    .order("updated_at", { ascending: false });
-
-  if (errDem || !demandas) return [];
-
-  // Filtra demandas que estão concluídas ou em colunas de entrega
-  const concluidas = demandas.filter((d: any) => {
-    const status = (d.status || "").toLowerCase();
-    return d.is_completed || status.includes("conclu") || status.includes("finaliz") || status.includes("done");
-  });
-
-  const { data: classif } = await supabase
-    .from("relatorio_classificacoes" as never)
-    .select("*");
-
-  const classifMap = new Map<string, any>();
-  if (Array.isArray(classif)) {
-    for (const c of classif as any[]) {
-      if (c && c.demanda_id) classifMap.set(c.demanda_id, c);
-    }
-  }
-
-  return concluidas.map((d: any) => {
-    const c = classifMap.get(d.id);
-    return {
-      demanda_id: d.id,
-      ticket_code: d.ticket_code || `#${d.id.slice(0, 6)}`,
-      titulo: d.title || "Sem título",
-      sistema_slug: d.sistema_slug || null,
-      responsavel_nome: null,
-      responsavel_id: d.assigned_to || null,
-      concluida_em: d.updated_at || d.created_at,
-      minutos_lancados: 0,
-      problema: null,
-      solucao: null,
-      alterado: null,
-      resultado: null,
-      testes: null,
-      tarefas_feitas: 0,
-      tarefas_total: 0,
-      anexos: 0,
-      ja_classificada: !!c?.classificacao,
-      classificacao: c?.classificacao || null,
-      rotulo: c?.rotulo || null,
-      pontos: c?.pontos || null,
-      justificativa: c?.justificativa || null,
-      classificada_por: c?.classificada_por || null,
-      classificada_em: c?.classificada_em || null,
-      autoclassificada: c?.autoclassificada || false,
-      vezes_alterada: c?.vezes_alterada || 0,
-    };
-  });
+  const { data, error } = await supabase.rpc(
+    "relatorio_pendencias_de_classificacao" as never,
+    {} as never,
+  );
+  // Sem rede de proteção de propósito: lista vazia agora é informação real
+  // ("não há concluída com data confirmada"), e erro precisa aparecer em vez
+  // de virar tela vazia silenciosa.
+  if (error) throw error;
+  return (data ?? []) as unknown as ParaClassificar[];
 }
 
 export async function classificar(

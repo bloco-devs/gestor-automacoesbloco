@@ -51,6 +51,35 @@ export interface LinhaDeImplementacao {
   minutos_lancados: number;
   ciclo_rotulo: string | null;
   autoclassificada?: boolean;
+
+  /**
+   * O RELATO TÉCNICO.
+   *
+   * Faltava justamente isto: a RPC devolvia `fechamento` — o estado — e nunca
+   * o texto. Então mesmo a demanda com relato completo aparecia no relatório
+   * sem uma linha sobre o que foi feito, porque o dado não chegava na tela.
+   *
+   * Continua nulo enquanto ninguém preencher, e `fechamento` é o que separa
+   * "ninguém escreveu" de "escreveu e deixou este campo em branco".
+   *
+   * Nota interna nunca entra aqui — o RH tem `relatorios.ver` e lê esta
+   * consulta. O que aparece é o que alguém redigiu como relato oficial.
+   */
+  fechamento_solicitado: string | null;
+  fechamento_problema: string | null;
+  fechamento_solucao: string | null;
+  fechamento_alterado: string | null;
+  fechamento_resultado: string | null;
+  fechamento_testes: string | null;
+  fechamento_banco: string | null;
+  fechamento_seguranca: string | null;
+  fechamento_integracoes: string | null;
+  fechamento_funcionalidades: string | null;
+  fechamento_observacoes: string | null;
+  fechamento_sistemas: string[] | null;
+  fechamento_evidencias: string[] | null;
+  fechamento_por: string | null;
+  fechamento_em: string | null;
 }
 
 export interface FiltrosDaConsulta {

@@ -1,4 +1,5 @@
 import { memo, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -67,6 +68,7 @@ function Cartao({
   /** Id de quem está logado, para saber se a entrega é da própria pessoa. */
   euSou: string | null;
 }) {
+  const navigate = useNavigate();
   const [aberto, setAberto] = useState(false);
   // Começa no que já está gravado. Abrir um cartão classificado com os três
   // botões em branco fazia parecer que a decisão tinha sumido.
@@ -135,13 +137,50 @@ function Cartao({
           </div>
         ) : (
           <Badge variant="outline" className="shrink-0 font-normal">
-            aguardando
+            {/* A fila passou a mostrar TODAS as concluídas, e não só as que já
+                têm relato. Sem distinguir aqui, "aguardando" significaria duas
+                coisas diferentes: esperando decisão, ou esperando alguém
+                escrever o que fez. São trabalhos distintos. */}
+            {item.fechamento === "concluido" ? "aguardando" : "falta o relato"}
           </Badge>
         )}
       </button>
 
       {aberto && (
         <div className="flex flex-col gap-4 border-t p-4">
+          {/* SEM RELATO NÃO HÁ O QUE DECIDIR.
+              Mostrar o formulário de classificação aqui só levaria ao erro que
+              `relatorio_classificar()` devolve — e depois de a pessoa ter
+              escolhido a categoria e escrito a justificativa. Melhor dizer
+              antes, e levar para onde dá para resolver. */}
+          {item.fechamento !== "concluido" && (
+            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
+              <p className="text-[13px]">
+                {item.fechamento === "rascunho"
+                  ? "O relato técnico está salvo como rascunho. Falta marcar como registrado."
+                  : "Esta entrega ainda não tem relato técnico."}{" "}
+                Sem ele não há base para classificar.
+              </p>
+              {item.falas_no_fio > 0 && (
+                <p className="ds-caption mt-1 text-muted-foreground">
+                  Há {item.falas_no_fio}{" "}
+                  {item.falas_no_fio === 1 ? "mensagem" : "mensagens"} da equipe no fio desta
+                  demanda. O formulário oferece {item.falas_no_fio === 1 ? "ela" : "elas"} para
+                  você aproveitar em vez de escrever de novo.
+                </p>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="mt-2"
+                onClick={() => navigate(`/relatorios/fechamento/${item.demanda_id}`)}
+              >
+                Escrever o relato
+              </Button>
+            </div>
+          )}
+
           {/* O relato, para quem classifica ler antes de decidir. */}
           <div className="flex flex-col gap-3 text-[13px]">
             {[
@@ -258,7 +297,17 @@ function Cartao({
 
           <div className="flex flex-wrap items-center gap-2">
             <Button
-              disabled={!escolha || curta || precisaMotivo || salvando}
+              // `relatorio_classificar()` recusa sem fechamento registrado.
+              // Travar aqui evita que a pessoa escolha a categoria, escreva a
+              // justificativa e só então descubra — o painel acima já diz o
+              // que falta e leva para lá.
+              disabled={
+                !escolha ||
+                curta ||
+                precisaMotivo ||
+                salvando ||
+                item.fechamento !== "concluido"
+              }
               onClick={() => aoClassificar(escolha!, justificativa, motivo || undefined)}
             >
               <Scale className="size-4" aria-hidden />
@@ -437,7 +486,7 @@ function ClassificacaoImpl() {
             }
             description={
               aba === "aguardando"
-                ? "Só aparecem aqui as entregas com fechamento técnico registrado. Veja a fila de pendências para as que ainda faltam."
+                ? "Aparecem aqui as entregas concluídas com data de conclusão confirmada. Se está vazio, ou não há nenhuma no período, ou todas já foram classificadas."
                 : undefined
             }
           />

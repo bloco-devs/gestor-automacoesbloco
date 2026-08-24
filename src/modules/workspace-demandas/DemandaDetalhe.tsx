@@ -387,6 +387,21 @@ export default function DemandaDetalhe() {
               {/* DEMANDA 7: Alterar status diretamente dentro da demanda */}
               <StatusStepper
                 statusAtualId={d.status.id}
+                /**
+                 * SÓ A EQUIPE MOVE.
+                 *
+                 * O componente sempre teve `disabled`, e esta tela nunca
+                 * passava — então o solicitante via as setas ativas. E não era
+                 * só aparência: a política de UPDATE de `demands` autoriza
+                 * `created_by`, então ele conseguia mesmo marcar a própria
+                 * demanda como concluída.
+                 *
+                 * Quem pediu não decide quando o trabalho terminou. Além do
+                 * óbvio, mover para `concluido` grava data de conclusão
+                 * confirmada e dispara o aviso ao solicitante — ou seja, ele
+                 * geraria o e-mail que anuncia a si mesmo que acabou.
+                 */
+                disabled={!daEquipe}
                 etapas={etapas.filter((e) => normalizarEtapa(e.rotulo) !== ETAPA_FORA_DO_FLUXO)}
                 onMoverStatus={async (novoStatusId) => {
                   try {
