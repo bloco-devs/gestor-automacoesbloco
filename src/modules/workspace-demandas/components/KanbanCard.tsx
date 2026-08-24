@@ -265,7 +265,7 @@ export function Cartao({
 
   const meta = [
     sinais.prioridade && d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
-    capacidades.complexidade && d.complexidade ? COMPLEXIDADE_ROTULO[d.complexidade] : null,
+    capacidades.complexidade && d.complexidade ? `Complexidade: ${COMPLEXIDADE_ROTULO[d.complexidade]}` : null,
     // O código de rastreio é linguagem de Helpdesk: dentro de um quadro de
     // projeto ninguém cita "#4e6706", cita o título do cartão.
     !emProjeto && sinais.referencia ? d.referencia : null,

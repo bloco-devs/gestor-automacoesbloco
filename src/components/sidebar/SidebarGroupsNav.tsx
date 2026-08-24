@@ -5,6 +5,36 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { findActive, type NavGroup, type NavItem } from "./navGroups";
+import { Home3DIcon, Automacoes3DIcon, Configuracoes3DIcon, Terminal3DIcon } from "./Sidebar3DIcons";
+
+function renderNavIcon(item: NavItem, isActive: boolean) {
+  const to = item.to || "";
+  const label = item.label.toLowerCase();
+
+  if (to === "/dashboard" || to === "/workspace" || to === "/portal/inicio" || label.includes("início") || label.includes("dashboard")) {
+    return <Home3DIcon isActive={isActive} />;
+  }
+  if (to === "/workspace/demandas" || to.includes("workflow") || to.includes("atividades") || label.includes("automaç") || label.includes("fluxo") || label.includes("projeto")) {
+    return <Automacoes3DIcon isActive={isActive} />;
+  }
+  if (to === "/configuracoes" || to === "/admin" || label.includes("configuraç") || label.includes("ferramenta")) {
+    return <Configuracoes3DIcon isActive={isActive} />;
+  }
+  if (to.includes("developer") || to.includes("terminal") || to.includes("studio") || label.includes("log") || label.includes("código") || label.includes("terminal")) {
+    return <Terminal3DIcon isActive={isActive} />;
+  }
+
+  const Icon = item.icon;
+  return (
+    <Icon
+      strokeWidth={1.8}
+      className={cn(
+        "size-[18px] shrink-0 transition-opacity duration-fast",
+        isActive ? "opacity-100 text-primary font-bold" : "opacity-60 group-hover:opacity-90",
+      )}
+    />
+  );
+}
 
 const GROUP_STORAGE_PREFIX = "ds2:sidebar:";
 
@@ -288,13 +318,7 @@ function SidebarNavItem({
                 vaos internos e transforma cada icone numa mancha. 1,75 e o que
                 Linear e Raycast usam, e e o que separa "icone de biblioteca"
                 de "icone desenhado para este produto". */}
-            <Icon
-              strokeWidth={1.75}
-              className={cn(
-                "size-[18px] shrink-0 transition-opacity duration-fast",
-                isActive ? "opacity-100" : "opacity-60 group-hover:opacity-90",
-              )}
-            />
+            {renderNavIcon(item, isActive)}
             {!mini && <span className="truncate flex-1">{item.label}</span>}
           </>
         )}
