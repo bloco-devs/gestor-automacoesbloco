@@ -171,10 +171,14 @@ export async function salvarFechamento(
   // volta como erro do banco. Traduzir aqui, porque a mensagem crua do
   // Postgres cita o nome da constraint e não ajuda ninguém.
   if (error) {
-    if (error.message.includes("rft_concluido_exige_essencial")) {
-      throw new Error(
-        "Para marcar como concluído, preencha: problema identificado, solução implementada, o que foi alterado e resultado obtido.",
-      );
+    // O nome novo, depois que a exigência caiu de quatro campos para um.
+    // O antigo continua tratado porque a migration pode ainda não ter rodado
+    // no ambiente de quem está usando.
+    if (
+      error.message.includes("rft_concluido_exige_solucao") ||
+      error.message.includes("rft_concluido_exige_essencial")
+    ) {
+      throw new Error("Para registrar, descreva como a demanda foi resolvida.");
     }
     if (error.message.includes("rft_datas_coerentes")) {
       throw new Error("A data de conclusão não pode ser anterior à data de início.");

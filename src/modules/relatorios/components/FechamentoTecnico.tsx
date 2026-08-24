@@ -34,32 +34,50 @@ import {
 import { formatarData } from "../services/relatorios-service";
 import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 
-/** Os quatro que o banco exige para marcar como concluído. */
+/**
+ * O ÚNICO OBRIGATÓRIO.
+ *
+ * Eram quatro — problema, solução, alteração e resultado — e isso foi invenção
+ * minha, não da especificação. Em entrega pequena os quatro viram quatro
+ * maneiras de escrever a mesma frase, e multiplicados por dezenas de demandas
+ * produzem um formulário que ninguém preenche. Formulário não preenchido não
+ * documenta nada; só faz o módulo parecer quebrado.
+ *
+ * O registro continua completo porque "O que foi solicitado" já vem da própria
+ * demanda. Pedido + resolução é o que permite a quem não participou entender a
+ * entrega — que era o objetivo desde o início.
+ */
 const OBRIGATORIOS = [
   {
-    campo: "problema_identificado" as const,
-    rotulo: "Problema identificado",
-    dica: "O que estava errado, ou o que faltava. Do ponto de vista de quem sofria com isso.",
-  },
-  {
     campo: "solucao_implementada" as const,
-    rotulo: "Solução implementada",
-    dica: "O que foi feito para resolver.",
+    rotulo: "Como foi resolvido",
+    dica: "Do jeito que você contaria para quem pediu. Se já escreveu isso no chat da demanda, use o botão acima.",
   },
+];
+
+/**
+ * Aplicáveis só quando houve. Vazio aqui não é lacuna, é "não teve".
+ *
+ * Os três que deixaram de ser obrigatórios entram no topo desta lista: numa
+ * entrega grande eles continuam valendo a pena, e são o que sustenta uma
+ * classificação de Difícil na hora de justificar.
+ */
+const OPCIONAIS = [
   {
     campo: "o_que_foi_alterado" as const,
     rotulo: "O que foi alterado",
-    dica: "Telas, fluxos, regras, tabelas — o que mudou de fato.",
+    dica: "Telas, fluxos, regras, tabelas — útil quando mexeu em várias partes.",
+  },
+  {
+    campo: "problema_identificado" as const,
+    rotulo: "Problema identificado",
+    dica: "Quando a causa não era óbvia pelo pedido.",
   },
   {
     campo: "resultado_obtido" as const,
     rotulo: "Resultado obtido",
-    dica: "No que deu. O que a pessoa consegue fazer agora que não conseguia antes.",
+    dica: "Quando o efeito vai além do que foi pedido.",
   },
-];
-
-/** Aplicáveis só quando houve. Vazio aqui não é lacuna, é "não teve". */
-const OPCIONAIS = [
   {
     campo: "funcionalidades_implementadas" as const,
     rotulo: "Funcionalidades implementadas",
@@ -76,11 +94,16 @@ const OPCIONAIS = [
  * Para onde uma fala do fio pode ser mandada. São os quatro que o banco exige,
  * mais testes — que é onde costuma cair "testei e funcionou".
  */
+/**
+ * Para onde uma fala do fio pode ser mandada.
+ *
+ * Encurtou junto com a exigência. Cinco destinos para um campo obrigatório era
+ * pedir uma decisão de arquivamento a cada mensagem; agora o primeiro é o que
+ * resolve 90% dos casos e os outros dois ficam para quem quiser detalhar.
+ */
 const DESTINOS = [
-  { campo: "problema_identificado" as const, curto: "problema" },
-  { campo: "solucao_implementada" as const, curto: "solução" },
-  { campo: "o_que_foi_alterado" as const, curto: "alterado" },
-  { campo: "resultado_obtido" as const, curto: "resultado" },
+  { campo: "solucao_implementada" as const, curto: "como foi resolvido" },
+  { campo: "o_que_foi_alterado" as const, curto: "o que foi alterado" },
   { campo: "testes_realizados" as const, curto: "testes" },
 ];
 
@@ -357,7 +380,7 @@ function FechamentoTecnicoImpl() {
 
           <Section
             title="O relato técnico"
-            description="Estes quatro campos são necessários para marcar como registrado — sem eles não há base para classificar a entrega."
+            description="Uma descrição de como a demanda foi resolvida basta para registrar. O resto é opcional."
           >
             <div className="flex flex-col gap-4">
               {OBRIGATORIOS.map((o) => (

@@ -20,6 +20,10 @@ import {
 } from "@/modules/demand-access";
 import { rascunhoDeDemanda } from "@/domain/knowledge";
 import {
+  buscarFechamento,
+  salvarFechamento,
+} from "@/modules/relatorios/services/fechamento-data";
+import {
   PRIORIDADE_ROTULO,
   RISCO_ROTULO,
   TIPO_ROTULO,
@@ -144,6 +148,34 @@ export default function DemandaDetalhe() {
     semResponsavel: (demanda?.responsaveis.length ?? 0) === 0,
   });
 
+
+  /**
+   * Já existe relato técnico desta demanda?
+   *
+   * Só para decidir se a opção "usar como relato" aparece no fio. Com relato
+   * gravado, ela sumiria — marcar de novo sobrescreveria sem a pessoa ver o
+   * que está sendo trocado, e o relato é a base da classificação, que é a
+   * base do pagamento. Corrigir se faz na tela de fechamento, olhando o texto.
+   *
+   * Falha silenciosa: quem não alcança a tabela simplesmente não vê a opção,
+   * em vez de a demanda inteira quebrar por causa de um botão.
+   */
+  const [temRelato, setTemRelato] = useState(false);
+  const recarregarRelato = useMemo(
+    () => async () => {
+      if (!id) return;
+      try {
+        const f = await buscarFechamento(id);
+        setTemRelato(f?.situacao === "concluido");
+      } catch {
+        setTemRelato(true);
+      }
+    },
+    [id],
+  );
+  useEffect(() => {
+    void recarregarRelato();
+  }, [recarregarRelato]);
 
   const eventos = useMemo(() => montarFio(fio.eventos, daEquipe), [fio.eventos, daEquipe]);
   const acoesDemanda = useAcoesDemanda(escopo);
@@ -525,6 +557,44 @@ export default function DemandaDetalhe() {
                   : undefined
               }
               anexando={anexos.enviando}
+              /**
+               * REGISTRAR O RELATO NO MOMENTO EM QUE ELE É ESCRITO.
+               *
+               * Três condições, e cada uma existe por um motivo:
+               *
+               *   daEquipe — o relato é do trabalho técnico; o solicitante
+               *     descreve o pedido, não a execução.
+               *
+               *   concluída — antes disso não há o que relatar, e o banco
+               *     recusaria classificar de qualquer forma.
+               *
+               *   sem relato ainda — se já existe, esta caixa sobrescreveria
+               *     em silêncio. Quem quiser corrigir vai à tela de
+               *     fechamento, onde vê o que está lá antes de trocar.
+               */
+              onRegistrarRelato={
+                daEquipe && d.status.id === "concluido" && !temRelato
+                  ? async (texto) => {
+                      try {
+                        await salvarFechamento(d.id, {
+                          o_que_foi_solicitado: d.descricao ?? null,
+                          solucao_implementada: texto,
+                          situacao: "concluido",
+                        });
+                        await recarregarRelato();
+                        toast.success("Relato técnico registrado", {
+                          description: "A entrega já pode ser classificada.",
+                        });
+                      } catch (e) {
+                        // A mensagem foi enviada; só o relato falhou. Dizer as
+                        // duas coisas evita que a pessoa reenvie o comentário.
+                        toast.error("A mensagem foi enviada, mas o relato não foi gravado", {
+                          description: (e as Error).message,
+                        });
+                      }
+                    }
+                  : undefined
+              }
               vazio="Ninguém falou nada ainda. Escreva a primeira mensagem."
             />
           ) : (

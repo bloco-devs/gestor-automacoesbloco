@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
+  ClipboardCheck,
   Loader2,
   Lock,
   LockOpen,
@@ -409,6 +410,18 @@ interface Props {
    */
   onAnexar?: (arquivos: File[]) => void;
   anexando?: boolean;
+  /**
+   * REGISTRAR O RELATO SEM SAIR DAQUI.
+   *
+   * O momento em que alguém sabe descrever como a demanda foi resolvida é
+   * quando está contando isso para quem pediu. Obrigar a reescrever depois,
+   * em outra tela, é pedir o mesmo trabalho duas vezes — e foi o que fez 45
+   * de 46 fechamentos ficarem em branco.
+   *
+   * Ausente quando não se aplica: solicitante, demanda não concluída, ou
+   * relato já registrado. A caixa só aparece quando marcar faz sentido.
+   */
+  onRegistrarRelato?: (texto: string) => Promise<void>;
   vazio: string;
 }
 
@@ -424,6 +437,7 @@ function FioImpl({
   onAbrirAnexo,
   onAnexar,
   anexando = false,
+  onRegistrarRelato,
   vazio,
 }: Props) {
   const eventosFiltrados = useMemo(() => {
@@ -435,6 +449,7 @@ function FioImpl({
   const [texto, setTexto] = useState("");
   const [interna, setInterna] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [registrarRelato, setRegistrarRelato] = useState(false);
   const [popoverAberto, setPopoverAberto] = useState(false);
   const seletorMedia = useRef<HTMLInputElement>(null);
   const seletorDoc = useRef<HTMLInputElement>(null);
@@ -512,8 +527,20 @@ function FioImpl({
     setEnviando(true);
     try {
       await onComentar(t, interna);
+      /**
+       * O relato vai DEPOIS da mensagem, e só se ela deu certo.
+       *
+       * A ordem importa: se gravasse primeiro e o comentário falhasse, o
+       * relato técnico afirmaria algo que o solicitante nunca leu. O
+       * contrário é recuperável — a mensagem está lá, e o relato pode ser
+       * registrado de novo pela tela de fechamento.
+       */
+      if (registrarRelato && onRegistrarRelato) {
+        await onRegistrarRelato(t);
+      }
       setTexto("");
       setInterna(false);
+      setRegistrarRelato(false);
     } finally {
       setEnviando(false);
     }
@@ -714,6 +741,31 @@ function FioImpl({
                       <LockOpen className="size-3.5" aria-hidden />
                     )}
                     {interna ? "Nota Interna Ativa" : "+ Nota interna"}
+                  </button>
+                )}
+
+                {/* REGISTRAR O RELATO A PARTIR DESTA MENSAGEM.
+                    Some quando a nota é interna: o relato técnico vai para o
+                    relatório que o RH lê, e nota interna não pode virar
+                    documento oficial por um clique distraído. Quem quiser usar
+                    o texto de uma nota interna faz isso na tela de fechamento,
+                    onde ele aparece marcado com o aviso. */}
+                {onRegistrarRelato && !interna && (
+                  <button
+                    type="button"
+                    onClick={() => setRegistrarRelato((v) => !v)}
+                    aria-pressed={registrarRelato}
+                    title="Grava esta mensagem como o relato técnico da demanda, que é o que permite classificar a entrega"
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all",
+                      "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                      registrarRelato
+                        ? "bg-success text-success-foreground ring-1 ring-success/50 shadow-xs"
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <ClipboardCheck className="size-3.5" aria-hidden />
+                    {registrarRelato ? "Vai virar o relato" : "+ Usar como relato"}
                   </button>
                 )}
               </div>
