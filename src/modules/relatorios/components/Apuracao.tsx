@@ -211,7 +211,22 @@ function Apurar() {
       <PageHeader
         breadcrumb={<VoltarParaRelatorios />}
         title="Apuração da remuneração variável"
-        subtitle="Ciclo do dia 20 ao dia 19"
+        /**
+         * As datas REAIS do ciclo escolhido, não uma regra genérica.
+         *
+         * Dizia "Ciclo do dia 20 ao dia 19", o que ensinava ao RH que a
+         * empresa tem uma regra permanente de dia 20. Não tem: aquele é o
+         * período que o RH definiu para a primeira apuração, porque a folha de
+         * agosto já estava fechada. No dia em que ele criar 01/09 → 30/09, o
+         * texto fixo estaria mentindo — este acompanha.
+         */
+        subtitle={
+          resultado.data
+            ? `Produção de ${formatarData(resultado.data.inicio)} a ${formatarData(
+                new Date(new Date(resultado.data.fim).getTime() - 1000).toISOString(),
+              )}`
+            : "Período definido no ciclo"
+        }
         icon={<Coins className="size-6" aria-hidden />}
         actions={
           <div className="flex flex-wrap gap-2">
@@ -347,26 +362,47 @@ function Apurar() {
                     : `${p.concluidas_no_ciclo} concluídas, ${p.elegiveis} apuradas`}
                 </p>
 
-                <ul className="mt-2 flex flex-col gap-1 text-muted-foreground">
-                  {p.sem_fechamento > 0 && (
-                    <li>
-                      <strong className="text-foreground tabular-nums">{p.sem_fechamento}</strong>{" "}
-                      sem fechamento técnico registrado
-                    </li>
-                  )}
-                  {p.sem_classificacao > 0 && (
-                    <li>
-                      <strong className="text-foreground tabular-nums">{p.sem_classificacao}</strong>{" "}
-                      com fechamento, aguardando classificação
-                    </li>
-                  )}
-                  {p.sem_data_confiavel > 0 && (
-                    <li>
-                      <strong className="text-foreground tabular-nums">{p.sem_data_confiavel}</strong>{" "}
-                      sem data de conclusão confirmável
-                    </li>
-                  )}
-                </ul>
+                {/* AS QUATRO CATEGORIAS, SEMPRE, INCLUSIVE AS ZERADAS.
+                    Esconder a linha zerada pouparia espaço e tiraria a única
+                    coisa que dá ao RH confiança no número: poder somar com o
+                    dedo e bater com o total. Antes as categorias podiam se
+                    sobrepor — uma demanda sem relato E sem data confiável era
+                    contada duas vezes — e a soma não fechava. Corrigido no
+                    banco em 20260825140000; aqui a soma fica exposta. */}
+                <div className="mt-3 flex flex-col gap-1 tabular-nums">
+                  {(
+                    [
+                      ["Elegíveis — entram na apuração", p.elegiveis],
+                      ["Sem relato técnico", p.sem_fechamento],
+                      ["Com relato, sem classificação", p.sem_classificacao],
+                      ["Sem data de conclusão confirmável", p.sem_data_confiavel],
+                    ] as Array<[string, number]>
+                  ).map(([rotulo, n]) => (
+                    <div key={rotulo} className="flex items-baseline justify-between gap-4">
+                      <span className={n === 0 ? "text-muted-foreground" : ""}>{rotulo}</span>
+                      <span className={n === 0 ? "text-muted-foreground" : "font-medium"}>{n}</span>
+                    </div>
+                  ))}
+                  <div className="mt-1 flex items-baseline justify-between gap-4 border-t pt-1">
+                    <span className="text-muted-foreground">Concluídas no período</span>
+                    <span className="font-medium">{p.concluidas_no_ciclo}</span>
+                  </div>
+                </div>
+
+                {p.elegiveis + p.sem_fechamento + p.sem_classificacao + p.sem_data_confiavel !==
+                  p.concluidas_no_ciclo && (
+                  <p className="mt-2 text-destructive">
+                    As categorias não somam o total. Isso é defeito de consulta, não do seu ciclo —
+                    avise o time técnico antes de fechar.
+                  </p>
+                )}
+
+                {p.com_fechamento > 0 && p.com_fechamento < p.concluidas_no_ciclo && (
+                  <p className="mt-2 text-muted-foreground">
+                    {p.com_fechamento} de {p.concluidas_no_ciclo} já têm relato técnico registrado
+                    {p.classificadas > 0 ? `, e ${p.classificadas} já foram classificadas` : ""}.
+                  </p>
+                )}
 
                 <p className="mt-2 text-muted-foreground">
                   Nada foi apagado nem escondido — tudo continua no relatório técnico.
