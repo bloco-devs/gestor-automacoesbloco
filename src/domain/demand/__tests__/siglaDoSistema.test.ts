@@ -21,10 +21,11 @@ describe("siglaDoSistema — Catálogo Completo dos 16 Sistemas do HUB Bloco ID"
     expect(siglaDoSistema("viab")).toBe("VIAB");
   });
 
-  it("substitui o prefixo genérico REC pelas siglas reais dos sistemas", () => {
-    expect(formatarReferenciaComSigla("REC-2608-0001", "rh", "id1")).toBe("RH-2608-0001");
-    expect(formatarReferenciaComSigla("REC-2608-0002", "fluxo-caixa", "id2")).toBe("FIN-2608-0002");
-    expect(formatarReferenciaComSigla("REC-2608-0003", "crm-house", "id3")).toBe("CRM-2608-0003");
-    expect(formatarReferenciaComSigla("REC-2608-0004", "incorporacao", "id4")).toBe("INC-2608-0004");
+  it("substitui os prefixos genéricos REQ- e REC- pelas siglas reais dos sistemas", () => {
+    expect(formatarReferenciaComSigla("REQ-2608-0033", null, "id1", "Ajuste e integração do Fluxo Futuro Financeiro")).toBe("FIN-2608-0033");
+    expect(formatarReferenciaComSigla("REQ-2608-0053", null, "id2", "Tela de quantitativo não atualiza automaticamente")).toBe("OBRA-2608-0053");
+    expect(formatarReferenciaComSigla("REQ-2608-0047", null, "id3", "Erro ao editar nome no portfólio")).toBe("PORT-2608-0047");
+    expect(formatarReferenciaComSigla("REQ-2608-0008", null, "id4", "Flexibilização do fluxo de pagamento Nakhon")).toBe("CONT-2608-0008");
+    expect(formatarReferenciaComSigla("REC-2608-0001", "rh", "id5")).toBe("RH-2608-0001");
   });
 });

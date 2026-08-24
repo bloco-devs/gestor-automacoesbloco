@@ -474,86 +474,89 @@ function FioImpl({
          * aqui — ele precisa ser visível o tempo todo, não a partir de um
          * quadradinho de 14px.
          */
-        <div className="shrink-0 border-t border-border/60 px-5 py-3">
+        <div className="shrink-0 border-t border-border/80 bg-slate-900/60 p-4 shadow-lg">
           <div
             className={cn(
-              "rounded-2xl border bg-background transition-colors duration-fast",
-              "focus-within:border-ring/60 focus-within:ring-2 focus-within:ring-ring/15",
-              interna ? "border-warning/50 bg-warning/5" : "border-border/70",
+              "rounded-2xl border bg-card shadow-sm transition-all duration-200",
+              "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25",
+              interna ? "border-amber-500/60 bg-amber-500/10" : "border-border/80 hover:border-primary/40",
             )}
           >
             <Textarea
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               onKeyDown={(e) => {
-                // Enter envia, como em qualquer mensageiro. Shift+Enter quebra
-                // linha para quem precisa de mais de um parágrafo, e
-                // ⌘/Ctrl+Enter continua valendo por hábito.
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   void enviar();
                 }
               }}
               data-fio-resposta
-              placeholder={interna ? "Nota visível só para a equipe…" : "Escreva uma resposta…"}
+              placeholder={interna ? "Escreva uma nota interna (visível apenas para a equipe)…" : "Digite sua resposta para o solicitante…"}
               aria-label="Escrever no fio da demanda"
               className={cn(
-                "min-h-[52px] resize-none border-0 bg-transparent px-4 pt-3 text-[13px] leading-relaxed",
+                "min-h-[60px] resize-none border-0 bg-transparent px-4 pt-3 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground/70",
                 "shadow-none focus-visible:ring-0 focus-visible:ring-offset-0",
               )}
             />
 
-            <div className="flex items-center gap-2 px-2.5 pb-2.5 pt-0.5">
-              {podeNotaInterna && (
-                <button
+            <div className="flex items-center justify-between border-t border-border/40 px-3 py-2">
+              <div className="flex items-center gap-2">
+                {podeNotaInterna && (
+                  <button
+                    type="button"
+                    onClick={() => setInterna((v) => !v)}
+                    aria-pressed={interna}
+                    title={
+                      interna
+                        ? "Esta nota fica só para a equipe"
+                        : "Marcar como nota interna — quem abriu não vê"
+                    }
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all",
+                      "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                      interna
+                        ? "bg-amber-500 text-amber-950 dark:text-amber-100 ring-1 ring-amber-500/50 shadow-xs"
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    {interna ? (
+                      <Lock className="size-3.5" aria-hidden />
+                    ) : (
+                      <LockOpen className="size-3.5" aria-hidden />
+                    )}
+                    {interna ? "Nota Interna Ativa" : "+ Nota interna"}
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="hidden text-[11px] font-medium text-muted-foreground/70 sm:inline">
+                  ↵ envia · ⇧↵ nova linha
+                </span>
+
+                <Button
                   type="button"
-                  onClick={() => setInterna((v) => !v)}
-                  aria-pressed={interna}
-                  title={
-                    interna
-                      ? "Esta nota fica só para a equipe"
-                      : "Marcar como nota interna — quem abriu não vê"
-                  }
+                  onClick={() => void enviar()}
+                  disabled={!texto.trim() || enviando}
+                  size="sm"
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] transition-colors",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                    "h-8 gap-1.5 rounded-xl px-4 text-xs font-bold transition-all shadow-xs",
                     interna
-                      ? "bg-warning/15 text-warning-foreground ring-1 ring-warning/40"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                      ? "bg-amber-600 text-white hover:bg-amber-700"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90",
                   )}
                 >
-                  {interna ? (
-                    <Lock className="size-3" aria-hidden />
+                  {enviando ? (
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
                   ) : (
-                    <LockOpen className="size-3" aria-hidden />
+                    <>
+                      <SendHorizontal className="size-3.5" aria-hidden />
+                      {interna ? "Salvar Nota" : "Enviar Resposta"}
+                    </>
                   )}
-                  {interna ? "Só para a equipe" : "Nota interna"}
-                </button>
-              )}
-
-              <span className="ml-auto hidden text-[11px] text-muted-foreground/60 sm:inline">
-                ↵ envia · ⇧↵ nova linha
-              </span>
-
-              <button
-                type="button"
-                onClick={() => void enviar()}
-                disabled={!texto.trim() || enviando}
-                aria-label={interna ? "Salvar nota interna" : "Responder"}
-                className={cn(
-                  "inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-all duration-fast",
-                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                  texto.trim() && !enviando
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "bg-muted text-muted-foreground/50",
-                )}
-              >
-                {enviando ? (
-                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                ) : (
-                  <SendHorizontal className="size-3.5" aria-hidden />
-                )}
-              </button>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
