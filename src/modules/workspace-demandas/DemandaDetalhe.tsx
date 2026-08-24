@@ -27,6 +27,7 @@ import {
   montarBriefing,
   montarProgressao,
   montarFio,
+  obterEstiloDoSistema,
   type AcaoSugerida,
   type Pessoa,
 } from "@/domain/demand";
@@ -338,7 +339,9 @@ export default function DemandaDetalhe() {
             )}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h1 className="flex min-w-0 flex-1 items-baseline gap-2">
-                <span className="shrink-0 text-[13px] tabular-nums text-muted-foreground">{d.referencia}</span>
+                <span className={cn("shrink-0 font-mono text-[12px] font-bold border px-2 py-0.5 rounded-md tracking-tight", obterEstiloDoSistema(d.sistema?.nome, d.referencia || d.titulo).badgeClass)}>
+                  {d.referencia}
+                </span>
                 <span className={cn("text-[17px] font-medium leading-snug", d.concluida && "line-through")}>
                   {d.titulo}
                 </span>

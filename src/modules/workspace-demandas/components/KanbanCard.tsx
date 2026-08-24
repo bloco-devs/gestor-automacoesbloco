@@ -30,6 +30,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { obterEstiloDoSistema } from "@/domain/demand";
 
 import { labelColorStyle } from "@/lib/atividades";
 import {
@@ -472,7 +473,10 @@ export function Cartao({
           {sistemaNome && (
             <span
               title={`Sistema: ${sistemaNome}`}
-              className="mb-1 inline-flex max-w-full items-center truncate rounded-sm bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+              className={cn(
+                "mb-1 inline-flex max-w-full items-center truncate rounded px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-tight border",
+                obterEstiloDoSistema(d.sistema?.nome || sistemaNome, d.referencia || d.titulo).badgeClass
+              )}
             >
               {sistemaNome}
             </span>

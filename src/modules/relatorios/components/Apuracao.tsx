@@ -13,7 +13,8 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { exportarPdfExecutivo } from "../services/pdf-exporter";
-import { formatarReferenciaComSigla } from "@/domain/demand";
+import { formatarReferenciaComSigla, obterEstiloDoSistema } from "@/domain/demand";
+import { cn } from "@/lib/utils";
 import { EmptyPanel, PageHeader, PageShell, Section } from "@/design-system";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -545,9 +546,14 @@ function Apurar() {
                 {linhas.map((l) => (
                   <TableRow key={l.demanda_id}>
                     <TableCell className="font-mono text-[12px]">
-                      <span className="inline-block font-mono font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md tracking-tight">
-                        {formatarReferenciaComSigla(l.ticket_code, l.sistema_slug, l.demanda_id, l.titulo)}
-                      </span>
+                      {(() => {
+                        const est = obterEstiloDoSistema(l.sistema_slug, l.ticket_code || l.titulo);
+                        return (
+                          <span className={cn("inline-block font-mono font-bold border px-2 py-0.5 rounded-md tracking-tight", est.badgeClass)}>
+                            {formatarReferenciaComSigla(l.ticket_code, l.sistema_slug, l.demanda_id, l.titulo)}
+                          </span>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="max-w-[280px] truncate">{l.titulo}</TableCell>
                     <TableCell>

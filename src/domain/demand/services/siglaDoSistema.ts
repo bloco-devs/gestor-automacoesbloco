@@ -100,6 +100,132 @@ export function siglaDoSistema(
   return null;
 }
 
+export const ESTILOS_DE_COR_DOS_SISTEMAS: Record<string, { bg: string; border: string; text: string; badgeClass: string }> = {
+  OBRA: {
+    bg: "bg-amber-500/15",
+    border: "border-amber-500/40",
+    text: "text-amber-500 dark:text-amber-400",
+    badgeClass: "bg-amber-500/15 border-amber-500/40 text-amber-500 dark:text-amber-400",
+  },
+  INC: {
+    bg: "bg-indigo-500/15",
+    border: "border-indigo-500/40",
+    text: "text-indigo-500 dark:text-indigo-400",
+    badgeClass: "bg-indigo-500/15 border-indigo-500/40 text-indigo-500 dark:text-indigo-400",
+  },
+  RH: {
+    bg: "bg-rose-500/15",
+    border: "border-rose-500/40",
+    text: "text-rose-500 dark:text-rose-400",
+    badgeClass: "bg-rose-500/15 border-rose-500/40 text-rose-500 dark:text-rose-400",
+  },
+  FIN: {
+    bg: "bg-emerald-500/15",
+    border: "border-emerald-500/40",
+    text: "text-emerald-500 dark:text-emerald-400",
+    badgeClass: "bg-emerald-500/15 border-emerald-500/40 text-emerald-500 dark:text-emerald-400",
+  },
+  CONT: {
+    bg: "bg-cyan-500/15",
+    border: "border-cyan-500/40",
+    text: "text-cyan-500 dark:text-cyan-400",
+    badgeClass: "bg-cyan-500/15 border-cyan-500/40 text-cyan-500 dark:text-cyan-400",
+  },
+  SGPO: {
+    bg: "bg-sky-500/15",
+    border: "border-sky-500/40",
+    text: "text-sky-500 dark:text-sky-400",
+    badgeClass: "bg-sky-500/15 border-sky-500/40 text-sky-500 dark:text-sky-400",
+  },
+  AUTO: {
+    bg: "bg-violet-500/15",
+    border: "border-violet-500/40",
+    text: "text-violet-500 dark:text-violet-400",
+    badgeClass: "bg-violet-500/15 border-violet-500/40 text-violet-500 dark:text-violet-400",
+  },
+  SUPR: {
+    bg: "bg-yellow-500/15",
+    border: "border-yellow-500/40",
+    text: "text-yellow-600 dark:text-yellow-400",
+    badgeClass: "bg-yellow-500/15 border-yellow-500/40 text-yellow-600 dark:text-yellow-400",
+  },
+  CRM: {
+    bg: "bg-fuchsia-500/15",
+    border: "border-fuchsia-500/40",
+    text: "text-fuchsia-500 dark:text-fuchsia-400",
+    badgeClass: "bg-fuchsia-500/15 border-fuchsia-500/40 text-fuchsia-500 dark:text-fuchsia-400",
+  },
+  PORT: {
+    bg: "bg-teal-500/15",
+    border: "border-teal-500/40",
+    text: "text-teal-500 dark:text-teal-400",
+    badgeClass: "bg-teal-500/15 border-teal-500/40 text-teal-500 dark:text-teal-400",
+  },
+  CS: {
+    bg: "bg-purple-500/15",
+    border: "border-purple-500/40",
+    text: "text-purple-500 dark:text-purple-400",
+    badgeClass: "bg-purple-500/15 border-purple-500/40 text-purple-500 dark:text-purple-400",
+  },
+  TI: {
+    bg: "bg-blue-500/15",
+    border: "border-blue-500/40",
+    text: "text-blue-500 dark:text-blue-400",
+    badgeClass: "bg-blue-500/15 border-blue-500/40 text-blue-500 dark:text-blue-400",
+  },
+  IN: {
+    bg: "bg-blue-500/15",
+    border: "border-blue-500/40",
+    text: "text-blue-500 dark:text-blue-400",
+    badgeClass: "bg-blue-500/15 border-blue-500/40 text-blue-500 dark:text-blue-400",
+  },
+  PROD: {
+    bg: "bg-orange-500/15",
+    border: "border-orange-500/40",
+    text: "text-orange-500 dark:text-orange-400",
+    badgeClass: "bg-orange-500/15 border-orange-500/40 text-orange-500 dark:text-orange-400",
+  },
+  COM: {
+    bg: "bg-lime-500/15",
+    border: "border-lime-500/40",
+    text: "text-lime-600 dark:text-lime-400",
+    badgeClass: "bg-lime-500/15 border-lime-500/40 text-lime-600 dark:text-lime-400",
+  },
+  CAP: {
+    bg: "bg-emerald-500/15",
+    border: "border-emerald-500/40",
+    text: "text-emerald-500 dark:text-emerald-400",
+    badgeClass: "bg-emerald-500/15 border-emerald-500/40 text-emerald-500 dark:text-emerald-400",
+  },
+  VIAB: {
+    bg: "bg-amber-600/15",
+    border: "border-amber-600/40",
+    text: "text-amber-600 dark:text-amber-400",
+    badgeClass: "bg-amber-600/15 border-amber-600/40 text-amber-600 dark:text-amber-400",
+  },
+};
+
+export function obterEstiloDoSistema(siglaOuNome?: string | null, codigoOuTitulo?: string | null) {
+  let sigla = siglaDoSistema(siglaOuNome, codigoOuTitulo);
+  if (!sigla && codigoOuTitulo) {
+    const match = codigoOuTitulo.match(/^([A-Z]{2,6})-/i);
+    if (match?.[1]) sigla = match[1].toUpperCase();
+  }
+  if (!sigla && siglaOuNome) {
+    const match = siglaOuNome.match(/^([A-Z]{2,6})-/i);
+    if (match?.[1]) sigla = match[1].toUpperCase();
+  }
+  if (sigla && ESTILOS_DE_COR_DOS_SISTEMAS[sigla]) {
+    return ESTILOS_DE_COR_DOS_SISTEMAS[sigla];
+  }
+  return {
+    bg: "bg-primary/15",
+    border: "border-primary/30",
+    text: "text-primary",
+    badgeClass: "bg-primary/15 border-primary/30 text-primary",
+  };
+}
+
 /**
  * Formata o código de referência substituindo o prefixo genérico `REQ-` ou `REC-` ou `#`
  * pela sigla oficial do sistema (ex: `RH-2607-0001`, `FIN-2608-0033`, `OBRA-2608-0053`).
@@ -113,11 +239,9 @@ export function formatarReferenciaComSigla(
   const sigla = siglaDoSistema(sistemaNomeOuSlug, titulo);
 
   if (codigoOriginal) {
-    // Substitui REQ- ou REC- se houver uma sigla identificada
     if (/^(REQ|REC)-/i.test(codigoOriginal) && sigla) {
       return codigoOriginal.replace(/^(REQ|REC)-/i, `${sigla}-`);
     }
-    // Se já tiver uma sigla real diferente de REQ e REC, mantém o código original
     if (!codigoOriginal.startsWith("#") && !/^(REQ|REC)-/i.test(codigoOriginal)) {
       return codigoOriginal;
     }

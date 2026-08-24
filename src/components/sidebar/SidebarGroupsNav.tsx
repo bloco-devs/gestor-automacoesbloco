@@ -1,38 +1,47 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Home, KanbanSquare, Wrench, Terminal, Cpu, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { findActive, type NavGroup, type NavItem } from "./navGroups";
-import { Home3DIcon, Automacoes3DIcon, Configuracoes3DIcon, Terminal3DIcon } from "./Sidebar3DIcons";
 
 function renderNavIcon(item: NavItem, isActive: boolean) {
   const to = item.to || "";
   const label = item.label.toLowerCase();
 
-  if (to === "/dashboard" || to === "/workspace" || to === "/portal/inicio" || label.includes("início") || label.includes("dashboard")) {
-    return <Home3DIcon isActive={isActive} />;
-  }
-  if (to === "/workspace/demandas" || to.includes("workflow") || to.includes("atividades") || label.includes("automaç") || label.includes("fluxo") || label.includes("projeto")) {
-    return <Automacoes3DIcon isActive={isActive} />;
-  }
-  if (to === "/configuracoes" || to === "/admin" || label.includes("configuraç") || label.includes("ferramenta")) {
-    return <Configuracoes3DIcon isActive={isActive} />;
-  }
-  if (to.includes("developer") || to.includes("terminal") || to.includes("studio") || label.includes("log") || label.includes("código") || label.includes("terminal")) {
-    return <Terminal3DIcon isActive={isActive} />;
+  let IconComponent = item.icon;
+  let containerStyle = isActive
+    ? "bg-primary/20 border-primary/40 text-primary shadow-xs"
+    : "bg-muted/60 border-border/60 text-muted-foreground group-hover:bg-primary/10 group-hover:border-primary/30 group-hover:text-primary";
+
+  // 1. Hoje / Home
+  if (to === "/dashboard" || to === "/workspace" || to === "/portal/inicio" || label.includes("hoje") || label.includes("início") || label.includes("dashboard")) {
+    IconComponent = Home;
+    if (!isActive) {
+      containerStyle = "bg-slate-800/60 border-slate-700/60 text-slate-300 group-hover:bg-primary/15 group-hover:text-primary";
+    }
+  } 
+  // 2. Demandas / Quadro
+  else if (to === "/workspace/demandas" || to.includes("demandas") || label.includes("demanda") || label.includes("projeto") || label.includes("quadro")) {
+    IconComponent = KanbanSquare;
+    containerStyle = isActive
+      ? "bg-primary text-primary-foreground border-primary shadow-md"
+      : "bg-primary/20 border-primary/40 text-primary shadow-xs group-hover:bg-primary/30";
+  } 
+  // 3. Builder / Automações
+  else if (to === "/configuracoes" || to.includes("workflow") || label.includes("builder") || label.includes("automaç") || label.includes("ferramenta") || label.includes("configuraç")) {
+    IconComponent = Wrench;
+  } 
+  // 4. DevTools / Terminal
+  else if (to.includes("developer") || to.includes("terminal") || to.includes("studio") || label.includes("devtools") || label.includes("log") || label.includes("código") || label.includes("terminal")) {
+    IconComponent = Terminal;
   }
 
-  const Icon = item.icon;
   return (
-    <Icon
-      strokeWidth={1.8}
-      className={cn(
-        "size-[18px] shrink-0 transition-opacity duration-fast",
-        isActive ? "opacity-100 text-primary font-bold" : "opacity-60 group-hover:opacity-90",
-      )}
-    />
+    <div className={cn("size-8 shrink-0 rounded-lg flex items-center justify-center border transition-all duration-200", containerStyle)}>
+      <IconComponent className="size-4" strokeWidth={2} />
+    </div>
   );
 }
 

@@ -40,7 +40,8 @@ import {
 import { toCsv, downloadCsv } from "@/modules/analytics/utils/csv";
 import { useRelatorioImplementacoes } from "../hooks/useRelatorioImplementacoes";
 import { formatarData } from "../services/relatorios-service";
-import { formatarReferenciaComSigla } from "@/domain/demand";
+import { formatarReferenciaComSigla, obterEstiloDoSistema } from "@/domain/demand";
+import { cn } from "@/lib/utils";
 import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 import type { AtalhoDePeriodo } from "../types";
 
@@ -359,9 +360,14 @@ function RelatorioImplementacoesImpl() {
                       }
                     >
                       <TableCell className="font-mono text-[12px]">
-                        <span className="inline-block font-mono font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md tracking-tight">
-                          {formatarReferenciaComSigla(l.ticket_code, l.sistema_slug, l.demanda_id, l.titulo)}
-                        </span>
+                        {(() => {
+                          const est = obterEstiloDoSistema(l.sistema_slug, l.ticket_code || l.titulo);
+                          return (
+                            <span className={cn("inline-block font-mono font-bold border px-2 py-0.5 rounded-md tracking-tight", est.badgeClass)}>
+                              {formatarReferenciaComSigla(l.ticket_code, l.sistema_slug, l.demanda_id, l.titulo)}
+                            </span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="max-w-[320px] truncate">{l.titulo}</TableCell>
                       <TableCell>
