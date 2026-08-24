@@ -109,7 +109,7 @@ export const ConversationInput = memo(function ConversationInput({
         receber(e.dataTransfer.files);
       }}
       className={cn(
-        "rounded-2xl border border-border bg-card p-2 shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring/40",
+        "rounded-2xl border border-border/80 bg-card p-2.5 shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-primary focus-within:border-primary",
         arrastando && "border-primary/60 bg-primary/5 ring-2 ring-primary/30",
       )}
     >

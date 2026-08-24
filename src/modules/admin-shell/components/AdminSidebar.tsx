@@ -32,13 +32,13 @@ function AdminSidebarImpl({ activeHref, onNavigate }: Props) {
                       onClick={() => onNavigate?.(item)}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-2 rounded-md px-2 py-1.5 outline-none transition-colors",
-                        "hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
-                        active && "bg-muted font-medium text-foreground",
+                        "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs outline-none transition-all duration-150",
+                        "hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-ring",
+                        active && "bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-xs border-l-2 border-primary",
                       )}
                     >
-                      <Icon className="size-4 text-muted-foreground" aria-hidden />
-                      <span className="truncate">{item.label}</span>
+                      <Icon strokeWidth={1.8} className={cn("size-4 shrink-0 transition-colors", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} aria-hidden />
+                      <span className="truncate flex-1">{item.label}</span>
                       {item.status && (
                         <Badge variant="secondary" className="ml-auto text-[10px]">
                           {item.status}

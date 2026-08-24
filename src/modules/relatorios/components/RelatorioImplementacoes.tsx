@@ -357,7 +357,11 @@ function RelatorioImplementacoesImpl() {
                         setExpandida((atual) => (atual === l.demanda_id ? null : l.demanda_id))
                       }
                     >
-                      <TableCell className="font-mono text-[12px]">{l.ticket_code}</TableCell>
+                      <TableCell className="font-mono text-[12px]">
+                        <span className="inline-block font-mono font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md tracking-tight">
+                          {l.ticket_code}
+                        </span>
+                      </TableCell>
                       <TableCell className="max-w-[320px] truncate">{l.titulo}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-normal">
