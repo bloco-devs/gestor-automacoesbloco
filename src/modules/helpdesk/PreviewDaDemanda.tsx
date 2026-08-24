@@ -75,6 +75,17 @@ function PreviewDaDemandaImpl({
   const problemas = problemasDe(nova);
   const insegura = nova.confianca < 0.6;
 
+  /**
+   * Só as falas de quem pediu. As do Blink não entram: ele já está
+   * representado pelo resumo acima, e repetir as perguntas dele aqui
+   * transformaria a comparação numa releitura da conversa inteira — que é
+   * justamente o esforço que ninguém faz.
+   */
+  const suasPalavras = (nova.conversa ?? [])
+    .filter((m) => m.papel === "solicitante")
+    .map((m) => m.texto.trim())
+    .filter(Boolean);
+
   return (
     <section
       aria-label="Confira o que entendemos"
@@ -97,6 +108,49 @@ function PreviewDaDemandaImpl({
         <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-muted-foreground">
           {nova.resumo}
         </p>
+
+        {/*
+          O QUE A PESSOA DISSE, AO LADO DO QUE A IA ENTENDEU.
+
+          Esta tela sempre existiu e sempre perguntou "confira se entendi
+          certo". Mesmo assim uma demanda passou errada e virou trabalho
+          entregue fora do pedido.
+
+          O motivo não foi desatenção: era pedir para conferir uma tradução
+          sem mostrar o original. O resumo do Blink SOA certo — é fluente e
+          plausível — e sem nada com que comparar, "confira" vira "leia isto e
+          diga se parece razoável". Parecia.
+
+          Com as próprias palavras aqui embaixo, a pergunta muda de natureza:
+          deixa de ser julgamento de plausibilidade e vira comparação. E
+          comparação é uma tarefa que gente faz bem.
+        */}
+        {suasPalavras.length > 0 && (
+          <details className="group mt-3 rounded-lg border border-border/60 bg-muted/30">
+            <summary
+              className={cn(
+                "flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-[12px] text-muted-foreground",
+                "transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+              )}
+            >
+              <ChevronDown
+                className="size-3.5 shrink-0 transition-transform duration-fast group-open:rotate-180"
+                aria-hidden
+              />
+              Comparar com o que você escreveu
+            </summary>
+            <div className="flex flex-col gap-2 px-3 pb-3 pt-1">
+              {suasPalavras.map((texto, i) => (
+                <p
+                  key={i}
+                  className="whitespace-pre-wrap border-l-2 border-border pl-2.5 text-[12px] leading-relaxed"
+                >
+                  {texto}
+                </p>
+              ))}
+            </div>
+          </details>
+        )}
 
         <div className="mt-4 border-t border-border/50 pt-2">
           <Campo rotulo="Tipo">{TIPO_ROTULO[nova.tipo]}</Campo>
