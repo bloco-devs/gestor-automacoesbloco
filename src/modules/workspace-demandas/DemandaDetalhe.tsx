@@ -28,6 +28,7 @@ import {
   montarProgressao,
   montarFio,
   obterEstiloDoSistema,
+  formatarReferenciaComSigla,
   type AcaoSugerida,
   type Pessoa,
 } from "@/domain/demand";
@@ -321,13 +322,15 @@ export default function DemandaDetalhe() {
       <header className="shrink-0 border-b border-border/60 px-5 py-3">
         <div className="flex items-start gap-3">
           <Button
-            variant="ghost"
+            type="button"
+            variant="outline"
             size="icon"
-            className="mt-0.5 size-6 shrink-0"
+            className="mt-0.5 size-9 shrink-0 rounded-xl bg-card border-2 border-slate-300 dark:border-slate-700 text-foreground shadow-md hover:bg-primary hover:text-slate-950 hover:border-primary transition-all duration-200"
             onClick={() => navigate(-1)}
             aria-label="Voltar"
+            title="Voltar à tela anterior"
           >
-            <ArrowLeft className="size-4" aria-hidden />
+            <ArrowLeft className="size-5 stroke-[2.5]" aria-hidden />
           </Button>
           <div className="min-w-0 flex-1">
             {d.sistema?.nome && (
@@ -339,9 +342,15 @@ export default function DemandaDetalhe() {
             )}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h1 className="flex min-w-0 flex-1 items-baseline gap-2">
-                <span className={cn("shrink-0 font-mono text-[12px] font-bold border px-2 py-0.5 rounded-md tracking-tight", obterEstiloDoSistema(d.sistema?.nome, d.referencia || d.titulo).badgeClass)}>
-                  {d.referencia}
-                </span>
+                {(() => {
+                  const refCalculada = formatarReferenciaComSigla(d.referencia, d.sistema?.nome, d.id, d.titulo, briefing.oQuePedem);
+                  const estRef = obterEstiloDoSistema(d.sistema?.nome, refCalculada || d.titulo);
+                  return (
+                    <span className={cn("shrink-0 font-mono text-[12px] font-bold border px-2 py-0.5 rounded-md tracking-tight", estRef.badgeClass)}>
+                      {refCalculada}
+                    </span>
+                  );
+                })()}
                 <span className={cn("text-[17px] font-medium leading-snug", d.concluida && "line-through")}>
                   {d.titulo}
                 </span>

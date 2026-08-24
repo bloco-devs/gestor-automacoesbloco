@@ -37,7 +37,9 @@ function AdminSidebarImpl({ activeHref, onNavigate }: Props) {
                         active && "bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-xs border-l-2 border-primary",
                       )}
                     >
-                      <Icon strokeWidth={1.8} className={cn("size-4 shrink-0 transition-colors", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} aria-hidden />
+                      <div className={cn("size-7 shrink-0 rounded-md flex items-center justify-center border transition-all duration-150", active ? "bg-primary/20 border-primary/40 text-primary shadow-xs" : "bg-muted/50 border-border/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary")}>
+                        <Icon strokeWidth={2} className="size-3.5" aria-hidden />
+                      </div>
                       <span className="truncate flex-1">{item.label}</span>
                       {item.status && (
                         <Badge variant="secondary" className="ml-auto text-[10px]">

@@ -36,13 +36,13 @@ export const SISTEMAS_ECOSSISTEMA_BLOCO_ID: Record<string, { sigla: string; nome
 };
 
 const PALAVRAS_CHAVE: Array<{ palavras: string[]; sigla: string }> = [
+  { palavras: ["gestao de obras", "gestao de obra", "produtividade", "obra", "obras", "quantitativo", "canteiro", "entregas", "frente servico", "medio prazo", "planejamento", "modulo de planejamento"], sigla: "OBRA" },
   { palavras: ["crm house", "crm-house", "crm"], sigla: "CRM" },
   { palavras: ["desenvolvimento produto", "engenharia produto", "ciclo produto"], sigla: "PROD" },
   { palavras: ["nakhon", "contrato", "contratos", "aditivo", "desembolso"], sigla: "CONT" },
   { palavras: ["gestao comercial", "comercial", "vgv", "unidades", "corretores"], sigla: "COM" },
   { palavras: ["captacao", "leads", "prospeccao"], sigla: "CAP" },
   { palavras: ["incorporacao", "incorporacao", "certidao trabalhista", "as-built", "estudo viabilidade"], sigla: "INC" },
-  { palavras: ["produtividade", "obra", "obras", "quantitativo", "canteiro", "entregas", "frente servico"], sigla: "OBRA" },
   { palavras: ["processo", "processos", "sgpo", "autentic", "seguranca"], sigla: "SGPO" },
   { palavras: ["recursos humanos", "rh", "pessoal", "folha", "admissao", "beneficios", "colaborador"], sigla: "RH" },
   { palavras: ["suprimentos", "terceirizadas", "locacao", "locacoes", "itens locaveis", "epi"], sigla: "SUPR" },
@@ -60,6 +60,7 @@ const PALAVRAS_CHAVE: Array<{ palavras: string[]; sigla: string }> = [
 export function siglaDoSistema(
   nomeOuSlug: string | null | undefined,
   titulo?: string | null,
+  descricao?: string | null,
 ): string | null {
   // 1. Extrai código entre colchetes do título: `[GO-11]`, `[RH-02]`
   if (titulo) {
@@ -71,19 +72,10 @@ export function siglaDoSistema(
 
   const textoSlug = (nomeOuSlug || "").trim().toLowerCase();
   const textoTitulo = (titulo || "").trim().toLowerCase();
+  const textoDescricao = (descricao || "").trim().toLowerCase();
 
-  // 2. Busca direta no dicionário por slug
-  if (textoSlug && SISTEMAS_ECOSSISTEMA_BLOCO_ID[textoSlug]) {
-    return SISTEMAS_ECOSSISTEMA_BLOCO_ID[textoSlug].sigla;
-  }
-
-  // 3. Se o slug já for uma sigla curta (2 a 6 letras maiúsculas), como "RH", "GO", "SGPO"
-  if (/^[A-Z]{2,6}$/i.test(textoSlug)) {
-    return textoSlug.toUpperCase();
-  }
-
-  // 4. Busca por palavras-chave combinando nomeOuSlug + titulo
-  const combinado = `${textoSlug} ${textoTitulo}`
+  // 2. Prioridade: palavras-chave no contexto combinando slug + titulo + descricao
+  const combinado = `${textoSlug} ${textoTitulo} ${textoDescricao}`
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
@@ -91,6 +83,16 @@ export function siglaDoSistema(
     if (item.palavras.some((p) => combinado.includes(p))) {
       return item.sigla;
     }
+  }
+
+  // 3. Busca direta no dicionário por slug
+  if (textoSlug && SISTEMAS_ECOSSISTEMA_BLOCO_ID[textoSlug]) {
+    return SISTEMAS_ECOSSISTEMA_BLOCO_ID[textoSlug].sigla;
+  }
+
+  // 4. Se o slug já for uma sigla curta (2 a 6 letras maiúsculas), como "RH", "GO", "SGPO"
+  if (/^[A-Z]{2,6}$/i.test(textoSlug)) {
+    return textoSlug.toUpperCase();
   }
 
   if (textoSlug.length >= 2) {
@@ -235,14 +237,15 @@ export function formatarReferenciaComSigla(
   sistemaNomeOuSlug: string | null | undefined,
   id: string,
   titulo?: string | null,
+  descricao?: string | null,
 ): string {
-  const sigla = siglaDoSistema(sistemaNomeOuSlug, titulo);
+  const sigla = siglaDoSistema(sistemaNomeOuSlug, titulo, descricao);
 
   if (codigoOriginal) {
-    if (/^(REQ|REC)-/i.test(codigoOriginal) && sigla) {
-      return codigoOriginal.replace(/^(REQ|REC)-/i, `${sigla}-`);
+    if (sigla && (/^(REQ|REC|TI)-/i.test(codigoOriginal) || (sigla !== "TI" && codigoOriginal.startsWith("TI-")))) {
+      return codigoOriginal.replace(/^(REQ|REC|TI|[A-Z]{2,6})-/i, `${sigla}-`);
     }
-    if (!codigoOriginal.startsWith("#") && !/^(REQ|REC)-/i.test(codigoOriginal)) {
+    if (!codigoOriginal.startsWith("#")) {
       return codigoOriginal;
     }
   }

@@ -1,7 +1,6 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
-
   Loader2,
   Lock,
   LockOpen,
@@ -9,11 +8,15 @@ import {
   Pencil,
   SendHorizontal,
   Trash2,
+  Plus,
+  Image,
+  FileText,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -412,6 +415,9 @@ function FioImpl({
   const [texto, setTexto] = useState("");
   const [interna, setInterna] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [popoverAberto, setPopoverAberto] = useState(false);
+  const seletorMedia = useRef<HTMLInputElement>(null);
+  const seletorDoc = useRef<HTMLInputElement>(null);
 
   const enviar = async () => {
     const t = texto.trim();
