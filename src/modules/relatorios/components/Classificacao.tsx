@@ -183,22 +183,35 @@ function Cartao({
 
           {/* O relato, para quem classifica ler antes de decidir. */}
           <div className="flex flex-col gap-3 text-[13px]">
-            {[
-              ["Problema", item.problema],
-              ["Solução", item.solucao],
-              ["O que foi alterado", item.alterado],
-              ["Resultado", item.resultado],
-              ["Testes", item.testes],
-            ].map(([rotulo, texto]) => (
-              <div key={rotulo as string}>
-                <span className="ds-label text-muted-foreground">{rotulo}</span>
-                <p className="mt-0.5 whitespace-pre-wrap">
-                  {(texto as string | null)?.trim() || (
-                    <span className="text-muted-foreground">Não informado.</span>
-                  )}
-                </p>
-              </div>
-            ))}
+            {/* SÓ O QUE FOI ESCRITO.
+                Antes os cinco campos apareciam sempre, com "Não informado" nos
+                vazios. Fazia sentido quando quatro eram obrigatórios: o vazio
+                era uma lacuna. Desde que só "como foi resolvido" é exigido, o
+                vazio virou o normal — e um relato completo aparecia com quatro
+                "Não informado", parecendo malfeito. Campo que não se aplica
+                não deveria ocupar espaço acusando ausência. */}
+            {(
+              [
+                ["Como foi resolvido", item.solucao],
+                ["O que foi alterado", item.alterado],
+                ["Problema", item.problema],
+                ["Resultado", item.resultado],
+                ["Testes", item.testes],
+              ] as Array<[string, string | null]>
+            )
+              .filter(([, texto], i) => i === 0 || !!texto?.trim())
+              .map(([rotulo, texto]) => (
+                <div key={rotulo}>
+                  <span className="ds-label text-muted-foreground">{rotulo}</span>
+                  <p className="mt-0.5 whitespace-pre-wrap">
+                    {texto?.trim() || (
+                      // A exceção é a solução: essa é obrigatória, então vazia
+                      // aqui é lacuna de verdade e precisa aparecer.
+                      <span className="text-muted-foreground">Não informado.</span>
+                    )}
+                  </p>
+                </div>
+              ))}
           </div>
 
           <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg bg-muted/40 p-3 text-[13px] text-muted-foreground">
