@@ -77,19 +77,20 @@ function MedidorImpl({
 
   // Só as faixas com um degrau visível interessam ao desenho. A primeira
   // (0–80%) é o chão, não um marco.
-  const marcos = useMemo(
-    () =>
-      faixas
-        .filter((f) => f.percentualMin > 0)
-        .sort((a, b) => a.percentualMin - b.percentualMin)
-        .map((f) => ({
+  const marcos = useMemo(() => {
+    const map = new Map<number, { pct: number; rotulo: string; valor: number | null; alcancado: boolean }>();
+    for (const f of faixas.filter((f) => f.percentualMin > 0)) {
+      if (!map.has(f.percentualMin)) {
+        map.set(f.percentualMin, {
           pct: f.percentualMin,
           rotulo: `${f.percentualMin.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%`,
           valor: f.valorReais,
           alcancado: pct >= f.percentualMin,
-        })),
-    [faixas, pct],
-  );
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.pct - b.pct);
+  }, [faixas, pct]);
 
   const tom = indefinida
     ? "warning"
@@ -177,25 +178,25 @@ function MedidorImpl({
         </div>
 
         {/* As legendas dos degraus, com o que cada um paga. */}
-        <div className="relative mt-2 h-9">
+        <div className="relative mt-3 h-12">
           {marcos.map((m) => (
             <div
               key={m.pct}
-              className={`absolute flex flex-col whitespace-nowrap ${ancora(posicao(m.pct))}`}
+              className={`absolute flex flex-col gap-0.5 whitespace-nowrap leading-tight ${ancora(posicao(m.pct))}`}
               style={{ left: `${posicao(m.pct)}%` }}
             >
               <span
                 className={[
-                  "text-[11px] tabular-nums",
-                  m.alcancado ? "font-medium" : "text-muted-foreground",
+                  "text-[11px] font-semibold tabular-nums leading-none",
+                  m.alcancado ? "text-foreground font-bold" : "text-muted-foreground",
                 ].join(" ")}
               >
                 {m.rotulo}
               </span>
               <span
                 className={[
-                  "text-[11px] tabular-nums",
-                  m.valor === null ? "text-warning" : "text-muted-foreground",
+                  "text-[11px] tabular-nums leading-none",
+                  m.valor === null ? "text-warning font-medium" : "text-muted-foreground",
                 ].join(" ")}
               >
                 {m.valor === null ? "a definir" : formatarReais(m.valor)}

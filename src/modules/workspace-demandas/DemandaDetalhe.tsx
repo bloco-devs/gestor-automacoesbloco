@@ -463,37 +463,37 @@ export default function DemandaDetalhe() {
         </main>
 
         {painel && (
-        <div className="flex min-h-0 flex-col overflow-y-auto rolagem-discreta border-l border-border/60">
-        <CopilotoDaDemanda
-          demanda={d}
-          eventos={eventos}
-          capacidades={capacidades}
-          relacionados={conhecimento.relacionados}
-          acoes={acoes}
-          onAbrir={(destino) =>
-            destino.startsWith("http")
-              ? window.open(destino, "_blank", "noopener,noreferrer")
-              : navigate(
-                  destino.startsWith("/demandas/") && projetoId ? `${destino}?projeto=${projetoId}` : destino,
-                )
-          }
-          onAcao={(a) => void executarAcao(a)}
-          onGerarArtigo={d.concluida && rascunho ? () => setRascunhoAberto(true) : undefined}
-          executando={acoesDemanda.executando}
-          onRemoverResponsavel={
-            daEquipe
-              ? () => {
-                  void desassumir(d.id, projetoId).catch((e: unknown) =>
-                    toast.error(
-                      e instanceof Error ? e.message : "Não foi possível remover a atribuição.",
-                    ),
-                  );
-                }
-              : undefined
-          }
-          removendoResponsavel={assumindo(d.id)}
-          className="border-l-0"
-        />
+          <div className="flex h-full min-h-0 flex-col overflow-y-auto rolagem-discreta border-l border-border/60">
+            <CopilotoDaDemanda
+              className="h-full min-h-0 border-l-0"
+              demanda={d}
+              eventos={eventos}
+              capacidades={capacidades}
+              relacionados={conhecimento.relacionados}
+              acoes={acoes}
+              onAbrir={(destino) =>
+                destino.startsWith("http")
+                  ? window.open(destino, "_blank", "noopener,noreferrer")
+                  : navigate(
+                      destino.startsWith("/demandas/") && projetoId ? `${destino}?projeto=${projetoId}` : destino,
+                    )
+              }
+              onAcao={(a) => void executarAcao(a)}
+              onGerarArtigo={d.concluida && rascunho ? () => setRascunhoAberto(true) : undefined}
+              executando={acoesDemanda.executando}
+              onRemoverResponsavel={
+                daEquipe
+                  ? () => {
+                      void desassumir(d.id, projetoId).catch((e: unknown) =>
+                        toast.error(
+                          e instanceof Error ? e.message : "Não foi possível remover a atribuição.",
+                        ),
+                      );
+                    }
+                  : undefined
+              }
+              removendoResponsavel={assumindo(d.id)}
+            />
 
         {/* Critérios e anexos ficam VISÍVEIS quando existem — não são consulta.
             O critério é o contrato do que significa "pronto"; o anexo costuma

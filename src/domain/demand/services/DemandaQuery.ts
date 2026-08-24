@@ -48,7 +48,7 @@ export function aplicarFila(demandas: Demanda[], fila: FilaId, usuarioId: string
     case "minhas":
       // Cobre tanto `u:<id>` (adapter de atividades) quanto o id puro (demands).
       return demandas.filter(
-        (d) => !d.concluida && usuarioId !== null && d.responsaveis.some((p) => p.id === usuarioId || p.id === `u:${usuarioId}`),
+        (d) => usuarioId !== null && d.responsaveis.some((p) => p.id === usuarioId || p.id === `u:${usuarioId}`),
       );
     case "sem_responsavel":
       return demandas.filter((d) => !d.concluida && d.responsaveis.length === 0);

@@ -184,13 +184,21 @@ export const ConversationInput = memo(function ConversationInput({
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={onKeyDown}
           onPaste={(e) => {
-            // Só intercepta quando há arquivo: colar texto continua sendo colar
-            // texto, sem `preventDefault` e sem surpresa.
             if (!aceitaAnexo) return;
-            const arquivos = [...e.clipboardData.files];
-            if (arquivos.length > 0) {
+            const files: File[] = [];
+            if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+              files.push(...Array.from(e.clipboardData.files));
+            } else if (e.clipboardData.items) {
+              for (const item of Array.from(e.clipboardData.items)) {
+                if (item.type.startsWith("image/")) {
+                  const file = item.getAsFile();
+                  if (file) files.push(file);
+                }
+              }
+            }
+            if (files.length > 0) {
               e.preventDefault();
-              receber(arquivos);
+              receber(files);
             }
           }}
           disabled={disabled}

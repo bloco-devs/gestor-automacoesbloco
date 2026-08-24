@@ -12,7 +12,7 @@ import {
   useCriarCartao,
   useExcluirCartao,
   useCapasDosCards,
-
+  useAssumirDemanda,
   useDemandas,
   useExcluirProjeto,
   ehInbox,
@@ -154,6 +154,7 @@ export default function WorkspaceDemandas() {
   // Na Caixa de Entrada a demanda mora em `demands`: excluir ali é o soft delete
   // da fila do Help Desk, não o delete de um cartão de quadro.
   const demandaExcluida = useDeleteDemand();
+  const { assumir, desassumir } = useAssumirDemanda();
 
 
   const contagens = useMemo(() => contarFilas(demandas, user?.id ?? null), [demandas, user?.id]);
@@ -490,6 +491,8 @@ export default function WorkspaceDemandas() {
 
                 podeMover={acoes.podeMover}
                 emProjeto={emProjeto}
+                onAssumir={(id) => user?.id && void assumir(id, emProjeto ? projetoId : null, user.id)}
+                onDesassumir={(id) => void desassumir(id, emProjeto ? projetoId : null)}
                 onConcluir={emProjeto ? (id) => void concluirCartao(id) : undefined}
                 concluindo={(id) => concluindo.has(id)}
                 onExcluir={(id) => {
