@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
   Loader2,
@@ -33,6 +33,16 @@ import { dobrarMudancas, representanteDaDobra } from "@/domain/demand";
 import type { Briefing as DadosDoBriefing, Evento } from "@/domain/demand";
 import { Briefing } from "./Briefing";
 import { Blink } from "@/components/blink/Blink";
+
+/**
+ * Onde a caixa de texto para de crescer, em pixels — cerca de dez linhas.
+ *
+ * Existe porque sem teto uma mensagem longa empurra a conversa inteira para
+ * fora da tela: a pessoa perde de vista justamente o histórico que está
+ * respondendo. Dez linhas cobrem uma resposta de suporte com folga, e o que
+ * passar disso rola dentro do campo.
+ */
+const ALTURA_MAXIMA = 220;
 
 /**
  * A conversa — o centro da tela.
@@ -464,6 +474,30 @@ function FioImpl({
     );
   };
 
+  /**
+   * A CAIXA CRESCE COM O TEXTO, ATÉ UM TETO.
+   *
+   * Ela tinha altura fixa de 60px. Quem escrevia três linhas via a terceira
+   * cortada no meio do glifo e precisava rolar dentro de um campo de duas
+   * linhas para reler o que acabou de digitar — o pior momento possível para
+   * esconder texto de alguém.
+   *
+   * O padrão de mensageiro resolve com dois limites em vez de um: cresce com o
+   * conteúdo, e a partir de ~10 linhas para de crescer e passa a rolar. Sem o
+   * teto, uma mensagem longa empurraria a conversa toda para fora da tela e
+   * engoliria o histórico que a pessoa está respondendo.
+   */
+  const campo = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = campo.current;
+    if (!el) return;
+    // Zerar antes de medir: sem isso `scrollHeight` nunca DIMINUI, e a caixa
+    // ficaria grande para sempre depois de apagar o texto.
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, ALTURA_MAXIMA)}px`;
+  }, [texto]);
+
   const aoEscolherArquivos = (e: React.ChangeEvent<HTMLInputElement>) => {
     const arquivos = Array.from(e.target.files ?? []);
     if (arquivos.length > 0) onAnexar?.(arquivos);
@@ -555,12 +589,17 @@ function FioImpl({
                   void enviar();
                 }
               }}
+              ref={campo}
+              rows={1}
               onPaste={aoColar}
               data-fio-resposta
               placeholder={interna ? "Escreva uma nota interna (visível apenas para a equipe)…" : "Digite sua resposta para o solicitante…"}
               aria-label="Escrever no fio da demanda"
               className={cn(
-                "min-h-[60px] resize-none border-0 bg-transparent px-4 pt-3 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground/70",
+                // `min-h` some: a altura agora é calculada no efeito acima. Um
+                // mínimo em CSS brigaria com ele e travaria a caixa em duas
+                // linhas mesmo com uma só.
+                "resize-none overflow-y-auto border-0 bg-transparent px-4 py-3 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground/70",
                 "shadow-none focus-visible:ring-0 focus-visible:ring-offset-0",
               )}
             />

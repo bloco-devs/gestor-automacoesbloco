@@ -581,6 +581,16 @@ export default function DemandaDetalhe() {
               for (const f of falhas) toast.error(f);
             });
           }}
+          /* `excluir` devolve a mensagem em vez de lançar, pelo mesmo motivo de
+             `enviar`: aqui o retorno é descartado com `void`, e promise
+             rejeitada sem dono morre no console. */
+          onExcluir={(anexo) => {
+            void anexos.excluir(anexo.id, anexo.caminho).then((erro) => {
+              if (erro) toast.error(erro);
+              else toast.success("Anexo excluído.");
+            });
+          }}
+          excluindo={anexos.excluindo}
         />
 
         {/* A ÚNICA seção fechada. Quem, quando, sistema, etiquetas: dados que

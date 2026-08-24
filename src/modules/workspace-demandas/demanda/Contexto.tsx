@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -69,7 +69,7 @@ function Gente({
   onRemover,
   removendo,
 }: {
-  pessoas: { id: string; nome: string; avatarUrl: string | null }[];
+  pessoas: { id: string; nome: string; avatarUrl: string | null; sistema?: boolean }[];
   onRemover?: (pessoaId: string) => void;
   removendo?: boolean;
 }) {
@@ -77,10 +77,23 @@ function Gente({
     <span className="flex flex-wrap items-center gap-1.5">
       {pessoas.map((p) => (
         <span key={p.id} className="group/resp inline-flex items-center gap-1.5">
-          <Avatar className="size-4">
-            {p.avatarUrl && <AvatarImage src={p.avatarUrl} alt="" />}
-            <AvatarFallback className="bg-muted text-[8px]">{iniciais(p.nome)}</AvatarFallback>
-          </Avatar>
+          {/* O Blink não tem foto, e a inicial "B" o fazia parecer um colega
+              chamado Bruno. Um símbolo na cor da marca diz o que ele é sem
+              precisar de legenda — e o assistente é a única coisa nesta lista
+              que não é uma pessoa. */}
+          {p.sistema ? (
+            <span
+              aria-hidden
+              className="grid size-4 shrink-0 place-items-center rounded-full bg-primary/20 text-primary"
+            >
+              <Sparkles className="size-2.5" />
+            </span>
+          ) : (
+            <Avatar className="size-4">
+              {p.avatarUrl && <AvatarImage src={p.avatarUrl} alt="" />}
+              <AvatarFallback className="bg-muted text-[8px]">{iniciais(p.nome)}</AvatarFallback>
+            </Avatar>
+          )}
           {p.nome}
           {onRemover && (
             <Tooltip>

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAttachmentSignedUrl, listAttachments } from "@/modules/demands/service";
-import { enviarVarios } from "@/modules/demands/anexos";
+import { enviarVarios, excluirAnexoDaDemanda } from "@/modules/demands/anexos";
 import { generoDe, ordenarAnexos, type Anexo } from "@/domain/demand";
 
 /**
@@ -28,6 +28,13 @@ export interface AnexoExibivel extends Anexo {
 export function useAnexos(demandaId: string | null, habilitado: boolean) {
   const qc = useQueryClient();
   const [enviando, setEnviando] = useState(false);
+  /**
+   * Id do anexo em exclusão — não um booleano.
+   *
+   * Com booleano, apagar um anexo faria TODOS os botões da lista girarem, e a
+   * pessoa não saberia qual está saindo. O id faz o estado pertencer à linha.
+   */
+  const [excluindo, setExcluindo] = useState<string | null>(null);
 
   const q = useQuery({
     queryKey: ["demanda", demandaId, "anexos"],
@@ -99,11 +106,35 @@ export function useAnexos(demandaId: string | null, habilitado: boolean) {
     [demandaId, qc],
   );
 
+  /**
+   * Devolve a mensagem de erro em vez de lançar, no mesmo espírito de `enviar`
+   * e pelo mesmo motivo: quem chama usa `void`, e `void` numa promise
+   * rejeitada é rejeição sem dono — o erro morre no console e a pessoa fica
+   * olhando um anexo que aparentemente não saiu.
+   */
+  const excluir = useCallback(
+    async (anexoId: string, caminho: string): Promise<string | null> => {
+      setExcluindo(anexoId);
+      try {
+        await excluirAnexoDaDemanda(anexoId, caminho);
+        await qc.invalidateQueries({ queryKey: ["demanda", demandaId, "anexos"] });
+        return null;
+      } catch (erro) {
+        return erro instanceof Error ? erro.message : "Não foi possível excluir o anexo.";
+      } finally {
+        setExcluindo(null);
+      }
+    },
+    [demandaId, qc],
+  );
+
   return {
     anexos,
     carregando: q.isLoading,
     enviando,
     enviar,
+    excluir,
+    excluindo,
     podeAnexar: habilitado,
   };
 }

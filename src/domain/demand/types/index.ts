@@ -121,6 +121,15 @@ export interface Pessoa {
   id: string;
   nome: string;
   avatarUrl: string | null;
+  /**
+   * O Blink. Ele já era criado com este campo em `useFioDaDemanda`; agora o
+   * tipo o reconhece, para a interface poder dar a ele um símbolo próprio em
+   * vez da inicial "B" — que o faz parecer um colega chamado Bruno.
+   *
+   * Não é o mesmo que `ia`: `participantes()` exclui `ia` da lista de quem
+   * está envolvido, e o Blink deve continuar aparecendo lá.
+   */
+  sistema?: boolean;
 }
 
 export interface Etiqueta {

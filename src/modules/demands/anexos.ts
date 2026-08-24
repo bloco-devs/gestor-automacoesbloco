@@ -308,3 +308,49 @@ export async function enviarVarios(
   }
   return { anexados, falhas };
 }
+
+/**
+ * EXCLUIR UM ANEXO.
+ *
+ * A ORDEM É DELIBERADA: ARQUIVO PRIMEIRO, LINHA DEPOIS.
+ *
+ * As duas permissões não têm o mesmo alcance, e isso não é descuido de quem as
+ * escreveu — são camadas diferentes:
+ *
+ *   `demand_attachments` (linha)  quem subiu, admin, OU quem abriu a demanda
+ *   `storage.objects` (arquivo)   quem subiu, admin, ou rascunho próprio
+ *
+ * Ou seja: o solicitante pode apagar a LINHA de um anexo que ele não subiu,
+ * mas não pode apagar o ARQUIVO. Removendo a linha primeiro, a interface diria
+ * "excluído" e o arquivo continuaria no bucket para sempre — invisível,
+ * inauditável e ocupando espaço. Órfão silencioso é a pior forma de lixo,
+ * porque ninguém sabe que ele existe para ir limpar.
+ *
+ * Apagando o arquivo primeiro, quem não tem permissão recebe um erro claro e
+ * nada é removido pela metade. "Não consegui" é resposta melhor que uma
+ * exclusão que não excluiu.
+ */
+export async function excluirAnexoDaDemanda(anexoId: string, caminho: string): Promise<void> {
+  const { error: erroDoArquivo } = await supabase.storage.from(BUCKET_ANEXOS).remove([caminho]);
+
+  if (erroDoArquivo) {
+    throw new Error(
+      "Não foi possível excluir o arquivo. Só quem enviou o anexo, ou um administrador, pode removê-lo.",
+    );
+  }
+
+  const { error: erroDaLinha, data } = await supabase
+    .from("demand_attachments")
+    .delete()
+    .eq("id", anexoId)
+    .select("id");
+
+  // Mesma armadilha de sempre neste schema: DELETE barrado por RLS não devolve
+  // erro, devolve zero linhas. Sem esta checagem, o arquivo sairia, a linha
+  // ficaria, e a lista mostraria um anexo cujo download nunca abre.
+  if (erroDaLinha || !data || data.length === 0) {
+    throw new Error(
+      "O arquivo foi removido, mas o registro do anexo não. Recarregue a página e tente de novo.",
+    );
+  }
+}

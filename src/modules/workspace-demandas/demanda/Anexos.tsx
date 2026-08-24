@@ -1,6 +1,17 @@
 import { memo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { FileText, FileArchive, Film, Loader2, Paperclip, Upload } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { FileText, FileArchive, Film, Loader2, Paperclip, Trash2, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { visualizavel, type Genero } from "@/domain/demand";
 import type { AnexoExibivel } from "@/modules/demand-access";
@@ -40,56 +51,148 @@ const ICONE: Record<Genero, typeof FileText> = {
   outro: Paperclip,
 };
 
-function Ficha({ anexo: a, onAbrir }: { anexo: AnexoExibivel; onAbrir: (a: AnexoExibivel) => void }) {
+/**
+ * O botão de excluir aparece no hover, sobre o canto da miniatura.
+ *
+ * Não é sutileza estética: excluir é irreversível e o alvo fica em cima do
+ * conteúdo. Visível o tempo todo, num grid de miniaturas pequenas, ele
+ * convida ao clique errado — e ninguém desfaz um arquivo apagado.
+ *
+ * Em toque, onde não existe hover, ele fica sempre visível: esconder um
+ * controle atrás de um gesto que o aparelho não tem seria pior que o risco.
+ */
+function BotaoExcluir({
+  nome,
+  excluindo,
+  onExcluir,
+}: {
+  nome: string;
+  excluindo: boolean;
+  onExcluir: () => void;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <button
+          type="button"
+          disabled={excluindo}
+          aria-label={`Excluir ${nome}`}
+          title="Excluir anexo"
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "absolute right-1 top-1 z-10 inline-flex size-6 items-center justify-center rounded-md",
+            "bg-background/85 text-muted-foreground backdrop-blur-sm ring-1 ring-border",
+            "transition-all hover:bg-destructive hover:text-destructive-foreground hover:ring-destructive",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+            "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+            "[@media(hover:none)]:opacity-100",
+          )}
+        >
+          {excluindo ? (
+            <Loader2 className="size-3 animate-spin" aria-hidden />
+          ) : (
+            <Trash2 className="size-3" aria-hidden />
+          )}
+        </button>
+      </AlertDialogTrigger>
+
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir este anexo?</AlertDialogTitle>
+          {/* O nome do arquivo na pergunta, não só "este anexo". Num grid de
+              miniaturas parecidas, é o que evita apagar a errada. */}
+          <AlertDialogDescription>
+            <span className="font-medium text-foreground">{nome}</span> será removido da demanda e
+            do armazenamento. Não há como desfazer.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onExcluir}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function Ficha({
+  anexo: a,
+  onAbrir,
+  onExcluir,
+  excluindo,
+}: {
+  anexo: AnexoExibivel;
+  onAbrir: (a: AnexoExibivel) => void;
+  onExcluir?: (a: AnexoExibivel) => void;
+  excluindo: boolean;
+}) {
   const Icone = ICONE[a.genero];
+
+  const excluir = onExcluir ? (
+    <BotaoExcluir nome={a.nome} excluindo={excluindo} onExcluir={() => onExcluir(a)} />
+  ) : null;
 
   if (a.genero === "imagem" && a.url) {
     return (
-      <button
-        type="button"
-        onClick={() => onAbrir(a)}
-        title={a.nome}
-        className="group relative aspect-[4/3] overflow-hidden rounded-md border border-border/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-      >
-        <img
-          src={a.url}
-          alt={a.nome}
-          loading="lazy"
-          className="size-full object-cover transition-transform duration-base group-hover:scale-[1.03]"
-        />
-      </button>
+      <div className="group relative">
+        <button
+          type="button"
+          onClick={() => onAbrir(a)}
+          title={a.nome}
+          className="block aspect-[4/3] w-full overflow-hidden rounded-md border border-border/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
+          <img
+            src={a.url}
+            alt={a.nome}
+            loading="lazy"
+            className="size-full object-cover transition-transform duration-base group-hover:scale-[1.03]"
+          />
+        </button>
+        {excluir}
+      </div>
     );
   }
 
   if (a.genero === "video" && a.url) {
     return (
-      <video
-        src={a.url}
-        controls
-        preload="metadata"
-        aria-label={a.nome}
-        className="aspect-[4/3] w-full rounded-md border border-border/60 bg-black object-contain"
-      />
+      <div className="group relative">
+        <video
+          src={a.url}
+          controls
+          preload="metadata"
+          aria-label={a.nome}
+          className="aspect-[4/3] w-full rounded-md border border-border/60 bg-black object-contain"
+        />
+        {excluir}
+      </div>
     );
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => onAbrir(a)}
-      disabled={!a.url}
-      title={a.nome}
-      className={cn(
-        "flex aspect-[4/3] flex-col items-center justify-center gap-1.5 rounded-md border border-border/60 px-2",
-        "transition-colors hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-        "disabled:opacity-50",
-      )}
-    >
-      <Icone className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-      <span className="line-clamp-2 break-all text-center text-[11px] leading-tight text-muted-foreground">
-        {a.nome}
-      </span>
-    </button>
+    <div className="group relative">
+      <button
+        type="button"
+        onClick={() => onAbrir(a)}
+        disabled={!a.url}
+        title={a.nome}
+        className={cn(
+          "flex aspect-[4/3] w-full flex-col items-center justify-center gap-1.5 rounded-md border border-border/60 px-2",
+          "transition-colors hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          "disabled:opacity-50",
+        )}
+      >
+        <Icone className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="line-clamp-2 break-all text-center text-[11px] leading-tight text-muted-foreground">
+          {a.nome}
+        </span>
+      </button>
+      {excluir}
+    </div>
   );
 }
 
@@ -98,9 +201,14 @@ interface Props {
   podeAnexar: boolean;
   enviando: boolean;
   onEnviar: (arquivos: File[]) => void;
+  /** Ausente quando a origem da demanda não permite excluir — aí o botão não
+   *  aparece, em vez de aparecer e falhar. */
+  onExcluir?: (anexo: AnexoExibivel) => void;
+  /** Id do anexo em exclusão, para o giro ficar na linha certa. */
+  excluindo?: string | null;
 }
 
-function AnexosImpl({ anexos, podeAnexar, enviando, onEnviar }: Props) {
+function AnexosImpl({ anexos, podeAnexar, enviando, onEnviar, onExcluir, excluindo }: Props) {
   const [aberto, setAberto] = useState<AnexoExibivel | null>(null);
   const [arrastando, setArrastando] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -143,7 +251,13 @@ function AnexosImpl({ anexos, podeAnexar, enviando, onEnviar }: Props) {
       {anexos.length > 0 && (
         <div className="mt-2 grid grid-cols-2 gap-1.5">
           {anexos.map((a) => (
-            <Ficha key={a.id} anexo={a} onAbrir={setAberto} />
+            <Ficha
+              key={a.id}
+              anexo={a}
+              onAbrir={setAberto}
+              onExcluir={onExcluir}
+              excluindo={excluindo === a.id}
+            />
           ))}
         </div>
       )}
