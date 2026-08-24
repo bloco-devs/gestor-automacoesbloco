@@ -42,6 +42,18 @@ export interface NovaDemanda {
   origemIa: true;
   /** O quanto a IA confia na própria leitura, de 0 a 1. */
   confianca: number;
+  /**
+   * A CONVERSA LITERAL QUE ORIGINOU ESTA DEMANDA.
+   *
+   * `resumo` e `descricaoTecnica` são o que a IA ESCREVEU. Isto é o que a
+   * pessoa DISSE — e a diferença entre as duas coisas já custou caro: a
+   * equipe construiu uma tradução fiel de um pedido que a solicitante nunca
+   * fez daquele jeito, e não havia como demonstrar isso porque o original
+   * tinha sido descartado.
+   *
+   * Vai gravado junto com a demanda e não é editável depois.
+   */
+  conversa?: Array<{ papel: "solicitante" | "blink"; texto: string }>;
 }
 
 /**

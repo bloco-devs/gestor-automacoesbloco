@@ -40,6 +40,7 @@ import { Blink } from "@/components/blink/Blink";
 import { Progresso } from "./demanda/Progresso";
 import { Checklist } from "./demanda/Checklist";
 import { Anexos } from "./demanda/Anexos";
+import { ConversaOriginal } from "./demanda/ConversaOriginal";
 import { RascunhoDeArtigo } from "./demanda/RascunhoDeArtigo";
 import { Fio } from "./demanda/Fio";
 import { CopilotoDaDemanda } from "./demanda/CopilotoDaDemanda";
@@ -566,6 +567,10 @@ export default function DemandaDetalhe() {
           onAcrescentar={(texto) => void checklist.acrescentar(texto)}
           onRemover={(itemId) => void checklist.remover(itemId)}
         />
+
+        {/* A origem vem antes dos artefatos: para entender uma demanda, ler
+            o que foi pedido precede ver o que foi anexado. */}
+        <ConversaOriginal demandaId={id ?? null} />
 
         <Anexos
           anexos={anexos.anexos}

@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createDemand, createTask } from "@/modules/demands/service";
+import { supabase } from "@/integrations/supabase/client";
 import type { NovaDemanda } from "@/domain/demand";
 
 /**
@@ -51,6 +52,34 @@ export function useCriarDemanda() {
           priority: nova.prioridade,
           complexity: nova.complexidade,
         });
+
+        /**
+         * A CONVERSA VAI JUNTO, E A FALHA DELA NÃO DERRUBA A DEMANDA.
+         *
+         * A demanda já existe neste ponto. Se a gravação da conversa falhar,
+         * lançar aqui faria a pessoa ver "erro ao criar", tentar de novo, e
+         * abrir a segunda demanda idêntica — o mesmo estrago que o anexo já
+         * causou no `NewTicketDialog` e que está documentado lá.
+         *
+         * Perder a transcrição é ruim; duplicar a demanda é pior, e visível
+         * para todo mundo.
+         */
+        if (nova.conversa?.length) {
+          // `as never` é a convenção do projeto para tabela que os tipos
+          // gerados ainda não conhecem — `types.ts` vem do banco, e a tabela
+          // nasce na migration. Mesmo padrão de `from("demands" as never)`.
+          const { error } = await supabase.from("demanda_conversa" as never).insert(
+            nova.conversa.map((m, i) => ({
+              demanda_id: criada.id,
+              // O índice é a ordem. `created_at` não serve: as linhas entram
+              // no mesmo instante e empatariam.
+              ordem: i,
+              papel: m.papel,
+              texto: m.texto,
+            })) as never,
+          );
+          if (error) console.warn("[demanda] conversa não gravada:", error.message);
+        }
 
         // Em série, e não em paralelo: `createTask` calcula a ordem a partir da
         // última tarefa existente, então disparar tudo junto embaralharia os

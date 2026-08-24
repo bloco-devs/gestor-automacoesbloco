@@ -324,6 +324,20 @@ export function useAIWorkspace() {
       titulo: preview.titulo,
       resumo: preview.descricao,
       descricaoTecnica: preview.justificativa ?? "",
+      /**
+       * A conversa literal, do jeito que aconteceu.
+       *
+       * `resumo` e `descricaoTecnica` acima são o que o Blink ESCREVEU. Isto é
+       * o que a pessoa DISSE. As duas coisas precisam viajar juntas, porque a
+       * distância entre elas já produziu trabalho construído certo sobre um
+       * pedido que ninguém fez daquele jeito.
+       */
+      conversa: messages
+        .filter((m) => m.content.trim().length > 0)
+        .map((m) => ({
+          papel: (m.role === "user" ? "solicitante" : "blink") as "solicitante" | "blink",
+          texto: m.content,
+        })),
       tipo: tipoDeClassificacao(preview.tipoDemanda, `${preview.titulo} ${preview.descricao}`),
       complexidade: complexidadeDeEscala(preview.complexidadeDev),
       prioridade: prioridadeDeScore(previewScore),
