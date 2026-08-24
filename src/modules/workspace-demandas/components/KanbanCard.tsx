@@ -514,19 +514,19 @@ export function Cartao({
 
             <p
               className={cn(
-                "line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug",
-                d.concluida && "line-through",
+                "line-clamp-2 min-w-0 flex-1 text-[13px] font-semibold leading-snug text-foreground",
+                d.concluida && "line-through opacity-70",
               )}
             >
               {d.titulo}
             </p>
-            {!meta && direita}
+            {!meta && <span className="font-code text-[11px] font-bold text-primary/90 tracking-tight">{direita}</span>}
           </div>
 
           {meta && (
-            <div className="ds-caption mt-1 flex items-center gap-1.5 text-muted-foreground">
+            <div className="ds-caption mt-1.5 flex items-center gap-1.5 text-muted-foreground font-medium">
               <span className="truncate">{meta}</span>
-              <span className="ml-auto">{direita}</span>
+              <span className="ml-auto font-code text-[11px] font-bold text-primary/90 tracking-tight">{direita}</span>
             </div>
           )}
 

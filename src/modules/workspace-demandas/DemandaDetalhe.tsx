@@ -253,8 +253,8 @@ export default function DemandaDetalhe() {
     demanda ? (
       <>
         <span className="flex min-w-0 items-center gap-2">
-          <span className="shrink-0 tabular-nums text-[12px] text-muted-foreground">{demanda.referencia}</span>
-          <span className="truncate text-[13px] font-medium">{demanda.titulo}</span>
+          <span className="shrink-0 font-code text-[12px] font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md tracking-tight">{demanda.referencia}</span>
+          <span className="truncate text-[13px] font-bold text-foreground">{demanda.titulo}</span>
         </span>
         <button
           type="button"
