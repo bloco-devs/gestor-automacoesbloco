@@ -403,7 +403,12 @@ function FioImpl({
   onAbrirAnexo,
   vazio,
 }: Props) {
-  const itens = useMemo(() => dobrarMudancas(eventos), [eventos]);
+  const eventosFiltrados = useMemo(() => {
+    if (podeNotaInterna) return eventos;
+    return eventos.filter((e) => !e.interna);
+  }, [eventos, podeNotaInterna]);
+
+  const itens = useMemo(() => dobrarMudancas(eventosFiltrados), [eventosFiltrados]);
   const [texto, setTexto] = useState("");
   const [interna, setInterna] = useState(false);
   const [enviando, setEnviando] = useState(false);
