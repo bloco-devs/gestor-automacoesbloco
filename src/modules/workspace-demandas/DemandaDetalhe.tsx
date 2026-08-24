@@ -29,6 +29,8 @@ import {
   montarFio,
   obterEstiloDoSistema,
   formatarReferenciaComSigla,
+  siglaDoSistema,
+  nomeDoSistemaPelaSigla,
   type AcaoSugerida,
   type Pessoa,
 } from "@/domain/demand";
@@ -333,13 +335,19 @@ export default function DemandaDetalhe() {
             <ArrowLeft className="size-5 stroke-[2.5]" aria-hidden />
           </Button>
           <div className="min-w-0 flex-1">
-            {d.sistema?.nome && (
-              <div className="mb-1 flex items-center gap-2">
-                <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                  Sistema: {d.sistema.nome}
-                </span>
-              </div>
-            )}
+            {(() => {
+              const sig = siglaDoSistema(d.sistema?.nome, d.titulo, briefing.oQuePedem);
+              const nomeSistema = nomeDoSistemaPelaSigla(sig) || d.sistema?.nome;
+              if (!nomeSistema) return null;
+              const est = obterEstiloDoSistema(sig || d.sistema?.nome, d.titulo);
+              return (
+                <div className="mb-1 flex items-center gap-2">
+                  <span className={cn("inline-flex items-center rounded-md border px-2.5 py-0.5 text-[11px] font-bold tracking-tight shadow-2xs", est.badgeClass)}>
+                    Sistema: {nomeSistema}
+                  </span>
+                </div>
+              );
+            })()}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h1 className="flex min-w-0 flex-1 items-baseline gap-2">
                 {(() => {

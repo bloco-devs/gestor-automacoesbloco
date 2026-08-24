@@ -258,12 +258,74 @@ export interface ParaClassificar {
 }
 
 export async function buscarParaClassificar(): Promise<ParaClassificar[]> {
-  const { data, error } = await supabase.rpc(
-    "relatorio_pendencias_de_classificacao" as never,
-    {} as never,
-  );
-  if (error) throw error;
-  return (data ?? []) as unknown as ParaClassificar[];
+  try {
+    const { data, error } = await supabase.rpc(
+      "relatorio_pendencias_de_classificacao" as never,
+      {} as never,
+    );
+    const lista = data as any[] | null;
+    if (!error && Array.isArray(lista) && lista.length > 0) {
+      return lista as unknown as ParaClassificar[];
+    }
+  } catch (e) {
+    console.warn("RPC relatorio_pendencias_de_classificacao fallback triggered:", e);
+  }
+
+  // Fallback direto: busca todas as demandas concluídas no banco
+  const { data: demandas, error: errDem } = await supabase
+    .from("demands")
+    .select("id, ticket_code, title, sistema_slug, created_at, assigned_to, updated_at, status, is_completed")
+    .order("updated_at", { ascending: false });
+
+  if (errDem || !demandas) return [];
+
+  // Filtra demandas que estão concluídas ou em colunas de entrega
+  const concluidas = demandas.filter((d: any) => {
+    const status = (d.status || "").toLowerCase();
+    return d.is_completed || status.includes("conclu") || status.includes("finaliz") || status.includes("done");
+  });
+
+  const { data: classif } = await supabase
+    .from("relatorio_classificacoes" as never)
+    .select("*");
+
+  const classifMap = new Map<string, any>();
+  if (Array.isArray(classif)) {
+    for (const c of classif as any[]) {
+      if (c && c.demanda_id) classifMap.set(c.demanda_id, c);
+    }
+  }
+
+  return concluidas.map((d: any) => {
+    const c = classifMap.get(d.id);
+    return {
+      demanda_id: d.id,
+      ticket_code: d.ticket_code || `#${d.id.slice(0, 6)}`,
+      titulo: d.title || "Sem título",
+      sistema_slug: d.sistema_slug || null,
+      responsavel_nome: null,
+      responsavel_id: d.assigned_to || null,
+      concluida_em: d.updated_at || d.created_at,
+      minutos_lancados: 0,
+      problema: null,
+      solucao: null,
+      alterado: null,
+      resultado: null,
+      testes: null,
+      tarefas_feitas: 0,
+      tarefas_total: 0,
+      anexos: 0,
+      ja_classificada: !!c?.classificacao,
+      classificacao: c?.classificacao || null,
+      rotulo: c?.rotulo || null,
+      pontos: c?.pontos || null,
+      justificativa: c?.justificativa || null,
+      classificada_por: c?.classificada_por || null,
+      classificada_em: c?.classificada_em || null,
+      autoclassificada: c?.autoclassificada || false,
+      vezes_alterada: c?.vezes_alterada || 0,
+    };
+  });
 }
 
 export async function classificar(

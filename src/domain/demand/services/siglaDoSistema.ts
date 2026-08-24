@@ -36,14 +36,14 @@ export const SISTEMAS_ECOSSISTEMA_BLOCO_ID: Record<string, { sigla: string; nome
 };
 
 const PALAVRAS_CHAVE: Array<{ palavras: string[]; sigla: string }> = [
-  { palavras: ["gestao de obras", "gestao de obra", "produtividade", "obra", "obras", "quantitativo", "canteiro", "entregas", "frente servico", "medio prazo", "planejamento", "modulo de planejamento"], sigla: "OBRA" },
+  { palavras: ["gestao de obras", "gestao de obra", "produtividade", "obra", "obras", "quantitativo", "canteiro", "canteiros", "entregas", "frente servico", "medio prazo", "planejamento", "modulo de planejamento"], sigla: "OBRA" },
   { palavras: ["crm house", "crm-house", "crm"], sigla: "CRM" },
   { palavras: ["desenvolvimento produto", "engenharia produto", "ciclo produto"], sigla: "PROD" },
-  { palavras: ["nakhon", "contrato", "contratos", "aditivo", "desembolso"], sigla: "CONT" },
+  { palavras: ["nakhon", "gerador de contratos", "contrato nakhon", "contratos nakhon"], sigla: "CONT" },
   { palavras: ["gestao comercial", "comercial", "vgv", "unidades", "corretores"], sigla: "COM" },
   { palavras: ["captacao", "leads", "prospeccao"], sigla: "CAP" },
   { palavras: ["incorporacao", "incorporacao", "certidao trabalhista", "as-built", "estudo viabilidade"], sigla: "INC" },
-  { palavras: ["processo", "processos", "sgpo", "autentic", "seguranca"], sigla: "SGPO" },
+  { palavras: ["sgpo", "gestao de processo", "gestao de processos", "processo sgpo", "autentic"], sigla: "SGPO" },
   { palavras: ["recursos humanos", "rh", "pessoal", "folha", "admissao", "beneficios", "colaborador"], sigla: "RH" },
   { palavras: ["suprimentos", "terceirizadas", "locacao", "locacoes", "itens locaveis", "epi"], sigla: "SUPR" },
   { palavras: ["financeira", "financeiro", "fluxo de caixa", "contas a pagar", "receber", "caixa", "faturamento", "irr"], sigla: "FIN" },
@@ -251,9 +251,13 @@ export function formatarReferenciaComSigla(
   }
 
   const hashId = id.replace(/-/g, "").slice(0, 6).toUpperCase();
-  if (sigla) {
-    return `${sigla}-${hashId}`;
-  }
-
   return codigoOriginal ?? `#${hashId}`;
+}
+
+export function nomeDoSistemaPelaSigla(sigla: string | null): string | null {
+  if (!sigla) return null;
+  for (const info of Object.values(SISTEMAS_ECOSSISTEMA_BLOCO_ID)) {
+    if (info.sigla === sigla) return info.nome;
+  }
+  return null;
 }
