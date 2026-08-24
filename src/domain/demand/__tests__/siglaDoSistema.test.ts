@@ -28,4 +28,44 @@ describe("siglaDoSistema — Catálogo Completo dos 16 Sistemas do HUB Bloco ID"
     expect(formatarReferenciaComSigla("REQ-2608-0008", null, "id4", "Flexibilização do fluxo de pagamento Nakhon")).toBe("CONT-2608-0008");
     expect(formatarReferenciaComSigla("REC-2608-0001", "rh", "id5")).toBe("RH-2608-0001");
   });
+
+  /**
+   * OS CASOS QUE ESTAVAM ERRADOS EM PRODUÇÃO.
+   *
+   * A GP-2608-0010 — "Aviso de envio de documentos Autentic" — é ficha de EPI
+   * na Gestão de Obra e aparecia como Gestão de Processo. Duas causas:
+   * "autentic" estava na lista de palavras do SGPO, e as palavras-chave
+   * rodavam ANTES da consulta pelo slug.
+   */
+  describe("o slug manda, e nome de ferramenta não vira sistema", () => {
+    it("não deduz sistema a partir de Autentique, que é ferramenta de assinatura", () => {
+      // Sem slug e sem outra pista, o nome do fornecedor não decide nada.
+      expect(siglaDoSistema(null, "Aviso de envio de documentos Autentic")).toBeNull();
+      expect(siglaDoSistema(null, "Enviar contrato pelo Autentique")).toBeNull();
+    });
+
+    it("o slug gravado vence a palavra que aparece no título", () => {
+      // Era o bug: título com "autentic" sobrepunha o slug de Obra.
+      expect(siglaDoSistema("produtividade", "Aviso de envio de documentos Autentic")).toBe("OBRA");
+      // E vale para qualquer palavra: RH no título não muda o sistema de Obra.
+      expect(siglaDoSistema("produtividade", "Ficha de EPI do colaborador")).toBe("OBRA");
+      expect(siglaDoSistema("rh", "Relatório financeiro de admissões")).toBe("RH");
+      expect(siglaDoSistema("incorporacao", "Contrato Nakhon da unidade")).toBe("INC");
+    });
+
+    it("a heurística só entra quando não há slug reconhecido", () => {
+      expect(siglaDoSistema(null, "Ficha de EPI e itens locáveis")).toBe("SUPR");
+      expect(siglaDoSistema(null, "Quantitativo do canteiro")).toBe("OBRA");
+    });
+
+    it("casa palavra inteira, não pedaço de palavra", () => {
+      // "ti" dentro de "atividade" e "notificação" não pode virar TI.
+      expect(siglaDoSistema(null, "Notificação de prazo vencido")).not.toBe("TI");
+      // "epi" dentro de "equipe" não pode virar Suprimentos.
+      expect(siglaDoSistema(null, "Cadastro de equipe do plantão")).not.toBe("SUPR");
+      // Mas a palavra sozinha continua casando.
+      expect(siglaDoSistema(null, "Suporte técnico de TI")).toBe("TI");
+      expect(siglaDoSistema(null, "Entrega de EPI")).toBe("SUPR");
+    });
+  });
 });

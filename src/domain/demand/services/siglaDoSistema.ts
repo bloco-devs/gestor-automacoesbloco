@@ -43,7 +43,16 @@ const PALAVRAS_CHAVE: Array<{ palavras: string[]; sigla: string }> = [
   { palavras: ["gestao comercial", "comercial", "vgv", "unidades", "corretores"], sigla: "COM" },
   { palavras: ["captacao", "leads", "prospeccao"], sigla: "CAP" },
   { palavras: ["incorporacao", "incorporacao", "certidao trabalhista", "as-built", "estudo viabilidade"], sigla: "INC" },
-  { palavras: ["sgpo", "gestao de processo", "gestao de processos", "processo sgpo", "autentic"], sigla: "SGPO" },
+  // "autentic" SAIU desta lista de propósito.
+  //
+  // Autentique é a ferramenta de assinatura eletrônica, usada por vários
+  // sistemas — não é um sistema. Com ela aqui, toda demanda que mencionasse
+  // assinatura virava SGPO: a GP-2608-0010 ("Aviso de envio de documentos
+  // Autentic") é ficha de EPI na Gestão de Obra e saiu marcada como Processo.
+  //
+  // Nome de fornecedor não identifica sistema. Sienge e Nakhon continuam aqui
+  // porque são sistemas do catálogo, não ferramentas de terceiros.
+  { palavras: ["sgpo", "gestao de processo", "gestao de processos", "processo sgpo"], sigla: "SGPO" },
   { palavras: ["recursos humanos", "rh", "pessoal", "folha", "admissao", "beneficios", "colaborador"], sigla: "RH" },
   { palavras: ["suprimentos", "terceirizadas", "locacao", "locacoes", "itens locaveis", "epi"], sigla: "SUPR" },
   { palavras: ["financeira", "financeiro", "fluxo de caixa", "contas a pagar", "receber", "caixa", "faturamento", "irr"], sigla: "FIN" },
@@ -56,6 +65,21 @@ const PALAVRAS_CHAVE: Array<{ palavras: string[]; sigla: string }> = [
   { palavras: ["infraestrutura", "infra", "redes", "servidor", "hardware"], sigla: "IN" },
   { palavras: ["tecnologia", "ti", "suporte tecnico"], sigla: "TI" },
 ];
+
+/**
+ * Casamento por PALAVRA, não por pedaço de palavra.
+ *
+ * A versão anterior usava `includes`, então "ti" casava dentro de "atividade"
+ * e de "notificação", e "cs" dentro de qualquer coisa. Qualquer título com a
+ * palavra "atividade" corria o risco de virar TI.
+ *
+ * Com limite de palavra, "epi" casa com "EPI" e não com "equipe"; "ti" casa
+ * com "TI" e não com "atividade".
+ */
+function contemPalavra(texto: string, frase: string): boolean {
+  const escapada = frase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escapada}\\b`, "i").test(texto);
+}
 
 export function siglaDoSistema(
   nomeOuSlug: string | null | undefined,
@@ -74,20 +98,32 @@ export function siglaDoSistema(
   const textoTitulo = (titulo || "").trim().toLowerCase();
   const textoDescricao = (descricao || "").trim().toLowerCase();
 
-  // 2. Prioridade: palavras-chave no contexto combinando slug + titulo + descricao
+  /**
+   * 2. O SLUG VEM PRIMEIRO. DADO ANTES DE PALPITE.
+   *
+   * Esta ordem estava invertida, e era a causa das siglas erradas. As
+   * palavras-chave rodavam antes, então um palpite tirado do TÍTULO sobrepunha
+   * o `sistema_slug` gravado no banco: uma demanda com slug `produtividade`
+   * (Gestão de Obra) cujo título mencionasse assinatura saía como SGPO.
+   *
+   * O slug é o que alguém — pessoa ou triagem — de fato registrou. As palavras
+   * -chave são heurística para quando esse registro NÃO existe, que é o caso
+   * das demandas antigas com prefixo genérico REQ-. Heurística é rede de
+   * segurança; ela não pode desautorizar o dado.
+   */
+  if (textoSlug && SISTEMAS_ECOSSISTEMA_BLOCO_ID[textoSlug]) {
+    return SISTEMAS_ECOSSISTEMA_BLOCO_ID[textoSlug].sigla;
+  }
+
+  // 3. Sem slug reconhecido: aí sim a heurística, sobre slug + título + descrição.
   const combinado = `${textoSlug} ${textoTitulo} ${textoDescricao}`
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
   for (const item of PALAVRAS_CHAVE) {
-    if (item.palavras.some((p) => combinado.includes(p))) {
+    if (item.palavras.some((p) => contemPalavra(combinado, p))) {
       return item.sigla;
     }
-  }
-
-  // 3. Busca direta no dicionário por slug
-  if (textoSlug && SISTEMAS_ECOSSISTEMA_BLOCO_ID[textoSlug]) {
-    return SISTEMAS_ECOSSISTEMA_BLOCO_ID[textoSlug].sigla;
   }
 
   // 4. Se o slug já for uma sigla curta (2 a 6 letras maiúsculas), como "RH", "GO", "SGPO"
