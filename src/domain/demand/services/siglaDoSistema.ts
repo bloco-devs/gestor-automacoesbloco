@@ -1,22 +1,73 @@
 /**
  * DEDUZ A SIGLA OFICIAL DO SISTEMA
  *
- * Resolve o "Defeito C" do sistema: quando o banco gera `REC-2607-0001` porque
- * `system_id` era nulo ou o slug vindo da IA não casou diretamente com a tabela,
- * esta função traduz o nome/slug do sistema ou o título da solicitação na sigla
- * oficial da equipe (RH, SIENGE, FIN, GO, IN, TI, AUTO, SGPO).
+ * Mapeamento completo dos 16 sistemas oficiais do HUB Bloco ID:
+ * 1. crm-house               → CRM   (Bloco.CRM HOUSE)
+ * 2. desenvolvimento-produto → PROD  (Desenvolvimento Produto)
+ * 3. nakhon-contratos        → CONT  (Gerador de Contratos Nakhon)
+ * 4. gestao-comercial        → COM   (Gestão Comercial e Marketing)
+ * 5. captacao                → CAP   (Gestão de Captação)
+ * 6. incorporacao            → INC   (Gestão de Incorporação)
+ * 7. produtividade / obra    → OBRA  (Gestão de Obra)
+ * 8. processos / sgpo        → SGPO  (Gestão de Processo / SGPO)
+ * 9. rh                      → RH    (Gestão de RH)
+ * 10. locacao / suprimentos  → SUPR  (Gestão de Suprimentos)
+ * 11. fluxo-caixa / finan    → FIN   (Gestão Financeira)
+ * 12. atividades             → ATIV  (Gestor de Atividades Líderes)
+ * 13. automacoes             → AUTO  (Gestor de Automações)
+ * 14. portfolio              → PORT  (Gestor de Portfólio)
+ * 15. sucesso-cliente        → CS    (Sucesso do Cliente)
+ * 16. viab / viabuilder      → VIAB  (ViaBuilder Pro)
  */
 
-const SIGLAS_CONHECIDAS: Array<{ palavras: string[]; sigla: string }> = [
-  { palavras: ["recursos humanos", "rh", "pessoal", "folha", "admissao", "beneficios"], sigla: "RH" },
+export const SISTEMAS_ECOSSISTEMA_BLOCO_ID: Record<string, { sigla: string; nome: string }> = {
+  "crm-house": { sigla: "CRM", nome: "Bloco.CRM HOUSE" },
+  "desenvolvimento-produto": { sigla: "PROD", nome: "Desenvolvimento Produto" },
+  "nakhon-contratos": { sigla: "CONT", nome: "Gerador de Contratos Nakhon" },
+  "gestao-comercial": { sigla: "COM", nome: "Gestão Comercial e Marketing" },
+  captacao: { sigla: "CAP", nome: "Gestão de Captação" },
+  incorporacao: { sigla: "INC", nome: "Gestão de Incorporação" },
+  produtividade: { sigla: "OBRA", nome: "Gestão de Obra" },
+  obra: { sigla: "OBRA", nome: "Gestão de Obra" },
+  processos: { sigla: "SGPO", nome: "Gestão de Processo / SGPO" },
+  sgpo: { sigla: "SGPO", nome: "Gestão de Processo / SGPO" },
+  rh: { sigla: "RH", nome: "Gestão de RH" },
+  locacao: { sigla: "SUPR", nome: "Gestão de Suprimentos" },
+  suprimentos: { sigla: "SUPR", nome: "Gestão de Suprimentos" },
+  "fluxo-caixa": { sigla: "FIN", nome: "Gestão Financeira" },
+  financeiro: { sigla: "FIN", nome: "Gestão Financeira" },
+  atividades: { sigla: "ATIV", nome: "Gestor de Atividades Líderes" },
+  automacoes: { sigla: "AUTO", nome: "Gestor de Automações" },
+  portfolio: { sigla: "PORT", nome: "Gestor de Portfólio" },
+  "sucesso-cliente": { sigla: "CS", nome: "Sucesso do Cliente" },
+  viab: { sigla: "VIAB", nome: "ViaBuilder Pro" },
+  viabuilder: { sigla: "VIAB", nome: "ViaBuilder Pro" },
+  sienge: { sigla: "SIENGE", nome: "Sienge" },
+  infraestrutura: { sigla: "IN", nome: "Infraestrutura & Redes" },
+  infra: { sigla: "IN", nome: "Infraestrutura" },
+  ti: { sigla: "TI", nome: "Tecnologia da Informação" },
+};
+
+const PALAVRAS_CHAVE: Array<{ palavras: string[]; sigla: string }> = [
+  { palavras: ["crm house", "crm-house", "crm"], sigla: "CRM" },
+  { palavras: ["desenvolvimento produto", "engenharia produto", "ciclo produto"], sigla: "PROD" },
+  { palavras: ["nakhon", "contrato", "contratos", "aditivo"], sigla: "CONT" },
+  { palavras: ["gestao comercial", "comercial", "vgv", "unidades", "corretores"], sigla: "COM" },
+  { palavras: ["captacao", "leads", "prospeccao"], sigla: "CAP" },
+  { palavras: ["incorporacao", "empreendimento", "as-built", "estudo viabilidade"], sigla: "INC" },
+  { palavras: ["produtividade", "obra", "obras", "frente servico", "pavimentos"], sigla: "OBRA" },
+  { palavras: ["processo", "processos", "sgpo"], sigla: "SGPO" },
+  { palavras: ["recursos humanos", "rh", "pessoal", "folha", "admissao", "beneficios", "colaborador"], sigla: "RH" },
+  { palavras: ["suprimentos", "locacao", "locacoes", "itens locaveis"], sigla: "SUPR" },
+  { palavras: ["financeira", "financeiro", "fluxo de caixa", "contas a pagar", "receber", "caixa"], sigla: "FIN" },
+  { palavras: ["atividades lideres", "atividades", "tarefas"], sigla: "ATIV" },
+  { palavras: ["automacoes", "automacao", "fluxos automatizados", "bot", "robo"], sigla: "AUTO" },
+  { palavras: ["portfolio", "portfólio", "kpis financeiros"], sigla: "PORT" },
+  { palavras: ["sucesso do cliente", "sucesso cliente", "cs", "onboarding", "churn"], sigla: "CS" },
+  { palavras: ["viabuilder", "viab", "m1-m3"], sigla: "VIAB" },
   { palavras: ["sienge"], sigla: "SIENGE" },
-  { palavras: ["financeiro", "finan", "faturamento", "contabilidade", "fiscal", "pagamento", "caixa"], sigla: "FIN" },
-  { palavras: ["obras", "gestao de obras", "engenharia", "sgpo", "canteiro"], sigla: "GO" },
-  { palavras: ["infra", "infraestrutura", "servidor", "rede", "hardware"], sigla: "IN" },
-  { palavras: ["ti", "tecnologia", "sistema", "suporte tecnico"], sigla: "TI" },
-  { palavras: ["automacao", "processos", "bot", "robo", "workflow"], sigla: "AUTO" },
-  { palavras: ["suporte", "helpdesk"], sigla: "SUP" },
-  { palavras: ["compras", "suprimentos"], sigla: "COMP" },
+  { palavras: ["infraestrutura", "infra", "redes", "servidor", "hardware"], sigla: "IN" },
+  { palavras: ["tecnologia", "ti", "suporte tecnico"], sigla: "TI" },
 ];
 
 export function siglaDoSistema(
@@ -35,17 +86,23 @@ export function siglaDoSistema(
   const texto = nomeOuSlug.trim();
   if (!texto) return null;
 
-  // Se já for uma sigla curta (2 a 6 letras maiúsculas), como "RH", "GO", "SGPO"
-  if (/^[A-Z]{2,6}$/.test(texto)) {
-    return texto;
-  }
-
   const normalizado = texto
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  for (const item of SIGLAS_CONHECIDAS) {
+  // 2. Busca direta no dicionário por slug
+  if (SISTEMAS_ECOSSISTEMA_BLOCO_ID[normalizado]) {
+    return SISTEMAS_ECOSSISTEMA_BLOCO_ID[normalizado].sigla;
+  }
+
+  // 3. Se já for uma sigla curta (2 a 6 letras maiúsculas), como "RH", "GO", "SGPO"
+  if (/^[A-Z]{2,6}$/.test(texto)) {
+    return texto;
+  }
+
+  // 4. Busca por palavras-chave
+  for (const item of PALAVRAS_CHAVE) {
     if (item.palavras.some((p) => normalizado.includes(p))) {
       return item.sigla;
     }
