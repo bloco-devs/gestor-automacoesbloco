@@ -18,3 +18,4 @@ export { fromAtividades, CAPACIDADES_ATIVIDADES, type EntradaAtividades } from "
 export { fromDemands, CAPACIDADES_DEMANDS, type EntradaDemands } from "./mappers/fromDemands";
 export * from "./services/tomDaEtapa";
 export * from "./services/dobrarMudancas";
+export * from "./services/siglaDoSistema";

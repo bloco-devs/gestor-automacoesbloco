@@ -17,6 +17,7 @@ import type {
   StatusCategoria,
 } from "../types";
 import { calcularRisco, diasDesde } from "../services/risco";
+import { formatarReferenciaComSigla } from "../services/siglaDoSistema";
 
 /**
  * Adapter: `atividades_cards` → Demanda.
@@ -145,7 +146,7 @@ export function fromAtividades({
 
     return {
       id: card.id,
-      referencia: referenciaCurta(card.id),
+      referencia: formatarReferenciaComSigla(null, solucao?.titulo, card.id, card.titulo),
       titulo: card.titulo,
       descricao: card.descricao ?? "",
 
