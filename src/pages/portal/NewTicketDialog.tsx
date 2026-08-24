@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Loader2, Upload, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEcossistemaSistemas } from "@/hooks/useEcossistemaSistemas";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -51,17 +51,17 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
   const [systemId, setSystemId] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [plataformas, setPlataformas] = useState<Array<{ id: string; nome: string; slug?: string | null }>>([]);
   const [acknowledgedSuggestions, setAcknowledgedSuggestions] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    supabase
-      .from("plataformas")
-      .select("id, nome")
-      .order("nome")
-      .then(({ data }) => setPlataformas(data ?? []));
-  }, [open]);
+  /**
+   * Mesmo conserto do diálogo da equipe: o seletor passa a oferecer o catálogo
+   * do HUB, cujo `id` é o slug, e o slug passa a ser gravado.
+   *
+   * Aqui pesa mais, porque este é o formulário do SOLICITANTE. Toda demanda
+   * aberta pelo portal nascia como `REQ-` e ficava fora do relatório por
+   * sistema — justamente as demandas de quem não conversa com o Blink.
+   */
+  const { sistemas, loading: carregandoSistemas } = useEcossistemaSistemas(open);
 
   const reset = () => {
     setTitle("");
@@ -102,7 +102,7 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
       const demand = await create.mutateAsync({
         title: title.trim(),
         description: description.trim() || null,
-        system_id: systemId || null,
+        sistema_slug: systemId || null,
         type: "melhoria",
       });
 
@@ -176,13 +176,17 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
             <Label>Sistema relacionado</Label>
             <Select value={systemId || "none"} onValueChange={(v) => setSystemId(v === "none" ? "" : v)}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecionar (opcional)" />
+                <SelectValue placeholder={carregandoSistemas ? "Carregando…" : "Selecionar"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Nenhum / Não sei</SelectItem>
-                {plataformas.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.nome}
+                {/* "Não sei" continua sendo uma resposta legítima — o
+                    solicitante não tem obrigação de conhecer a divisão interna
+                    dos sistemas. Forçar uma escolha aqui produziria chute, que
+                    é pior que a ausência: chute parece dado. */}
+                <SelectItem value="none">Não sei dizer</SelectItem>
+                {sistemas.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.nome}
                   </SelectItem>
                 ))}
               </SelectContent>

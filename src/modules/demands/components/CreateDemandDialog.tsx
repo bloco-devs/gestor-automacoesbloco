@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, Sparkles, Upload, Wand2, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEcossistemaSistemas } from "@/hooks/useEcossistemaSistemas";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -48,14 +48,23 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
   const triage = useTriageDemand();
   const autoRespond = useAutoRespondDemand();
   const { data: workloads = [] } = useUserWorkloads(open);
-  const [plataformas, setPlataformas] = useState<Array<{ id: string; nome: string }>>([]);
-  useEffect(() => {
-    supabase
-      .from("plataformas")
-      .select("id, nome")
-      .order("nome")
-      .then(({ data }) => setPlataformas(data ?? []));
-  }, []);
+  /**
+   * O SELETOR PASSOU A OFERECER O CATÁLOGO DO HUB, E NÃO `plataformas`.
+   *
+   * Este formulário gravava `system_id` a partir de `plataformas` e NUNCA
+   * gravava `sistema_slug`. Como é do slug que o banco monta o código do
+   * chamado, toda demanda aberta por aqui nascia com o prefixo genérico
+   * `REQ-` e sem sistema no relatório — e o relatório por sistema, que é
+   * requisito do RH, simplesmente não a enxergava.
+   *
+   * Não era 3% de imprecisão: era 100% de ausência neste caminho. Só a
+   * conversa com o Blink preenchia o campo.
+   *
+   * O catálogo do HUB é a fonte de verdade declarada do ecossistema, e o
+   * `id` que ele devolve JÁ É o slug — o mesmo que a triagem da IA usa. Com
+   * isso os três caminhos de criação passam a gravar a mesma coisa.
+   */
+  const { sistemas, loading: carregandoSistemas } = useEcossistemaSistemas(open);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -126,7 +135,10 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
       const demand = await create.mutateAsync({
         title: title.trim(),
         description: description.trim() || null,
-        system_id: systemId || null,
+        /* `system_id` aponta para `solucoes`, que está vazia — passar um id de
+           `plataformas` ali nunca resolveu nada. O que o banco e os relatórios
+           realmente usam é o slug. */
+        sistema_slug: systemId || null,
         type,
         priority,
         complexity,
@@ -229,14 +241,23 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
             <div className="space-y-2">
               <Label>Sistema</Label>
               <Select value={systemId || "none"} onValueChange={(v) => setSystemId(v === "none" ? "" : v)}>
-                <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder={carregandoSistemas ? "Carregando…" : "Selecionar"} />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {plataformas.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                  {/* "Não identificado" em vez de "Nenhum": descreve o estado
+                      real. Toda demanda pertence a algum sistema — o que pode
+                      faltar é saber qual, e o rótulo deve dizer isso para a
+                      pessoa perceber que há algo por preencher. */}
+                  <SelectItem value="none">Não identificado</SelectItem>
+                  {sistemas.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[11px] text-muted-foreground">
+                Define a sigla do chamado e agrupa os relatórios.
+              </p>
             </div>
 
             <div className="space-y-2">
