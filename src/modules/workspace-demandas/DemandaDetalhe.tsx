@@ -27,6 +27,10 @@ import {
   montarBriefing,
   montarProgressao,
   montarFio,
+  obterEstiloDoSistema,
+  formatarReferenciaComSigla,
+  siglaDoSistema,
+  nomeDoSistemaPelaSigla,
   type AcaoSugerida,
   type Pessoa,
 } from "@/domain/demand";
@@ -39,6 +43,7 @@ import { Anexos } from "./demanda/Anexos";
 import { RascunhoDeArtigo } from "./demanda/RascunhoDeArtigo";
 import { Fio } from "./demanda/Fio";
 import { CopilotoDaDemanda } from "./demanda/CopilotoDaDemanda";
+import { StatusStepper } from "./demanda/StatusStepper";
 
 const ETAPA_FORA_DO_FLUXO = "homologacao";
 
@@ -252,8 +257,8 @@ export default function DemandaDetalhe() {
     demanda ? (
       <>
         <span className="flex min-w-0 items-center gap-2">
-          <span className="shrink-0 tabular-nums text-[12px] text-muted-foreground">{demanda.referencia}</span>
-          <span className="truncate text-[13px] font-medium">{demanda.titulo}</span>
+          <span className="shrink-0 font-code text-[12px] font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md tracking-tight">{demanda.referencia}</span>
+          <span className="truncate text-[13px] font-bold text-foreground">{demanda.titulo}</span>
         </span>
         <button
           type="button"
@@ -311,7 +316,6 @@ export default function DemandaDetalhe() {
    */
   const identidade = [
     capacidades.tipo && d.tipo ? TIPO_ROTULO[d.tipo] : null,
-    d.sistema?.nome ?? null,
     d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
   ].filter(Boolean) as string[];
 
@@ -320,21 +324,61 @@ export default function DemandaDetalhe() {
       <header className="shrink-0 border-b border-border/60 px-5 py-3">
         <div className="flex items-start gap-3">
           <Button
-            variant="ghost"
+            type="button"
+            variant="outline"
             size="icon"
-            className="mt-0.5 size-6 shrink-0"
+            className="mt-0.5 size-9 shrink-0 rounded-xl bg-card border-2 border-slate-300 dark:border-slate-700 text-foreground shadow-md hover:bg-primary hover:text-slate-950 hover:border-primary transition-all duration-200"
             onClick={() => navigate(-1)}
             aria-label="Voltar"
+            title="Voltar à tela anterior"
           >
-            <ArrowLeft className="size-4" aria-hidden />
+            <ArrowLeft className="size-5 stroke-[2.5]" aria-hidden />
           </Button>
           <div className="min-w-0 flex-1">
-            <h1 className="flex min-w-0 items-baseline gap-2">
-              <span className="shrink-0 text-[13px] tabular-nums text-muted-foreground">{d.referencia}</span>
-              <span className={cn("text-[17px] font-medium leading-snug", d.concluida && "line-through")}>
-                {d.titulo}
-              </span>
-            </h1>
+            {(() => {
+              const sig = siglaDoSistema(d.sistema?.nome, d.titulo, briefing.oQuePedem);
+              const nomeSistema = nomeDoSistemaPelaSigla(sig) || d.sistema?.nome;
+              if (!nomeSistema) return null;
+              const est = obterEstiloDoSistema(sig || d.sistema?.nome, d.titulo);
+              return (
+                <div className="mb-1 flex items-center gap-2">
+                  <span className={cn("inline-flex items-center rounded-md border px-2.5 py-0.5 text-[11px] font-bold tracking-tight shadow-2xs", est.badgeClass)}>
+                    Sistema: {nomeSistema}
+                  </span>
+                </div>
+              );
+            })()}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h1 className="flex min-w-0 flex-1 items-baseline gap-2">
+                {(() => {
+                  const refCalculada = formatarReferenciaComSigla(d.referencia, d.sistema?.nome, d.id, d.titulo, briefing.oQuePedem);
+                  const estRef = obterEstiloDoSistema(d.sistema?.nome, refCalculada || d.titulo);
+                  return (
+                    <span className={cn("shrink-0 font-mono text-[12px] font-bold border px-2 py-0.5 rounded-md tracking-tight", estRef.badgeClass)}>
+                      {refCalculada}
+                    </span>
+                  );
+                })()}
+                <span className={cn("text-[17px] font-medium leading-snug", d.concluida && "line-through")}>
+                  {d.titulo}
+                </span>
+              </h1>
+
+              {/* DEMANDA 7: Alterar status diretamente dentro da demanda */}
+              <StatusStepper
+                statusAtualId={d.status.id}
+                etapas={etapas.filter((e) => normalizarEtapa(e.rotulo) !== ETAPA_FORA_DO_FLUXO)}
+                onMoverStatus={async (novoStatusId) => {
+                  try {
+                    await acoesDemanda.mover({ demandaId: d.id, statusId: novoStatusId });
+                    toast.success("Status atualizado com sucesso.");
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Não foi possível alterar o status.");
+                  }
+                }}
+              />
+            </div>
+
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted-foreground">
               {identidade.map((item, i) => (
                 <span key={item} className="flex items-center gap-2">
@@ -439,37 +483,37 @@ export default function DemandaDetalhe() {
         </main>
 
         {painel && (
-        <div className="flex min-h-0 flex-col overflow-y-auto rolagem-discreta border-l border-border/60">
-        <CopilotoDaDemanda
-          demanda={d}
-          eventos={eventos}
-          capacidades={capacidades}
-          relacionados={conhecimento.relacionados}
-          acoes={acoes}
-          onAbrir={(destino) =>
-            destino.startsWith("http")
-              ? window.open(destino, "_blank", "noopener,noreferrer")
-              : navigate(
-                  destino.startsWith("/demandas/") && projetoId ? `${destino}?projeto=${projetoId}` : destino,
-                )
-          }
-          onAcao={(a) => void executarAcao(a)}
-          onGerarArtigo={d.concluida && rascunho ? () => setRascunhoAberto(true) : undefined}
-          executando={acoesDemanda.executando}
-          onRemoverResponsavel={
-            daEquipe
-              ? () => {
-                  void desassumir(d.id, projetoId).catch((e: unknown) =>
-                    toast.error(
-                      e instanceof Error ? e.message : "Não foi possível remover a atribuição.",
-                    ),
-                  );
-                }
-              : undefined
-          }
-          removendoResponsavel={assumindo(d.id)}
-          className="border-l-0"
-        />
+          <div className="flex h-full min-h-0 flex-col overflow-y-auto rolagem-discreta border-l border-border/60">
+            <CopilotoDaDemanda
+              className="h-full min-h-0 border-l-0"
+              demanda={d}
+              eventos={eventos}
+              capacidades={capacidades}
+              relacionados={conhecimento.relacionados}
+              acoes={acoes}
+              onAbrir={(destino) =>
+                destino.startsWith("http")
+                  ? window.open(destino, "_blank", "noopener,noreferrer")
+                  : navigate(
+                      destino.startsWith("/demandas/") && projetoId ? `${destino}?projeto=${projetoId}` : destino,
+                    )
+              }
+              onAcao={(a) => void executarAcao(a)}
+              onGerarArtigo={d.concluida && rascunho ? () => setRascunhoAberto(true) : undefined}
+              executando={acoesDemanda.executando}
+              onRemoverResponsavel={
+                daEquipe
+                  ? () => {
+                      void desassumir(d.id, projetoId).catch((e: unknown) =>
+                        toast.error(
+                          e instanceof Error ? e.message : "Não foi possível remover a atribuição.",
+                        ),
+                      );
+                    }
+                  : undefined
+              }
+              removendoResponsavel={assumindo(d.id)}
+            />
 
         {/* Critérios e anexos ficam VISÍVEIS quando existem — não são consulta.
             O critério é o contrato do que significa "pronto"; o anexo costuma

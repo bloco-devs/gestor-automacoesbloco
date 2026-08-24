@@ -30,9 +30,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { obterEstiloDoSistema } from "@/domain/demand";
 
 import { labelColorStyle } from "@/lib/atividades";
 import {
+  COMPLEXIDADE_ROTULO,
   PRIORIDADE_ROTULO,
   RISCO_ROTULO,
   type Capacidades,
@@ -264,6 +266,7 @@ export function Cartao({
 
   const meta = [
     sinais.prioridade && d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
+    capacidades.complexidade && d.complexidade ? `Complexidade: ${COMPLEXIDADE_ROTULO[d.complexidade]}` : null,
     // O código de rastreio é linguagem de Helpdesk: dentro de um quadro de
     // projeto ninguém cita "#4e6706", cita o título do cartão.
     !emProjeto && sinais.referencia ? d.referencia : null,
@@ -470,7 +473,10 @@ export function Cartao({
           {sistemaNome && (
             <span
               title={`Sistema: ${sistemaNome}`}
-              className="mb-1 inline-flex max-w-full items-center truncate rounded-sm bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+              className={cn(
+                "mb-1 inline-flex max-w-full items-center truncate rounded px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-tight border",
+                obterEstiloDoSistema(d.sistema?.nome || sistemaNome, d.referencia || d.titulo).badgeClass
+              )}
             >
               {sistemaNome}
             </span>
@@ -512,19 +518,19 @@ export function Cartao({
 
             <p
               className={cn(
-                "line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug",
-                d.concluida && "line-through",
+                "line-clamp-2 min-w-0 flex-1 text-[13px] font-semibold leading-snug text-foreground",
+                d.concluida && "line-through opacity-70",
               )}
             >
               {d.titulo}
             </p>
-            {!meta && direita}
+            {!meta && <span className="font-code text-[11px] font-bold text-primary/90 tracking-tight">{direita}</span>}
           </div>
 
           {meta && (
-            <div className="ds-caption mt-1 flex items-center gap-1.5 text-muted-foreground">
+            <div className="ds-caption mt-1.5 flex items-center gap-1.5 text-muted-foreground font-medium">
               <span className="truncate">{meta}</span>
-              <span className="ml-auto">{direita}</span>
+              <span className="ml-auto font-code text-[11px] font-bold text-primary/90 tracking-tight">{direita}</span>
             </div>
           )}
 

@@ -1,7 +1,6 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
-
   Loader2,
   Lock,
   LockOpen,
@@ -9,11 +8,15 @@ import {
   Pencil,
   SendHorizontal,
   Trash2,
+  Plus,
+  Image,
+  FileText,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -215,49 +218,38 @@ function Fala({
   return (
     <li
       className={cn(
-        "group/fala flex gap-3 py-3",
-        evento.interna && "rounded-md bg-warning/5 px-2 -mx-2",
+        "group/fala flex gap-3 py-2",
+        evento.interna && "my-1",
       )}
     >
-      {sistema ? (
-        /* O aviso automático vem do Blink: mesmo rosto da IA no fio e da
-           lateral direita. Quem diz "isto é automático" é o selo ao lado do
-           nome, não um ícone genérico de robô. */
+      {sistema || ia ? (
         <span
-          className="mt-0.5 size-7 shrink-0 overflow-hidden rounded-full bg-muted/50"
+          className="mt-1 size-8 shrink-0 overflow-hidden rounded-full border border-border/80 bg-background shadow-xs"
           aria-label="Blink"
         >
           <Blink className="size-full" />
         </span>
-
-      ) : ia ? (
-        /* Quem fala no fio tem rosto: as pessoas têm avatar, e o Blink
-           tinha um ícone de brilho. Um símbolo abstrato ao lado de fotos faz
-           a IA parecer um carimbo do sistema, não um participante. */
-        <span className="mt-0.5 size-7 shrink-0 overflow-hidden rounded-full bg-muted/50" aria-label="Blink">
-          <Blink className="size-full" />
-        </span>
       ) : (
-        <Avatar className="mt-0.5 size-7 shrink-0">
+        <Avatar className="mt-1 size-8 shrink-0 border border-border/80 shadow-xs">
           {evento.autor?.avatarUrl && <AvatarImage src={evento.autor.avatarUrl} alt="" />}
-          <AvatarFallback className="bg-muted text-[10px]">
+          <AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">
             {iniciais(evento.autor?.nome ?? "?")}
           </AvatarFallback>
         </Avatar>
       )}
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2">
-          <span className="text-[13px] font-medium">
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[13px] font-bold text-foreground">
             {sistema ? "Blink" : (evento.autor?.nome ?? "Alguém")}
           </span>
           {sistema && (
-            <Badge variant="neutral" className="text-[10px] font-normal">
+            <Badge variant="outline" className="text-[10px] font-medium bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 py-0 px-1.5">
               automático
             </Badge>
           )}
           {evento.interna && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-warning">
+            <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/30">
               <Lock className="size-3" aria-hidden />
               nota interna
             </span>
@@ -298,7 +290,7 @@ function Fala({
                 )}
               </span>
             )}
-            <time className="text-[12px] tabular-nums text-muted-foreground" dateTime={evento.em}>
+            <time className="text-[11px] tabular-nums text-muted-foreground font-medium" dateTime={evento.em}>
               {quando(evento.em)}
               {evento.editadoEm ? " · editado" : ""}
             </time>
@@ -336,7 +328,18 @@ function Fala({
             </div>
           </div>
         ) : (
-          <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-relaxed">{evento.texto}</p>
+          <div
+            className={cn(
+              "rounded-2xl px-4 py-3 text-[13px] leading-relaxed whitespace-pre-wrap break-words shadow-xs border transition-colors",
+              evento.interna
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-100 rounded-tl-xs"
+                : sistema
+                  ? "bg-card border-border/80 text-foreground rounded-tl-xs shadow-xs"
+                  : "bg-muted/40 border-border/60 text-foreground rounded-tl-xs",
+            )}
+          >
+            {evento.texto}
+          </div>
         )}
       </div>
 
@@ -403,10 +406,18 @@ function FioImpl({
   onAbrirAnexo,
   vazio,
 }: Props) {
-  const itens = useMemo(() => dobrarMudancas(eventos), [eventos]);
+  const eventosFiltrados = useMemo(() => {
+    if (podeNotaInterna) return eventos;
+    return eventos.filter((e) => !e.interna);
+  }, [eventos, podeNotaInterna]);
+
+  const itens = useMemo(() => dobrarMudancas(eventosFiltrados), [eventosFiltrados]);
   const [texto, setTexto] = useState("");
   const [interna, setInterna] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [popoverAberto, setPopoverAberto] = useState(false);
+  const seletorMedia = useRef<HTMLInputElement>(null);
+  const seletorDoc = useRef<HTMLInputElement>(null);
 
   const enviar = async () => {
     const t = texto.trim();
@@ -474,86 +485,89 @@ function FioImpl({
          * aqui — ele precisa ser visível o tempo todo, não a partir de um
          * quadradinho de 14px.
          */
-        <div className="shrink-0 border-t border-border/60 px-5 py-3">
+        <div className="shrink-0 border-t border-border/70 bg-background/80 p-3 shadow-xs">
           <div
             className={cn(
-              "rounded-2xl border bg-background transition-colors duration-fast",
-              "focus-within:border-ring/60 focus-within:ring-2 focus-within:ring-ring/15",
-              interna ? "border-warning/50 bg-warning/5" : "border-border/70",
+              "rounded-2xl border bg-card shadow-sm transition-all duration-200",
+              "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25",
+              interna ? "border-amber-500/60 bg-amber-500/10" : "border-border/80 hover:border-primary/40",
             )}
           >
             <Textarea
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               onKeyDown={(e) => {
-                // Enter envia, como em qualquer mensageiro. Shift+Enter quebra
-                // linha para quem precisa de mais de um parágrafo, e
-                // ⌘/Ctrl+Enter continua valendo por hábito.
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   void enviar();
                 }
               }}
               data-fio-resposta
-              placeholder={interna ? "Nota visível só para a equipe…" : "Escreva uma resposta…"}
+              placeholder={interna ? "Escreva uma nota interna (visível apenas para a equipe)…" : "Digite sua resposta para o solicitante…"}
               aria-label="Escrever no fio da demanda"
               className={cn(
-                "min-h-[52px] resize-none border-0 bg-transparent px-4 pt-3 text-[13px] leading-relaxed",
+                "min-h-[60px] resize-none border-0 bg-transparent px-4 pt-3 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground/70",
                 "shadow-none focus-visible:ring-0 focus-visible:ring-offset-0",
               )}
             />
 
-            <div className="flex items-center gap-2 px-2.5 pb-2.5 pt-0.5">
-              {podeNotaInterna && (
-                <button
+            <div className="flex items-center justify-between border-t border-border/40 px-3 py-2">
+              <div className="flex items-center gap-2">
+                {podeNotaInterna && (
+                  <button
+                    type="button"
+                    onClick={() => setInterna((v) => !v)}
+                    aria-pressed={interna}
+                    title={
+                      interna
+                        ? "Esta nota fica só para a equipe"
+                        : "Marcar como nota interna — quem abriu não vê"
+                    }
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all",
+                      "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                      interna
+                        ? "bg-amber-500 text-amber-950 dark:text-amber-100 ring-1 ring-amber-500/50 shadow-xs"
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    {interna ? (
+                      <Lock className="size-3.5" aria-hidden />
+                    ) : (
+                      <LockOpen className="size-3.5" aria-hidden />
+                    )}
+                    {interna ? "Nota Interna Ativa" : "+ Nota interna"}
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="hidden text-[11px] font-medium text-muted-foreground/70 sm:inline">
+                  ↵ envia · ⇧↵ nova linha
+                </span>
+
+                <Button
                   type="button"
-                  onClick={() => setInterna((v) => !v)}
-                  aria-pressed={interna}
-                  title={
-                    interna
-                      ? "Esta nota fica só para a equipe"
-                      : "Marcar como nota interna — quem abriu não vê"
-                  }
+                  onClick={() => void enviar()}
+                  disabled={!texto.trim() || enviando}
+                  size="sm"
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] transition-colors",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                    "h-8 gap-1.5 rounded-xl px-4 text-xs font-bold transition-all shadow-xs",
                     interna
-                      ? "bg-warning/15 text-warning-foreground ring-1 ring-warning/40"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                      ? "bg-amber-600 text-white hover:bg-amber-700"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90",
                   )}
                 >
-                  {interna ? (
-                    <Lock className="size-3" aria-hidden />
+                  {enviando ? (
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
                   ) : (
-                    <LockOpen className="size-3" aria-hidden />
+                    <>
+                      <SendHorizontal className="size-3.5" aria-hidden />
+                      {interna ? "Salvar Nota" : "Enviar Resposta"}
+                    </>
                   )}
-                  {interna ? "Só para a equipe" : "Nota interna"}
-                </button>
-              )}
-
-              <span className="ml-auto hidden text-[11px] text-muted-foreground/60 sm:inline">
-                ↵ envia · ⇧↵ nova linha
-              </span>
-
-              <button
-                type="button"
-                onClick={() => void enviar()}
-                disabled={!texto.trim() || enviando}
-                aria-label={interna ? "Salvar nota interna" : "Responder"}
-                className={cn(
-                  "inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-all duration-fast",
-                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                  texto.trim() && !enviando
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "bg-muted text-muted-foreground/50",
-                )}
-              >
-                {enviando ? (
-                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                ) : (
-                  <SendHorizontal className="size-3.5" aria-hidden />
-                )}
-              </button>
+                </Button>
+              </div>
             </div>
           </div>
         </div>

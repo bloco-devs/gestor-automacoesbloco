@@ -48,7 +48,7 @@ export function aplicarFila(demandas: Demanda[], fila: FilaId, usuarioId: string
     case "minhas":
       // Cobre tanto `u:<id>` (adapter de atividades) quanto o id puro (demands).
       return demandas.filter(
-        (d) => !d.concluida && usuarioId !== null && d.responsaveis.some((p) => p.id === usuarioId || p.id === `u:${usuarioId}`),
+        (d) => usuarioId !== null && d.responsaveis.some((p) => p.id === usuarioId || p.id === `u:${usuarioId}`),
       );
     case "sem_responsavel":
       return demandas.filter((d) => !d.concluida && d.responsaveis.length === 0);
@@ -166,6 +166,20 @@ export function ordenarPorChegada(demandas: Demanda[]): Demanda[] {
     if (a.concluida !== b.concluida) return a.concluida ? 1 : -1;
     return new Date(b.criadaEm).getTime() - new Date(a.criadaEm).getTime();
   });
+}
+
+/**
+ * Concluídas: mais recentemente atualizada primeiro.
+ *
+ * Quando alguém conclui uma demanda, o `updated_at` é marcado. Ordenar por
+ * ele garante que a demanda recém-concluída aparece no topo da coluna —
+ * antes, todas tinham peso de atenção -1 (idêntico), e a posição era
+ * efetivamente aleatória.
+ */
+export function ordenarPorConclusao(demandas: Demanda[]): Demanda[] {
+  return [...demandas].sort(
+    (a, b) => new Date(b.atualizadaEm).getTime() - new Date(a.atualizadaEm).getTime(),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -299,12 +313,23 @@ export function agruparPorStatus(demandas: Demanda[]): Grupo[] {
    * agora precisa aparecer no topo: é a fila de triagem, e uma fila que
    * embaralha a ordem de chegada faz o pedido novo nascer no meio da lista,
    * onde ninguém olha.
+   *
+   * CONCLUÍDAS: MAIS RECENTE PRIMEIRO
+   * A demanda recém-concluída precisa aparecer no topo da coluna. Antes, todas
+   * as concluídas tinham peso de atenção -1 (idêntico), e a ordem ficava
+   * aleatória. Agora, concluídas ordenam por `atualizadaEm` decrescente: quem
+   * acabou de ser movida para lá aparece primeiro.
    */
   const entrada = ordenadas.find((g) => g.categoria === "aberta");
   return ordenadas.map(({ id, rotulo, itens, categoria }) => ({
     id,
     rotulo,
-    itens: entrada && id === entrada.id ? ordenarPorChegada(itens) : ordenarPorAtencao(itens),
+    itens:
+      categoria === "concluida"
+        ? ordenarPorConclusao(itens)
+        : entrada && id === entrada.id
+          ? ordenarPorChegada(itens)
+          : ordenarPorAtencao(itens),
   }));
 }
 
@@ -565,6 +590,8 @@ export interface SinaisUteis {
   sistema: boolean;
   /** A referencia curta so vale quando o titulo nao carrega um codigo proprio. */
   referencia: boolean;
+  /** Exibir complexidade quando houver diversidade entre as demandas visíveis. */
+  complexidade: boolean;
 }
 
 /** Detecta codigos que a equipe ja usa no titulo: `[GO-11]`, `[IN-05]`. */
@@ -572,13 +599,14 @@ const CODIGO_NO_TITULO = /^\s*\[[^\]]{2,12}\]/;
 
 export function sinaisUteis(demandas: Demanda[]): SinaisUteis {
   if (demandas.length === 0) {
-    return { prioridade: false, etiquetas: false, prazo: false, progresso: false, sistema: false, referencia: true };
+    return { prioridade: false, etiquetas: false, prazo: false, progresso: false, sistema: false, referencia: true, complexidade: false };
   }
 
   const distintos = <T>(valores: T[]) => new Set(valores).size;
 
   const prioridades = demandas.map((d) => d.prioridade ?? "—");
   const sistemas = demandas.map((d) => d.sistema?.nome ?? "—");
+  const complexidades = demandas.map((d) => d.complexidade ?? "—");
   const etiquetas = demandas.map((d) =>
     d.etiquetas.map((e) => e.id).sort().join("|"),
   );
@@ -594,5 +622,6 @@ export function sinaisUteis(demandas: Demanda[]): SinaisUteis {
     progresso: demandas.some((d) => d.progresso !== null),
     sistema: distintos(sistemas) > 1,
     referencia: comCodigo < demandas.length / 2,
+    complexidade: distintos(complexidades) > 1,
   };
 }

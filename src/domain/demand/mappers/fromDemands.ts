@@ -9,6 +9,7 @@ import type {
   StatusCategoria,
 } from "../types";
 import { calcularRisco, diasDesde } from "../services/risco";
+import { formatarReferenciaComSigla } from "../services/siglaDoSistema";
 
 /**
  * Adapter: `demands` → Demanda.
@@ -114,7 +115,7 @@ export function fromDemands({
 
     return {
       id: d.id,
-      referencia: referenciaDe(d),
+      referencia: formatarReferenciaComSigla(d.ticket_code, sistema?.nome || d.system_id, d.id, d.title),
       titulo: d.title,
       descricao: d.description ?? "",
 

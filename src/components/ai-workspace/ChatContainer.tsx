@@ -21,7 +21,7 @@ export const ChatContainer = memo(function ChatContainer({ messages, thinking }:
   return (
     <div
       ref={scrollRef}
-      className="max-h-[52vh] min-h-[220px] space-y-4 overflow-y-auto rounded-2xl border border-border/60 bg-background/40 p-4"
+      className="flex-1 min-h-[300px] h-full space-y-3 overflow-y-auto rounded-xl border border-border/40 bg-muted/20 p-4 rolagem-discreta"
       aria-label="Histórico da conversa"
       role="log"
       aria-live="polite"

@@ -16,11 +16,13 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, Search } from "lucide-react";
 import { inserirNaLista, reordenarLista } from "../ordenacao";
 import { cn } from "@/lib/utils";
 import { EmptyPanel } from "@/design-system";
+import { usePreferencia } from "@/hooks/usePreferencia";
 import {
+  buscar,
   type Capacidades,
   type Demanda,
   type Grupo,
@@ -231,6 +233,8 @@ function Coluna({
   criandoCartao,
   capas,
   emProjeto,
+  buscaLocal,
+  onBuscaLocal,
 }: {
   grupo: Grupo;
   capacidades: Capacidades;
@@ -250,6 +254,8 @@ function Coluna({
   criandoCartao?: boolean;
   capas?: CapasResolvidas;
   emProjeto?: boolean;
+  buscaLocal?: string;
+  onBuscaLocal?: (termo: string) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: grupo.id });
   const tinta = PALETA[tomDaEtapa(grupo.rotulo)];
@@ -305,6 +311,18 @@ function Coluna({
             </button>
           )}
         </div>
+        {onBuscaLocal !== undefined && (
+          <div className="relative mb-2">
+            <Search className="absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <input
+              type="text"
+              value={buscaLocal ?? ""}
+              onChange={(e) => onBuscaLocal(e.target.value)}
+              placeholder="Buscar no concluído…"
+              className="w-full rounded-md border border-border/60 bg-card py-1 pl-7 pr-2 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring/50"
+            />
+          </div>
+        )}
         {/* A régua substitui a borda cinza de 1px. Ela faz o mesmo trabalho de
             separar cabeçalho de conteúdo, e de quebra carrega o tom. */}
         <div aria-hidden className={cn("h-0.5 w-full rounded-full", tinta.regua)} />
@@ -431,6 +449,10 @@ interface Props {
 
 // ─── BoardLenteImpl ───────────────────────────────────────────────────────────
 
+function isStringArray(val: unknown): val is string[] {
+  return Array.isArray(val) && val.every((x) => typeof x === "string");
+}
+
 function BoardLenteImpl({
   grupos,
   capacidades,
@@ -454,8 +476,31 @@ function BoardLenteImpl({
   emProjeto,
 }: Props) {
   const [arrastando, setArrastando] = useState<Demanda | null>(null);
-  const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
-  const [jaVistas, setJaVistas] = useState<Set<string>>(new Set());
+
+  /**
+   * DEMANDA 1 — PERSISTÊNCIA DAS COLUNAS RECOLHIDAS
+   *
+   * Armazenadas em localStorage via `usePreferencia`. Quando o usuário navega
+   * para outra tela e retorna, o estado da coluna (aberta/fechada) permanece
+   * intacto.
+   */
+  const [recolhidasArr, setRecolhidasArr] = usePreferencia<string[]>(
+    "board:colunas_recolhidas",
+    [],
+    isStringArray,
+  );
+  const [jaIniciadasArr, setJaIniciadasArr] = usePreferencia<string[]>(
+    "board:colunas_iniciadas",
+    [],
+    isStringArray,
+  );
+
+  /** DEMANDA 5 — Busca local na coluna Concluídos */
+  const [buscaConcluidas, setBuscaConcluidas] = useState("");
+
+  const recolhidas = useMemo(() => new Set(recolhidasArr), [recolhidasArr]);
+  const jaVistas = useMemo(() => new Set(jaIniciadasArr), [jaIniciadasArr]);
+
   /**
    * `distance: 6` é o limiar que separa clique de arrasto: abrir o cartão é a
    * ação mais frequente, então o gesto de pegar precisa ser deliberado.
@@ -468,16 +513,17 @@ function BoardLenteImpl({
   );
 
   /**
-   * Colunas concluídas começam recolhidas — mas só na primeira vez que
-   * aparecem. Depois disso a escolha é do usuário: recolher de novo o que ele
-   * acabou de abrir seria a tela discordando dele a cada re-render.
+   * Colunas concluídas começam recolhidas na PRIMEIRA vez que o usuário as vê.
+   * Se o usuário expandir ou recolher manualmente, a escolha dele é persistida em
+   * localStorage e mantida nas navegações posteriores.
    */
   useEffect(() => {
-    const novas = grupos.filter((g) => g.concluido && !jaVistas.has(g.id)).map((g) => g.id);
-    if (novas.length === 0) return;
-    setRecolhidas((r) => new Set([...r, ...novas]));
-    setJaVistas((v) => new Set([...v, ...novas]));
-  }, [grupos, jaVistas]);
+    const novasIniciadas = grupos.filter((g) => g.concluido && !jaVistas.has(g.id)).map((g) => g.id);
+    if (novasIniciadas.length === 0) return;
+
+    setRecolhidasArr(Array.from(new Set([...recolhidasArr, ...novasIniciadas])));
+    setJaIniciadasArr(Array.from(new Set([...jaIniciadasArr, ...novasIniciadas])));
+  }, [grupos, jaVistas, recolhidasArr, jaIniciadasArr, setRecolhidasArr, setJaIniciadasArr]);
 
   const porId = useMemo(() => {
     const m = new Map<string, Demanda>();
@@ -630,13 +676,12 @@ function BoardLenteImpl({
     );
   }
 
-  const alternar = (id: string) =>
-    setRecolhidas((r) => {
-      const p = new Set(r);
-      if (p.has(id)) p.delete(id);
-      else p.add(id);
-      return p;
-    });
+  const alternar = (id: string) => {
+    const s = new Set(recolhidasArr);
+    if (s.has(id)) s.delete(id);
+    else s.add(id);
+    setRecolhidasArr(Array.from(s));
+  };
 
   const aoIniciar = (e: DragStartEvent) => setArrastando(porId.get(String(e.active.id)) ?? null);
 
@@ -895,13 +940,18 @@ function BoardLenteImpl({
       {/* `contents` deixa o filho herdar a altura do avô sem criar um nível de
           caixa no meio — o DndContext não renderiza DOM, mas este wrapper sim. */}
       <div className="rolagem-discreta flex h-full min-h-0 items-stretch gap-4 overflow-x-auto overflow-y-hidden pb-2">
-        {colunas.map((g) =>
-          recolhidas.has(g.id) ? (
-            <ColunaRecolhida key={g.id} grupo={g} onExpandir={() => alternar(g.id)} />
+        {colunas.map((g) => {
+          const ehConcluido = g.concluido || tomDaEtapa(g.rotulo) === "concluido";
+          const grupoExibido = ehConcluido && buscaConcluidas.trim()
+            ? { ...g, itens: buscar(g.itens, buscaConcluidas) }
+            : g;
+
+          return recolhidas.has(g.id) ? (
+            <ColunaRecolhida key={g.id} grupo={grupoExibido} onExpandir={() => alternar(g.id)} />
           ) : (
             <Coluna
               key={g.id}
-              grupo={g}
+              grupo={grupoExibido}
               capacidades={capacidades}
               sinais={sinais}
               onAbrir={onAbrir}
@@ -923,9 +973,11 @@ function BoardLenteImpl({
               criandoCartao={criandoCartao}
               capas={capas}
               emProjeto={emProjeto}
+              buscaLocal={ehConcluido ? buscaConcluidas : undefined}
+              onBuscaLocal={ehConcluido ? setBuscaConcluidas : undefined}
             />
-          ),
-        )}
+          );
+        })}
       </div>
 
       {/* O DragOverlay com a física Trello vive em KanbanCardOverlay para evitar

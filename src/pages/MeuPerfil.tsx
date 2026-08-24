@@ -106,65 +106,90 @@ export default function MeuPerfil() {
   };
 
   return (
-    <div className="max-w-xl mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle>Meu perfil</CardTitle>
-          <CardDescription>
-            Sua foto aparece nos cards, colunas e listas de membros. Fica visível para todos que
-            têm acesso aos mesmos quadros.
-          </CardDescription>
+    <div className="max-w-2xl mx-auto py-6 px-4">
+      <Card className="rounded-2xl border border-border/80 bg-card shadow-lg overflow-hidden">
+        <CardHeader className="border-b border-border/60 bg-muted/20 pb-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl font-bold tracking-tight text-foreground">
+                Meu Perfil & Preferências
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground mt-1">
+                Sua foto e identidade aparecem no atendimento, cartões do Kanban e relatórios.
+              </CardDescription>
+            </div>
+            {user.role && (
+              <span className="rounded-full bg-primary/10 border border-primary/30 px-3 py-1 text-xs font-bold text-primary uppercase tracking-wider">
+                {user.isAdministrador ? "Administrador" : user.role === "developer" ? "Desenvolvedor" : "Solicitante"}
+              </span>
+            )}
+          </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="size-20 ring-2 ring-white shadow">
+
+        <CardContent className="space-y-6 pt-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 rounded-xl border border-border/50 bg-slate-900/30 p-4">
+            <Avatar className="size-24 ring-4 ring-primary/20 shadow-md shrink-0">
               {avatarUrl && <AvatarImage src={avatarUrl} alt={user.nome} />}
-              <AvatarFallback className="bg-slate-200 text-slate-800 text-lg">
+              <AvatarFallback className="bg-primary/10 text-primary font-extrabold text-2xl">
                 {initials(user.nome)}
               </AvatarFallback>
             </Avatar>
-            <div className="min-w-0">
-              <div className="font-medium truncate">{user.nome}</div>
-              <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+
+            <div className="min-w-0 text-center sm:text-left space-y-1 my-auto">
+              <h2 className="text-lg font-bold text-foreground truncate">{user.nome}</h2>
+              <p className="text-sm font-medium text-muted-foreground truncate">{user.email}</p>
+              <div className="pt-1 flex items-center justify-center sm:justify-start gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                Conta Ativa no HUB Bloco ID
+              </div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) openEditorWithFile(f);
-                e.target.value = "";
-              }}
-            />
-            <Button onClick={() => fileRef.current?.click()} disabled={busy}>
-              {busy ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Upload className="size-4" />
+
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Foto de Perfil
+            </h3>
+            <div className="flex flex-wrap gap-2.5">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) openEditorWithFile(f);
+                  e.target.value = "";
+                }}
+              />
+              <Button
+                onClick={() => fileRef.current?.click()}
+                disabled={busy}
+                className="gap-2 font-semibold shadow-xs"
+              >
+                {busy ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Upload className="size-4" />
+                )}
+                <span>Enviar nova foto</span>
+              </Button>
+              {avatarUrl && (
+                <>
+                  <Button variant="secondary" onClick={handleAdjustCurrent} disabled={busy} className="gap-2 font-semibold border border-border/80">
+                    <Crop className="size-4" />
+                    <span>Ajustar enquadramento</span>
+                  </Button>
+                  <Button variant="outline" onClick={handleRemove} disabled={busy} className="gap-2 font-semibold text-destructive hover:bg-destructive/10 border-destructive/30">
+                    <Trash2 className="size-4" />
+                    <span>Remover</span>
+                  </Button>
+                </>
               )}
-              <span className="ml-2">Enviar nova foto</span>
-            </Button>
-            {avatarUrl && (
-              <>
-                <Button variant="secondary" onClick={handleAdjustCurrent} disabled={busy}>
-                  <Crop className="size-4" />
-                  <span className="ml-2">Ajustar enquadramento</span>
-                </Button>
-                <Button variant="outline" onClick={handleRemove} disabled={busy}>
-                  <Trash2 className="size-4" />
-                  <span className="ml-2">Remover</span>
-                </Button>
-              </>
-            )}
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Você pode ajustar o enquadramento com zoom e rotação antes de salvar. A imagem final é otimizada para exibição em todos os dispositivos.
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Após selecionar a imagem, você pode arrastar e dar zoom para centralizar o rosto, no
-            estilo LinkedIn. A foto final é salva em 256×256 px.
-          </p>
         </CardContent>
       </Card>
 

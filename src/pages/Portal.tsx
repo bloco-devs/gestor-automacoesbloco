@@ -41,6 +41,7 @@ import { useAIWorkspace } from "@/hooks/useAIWorkspace";
 import { ChatContainer } from "@/components/ai-workspace/ChatContainer";
 import { ConversationInput } from "@/components/ai-workspace/ConversationInput";
 import { ConversationFooter } from "@/components/ai-workspace/ConversationFooter";
+import { HelpdeskChatLayout } from "@/components/ai-workspace/HelpdeskChatLayout";
 import { PreviewDaDemanda } from "@/modules/helpdesk";
 import { KnowledgeSuggestions } from "@/modules/knowledge";
 import { useDemands } from "@/modules/demands/hooks";
@@ -292,30 +293,22 @@ export default function Portal() {
   // ===== Etapa 2+: conversa / preview =====================================
   if (started) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6">
-        {!submitting && (
-          <header className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Estamos entendendo sua solicitação
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Responda com suas próprias palavras. Você poderá revisar tudo antes de enviar.
-            </p>
-          </header>
-        )}
-
-        {!showPreview && (
-          <>
-            <ChatContainer messages={messages} thinking={thinking} />
+      <div className="w-full h-[calc(100vh-4rem)] p-2 sm:p-4">
+        {!showPreview && !submitting && (
+          <HelpdeskChatLayout
+            user={user}
+            messages={messages}
+            thinking={thinking}
+            processing={processing}
+            sendMessage={sendMessage}
+            onReset={reset}
+            onBack={reset}
+            userTurns={userTurns}
+            maxUserTurns={maxUserTurns}
+            phase={phase}
+          >
             {processing && <ThinkingSteps />}
-            <ConversationInput
-              onSend={sendMessage}
-              disabled={thinking || processing}
-              loading={thinking}
-              placeholder="Escreva sua resposta…"
-            />
-            <ConversationFooter turnsUsed={userTurns} maxTurns={maxUserTurns} phase={phase} />
-          </>
+          </HelpdeskChatLayout>
         )}
 
         {showPreview && demandaDoPreview && !submitting && (

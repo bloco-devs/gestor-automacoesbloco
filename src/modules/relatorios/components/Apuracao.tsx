@@ -5,12 +5,16 @@ import {
   ClipboardList,
   CheckCircle2,
   Coins,
+  FileText,
   Info,
   Lock,
   LockOpen,
   Scale,
   TriangleAlert,
 } from "lucide-react";
+import { exportarPdfExecutivo } from "../services/pdf-exporter";
+import { formatarReferenciaComSigla, obterEstiloDoSistema } from "@/domain/demand";
+import { cn } from "@/lib/utils";
 import { EmptyPanel, PageHeader, PageShell, Section } from "@/design-system";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -221,6 +225,30 @@ function Apurar() {
                 </SelectContent>
               </Select>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/relatorios/executivo")}
+            >
+              <FileText className="mr-1.5 size-4" /> Relatório Executivo
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (r) {
+                  exportarPdfExecutivo({
+                    resultado: r,
+                    pessoas,
+                    atividades: linhas,
+                    pendencias: p,
+                  });
+                }
+              }}
+              disabled={!r}
+            >
+              <Coins className="mr-1.5 size-4" /> PDF Oficial
+            </Button>
             <Button variant="outline" size="sm" onClick={exportar} disabled={linhas.length === 0}>
               CSV
             </Button>
@@ -520,7 +548,16 @@ function Apurar() {
               <TableBody>
                 {linhas.map((l) => (
                   <TableRow key={l.demanda_id}>
-                    <TableCell className="font-mono text-[12px]">{l.ticket_code}</TableCell>
+                    <TableCell className="font-mono text-[12px]">
+                      {(() => {
+                        const est = obterEstiloDoSistema(l.sistema_slug, l.ticket_code || l.titulo);
+                        return (
+                          <span className={cn("inline-block font-mono font-bold border px-2 py-0.5 rounded-md tracking-tight", est.badgeClass)}>
+                            {formatarReferenciaComSigla(l.ticket_code, l.sistema_slug, l.demanda_id, l.titulo)}
+                          </span>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell className="max-w-[280px] truncate">{l.titulo}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="font-normal">

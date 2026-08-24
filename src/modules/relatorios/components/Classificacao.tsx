@@ -26,6 +26,8 @@ import {
 } from "../services/fechamento-data";
 import { buscarTiposDeClassificacao } from "../services/relatorios-data";
 import { formatarData } from "../services/relatorios-service";
+import { formatarReferenciaComSigla, obterEstiloDoSistema } from "@/domain/demand";
+import { cn } from "@/lib/utils";
 import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -97,7 +99,14 @@ function Cartao({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[12px] text-muted-foreground">{item.ticket_code}</span>
+            {(() => {
+              const est = obterEstiloDoSistema(item.sistema_slug, item.ticket_code || item.titulo);
+              return (
+                <span className={cn("inline-block font-mono font-bold border px-2 py-0.5 rounded-md tracking-tight", est.badgeClass)}>
+                  {formatarReferenciaComSigla(item.ticket_code, item.sistema_slug, item.demanda_id, item.titulo)}
+                </span>
+              );
+            })()}
             <span className="ds-h3">{item.titulo}</span>
           </div>
           <div className="ds-caption mt-1 flex flex-wrap gap-x-4 text-muted-foreground">

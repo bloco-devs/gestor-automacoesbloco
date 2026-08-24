@@ -1,7 +1,8 @@
 import { DragEvent, KeyboardEvent, memo, useEffect, useRef, useState } from "react";
-import { SendHorizontal, Loader2, Paperclip, X } from "lucide-react";
+import { SendHorizontal, Loader2, Paperclip, X, Plus, Image, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { ACEITA_NO_SELETOR } from "@/modules/demands/anexos";
 import type { AnexoDeRascunho } from "@/modules/demand-access";
@@ -62,8 +63,10 @@ export const ConversationInput = memo(function ConversationInput({
 }: Props) {
   const [value, setValue] = useState("");
   const [arrastando, setArrastando] = useState(false);
+  const [popoverAberto, setPopoverAberto] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
-  const seletor = useRef<HTMLInputElement>(null);
+  const seletorMedia = useRef<HTMLInputElement>(null);
+  const seletorDoc = useRef<HTMLInputElement>(null);
   const aceitaAnexo = !!onAnexar;
 
   useEffect(() => {
@@ -109,7 +112,7 @@ export const ConversationInput = memo(function ConversationInput({
         receber(e.dataTransfer.files);
       }}
       className={cn(
-        "rounded-2xl border border-border bg-card p-2 shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring/40",
+        "rounded-2xl border border-border/80 bg-card p-2.5 shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-primary focus-within:border-primary",
         arrastando && "border-primary/60 bg-primary/5 ring-2 ring-primary/30",
       )}
     >
@@ -148,27 +151,79 @@ export const ConversationInput = memo(function ConversationInput({
       <div className="flex items-end gap-2">
         {aceitaAnexo && (
           <>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              onClick={() => seletor.current?.click()}
-              disabled={disabled || enviandoAnexo}
-              aria-label="Anexar arquivo"
-              title="Anexar print, foto ou PDF — ou arraste, ou cole"
-              className="size-10 shrink-0 rounded-xl text-muted-foreground hover:text-foreground"
-            >
-              {enviandoAnexo ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Paperclip className="size-4" />
-              )}
-            </Button>
+            <Popover open={popoverAberto} onOpenChange={setPopoverAberto}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  disabled={disabled || enviandoAnexo}
+                  aria-label="Anexar arquivos"
+                  title="Anexar fotos, vídeos ou documentos (ou cole com Ctrl+V)"
+                  className="size-10 shrink-0 rounded-xl bg-muted/40 border border-border/60 text-muted-foreground hover:bg-primary/20 hover:text-primary hover:border-primary/40 transition-all font-bold"
+                >
+                  {enviandoAnexo ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Plus className={cn("size-5 transition-transform duration-200", popoverAberto && "rotate-45 text-primary")} />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent side="top" align="start" className="w-56 p-2 rounded-2xl border border-border/80 bg-card shadow-lg">
+                <div className="flex flex-col gap-1 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPopoverAberto(false);
+                      seletorMedia.current?.click();
+                    }}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted transition-colors text-foreground text-left"
+                  >
+                    <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                      <Image className="size-4" />
+                    </span>
+                    <div className="flex flex-col">
+                      <span>Fotos e Vídeos</span>
+                      <span className="text-[10px] font-normal text-muted-foreground">PNG, JPG, MP4 ou cola print</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPopoverAberto(false);
+                      seletorDoc.current?.click();
+                    }}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted transition-colors text-foreground text-left"
+                  >
+                    <span className="flex size-7 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                      <FileText className="size-4" />
+                    </span>
+                    <div className="flex flex-col">
+                      <span>Documento</span>
+                      <span className="text-[10px] font-normal text-muted-foreground">PDF, Word, Excel, TXT</span>
+                    </div>
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
             <input
-              ref={seletor}
+              ref={seletorMedia}
               type="file"
               multiple
-              accept={ACEITA_NO_SELETOR}
+              accept="image/*,video/*"
+              className="sr-only"
+              onChange={(e) => {
+                receber(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <input
+              ref={seletorDoc}
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
               className="sr-only"
               onChange={(e) => {
                 receber(e.target.files);
@@ -184,13 +239,21 @@ export const ConversationInput = memo(function ConversationInput({
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={onKeyDown}
           onPaste={(e) => {
-            // Só intercepta quando há arquivo: colar texto continua sendo colar
-            // texto, sem `preventDefault` e sem surpresa.
             if (!aceitaAnexo) return;
-            const arquivos = [...e.clipboardData.files];
-            if (arquivos.length > 0) {
+            const files: File[] = [];
+            if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+              files.push(...Array.from(e.clipboardData.files));
+            } else if (e.clipboardData.items) {
+              for (const item of Array.from(e.clipboardData.items)) {
+                if (item.type.startsWith("image/")) {
+                  const file = item.getAsFile();
+                  if (file) files.push(file);
+                }
+              }
+            }
+            if (files.length > 0) {
               e.preventDefault();
-              receber(arquivos);
+              receber(files);
             }
           }}
           disabled={disabled}
@@ -202,13 +265,19 @@ export const ConversationInput = memo(function ConversationInput({
 
         <Button
           type="button"
-          size="icon"
           onClick={submit}
           disabled={disabled || !value.trim()}
           aria-label="Enviar mensagem"
-          className="size-10 shrink-0 rounded-xl"
+          className="h-10 px-4 shrink-0 rounded-xl gap-2 font-semibold shadow-xs"
         >
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <SendHorizontal className="size-4" />}
+          {loading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <>
+              <SendHorizontal className="size-4" />
+              <span className="hidden sm:inline">Enviar</span>
+            </>
+          )}
         </Button>
       </div>
     </div>

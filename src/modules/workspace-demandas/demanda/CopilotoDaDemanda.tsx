@@ -160,7 +160,7 @@ function CopilotoDaDemandaImpl({
   return (
     <aside
       aria-label="Blink — análise desta demanda"
-      className={cn("flex min-h-0 flex-col overflow-y-auto border-l border-border/60", className)}
+      className={cn("flex h-full min-h-0 flex-col overflow-y-auto rolagem-discreta border-l border-border/60", className)}
     >
       {/* O cabeçalho fica colado no topo enquanto a análise rola: sem ele à
           vista, os cartões soltos deixam de ter dono e parecem widgets. */}

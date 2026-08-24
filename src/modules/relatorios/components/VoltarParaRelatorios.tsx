@@ -22,9 +22,9 @@ function VoltarImpl({ para = "/relatorios", rotulo = "Relatórios" }: {
     <button
       type="button"
       onClick={() => navigate(para)}
-      className="inline-flex items-center gap-1 rounded text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+      className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 dark:border-slate-700 bg-card px-3 py-1.5 text-xs font-bold text-foreground shadow-xs transition-all hover:border-primary hover:bg-primary hover:text-slate-950"
     >
-      <ArrowLeft className="size-3.5" aria-hidden />
+      <ArrowLeft className="size-4 stroke-[2.5]" aria-hidden />
       {rotulo}
     </button>
   );

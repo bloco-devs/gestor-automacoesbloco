@@ -1,10 +1,41 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Home, KanbanSquare, Wrench, Terminal, Cpu, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { findActive, type NavGroup, type NavItem } from "./navGroups";
+
+function renderNavIcon(item: NavItem, isActive: boolean) {
+  const to = item.to || "";
+  const label = item.label.toLowerCase();
+
+  let IconComponent = item.icon;
+
+  if (to === "/dashboard" || to === "/workspace" || to === "/portal/inicio" || label.includes("hoje") || label.includes("início") || label.includes("dashboard")) {
+    IconComponent = Home;
+  } 
+  else if (to === "/workspace/demandas" || to.includes("demandas") || label.includes("demanda") || label.includes("projeto") || label.includes("quadro")) {
+    IconComponent = KanbanSquare;
+  } 
+  else if (to === "/configuracoes" || to.includes("workflow") || label.includes("builder") || label.includes("automaç") || label.includes("ferramenta") || label.includes("configuraç")) {
+    IconComponent = Wrench;
+  } 
+  else if (to.includes("developer") || to.includes("terminal") || to.includes("studio") || label.includes("devtools") || label.includes("log") || label.includes("código") || label.includes("terminal")) {
+    IconComponent = Terminal;
+  }
+
+  return (
+    <div className={cn(
+      "size-7 shrink-0 rounded-lg flex items-center justify-center transition-colors duration-150",
+      isActive
+        ? "bg-primary/25 text-primary"
+        : "bg-muted/40 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
+    )}>
+      <IconComponent className="size-4" strokeWidth={2} />
+    </div>
+  );
+}
 
 const GROUP_STORAGE_PREFIX = "ds2:sidebar:";
 
@@ -240,24 +271,12 @@ function SidebarNavItem({
         title={mini ? undefined : item.label}
         className={({ isActive }) =>
           cn(
-            "group relative flex min-w-0 items-center rounded-lg text-[13px] leading-5",
-            // Cor E transform na transição: o item afunda 1px ao ser pressionado,
-            // que é o retorno tátil que separa um botão de um link decorado.
-            "transition-[background-color,color] duration-fast ease-standard active:translate-y-px",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-            // Recolhida, o alvo é um quadrado centrado pelo próprio eixo. Antes
-            // ele herdava o alinhamento do container e ficava fora do centro por
-            // alguns pixels — e um menu inteiro desalinhado lê-se como descuido
-            // antes de qualquer outra coisa.
-            mini ? "mx-auto size-9 justify-center" : "h-8 gap-2.5 px-2.5",
+            "group flex min-w-0 items-center rounded-xl text-[13px] leading-5 transition-colors duration-150 outline-none",
+            mini ? "mx-auto size-9 justify-center" : "h-9 gap-2.5 px-2",
             isActive
-              ? // O ativo ganha superfície cheia e texto em peso médio. Antes o
-                // contraste vinha só de um fundo a 100% de um tom quase igual ao
-                // da barra — bastava o monitor estar mal calibrado para sumir.
-                "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+              ? "bg-primary/15 text-primary font-bold border border-primary/30 shadow-xs"
               : cn(
-                  "hover:bg-sidebar-accent/60",
-                  dim ? "text-sidebar-foreground/55" : "text-sidebar-foreground/80",
+                  "hover:bg-sidebar-accent/60 text-sidebar-foreground/80 hover:text-sidebar-foreground border border-transparent",
                 ),
           )
         }
@@ -265,36 +284,7 @@ function SidebarNavItem({
       >
         {({ isActive }: { isActive: boolean }) => (
           <>
-            {/* A barra fica FORA da caixa do item (-left-2), encostada na borda
-                da barra lateral. Dentro dela, competia com o próprio fundo do
-                item ativo e virava um detalhe redundante; encostada na borda,
-                é o sinal que a visão periférica capta sem foco direto. */}
-            {isActive && !mini && (
-              <span
-                aria-hidden
-                className="absolute -left-2 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-primary"
-              />
-            )}
-            {/* DEZOITO, NAO DEZESSETE — e nao e implicancia
-                Os icones do lucide sao desenhados numa grade de 24px com traco
-                de 2px. Em 17px a escala e 0,708: cada traco vertical cai em
-                meio-pixel e o navegador o espalha por duas colunas de pixel
-                com meia opacidade cada. O resultado nao e "menor", e BORRADO —
-                e traco borrado o olho le como torto, nao como suave. Era esse
-                o "mal centralizado".
-                18px da escala 0,75, que devolve os tracos para o pixel inteiro.
-
-                E o traco de 2px do padrao pesa demais nesse tamanho: fecha os
-                vaos internos e transforma cada icone numa mancha. 1,75 e o que
-                Linear e Raycast usam, e e o que separa "icone de biblioteca"
-                de "icone desenhado para este produto". */}
-            <Icon
-              strokeWidth={1.75}
-              className={cn(
-                "size-[18px] shrink-0 transition-opacity duration-fast",
-                isActive ? "opacity-100" : "opacity-60 group-hover:opacity-90",
-              )}
-            />
+            {renderNavIcon(item, isActive)}
             {!mini && <span className="truncate flex-1">{item.label}</span>}
           </>
         )}

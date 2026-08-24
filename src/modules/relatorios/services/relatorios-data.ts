@@ -50,6 +50,7 @@ export interface LinhaDeImplementacao {
   classificada_em: string | null;
   minutos_lancados: number;
   ciclo_rotulo: string | null;
+  autoclassificada?: boolean;
 }
 
 export interface FiltrosDaConsulta {
