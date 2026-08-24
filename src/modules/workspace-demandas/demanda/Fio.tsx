@@ -474,7 +474,7 @@ function FioImpl({
          * aqui — ele precisa ser visível o tempo todo, não a partir de um
          * quadradinho de 14px.
          */
-        <div className="shrink-0 border-t border-border/80 bg-slate-900/60 p-4 shadow-lg">
+        <div className="shrink-0 border-t border-border/70 bg-background/80 p-3 shadow-xs">
           <div
             className={cn(
               "rounded-2xl border bg-card shadow-sm transition-all duration-200",

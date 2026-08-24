@@ -113,14 +113,14 @@ export function HelpdeskChatLayout({
   return (
     <div className="flex h-[calc(100vh-4.5rem)] w-full max-w-[1400px] mx-auto flex-col overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xl">
       {/* ─── BARRA SUPERIOR DE NAVEGAÇÃO HELPDESK (Estilo Paldesk / Chat2Desk Header) ─── */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/80 bg-slate-900 px-4 text-white">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/80 bg-card px-4 text-foreground">
         <div className="flex items-center gap-3">
           {onBack && (
             <Button
               variant="ghost"
               size="icon"
               onClick={onBack}
-              className="size-8 text-slate-300 hover:bg-slate-800 hover:text-white"
+              className="size-8 text-muted-foreground hover:bg-muted hover:text-foreground"
               aria-label="Voltar"
             >
               <ArrowLeft className="size-4" />
@@ -131,10 +131,10 @@ export function HelpdeskChatLayout({
               <Bot className="size-4" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white leading-none">
+              <h1 className="text-sm font-bold text-foreground leading-none">
                 Central de Chat & Helpdesk
               </h1>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-muted-foreground">
                 Grupo Bloco · Atendimento Solicitantes
               </p>
             </div>
