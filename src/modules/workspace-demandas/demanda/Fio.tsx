@@ -215,49 +215,38 @@ function Fala({
   return (
     <li
       className={cn(
-        "group/fala flex gap-3 py-3",
-        evento.interna && "rounded-md bg-warning/5 px-2 -mx-2",
+        "group/fala flex gap-3 py-2",
+        evento.interna && "my-1",
       )}
     >
-      {sistema ? (
-        /* O aviso automático vem do Blink: mesmo rosto da IA no fio e da
-           lateral direita. Quem diz "isto é automático" é o selo ao lado do
-           nome, não um ícone genérico de robô. */
+      {sistema || ia ? (
         <span
-          className="mt-0.5 size-7 shrink-0 overflow-hidden rounded-full bg-muted/50"
+          className="mt-1 size-8 shrink-0 overflow-hidden rounded-full border border-border/80 bg-background shadow-xs"
           aria-label="Blink"
         >
           <Blink className="size-full" />
         </span>
-
-      ) : ia ? (
-        /* Quem fala no fio tem rosto: as pessoas têm avatar, e o Blink
-           tinha um ícone de brilho. Um símbolo abstrato ao lado de fotos faz
-           a IA parecer um carimbo do sistema, não um participante. */
-        <span className="mt-0.5 size-7 shrink-0 overflow-hidden rounded-full bg-muted/50" aria-label="Blink">
-          <Blink className="size-full" />
-        </span>
       ) : (
-        <Avatar className="mt-0.5 size-7 shrink-0">
+        <Avatar className="mt-1 size-8 shrink-0 border border-border/80 shadow-xs">
           {evento.autor?.avatarUrl && <AvatarImage src={evento.autor.avatarUrl} alt="" />}
-          <AvatarFallback className="bg-muted text-[10px]">
+          <AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">
             {iniciais(evento.autor?.nome ?? "?")}
           </AvatarFallback>
         </Avatar>
       )}
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2">
-          <span className="text-[13px] font-medium">
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[13px] font-bold text-foreground">
             {sistema ? "Blink" : (evento.autor?.nome ?? "Alguém")}
           </span>
           {sistema && (
-            <Badge variant="neutral" className="text-[10px] font-normal">
+            <Badge variant="outline" className="text-[10px] font-medium bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 py-0 px-1.5">
               automático
             </Badge>
           )}
           {evento.interna && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-warning">
+            <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/30">
               <Lock className="size-3" aria-hidden />
               nota interna
             </span>
@@ -298,7 +287,7 @@ function Fala({
                 )}
               </span>
             )}
-            <time className="text-[12px] tabular-nums text-muted-foreground" dateTime={evento.em}>
+            <time className="text-[11px] tabular-nums text-muted-foreground font-medium" dateTime={evento.em}>
               {quando(evento.em)}
               {evento.editadoEm ? " · editado" : ""}
             </time>
@@ -336,7 +325,18 @@ function Fala({
             </div>
           </div>
         ) : (
-          <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-relaxed">{evento.texto}</p>
+          <div
+            className={cn(
+              "rounded-2xl px-4 py-3 text-[13px] leading-relaxed whitespace-pre-wrap break-words shadow-xs border transition-colors",
+              evento.interna
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-100 rounded-tl-xs"
+                : sistema
+                  ? "bg-card border-border/80 text-foreground rounded-tl-xs shadow-xs"
+                  : "bg-muted/40 border-border/60 text-foreground rounded-tl-xs",
+            )}
+          >
+            {evento.texto}
+          </div>
         )}
       </div>
 
