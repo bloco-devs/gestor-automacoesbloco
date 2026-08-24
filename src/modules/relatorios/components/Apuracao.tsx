@@ -5,12 +5,14 @@ import {
   ClipboardList,
   CheckCircle2,
   Coins,
+  FileText,
   Info,
   Lock,
   LockOpen,
   Scale,
   TriangleAlert,
 } from "lucide-react";
+import { exportarPdfExecutivo } from "../services/pdf-exporter";
 import { EmptyPanel, PageHeader, PageShell, Section } from "@/design-system";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -220,6 +222,30 @@ function Apurar() {
                 </SelectContent>
               </Select>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/relatorios/executivo")}
+            >
+              <FileText className="mr-1.5 size-4" /> Relatório Executivo
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (r) {
+                  exportarPdfExecutivo({
+                    resultado: r,
+                    pessoas,
+                    atividades: linhas,
+                    pendencias: p,
+                  });
+                }
+              }}
+              disabled={!r}
+            >
+              <Coins className="mr-1.5 size-4" /> PDF Oficial
+            </Button>
             <Button variant="outline" size="sm" onClick={exportar} disabled={linhas.length === 0}>
               CSV
             </Button>

@@ -82,3 +82,8 @@ export {
 export type { PendenciasDoCiclo, ResultadoDoCiclo } from "./services/apuracao-data";
 export { default as MedidorDaMeta } from "./components/MedidorDaMeta";
 export { VoltarParaRelatorios } from "./components/VoltarParaRelatorios";
+
+// Etapa 6 — Relatório Executivo e PDF
+export { RelatorioExecutivo } from "./components/RelatorioExecutivo";
+export { exportarPdfExecutivo, exportarPdfTecnicoPorSistema } from "./services/pdf-exporter";
+

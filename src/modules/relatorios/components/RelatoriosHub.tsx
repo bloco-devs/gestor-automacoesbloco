@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BarChart3, CalendarClock, ClipboardList, Coins, FileSearch, Lock, Scale } from "lucide-react";
+import { ArrowRight, BarChart3, CalendarClock, ClipboardList, Coins, FileSearch, FileText, Lock, Scale } from "lucide-react";
 import { EmptyPanel, PageHeader, PageShell, Section } from "@/design-system";
 import { Badge } from "@/components/ui/badge";
 import { buscarCiclos, buscarMinhasCapacidades } from "../services/relatorios-data";
@@ -47,6 +47,16 @@ const CARTOES: Cartao[] = [
     href: "/relatorios/classificacao",
     icone: Scale,
     capacidade: "classificacao.definir",
+    pronto: true,
+  },
+  {
+    id: "executivo",
+    titulo: "Relatório Executivo",
+    descricao:
+      "Relatório oficial de apuração para o RH e Diretoria com resumo, equipe, atividades, pendências e auditoria.",
+    href: "/relatorios/executivo",
+    icone: FileText,
+    capacidade: "relatorios.ver",
     pronto: true,
   },
   {
