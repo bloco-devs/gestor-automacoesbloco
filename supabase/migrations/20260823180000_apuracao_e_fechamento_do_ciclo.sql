@@ -165,8 +165,13 @@ CREATE TABLE IF NOT EXISTS public.relatorio_ciclo_resultado (
 ALTER TABLE public.relatorio_ciclo_item ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.relatorio_ciclo_resultado ENABLE ROW LEVEL SECURITY;
 
--- SÓ SELECT. A imutabilidade não depende de RLS: sem GRANT de UPDATE ou
--- DELETE, nem policy poderia liberar. Escrita exclusivamente pelas RPCs.
+-- SÓ SELECT.
+--
+-- ERRATA: a versão original deste comentário dizia que a imutabilidade não
+-- dependia de RLS, "porque sem GRANT nem policy liberaria". Está errado —
+-- GRANT é aditivo e não revoga o que os privilégios padrão do projeto já
+-- concederam. Quem realmente barrava era a RLS, pela AUSÊNCIA de policy de
+-- UPDATE e DELETE. A revogação explícita veio em 20260824140000.
 GRANT SELECT ON public.relatorio_ciclo_item      TO authenticated;
 GRANT SELECT ON public.relatorio_ciclo_resultado TO authenticated;
 GRANT ALL    ON public.relatorio_ciclo_item      TO service_role;

@@ -262,6 +262,10 @@ ALTER TABLE public.relatorio_classificacao ENABLE ROW LEVEL SECURITY;
 -- Só SELECT para `authenticated`. Escrita exclusivamente pela RPC abaixo, que
 -- é o único lugar onde as três regras (capacidade, não-autoclassificação,
 -- histórico) são aplicadas juntas e na mesma transação.
+--
+-- ERRATA: conceder só SELECT não retira UPDATE nem DELETE — GRANT é aditivo,
+-- e os privilégios padrão deste projeto já os davam. Quem barrava era a
+-- ausência de policy. Revogação explícita em 20260824140000.
 GRANT SELECT ON public.relatorio_classificacao TO authenticated;
 GRANT ALL ON public.relatorio_classificacao TO service_role;
 

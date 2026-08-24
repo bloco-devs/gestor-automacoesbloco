@@ -82,7 +82,11 @@ CREATE POLICY demanda_conversa_insert ON public.demanda_conversa
     )
   );
 
--- SEM policy de UPDATE nem DELETE, e sem GRANT deles.
+-- SEM policy de UPDATE nem DELETE.
+--
+-- ERRATA: a primeira versão dizia "e sem GRANT deles", o que não era
+-- verdade — GRANT é aditivo e os privilégios padrão do projeto já concediam
+-- escrita. A RLS é que segurava. Revogado de fato em 20260824140000.
 --
 -- É a razão de a tabela existir: um registro que pode ser editado depois não
 -- serve para resolver divergência sobre o que foi dito. A conversa é
