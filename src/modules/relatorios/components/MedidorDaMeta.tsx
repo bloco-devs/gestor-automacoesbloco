@@ -100,12 +100,53 @@ function MedidorImpl({
         : "muted";
 
   const CORES = {
-    success: { barra: "bg-success", texto: "text-success" },
-    info: { barra: "bg-info", texto: "text-info" },
-    warning: { barra: "bg-warning", texto: "text-warning" },
-    muted: { barra: "bg-muted-foreground/40", texto: "text-muted-foreground" },
+    success: { barra: "bg-success", texto: "text-success", pilula: "bg-success text-success-foreground" },
+    info:    { barra: "bg-info",    texto: "text-info",    pilula: "bg-info text-info-foreground" },
+    warning: { barra: "bg-warning", texto: "text-warning", pilula: "bg-warning text-warning-foreground" },
+    muted:   { barra: "bg-muted-foreground", texto: "text-muted-foreground", pilula: "bg-muted-foreground text-background" },
   } as const;
   const cor = CORES[tom];
+
+  /**
+   * A régua virada em segmentos.
+   *
+   * Cada faixa cadastrada é uma fatia com largura proporcional. A faixa de
+   * "exatamente 100%" tem largura zero por definição — recebe um mínimo
+   * visível, senão a regra mais importante da escala simplesmente não
+   * apareceria.
+   *
+   * A faixa alcançada fica sólida; as ainda não alcançadas, apagadas. Assim
+   * a barra informa duas coisas ao mesmo tempo: qual é a regra, e até onde a
+   * equipe chegou.
+   */
+  const segmentos = useMemo(() => {
+    const ordenadas = [...faixas].sort((a, b) => a.percentualMin - b.percentualMin);
+    return ordenadas.map((f, i) => {
+      const fim = f.percentualMax ?? teto;
+      const bruta = posicao(fim) - posicao(f.percentualMin);
+      const largura = Math.max(bruta, f.percentualMax === f.percentualMin ? 1.5 : 0.5);
+      const alcancado = pct >= f.percentualMin;
+      const semValor = f.valorReais === null;
+
+      const classe = semValor
+        ? "shrink-0"
+        : f.valorReais === 0
+          ? alcancado ? "bg-muted-foreground/60" : "bg-muted"
+          : i === ordenadas.length - 1
+            ? alcancado ? "bg-success" : "bg-success/20"
+            : alcancado ? "bg-info" : "bg-info/20";
+
+      return {
+        chave: f.id,
+        largura,
+        classe,
+        hachurado: semValor,
+        titulo: semValor
+          ? `${f.percentualMin}% a ${f.percentualMax}% — valor não definido`
+          : `${f.rotulo ?? ""} — ${formatarReais(f.valorReais)}`,
+      };
+    });
+  }, [faixas, pct, teto]);
 
   const faltamParaMeta = Math.max(0, meta - pontos);
 
@@ -140,41 +181,58 @@ function MedidorImpl({
         </div>
       </div>
 
-      {/* A régua. */}
+      {/* ======================================================
+          A RÉGUA, COMO ESCALA SEGMENTADA
+
+          A primeira versão era uma barra de progresso: trilha cinza mais um
+          preenchimento até a posição atual, e as marcas dos degraus como
+          linhas de 1px usando `bg-border-strong` — classe que NÃO EXISTE neste
+          projeto. As linhas ficavam invisíveis, e sobrava cinza com um
+          retalho hachurado flutuando no meio, que parece defeito.
+
+          Além do erro de classe, o desenho estava errado: barra de progresso
+          com zero por cento não mostra nada, e a regra de remuneração
+          desaparecia junto. Agora cada faixa é um SEGMENTO sempre visível —
+          a régua inteira se lê mesmo com 0 pontos — e a posição da equipe é
+          um ponteiro por cima.
+          ====================================================== */}
       <div className="mt-6">
-        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
-          {/* A lacuna, hachurada. Aparece só se houver faixa sem valor. */}
-          {faixas
-            .filter((f) => f.valorReais === null && f.percentualMax !== null)
-            .map((f) => (
-              <div
-                key={f.id}
-                className="absolute inset-y-0 opacity-60"
-                style={{
-                  left: `${posicao(f.percentualMin)}%`,
-                  width: `${posicao(f.percentualMax!) - posicao(f.percentualMin)}%`,
-                  backgroundImage:
-                    "repeating-linear-gradient(45deg, hsl(var(--warning)/0.35) 0 4px, transparent 4px 8px)",
-                }}
-                title="Faixa sem valor definido"
-              />
-            ))}
-
-          <div
-            className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ${cor.barra}`}
-            style={{ width: `${posicao(pct)}%` }}
-          />
-
-          {/* Os degraus, sobre a barra. */}
-          {marcos.map((m) => (
+        <div className="flex h-3 w-full gap-px overflow-hidden rounded-full">
+          {segmentos.map((seg) => (
             <div
-              key={m.pct}
-              className="absolute inset-y-0 w-px bg-border-strong"
-              style={{ left: `${posicao(m.pct)}%` }}
-              aria-hidden
+              key={seg.chave}
+              className={seg.classe}
+              style={{
+                width: `${seg.largura}%`,
+                ...(seg.hachurado
+                  ? {
+                      backgroundImage:
+                        "repeating-linear-gradient(45deg, hsl(var(--warning)/0.5) 0 4px, hsl(var(--warning)/0.12) 4px 8px)",
+                    }
+                  : {}),
+              }}
+              title={seg.titulo}
             />
           ))}
         </div>
+
+        {/* O ponteiro. Some quando não há ponto nenhum — apontar para o zero
+            absoluto só polui a borda esquerda. */}
+        {pct > 0 && (
+          <div className="relative h-0">
+            <div
+              className="absolute -top-[18px] flex -translate-x-1/2 flex-col items-center"
+              style={{ left: `${posicao(pct)}%` }}
+            >
+              <span
+                className={`rounded px-1.5 py-0.5 text-[10px] font-medium tabular-nums ${cor.pilula}`}
+              >
+                {formatarPercentual(percentual)}
+              </span>
+              <span className={`h-2 w-px ${cor.barra}`} />
+            </div>
+          </div>
+        )}
 
         {/* As legendas dos degraus, com o que cada um paga. */}
         <div className="relative mt-2 h-9">

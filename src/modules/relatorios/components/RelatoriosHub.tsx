@@ -117,7 +117,7 @@ function RelatoriosHubImpl() {
     <PageShell>
       <PageHeader
         title="Relatórios"
-        subtitle="Histórico técnico das implementações e apuração da remuneração variável."
+        subtitle="Histórico técnico e apuração da remuneração"
         icon={<FileSearch className="size-6" aria-hidden />}
       />
 

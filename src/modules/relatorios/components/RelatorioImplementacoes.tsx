@@ -40,6 +40,7 @@ import {
 import { toCsv, downloadCsv } from "@/modules/analytics/utils/csv";
 import { useRelatorioImplementacoes } from "../hooks/useRelatorioImplementacoes";
 import { formatarData } from "../services/relatorios-service";
+import { nomeCurto } from "../nomes";
 import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 import type { AtalhoDePeriodo } from "../types";
 
@@ -102,7 +103,7 @@ function RelatorioImplementacoesImpl() {
       <PageHeader
         breadcrumb={<VoltarParaRelatorios />}
         title="Relatório de Implementações"
-        subtitle="O que foi entregue, por sistema e por pessoa. Períodos cronológicos — o corte do dia 19 vale só para a apuração da folha."
+        subtitle="O que foi entregue, por sistema e por pessoa"
         icon={<FileSearch className="size-6" aria-hidden />}
         actions={
           <div className="flex gap-2">
@@ -364,9 +365,11 @@ function RelatorioImplementacoesImpl() {
                           {l.sistema_slug ?? "não identificado"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-[150px] truncate text-[13px]">
-                        {l.responsavel_nome ?? (
-                          <span className="text-muted-foreground">Sem responsável</span>
+                      <TableCell className="text-[13px]" title={l.responsavel_nome ?? undefined}>
+                        {l.responsavel_nome ? (
+                          nomeCurto(l.responsavel_nome)
+                        ) : (
+                          <span className="text-muted-foreground">sem responsável</span>
                         )}
                       </TableCell>
                       <TableCell className="tabular-nums text-[13px]">

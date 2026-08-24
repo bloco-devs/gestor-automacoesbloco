@@ -50,7 +50,7 @@ function PendenciasDeFechamentoImpl() {
       <PageHeader
         breadcrumb={<VoltarParaRelatorios />}
         title="Pendências de fechamento técnico"
-        subtitle="Entregas concluídas que ainda não têm o relato registrado. A demanda continua concluída — o que falta é o registro para ela poder ser classificada."
+        subtitle="Entregas concluídas que ainda não têm o relato técnico"
         icon={<ClipboardList className="size-6" aria-hidden />}
       />
 

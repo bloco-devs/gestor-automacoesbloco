@@ -358,7 +358,7 @@ function ClassificacaoImpl() {
       <PageHeader
         breadcrumb={<VoltarParaRelatorios />}
         title="Classificação"
-        subtitle="Fácil, Médio ou Difícil, decidido por gente. O tempo entra como contexto — nunca como fórmula."
+        subtitle="Fácil, Médio ou Difícil — decidido por gente"
         icon={<Scale className="size-6" aria-hidden />}
       />
 

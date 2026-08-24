@@ -51,6 +51,7 @@ import {
 import MedidorDaMeta from "./MedidorDaMeta";
 import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 import { formatarData } from "../services/relatorios-service";
+import { nomeCurto } from "../nomes";
 import { formatarDuracao } from "../services/fechamento-data";
 
 const TODOS = "__todos__";
@@ -206,7 +207,7 @@ function Apurar() {
       <PageHeader
         breadcrumb={<VoltarParaRelatorios />}
         title="Apuração da remuneração variável"
-        subtitle="Ciclo do dia 20 ao dia 19. Só entram entregas com data confirmada, fechamento registrado e classificação definida."
+        subtitle="Ciclo do dia 20 ao dia 19"
         icon={<Coins className="size-6" aria-hidden />}
         actions={
           <div className="flex flex-wrap gap-2">
@@ -406,7 +407,9 @@ function Apurar() {
               <TableBody>
                 {pessoas.map((x) => (
                   <TableRow key={x.pessoa_id}>
-                    <TableCell>{x.pessoa_nome ?? x.pessoa_email ?? "—"}</TableCell>
+                    <TableCell title={x.pessoa_nome ?? undefined}>
+                      {nomeCurto(x.pessoa_nome ?? x.pessoa_email)}
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">{x.entregas}</TableCell>
                     <TableCell className="text-right tabular-nums">{x.facil}</TableCell>
                     <TableCell className="text-right tabular-nums">{x.media}</TableCell>
@@ -524,8 +527,8 @@ function Apurar() {
                         {l.sistema_slug ?? "não identificado"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="max-w-[140px] truncate text-[13px]">
-                      {l.responsavel_nome ?? "—"}
+                    <TableCell className="text-[13px]" title={l.responsavel_nome ?? undefined}>
+                      {nomeCurto(l.responsavel_nome)}
                     </TableCell>
                     <TableCell className="tabular-nums text-[13px]">
                       {formatarData(l.concluida_em)}
