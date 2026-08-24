@@ -17,13 +17,47 @@ export interface DadosRelatorioExecutivo {
   } | null;
   geradoPorEmail?: string;
   observacoes?: string | null;
+  /**
+   * Dados de auditoria do ciclo. Opcional porque exigem capacidade de
+   * remuneração — quem tem só `relatorios.ver` gera o PDF sem eles, e o
+   * documento diz que não os obteve em vez de fingir que não existem.
+   */
+  ciclo?: {
+    referencia?: string | null;
+    fechado_em?: string | null;
+    fechado_por_email?: string | null;
+  } | null;
+}
+
+/**
+ * O último dia que ENTRA no ciclo, para impressão.
+ *
+ * `resultado.fim` é o limite EXCLUSIVO: para o ciclo que termina em 19/09, o
+ * valor é 20/09 00:00. Imprimir esse valor cru dizia "Período: 20/08 a 20/09"
+ * — um dia a mais, num documento que vai para a Diretoria, e que sugere que
+ * uma entrega do dia 20 teria contado. Não teria.
+ */
+function fimParaImpressao(fimIso: string | null): string {
+  if (!fimIso) return "—";
+  return formatarData(new Date(new Date(fimIso).getTime() - 1000).toISOString());
 }
 
 /**
  * Exporta o Relatório Executivo de Apuração em formato PDF oficial paginado.
  */
 export function exportarPdfExecutivo(dados: DadosRelatorioExecutivo) {
-  const { resultado, pessoas, atividades, pendencias, geradoPorEmail, observacoes } = dados;
+  const { resultado, pessoas, atividades, pendencias, geradoPorEmail, observacoes, ciclo } = dados;
+
+  /**
+   * A meta vem do ciclo. Sem valor, o PDF NÃO chuta 800.
+   *
+   * Havia `?? 800` em três lugares. Parece inofensivo — a meta é 800 hoje —
+   * mas 800 é configuração de um ciclo, alterável pelo RH na tela de Gestão de
+   * Ciclos. Um PDF que assume 800 quando o dado falta imprime um percentual
+   * calculado sobre uma meta que talvez não seja a daquele ciclo, e não há
+   * como quem lê perceber.
+   */
+  const meta = resultado.meta_pontos;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   const azulEscuro: [number, number, number] = [15, 23, 42]; // #0f172a
@@ -56,7 +90,8 @@ export function exportarPdfExecutivo(dados: DadosRelatorioExecutivo) {
 
   // Card do Ciclo
   doc.setFillColor(...cinzaClaro);
-  doc.roundedRect(14, y, 182, 22, 2, 2, "F");
+  // Alto o suficiente para a linha da referência da folha caber dentro.
+  doc.roundedRect(14, y, 182, 27, 2, 2, "F");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
@@ -67,15 +102,26 @@ export function exportarPdfExecutivo(dados: DadosRelatorioExecutivo) {
   doc.setFontSize(9);
   doc.setTextColor(...cinzaEscuro);
   const inicioFmt = resultado.inicio ? formatarData(resultado.inicio) : "—";
-  const fimFmt = resultado.fim ? formatarData(resultado.fim) : "—";
-  doc.text(`Período: ${inicioFmt} a ${fimFmt}`, 18, y + 15);
+  const fimFmt = fimParaImpressao(resultado.fim);
+  doc.text(`Produção considerada: ${inicioFmt} a ${fimFmt}`, 18, y + 15);
+
+  // A folha de destino, separada do período de produção. A folha de setembro
+  // remunera trabalho de agosto e setembro; juntar as duas informações numa
+  // linha só foi a origem da confusão sobre "a regra da empresa ser 20 a 19".
+  if (ciclo?.referencia) {
+    doc.text(
+      `Referência da folha: ${ciclo.referencia.slice(5, 7)}/${ciclo.referencia.slice(0, 4)}`,
+      18,
+      y + 21,
+    );
+  }
 
   const statusTexto = (resultado.situacao || "EM_APURACAO").toUpperCase();
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...azulPrimario);
   doc.text(`Status: ${statusTexto}`, 140, y + 11);
 
-  y += 28;
+  y += 33;
 
   // Seção: Resumo Executivo da Meta
   doc.setFont("helvetica", "bold");
@@ -86,13 +132,16 @@ export function exportarPdfExecutivo(dados: DadosRelatorioExecutivo) {
 
   const colW = 43;
   const kpis = [
-    { label: "Meta da Equipe", val: `${resultado.meta_pontos ?? 800} pts` },
+    { label: "Meta da Equipe", val: meta ? `${meta} pts` : "não informada" },
     { label: "Pontos Realizados", val: `${resultado.pontos ?? 0} pts` },
     { label: "% Atingimento", val: formatarPercentual(resultado.percentual) },
     {
-      label: "Valor Total (R$)",
+      label: "Valor da Equipe (R$)",
+      // Dizia "Faixa Indefinida". O texto oficial acordado é este, e a
+      // diferença não é estética: "indefinida" pode ser lido como falha do
+      // sistema, quando o que existe é uma faixa que o RH ainda não definiu.
       val: resultado.faixa_indefinida
-        ? "Faixa Indefinida"
+        ? "não definido"
         : resultado.valor_reais !== null
         ? formatarReais(resultado.valor_reais)
         : "—",
@@ -125,39 +174,83 @@ export function exportarPdfExecutivo(dados: DadosRelatorioExecutivo) {
   doc.text("2. DESEMPENHO DA EQUIPE", 14, y);
   y += 4;
 
+  /**
+   * SEM COLUNA DE VALOR POR PESSOA — e esta é a correção mais importante
+   * deste arquivo.
+   *
+   * A versão anterior imprimia, para cada desenvolvedor:
+   *
+   *   formatarReais(Math.round((p.pontos / resultado.pontos) * resultado.valor_reais))
+   *
+   * ou seja, rateava o dinheiro da equipe na proporção dos pontos. Se a equipe
+   * batesse R$ 1.200 e alguém tivesse 60% dos pontos, o documento oficial
+   * afirmava que essa pessoa receberia R$ 720.
+   *
+   * Essa regra NÃO EXISTE. As faixas cadastradas (R$ 800 / 1.000 / 1.200)
+   * são o resultado da EQUIPE. Se esse valor é de cada um, se é dividido, ou
+   * se segue outro modelo, é decisão do RH — e até hoje ela não foi tomada.
+   * Um PDF assinado pelo sistema, entregue à Diretoria, com um número
+   * individual derivado de uma regra inventada, é o pior lugar possível para
+   * um palpite: ele vira base de conversa sobre o salário de alguém.
+   *
+   * No lugar entra o que é medido de verdade: quanto cada pessoa produziu, e
+   * que fração do total da equipe isso representa. Quem for distribuir decide
+   * com informação real, em vez de herdar uma conta que ninguém autorizou.
+   */
   const linhasEquipe = pessoas.map((p) => [
     p.pessoa_nome || p.pessoa_email || "—",
     p.entregas.toString(),
     `${p.facil} / ${p.media} / ${p.dificil}`,
     `${p.pontos} pts`,
-    formatarPercentual(percentualDeAlcance(p.pontos, resultado.meta_pontos || 800)),
-    resultado.faixa_indefinida
-      ? "Indefinida"
-      : resultado.valor_reais !== null
-      ? formatarReais(Math.round((p.pontos / (resultado.pontos || 1)) * (resultado.valor_reais || 0)))
-      : "—",
+    // Fração da produção da equipe. Não é dinheiro, e o cabeçalho diz isso.
+    resultado.pontos > 0 ? `${Math.round((p.pontos / resultado.pontos) * 100)}%` : "—",
+    meta ? formatarPercentual(percentualDeAlcance(p.pontos, meta)) : "—",
   ]);
 
   autoTable(doc, {
     startY: y,
-    head: [["Desenvolvedor", "Demandas", "Fácil / Médio / Difícil", "Pontos", "% Meta", "Valor (R$)"]],
+    head: [
+      [
+        "Desenvolvedor",
+        "Demandas",
+        "Fácil / Médio / Difícil",
+        "Pontos",
+        "% da produção",
+        "% da meta da equipe",
+      ],
+    ],
     body: linhasEquipe,
     theme: "striped",
     headStyles: { fillColor: azulEscuro, textColor: 255, fontSize: 9, fontStyle: "bold" },
     bodyStyles: { fontSize: 8.5, textColor: [30, 41, 59] },
     columnStyles: {
-      0: { cellWidth: 50 },
+      0: { cellWidth: 48 },
       1: { halign: "center" },
       2: { halign: "center" },
       3: { halign: "right", fontStyle: "bold" },
       4: { halign: "right" },
-      5: { halign: "right", fontStyle: "bold" },
+      5: { halign: "right" },
     },
     margin: { left: 14, right: 14 },
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  y = (doc as any).lastAutoTable.finalY + 10;
+  y = (doc as any).lastAutoTable.finalY + 5;
+
+  // A nota que impede a leitura errada da tabela acima. Sem ela, quem vê
+  // "60% da produção" ao lado de "R$ 1.200 da equipe" faz a multiplicação
+  // sozinho — que é exatamente a conta que o sistema deixou de fazer.
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...cinzaEscuro);
+  doc.text(
+    "A faixa de remuneração é apurada sobre o resultado da equipe. A regra de distribuição individual",
+    14,
+    y,
+  );
+  doc.text("não foi definida pelo RH, por isso este relatório não atribui valor por pessoa.", 14, y + 3.5);
+
+  y += 12;
 
   // Seção: Pendências e Alertas
   if (pendencias) {
@@ -253,13 +346,80 @@ export function exportarPdfExecutivo(dados: DadosRelatorioExecutivo) {
   doc.setFontSize(8.5);
   doc.setTextColor(...cinzaEscuro);
 
-  doc.text(`Solicitado / Exportado por: ${geradoPorEmail || "Sistema Automatizado"}`, 14, y);
+  doc.text(`Gerado por: ${geradoPorEmail || "Sistema Automatizado"}`, 14, y);
   y += 4;
-  doc.text(`Regra Financeira: Resolução 800pts = 100% Meta Equipe`, 14, y);
+  doc.text(`Gerado em: ${dataEmissao}`, 14, y);
   y += 4;
-  if (observacoes) {
-    doc.text(`Observações / Histórico: ${observacoes}`, 14, y);
-    y += 5;
+
+  // A meta do ciclo, não uma constante. Dizia "800pts" em texto fixo, o que
+  // continuaria dizendo 800 depois de o RH mudar a meta na tela de ciclos.
+  doc.text(
+    meta
+      ? `Regra: ${meta} pontos = 100% da meta da equipe. Escala Fácil 50 / Médio 100 / Difícil 200.`
+      : "Regra: meta do ciclo não informada.",
+    14,
+    y,
+  );
+  y += 4;
+
+  // FECHAMENTO E REABERTURA. Um resultado congelado sem dizer quem congelou e
+  // quando não é auditável — é só um número que alguém afirma ser definitivo.
+  if (resultado.congelado) {
+    doc.text(
+      `Ciclo fechado por ${ciclo?.fechado_por_email ?? "—"} em ${
+        ciclo?.fechado_em
+          ? new Date(ciclo.fechado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+          : "—"
+      }.`,
+      14,
+      y,
+    );
+    y += 4;
+    doc.text(
+      "Os números acima vêm do resultado congelado no fechamento e não mudam com alterações posteriores nas demandas.",
+      14,
+      y,
+    );
+    y += 4;
+  } else {
+    doc.text(
+      "Ciclo em apuração: os números refletem a situação neste momento e ainda podem mudar.",
+      14,
+      y,
+    );
+    y += 4;
+  }
+
+  /**
+   * O histórico de reaberturas mora em `relatorio_ciclo.observacoes` — é lá
+   * que `relatorio_reabrir_ciclo` grava motivo, autor e data, em linhas
+   * acumuladas. Era impresso como uma linha só, que estourava a margem e
+   * cortava justamente o motivo. Agora quebra e ocupa o espaço que precisar.
+   */
+  if (observacoes && observacoes.trim()) {
+    y += 2;
+    doc.setFont("helvetica", "bold");
+    doc.text("Histórico do ciclo (fechamentos e reaberturas):", 14, y);
+    y += 4;
+    doc.setFont("helvetica", "normal");
+    for (const linha of doc.splitTextToSize(observacoes.trim(), 182) as string[]) {
+      if (y > 275) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.text(linha, 14, y);
+      y += 4;
+    }
+  }
+
+  if (!ciclo) {
+    doc.setFont("helvetica", "italic");
+    doc.text(
+      "Dados de fechamento não incluídos: exigem capacidade de remuneração e não foram obtidos por quem gerou este relatório.",
+      14,
+      y,
+    );
+    y += 4;
   }
 
   // Rodapé em todas as páginas

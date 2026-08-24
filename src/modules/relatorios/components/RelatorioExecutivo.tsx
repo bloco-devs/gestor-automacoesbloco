@@ -34,6 +34,7 @@ import {
 import { downloadCsv, toCsv } from "@/modules/analytics/utils/csv";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  buscarCiclosAdministraveis,
   buscarResultadoDoCiclo,
   buscarPendenciasDoCiclo,
   formatarPercentual,
@@ -105,8 +106,26 @@ export function RelatorioExecutivo() {
     enabled: !!ciclo && temPermissao,
   });
 
+  /**
+   * Dados de auditoria do ciclo — quem fechou, quando, e o histórico de
+   * reaberturas. Ficam numa consulta separada porque exigem capacidade de
+   * remuneração, e esta tela também é acessível por `relatorios.gerar`.
+   *
+   * `retry: false` e falha silenciosa de propósito: quem não tiver a
+   * capacidade continua gerando o PDF, que então declara não ter obtido esses
+   * dados. Melhor um relatório que admite o que não sabe do que um erro que
+   * impede de gerar qualquer coisa.
+   */
+  const auditoria = useQuery({
+    queryKey: ["relatorio", "ciclos-administraveis"],
+    queryFn: buscarCiclosAdministraveis,
+    enabled: !!cicloId,
+    retry: false,
+  });
+
   const r = resultado.data;
   const p = pendencias.data;
+  const cicloAuditado = auditoria.data?.find((c) => c.id === cicloId) ?? null;
   const pessoas = useMemo(() => porPessoa.data ?? [], [porPessoa.data]);
   const linhas = useMemo(() => atividades.data ?? [], [atividades.data]);
 
@@ -118,6 +137,16 @@ export function RelatorioExecutivo() {
       atividades: linhas,
       pendencias: p,
       geradoPorEmail: user?.email ?? "Usuário Autenticado",
+      // O histórico de reaberturas mora aqui: `relatorio_reabrir_ciclo` grava
+      // motivo, autor e data acumulados em `observacoes`.
+      observacoes: cicloAuditado?.observacoes ?? null,
+      ciclo: cicloAuditado
+        ? {
+            referencia: cicloAuditado.referencia,
+            fechado_em: cicloAuditado.fechado_em,
+            fechado_por_email: cicloAuditado.fechado_por_email,
+          }
+        : null,
     });
   }
 
@@ -233,7 +262,10 @@ export function RelatorioExecutivo() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-xl border bg-muted/40 p-4">
               <span className="ds-caption text-muted-foreground">Meta da Equipe</span>
-              <p className="text-xl font-bold mt-1">{r?.meta_pontos ?? 800} pts</p>
+              {/* A meta é configuração do ciclo, não constante do sistema. */}
+              <p className="text-xl font-bold mt-1">
+                {r?.meta_pontos ? `${r.meta_pontos} pts` : "—"}
+              </p>
               <span className="text-xs text-muted-foreground">800 pts = 100%</span>
             </div>
 
@@ -292,7 +324,11 @@ export function RelatorioExecutivo() {
                   <TableHead className="text-center">Fácil / Médio / Difícil</TableHead>
                   <TableHead className="text-right">Pontos</TableHead>
                   <TableHead className="text-right">% Meta Equipe</TableHead>
-                  <TableHead className="text-right">Valor Financeiro</TableHead>
+                  {/* Era "Valor Financeiro", com o dinheiro da equipe rateado
+                      por pontos. A regra de distribuição individual não existe
+                      — as faixas são o resultado do conjunto. Ver o comentário
+                      em pdf-exporter.ts, na montagem desta mesma tabela. */}
+                  <TableHead className="text-right">% da produção</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -304,13 +340,14 @@ export function RelatorioExecutivo() {
                   </TableRow>
                 ) : (
                   pessoas.map((p) => {
-                    const pctMeta = percentualDeAlcance(p.pontos, r?.meta_pontos ?? 800);
-                    const valorCalculado =
-                      r?.faixa_indefinida
-                        ? "Indefinida"
-                        : r?.valor_reais !== null && r?.valor_reais !== undefined
-                        ? formatarReais(Math.round((p.pontos / (r.pontos || 1)) * r.valor_reais))
-                        : "—";
+                    // Sem `?? 800`: a meta é do ciclo e o RH pode mudá-la. Se
+                    // ela não vier, mostra "—" em vez de calcular percentual
+                    // sobre um número que talvez não seja o daquele ciclo.
+                    const pctMeta = r?.meta_pontos
+                      ? formatarPercentual(percentualDeAlcance(p.pontos, r.meta_pontos))
+                      : "—";
+                    const fracaoDaProducao =
+                      r && r.pontos > 0 ? `${Math.round((p.pontos / r.pontos) * 100)}%` : "—";
 
                     return (
                       <TableRow key={p.pessoa_id}>
@@ -322,9 +359,9 @@ export function RelatorioExecutivo() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right font-bold text-primary">{p.pontos} pts</TableCell>
-                        <TableCell className="text-right">{formatarPercentual(pctMeta)}</TableCell>
-                        <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400">
-                          {valorCalculado}
+                        <TableCell className="text-right">{pctMeta}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {fracaoDaProducao}
                         </TableCell>
                       </TableRow>
                     );
@@ -333,6 +370,13 @@ export function RelatorioExecutivo() {
               </TableBody>
             </Table>
           </div>
+          {/* Sem esta nota, quem vê "60% da produção" ao lado do valor da
+              equipe faz a multiplicação de cabeça — que é justamente a conta
+              que o sistema deixou de fazer por não ter regra que a sustente. */}
+          <p className="ds-caption mt-2 text-muted-foreground">
+            A faixa de remuneração é apurada sobre o resultado da equipe. A regra de distribuição
+            individual ainda não foi definida pelo RH, por isso não há valor por pessoa aqui.
+          </p>
         </Section>
 
         {/* 3. Diagnóstico e Pendências */}
