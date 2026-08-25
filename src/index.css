@@ -423,12 +423,84 @@
 .blink-olho-e { animation: blink-piscar 5.5s ease-in-out infinite; }
 .blink-olho-d { animation: blink-piscar-um 5.5s ease-in-out infinite; }
 
+/* ------------------------------------------------------------
+   Blink saltando — o carregamento do sistema
+   ------------------------------------------------------------
+   Adaptado do efeito de salto do Uiverse (forzayt, easter egg).
+   O que veio de lá é a CURVA: agachar, esticar no impulso, girar
+   no ar, achatar no impacto e assentar. É ela que faz parecer
+   peso e não só deslocamento — um `translateY` puro lê como
+   elevador, este lê como pulo.
+
+   O que NÃO veio: o ovo, as listras de páscoa e a paleta
+   (#ff595e, #8ac926, #ffca3a). Aqui quem salta é o Blink, que já
+   existe em SVG, e a sombra usa a cor de texto do tema em vez de
+   preto fixo — senão some no escuro e pesa demais no claro.
+
+   O deslocamento lateral do original (30px) virou 18px: ele
+   saltava dentro de uma tela de demonstração larga; aqui precisa
+   caber em caixa de diálogo e em canto de tela.
+   ------------------------------------------------------------ */
+@keyframes blink-saltar {
+  0%   { transform: scale(1, 1) translateY(0); }
+  10%  { transform: scale(1.1, 0.9) translateY(0); }
+  30%  { transform: scale(0.9, 1.1) translateY(-42px) translateX(18px); }
+  50%  { transform: scale(1.05, 0.95) translateY(0) translateX(18px) rotate(-10deg); }
+  58%  { transform: scale(1, 1) translateY(-5px) translateX(0); }
+  65%  { transform: scale(1, 1) translateY(0); }
+  100% { transform: scale(1, 1) translateY(0); }
+}
+
+/* A sombra conta a mesma história por baixo: encolhe quando ele
+   sobe, acompanha o deslocamento, e volta. Sem ela o salto fica
+   sem chão e o boneco parece flutuar. */
+@keyframes blink-sombra {
+  0%   { transform: translateX(0) scale(1); opacity: 0.22; }
+  10%  { transform: translateX(0) scale(0.8); opacity: 0.26; }
+  30%  { transform: translateX(18px) scale(0.6); opacity: 0.1; }
+  50%  { transform: translateX(18px) scale(0.7); opacity: 0.16; }
+  58%  { transform: translateX(10px) scale(0.9); opacity: 0.2; }
+  65%  { transform: translateX(0) scale(1); opacity: 0.22; }
+  100% { transform: translateX(0) scale(1); opacity: 0.22; }
+}
+
+/* Nuvens ao fundo, atravessando. Só para dar sensação de
+   movimento contínuo enquanto se espera. */
+@keyframes blink-nuvens {
+  from { transform: translateX(120%); }
+  to   { transform: translateX(-220%); }
+}
+
+.blink-salta  { animation: blink-saltar 1s linear infinite; }
+.blink-chao   { animation: blink-sombra 1s linear infinite; }
+.blink-nuvem  { animation: blink-nuvens linear infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .blink-flutua,
   .blink-olho-e,
-  .blink-olho-d {
+  .blink-olho-d,
+  .blink-nuvem {
     animation: none;
   }
+
+  /* O SALTO NÃO SÓ PARA — VIRA OUTRA COISA.
+     Este é o carregador do sistema: ele aparece sempre, e alguém
+     que sente enjoo com movimento encontraria um boneco pulando
+     em toda espera. Mas parar tudo tira o sinal de "está
+     acontecendo algo" justamente de quem mais precisa dele.
+     Então some para uma pulsação suave, que informa sem agitar. */
+  .blink-salta {
+    animation: blink-respira 2s ease-in-out infinite;
+  }
+  .blink-chao {
+    animation: none;
+    opacity: 0.18;
+  }
+}
+
+@keyframes blink-respira {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
 }
 
 /* ============================================================

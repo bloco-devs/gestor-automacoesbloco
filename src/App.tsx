@@ -1,4 +1,5 @@
 import { lazy, Suspense, type ReactElement } from "react";
+import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { UxRewriteGate } from "@/modules/portal-unified";
@@ -31,7 +32,6 @@ import { ContextProvider } from "@/modules/context";
 import { PlatformProvider } from "@/modules/platform";
 import { LanguageProvider } from "@/modules/ux";
 import { WorkflowRuntimeProvider } from "@/modules/workflow-runtime";
-import { Loader2 } from "lucide-react";
 
 // Rotas críticas — carregamento imediato (auth/entrada)
 import Index from "./pages/Index";
@@ -190,15 +190,20 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * A espera entre rotas.
+ *
+ * Era um spinner genérico — o mesmo de qualquer aplicativo, sem nada que
+ * dissesse de que sistema é esta tela. Trocado pelo Blink, que já é o rosto da
+ * IA aqui: a espera passa a ser de alguém, e não de um círculo girando.
+ *
+ * Só neste ponto e em espera de tela cheia. Skeleton continua sendo o certo em
+ * lista e tabela, onde o que informa é a forma do conteúdo que vai chegar.
+ */
 function RouteFallback() {
   return (
-    <div
-      className="flex items-center justify-center min-h-[40dvh] text-sm text-muted-foreground"
-      role="status"
-      aria-live="polite"
-    >
-      <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-      Carregando…
+    <div className="flex min-h-[40dvh] items-center justify-center">
+      <BlinkCarregando mensagem="Carregando…" />
     </div>
   );
 }
