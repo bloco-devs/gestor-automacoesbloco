@@ -311,6 +311,25 @@ export function nomeDoSistemaPeloSlug(slug: string | null | undefined): string |
   return null;
 }
 
+/**
+ * POR QUE NÃO EXISTE AQUI UMA VERSÃO QUE ADIVINHA O SISTEMA PELO TÍTULO.
+ *
+ * Houve uma, e ela saiu. Fazia duas coisas além de `nomeDoSistemaPeloSlug`:
+ * caía na heurística de palavras-chave quando o slug era nulo, e transformava
+ * slug fora do catálogo em texto legível (`nakhon-x` → "Nakhon X").
+ *
+ * As duas escondem informação num documento que sustenta remuneração. O
+ * titlecase faz um slug que ninguém cadastrou parecer sistema cadastrado. E a
+ * heurística afirma, numa coluna chamada "Sistema", um palpite tirado do
+ * título — do lado de um número de pontos, isso se lê como registro.
+ *
+ * A sigla do código continua usando a heurística (`formatarReferenciaComSigla`),
+ * porque ali ela é declaradamente um prefixo derivado. Fica uma inconsistência
+ * conhecida: o crachá pode dizer OBRA-2608-0053 e a coluna Sistema dizer "não
+ * identificado". Ela é intencional até alguém decidir como marcar palpite como
+ * palpite na tela.
+ */
+
 export function nomeDoSistemaPelaSigla(sigla: string | null): string | null {
   if (!sigla) return null;
   for (const info of Object.values(SISTEMAS_ECOSSISTEMA_BLOCO_ID)) {

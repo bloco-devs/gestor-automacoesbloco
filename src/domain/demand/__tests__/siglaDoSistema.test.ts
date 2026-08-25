@@ -1,5 +1,59 @@
 import { describe, expect, it } from "vitest";
-import { formatarReferenciaComSigla, siglaDoSistema } from "../services/siglaDoSistema";
+import {
+  formatarReferenciaComSigla,
+  nomeDoSistemaPeloSlug,
+  siglaDoSistema,
+} from "../services/siglaDoSistema";
+
+/**
+ * O DEFEITO QUE ESTES TESTES TRANCAM
+ *
+ * O Relatório de Implementações imprimia `sistema_slug` cru. A tela, o CSV e o
+ * PDF mostravam "produtividade" na coluna Sistema — e quem recebeu o relatório
+ * respondeu, com razão, que "produtividade não existe em nossos sistemas". Não
+ * existe mesmo: `produtividade` é a chave interna da Gestão de Obra.
+ *
+ * O nome sempre esteve em `SISTEMAS_ECOSSISTEMA_BLOCO_ID`, ao lado da sigla que
+ * o cartão já usava. Faltava o caminho do slug até ele.
+ */
+describe("nomeDoSistemaPeloSlug — o nome que a empresa usa, não a chave do banco", () => {
+  it("traduz os slugs internos para os nomes oficiais", () => {
+    expect(nomeDoSistemaPeloSlug("produtividade")).toBe("Gestão de Obra");
+    expect(nomeDoSistemaPeloSlug("incorporacao")).toBe("Gestão de Incorporação");
+    expect(nomeDoSistemaPeloSlug("nakhon-contratos")).toBe("Gerador de Contratos Nakhon");
+    expect(nomeDoSistemaPeloSlug("fluxo-caixa")).toBe("Gestão Financeira");
+    expect(nomeDoSistemaPeloSlug("locacao")).toBe("Gestão de Suprimentos");
+    expect(nomeDoSistemaPeloSlug("crm-house")).toBe("Bloco.CRM HOUSE");
+  });
+
+  it("nunca devolve o slug cru para um sistema do catálogo", () => {
+    for (const slug of ["produtividade", "incorporacao", "processos", "locacao", "fluxo-caixa"]) {
+      expect(nomeDoSistemaPeloSlug(slug)).not.toBe(slug);
+    }
+  });
+
+  it("aceita o slug com espaço e maiúscula, como vem de fonte diferente", () => {
+    expect(nomeDoSistemaPeloSlug("  Produtividade  ")).toBe("Gestão de Obra");
+  });
+
+  it("sem sistema nenhum devolve null, para a tela escrever 'não identificado'", () => {
+    expect(nomeDoSistemaPeloSlug(null)).toBeNull();
+    expect(nomeDoSistemaPeloSlug(undefined)).toBeNull();
+    expect(nomeDoSistemaPeloSlug("")).toBeNull();
+  });
+
+  /**
+   * NÃO INVENTA NOME, E ISSO É A REGRA — NÃO UMA LACUNA.
+   *
+   * Uma versão anterior transformava slug desconhecido em texto legível
+   * (`sistema-novo-qualquer` → "Sistema Novo Qualquer"). Fica bonito e esconde
+   * o que importa: que alguém gravou um slug que não está no catálogo. Devolvendo
+   * nulo, a tela mostra o slug cru e o problema aparece.
+   */
+  it("slug fora do catálogo devolve null, para o cru aparecer e denunciar o cadastro", () => {
+    expect(nomeDoSistemaPeloSlug("sistema-novo-qualquer")).toBeNull();
+  });
+});
 
 describe("siglaDoSistema — Catálogo Completo dos 16 Sistemas do HUB Bloco ID", () => {
   it("deduz as siglas oficiais para os 16 sistemas do HUB Bloco ID", () => {

@@ -48,6 +48,7 @@ import {
 } from "../services/relatorios-data";
 import { formatarData, percentualDeAlcance } from "../services/relatorios-service";
 import { exportarPdfExecutivo } from "../services/pdf-exporter";
+import { nomeDoSistemaPeloSlug } from "@/domain/demand";
 import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 
 export function RelatorioExecutivo() {
@@ -158,12 +159,16 @@ export function RelatorioExecutivo() {
         linhas.map((l) => ({
           Demanda: l.ticket_code,
           Título: l.titulo,
-          Sistema: l.sistema_slug ?? "Não informado",
+          Sistema: nomeDoSistemaPeloSlug(l.sistema_slug) ?? l.sistema_slug ?? "Não informado",
           Responsável: l.responsavel_nome ?? "—",
           "Concluído em": formatarData(l.concluida_em),
           Classificação: l.classificacao_rotulo ?? "Não classificada",
           Pontos: l.pontos ?? 0,
-          Autoclassificada: l.autoclassificada ? "Sim" : "Não",
+          // "Autoclassificada: Sim" fazia parecer que o sistema classificou
+          // sozinho — e nada aqui classifica sozinho. A marca diz que quem
+          // classificou foi a pessoa responsável pela entrega, o que existe
+          // para o RH revisar por amostragem. A coluna passa a dizer isso.
+          "Classificada por": l.autoclassificada ? "Próprio autor" : "Outra pessoa",
           Fechamento: l.fechamento === "concluido" ? "Registrado" : "Pendente",
         }))
       )
@@ -434,7 +439,7 @@ export function RelatorioExecutivo() {
                   <TableHead>Conclusão</TableHead>
                   <TableHead>Classificação</TableHead>
                   <TableHead className="text-right">Pontos</TableHead>
-                  <TableHead className="text-center">Autoclass.</TableHead>
+                  <TableHead className="text-center">Classificada por</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -449,7 +454,9 @@ export function RelatorioExecutivo() {
                     <TableRow key={atv.demanda_id}>
                       <TableCell className="font-mono text-xs text-muted-foreground">{atv.ticket_code}</TableCell>
                       <TableCell className="font-medium text-sm">{atv.titulo}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{atv.sistema_slug || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {nomeDoSistemaPeloSlug(atv.sistema_slug) || atv.sistema_slug || "—"}
+                      </TableCell>
                       <TableCell className="text-xs">{atv.responsavel_nome || "—"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{formatarData(atv.concluida_em)}</TableCell>
                       <TableCell className="text-xs">
@@ -458,13 +465,13 @@ export function RelatorioExecutivo() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-bold text-xs">{atv.pontos ?? 0} pts</TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center text-xs">
                         {atv.autoclassificada ? (
-                          <Badge variant="secondary" className="text-[10px]">
-                            Sim
+                          <Badge variant="secondary" className="text-[10px] font-normal">
+                            próprio autor
                           </Badge>
                         ) : (
-                          "Não"
+                          <span className="text-muted-foreground">outra pessoa</span>
                         )}
                       </TableCell>
                     </TableRow>

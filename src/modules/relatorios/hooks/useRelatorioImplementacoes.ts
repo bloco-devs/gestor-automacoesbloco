@@ -7,6 +7,7 @@ import {
   type OpcaoDeFiltro,
 } from "../services/relatorios-data";
 import { periodoDoAtalho, periodoPersonalizado } from "../services/relatorios-service";
+import { nomeDoSistemaPeloSlug } from "@/domain/demand";
 import type { AtalhoDePeriodo, Periodo } from "../types";
 
 const STALE = 30_000;
@@ -42,7 +43,12 @@ export interface ResumoDoRelatorio {
   comEvidencia: number;
   tarefasFeitas: number;
   tarefasTotal: number;
-  porSistema: Array<{ sistema: string; quantidade: number }>;
+  /**
+   * `sistema` é o slug — serve de valor de filtro. `rotulo` é o nome que a
+   * empresa usa. Os dois viajam juntos porque a tela precisa filtrar por um e
+   * escrever o outro; quando só existia o slug, ela escrevia o slug.
+   */
+  porSistema: Array<{ sistema: string | null; rotulo: string; quantidade: number }>;
   porResponsavel: Array<{ nome: string; quantidade: number }>;
   porTipo: Array<{ tipo: string; quantidade: number }>;
   /** Etapa 4 */
@@ -62,7 +68,10 @@ function resumir(linhas: LinhaDeImplementacao[]): ResumoDoRelatorio {
       .sort((a, b) => b.quantidade - a.quantidade);
   };
 
-  const sistemas = contar(linhas.map((l) => l.sistema_slug ?? "Sem sistema"));
+  // Sentinela vazia para "sem sistema registrado". Antes a chave era o texto
+  // "Sem sistema", que a tela devolvia como valor de filtro — e nenhum slug se
+  // chama assim, então clicar no grupo filtrava para o vazio.
+  const sistemas = contar(linhas.map((l) => l.sistema_slug ?? ""));
   const responsaveis = contar(linhas.map((l) => l.responsavel_nome ?? "Sem responsável"));
   const tipos = contar(linhas.map((l) => l.tipo));
 
@@ -91,7 +100,11 @@ function resumir(linhas: LinhaDeImplementacao[]): ResumoDoRelatorio {
     comEvidencia: linhas.filter((l) => l.anexos > 0 || l.comentarios > 0).length,
     tarefasFeitas: linhas.reduce((s, l) => s + l.tarefas_feitas, 0),
     tarefasTotal: linhas.reduce((s, l) => s + l.tarefas_total, 0),
-    porSistema: sistemas.map((s) => ({ sistema: s.k, quantidade: s.quantidade })),
+    porSistema: sistemas.map((s) => ({
+      sistema: s.k || null,
+      rotulo: s.k ? (nomeDoSistemaPeloSlug(s.k) ?? s.k) : "Sem sistema identificado",
+      quantidade: s.quantidade,
+    })),
     porResponsavel: responsaveis.map((r) => ({ nome: r.k, quantidade: r.quantidade })),
     porTipo: tipos.map((t) => ({ tipo: t.k, quantidade: t.quantidade })),
     classificadas: linhas.filter((l) => l.classificacao).length,

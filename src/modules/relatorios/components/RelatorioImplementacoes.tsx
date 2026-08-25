@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Download,
   FileSearch,
+  FileText,
   Layers,
   Paperclip,
   RefreshCw,
@@ -40,6 +41,9 @@ import {
 import { toCsv, downloadCsv } from "@/modules/analytics/utils/csv";
 import { useRelatorioImplementacoes } from "../hooks/useRelatorioImplementacoes";
 import { formatarData } from "../services/relatorios-service";
+import { relatoPreenchido } from "../services/relato-campos";
+import { exportarPdfImplementacoes } from "../services/pdf-exporter";
+import { useAuth } from "@/hooks/useAuth";
 import { nomeCurto } from "../nomes";
 import {
   formatarReferenciaComSigla,
@@ -67,30 +71,11 @@ const ATALHOS: Array<{ valor: AtalhoDePeriodo; rotulo: string }> = [
 /**
  * O relato técnico dentro da linha expandida.
  *
- * A ordem é a de quem lê de fora e precisa entender a entrega sem ter
- * participado dela: qual era o problema, o que foi feito, o que mudou, no que
- * deu. Os quatro primeiros são obrigatórios para concluir o fechamento, então
- * numa entrega registrada eles sempre existem — os demais aparecem só quando
- * se aplicam, porque nem toda entrega mexe em banco, integração ou RLS.
+ * A lista de campos e a ordem deles moram em `relato-campos` — o PDF imprime a
+ * mesma coisa, e duas listas divergiriam no primeiro campo novo.
  */
-const CAMPOS_DO_RELATO: Array<{ chave: keyof LinhaDeImplementacao; rotulo: string }> = [
-  { chave: "fechamento_problema", rotulo: "Qual era o problema" },
-  { chave: "fechamento_solucao", rotulo: "Como foi resolvido" },
-  { chave: "fechamento_alterado", rotulo: "O que foi alterado" },
-  { chave: "fechamento_resultado", rotulo: "Resultado obtido" },
-  { chave: "fechamento_funcionalidades", rotulo: "Funcionalidades implementadas" },
-  { chave: "fechamento_integracoes", rotulo: "Integrações" },
-  { chave: "fechamento_banco", rotulo: "Alterações no banco" },
-  { chave: "fechamento_seguranca", rotulo: "Segurança e permissões" },
-  { chave: "fechamento_testes", rotulo: "Como foi testado" },
-  { chave: "fechamento_observacoes", rotulo: "Observações" },
-];
-
 function RelatoTecnico({ l }: { l: LinhaDeImplementacao }) {
-  const preenchidos = CAMPOS_DO_RELATO.filter((c) => {
-    const v = l[c.chave];
-    return typeof v === "string" && v.trim().length > 0;
-  });
+  const preenchidos = relatoPreenchido(l);
 
   if (preenchidos.length === 0) return null;
 
@@ -107,9 +92,9 @@ function RelatoTecnico({ l }: { l: LinhaDeImplementacao }) {
       </div>
       <div className="flex flex-col gap-2">
         {preenchidos.map((c) => (
-          <div key={String(c.chave)}>
+          <div key={c.rotulo}>
             <span className="ds-label text-muted-foreground">{c.rotulo}</span>
-            <p className="mt-0.5 whitespace-pre-wrap">{String(l[c.chave]).trim()}</p>
+            <p className="mt-0.5 whitespace-pre-wrap">{c.texto}</p>
           </div>
         ))}
         {l.fechamento_evidencias && l.fechamento_evidencias.length > 0 && (
@@ -150,14 +135,26 @@ const TODOS = "__todos__";
 
 function RelatorioImplementacoesImpl() {
   const r = useRelatorioImplementacoes();
+  const { user } = useAuth();
   const [expandida, setExpandida] = useState<string | null>(null);
+
+  function exportarPdf() {
+    exportarPdfImplementacoes({
+      inicio: r.periodo.inicio,
+      fim: r.periodo.fim,
+      linhas: r.linhas,
+      sistemaSlug: r.filtros.sistema,
+      geradoPorEmail: user?.email ?? undefined,
+    });
+  }
 
   function exportar() {
     const linhas = r.linhas.map((l) => ({
       Demanda: l.ticket_code,
       Título: l.titulo,
       // O nome, não o slug: "produtividade" é o Gestão de Obra, e ninguém
-      // do Grupo Bloco chama assim.
+      // do Grupo Bloco chama assim. Slug fora do catálogo aparece cru de
+      // propósito — é assim que um sistema não cadastrado fica visível.
       Sistema: nomeDoSistemaPeloSlug(l.sistema_slug) ?? l.sistema_slug ?? "Não identificado",
       Categoria: TIPO_ROTULO[l.tipo] ?? l.tipo,
       Classificação: l.classificacao_rotulo ?? "Não classificada",
@@ -201,9 +198,18 @@ function RelatorioImplementacoesImpl() {
               <RefreshCw className={r.carregando ? "size-4 animate-spin" : "size-4"} aria-hidden />
               Atualizar
             </Button>
-            <Button size="sm" onClick={exportar} disabled={r.linhas.length === 0}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportar}
+              disabled={r.linhas.length === 0}
+            >
               <Download className="size-4" aria-hidden />
               CSV
+            </Button>
+            <Button size="sm" onClick={exportarPdf} disabled={r.linhas.length === 0}>
+              <FileText className="size-4" aria-hidden />
+              PDF
             </Button>
           </div>
         }
@@ -259,9 +265,12 @@ function RelatorioImplementacoesImpl() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value={TODOS}>Todos os sistemas</SelectItem>
+                {/* A RPC devolve o slug como rótulo — o nome vem daqui. O
+                    grupo sem sistema já tem texto próprio e passa direto. */}
                 {r.sistemas.map((s) => (
                   <SelectItem key={s.valor} value={s.valor}>
-                    {s.rotulo} ({s.quantidade})
+                    {(s.valor === "(sem sistema)" ? null : nomeDoSistemaPeloSlug(s.valor)) ?? s.rotulo}{" "}
+                    ({s.quantidade})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -378,18 +387,20 @@ function RelatorioImplementacoesImpl() {
           <div className="flex flex-wrap gap-2">
             {r.resumo.porSistema.map((s) => (
               <button
-                key={s.sistema}
+                key={s.sistema ?? "__sem_sistema__"}
                 type="button"
+                // Sem slug não há por onde filtrar — o grupo continua contando
+                // as entregas, mas não finge ser um atalho que não funciona.
+                disabled={s.sistema === null}
                 onClick={() =>
                   r.setFiltros((f) => ({
                     ...f,
                     sistema: f.sistema === s.sistema ? null : s.sistema,
                   }))
                 }
-                className="rounded-full border px-3 py-1 text-[13px] transition-colors hover:bg-accent"
+                className="rounded-full border px-3 py-1 text-[13px] transition-colors hover:bg-accent disabled:cursor-default disabled:opacity-60 disabled:hover:bg-transparent"
               >
-                {s.sistema}{" "}
-                <span className="text-muted-foreground">{s.quantidade}</span>
+                {s.rotulo} <span className="text-muted-foreground">{s.quantidade}</span>
               </button>
             ))}
           </div>

@@ -86,5 +86,5 @@ export { VoltarParaRelatorios } from "./components/VoltarParaRelatorios";
 // Etapa 6 — Relatório Executivo e PDF
 export { RelatorioExecutivo } from "./components/RelatorioExecutivo";
 export { GestaoDeCiclos } from "./components/GestaoDeCiclos";
-export { exportarPdfExecutivo, exportarPdfTecnicoPorSistema } from "./services/pdf-exporter";
+export { exportarPdfExecutivo, exportarPdfImplementacoes } from "./services/pdf-exporter";
 

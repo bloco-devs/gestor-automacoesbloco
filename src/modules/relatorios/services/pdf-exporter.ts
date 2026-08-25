@@ -1,8 +1,9 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatarData, percentualDeAlcance } from "./relatorios-service";
-import { nomeDoSistemaPeloSlug } from "@/domain/demand";
 import { formatarReais, formatarPercentual, type ResultadoDoCiclo } from "./apuracao-data";
+import { relatoPreenchido } from "./relato-campos";
+import { nomeDoSistemaPeloSlug } from "@/domain/demand";
 import type { LinhaDaApuracao, LinhaDeImplementacao } from "./relatorios-data";
 
 export interface DadosRelatorioExecutivo {
@@ -300,17 +301,23 @@ export function exportarPdfExecutivo(dados: DadosRelatorioExecutivo) {
   const linhasAtividades = atividades.map((atv) => [
     atv.ticket_code,
     atv.titulo.length > 40 ? atv.titulo.substring(0, 37) + "..." : atv.titulo,
+    // O nome do sistema. Imprimia `sistema_slug` cru, e um documento assinado
+    // que vai à Diretoria listava "produtividade" como se fosse um sistema.
     nomeDoSistemaPeloSlug(atv.sistema_slug) || atv.sistema_slug || "—",
     atv.responsavel_nome || "—",
     formatarData(atv.concluida_em),
     atv.classificacao_rotulo || "Não classificada",
     atv.pontos !== null ? `${atv.pontos} pts` : "—",
-    atv.autoclassificada ? "Sim (Auto)" : "Não",
+    // NÃO É AUTOMAÇÃO. Dizia "Sim (Auto)" sob a coluna "Autoclass.", e num
+    // documento oficial isso se lê como "o sistema classificou sozinho" —
+    // nada aqui classifica sozinho. A marca registra que quem classificou foi
+    // a pessoa responsável pela entrega, para o RH revisar por amostragem.
+    atv.autoclassificada ? "Próprio autor" : "Outra pessoa",
   ]);
 
   autoTable(doc, {
     startY: y,
-    head: [["Código", "Título da Demanda", "Sistema", "Responsável", "Conclusão", "Classificação", "Pontos", "Autoclass."]],
+    head: [["Código", "Título da Demanda", "Sistema", "Responsável", "Conclusão", "Classificação", "Pontos", "Classificada por"]],
     body: linhasAtividades,
     theme: "grid",
     headStyles: { fillColor: cinzaEscuro, textColor: 255, fontSize: 8, fontStyle: "bold" },
@@ -441,73 +448,273 @@ export function exportarPdfExecutivo(dados: DadosRelatorioExecutivo) {
   doc.save(nomeArquivo);
 }
 
+export interface DadosRelatorioImplementacoes {
+  inicio: Date;
+  /** Limite EXCLUSIVO do período, como vem do seletor da tela. */
+  fim: Date;
+  linhas: LinhaDeImplementacao[];
+  /** Só quando a tela está filtrada por um sistema. Nulo = todos. */
+  sistemaSlug?: string | null;
+  geradoPorEmail?: string;
+}
+
 /**
- * Exporta o Relatório Técnico por Sistema em PDF.
+ * Exporta o Relatório de Implementações em PDF — COM O RELATO.
+ *
+ * O QUE ESTAVA ERRADO
+ *
+ * A versão anterior imprimia uma tabela de seis colunas: código, título,
+ * desenvolvedor, conclusão, classificação, pontos. Nada mais. Quem recebia o
+ * documento ficava sabendo que a entrega GP-2608-0010 valeu 100 pontos e não
+ * ficava sabendo o que ela era. O relato existe no banco, aparece na tela
+ * expandida e sai no CSV — só o PDF, que é justamente o que circula fora da
+ * equipe, não o levava.
+ *
+ * Pior: a tabela era o documento inteiro. Um relatório de implementações cuja
+ * única informação sobre a implementação é o título dela não é um relatório de
+ * implementações, é um extrato de pontos.
+ *
+ * COMO É AGORA
+ *
+ * Cada entrega é um bloco de texto corrido, na ordem em que se lê: o que era o
+ * problema, como foi resolvido, o que mudou, no que deu. Os campos vêm de
+ * `CAMPOS_DO_RELATO`, a mesma lista que a tela usa — os dois não podem
+ * divergir.
+ *
+ * Entrega sem relato registrado aparece com o bloco vazio e a frase dizendo
+ * isso. É informação: são as demandas que precisam de fechamento, e esconder
+ * cada uma delas faria o documento parecer completo quando não está. O resumo
+ * no topo conta quantas são.
  */
-export function exportarPdfTecnicoPorSistema(
-  sistemaSlug: string,
-  inicio: Date,
-  fim: Date,
-  atividades: LinhaDeImplementacao[]
-) {
+export function exportarPdfImplementacoes(dados: DadosRelatorioImplementacoes) {
+  const { inicio, fim, linhas, sistemaSlug, geradoPorEmail } = dados;
+
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
   const azulEscuro: [number, number, number] = [15, 23, 42];
   const cinzaEscuro: [number, number, number] = [71, 85, 105];
+  const cinzaClaro: [number, number, number] = [241, 245, 249];
+  const ambar: [number, number, number] = [180, 83, 9];
 
+  const ESQ = 14;
+  const LARGURA = 182;
+  const RODAPE = 278;
+
+  const dataEmissao = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const nomeDoFiltro = sistemaSlug ? (nomeDoSistemaPeloSlug(sistemaSlug) ?? sistemaSlug) : null;
+
+  // Cabeçalho
   doc.setFillColor(...azulEscuro);
-  doc.rect(0, 0, 210, 24, "F");
+  doc.rect(0, 0, 210, 26, "F");
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
+  doc.setFontSize(15);
   doc.setTextColor(255, 255, 255);
-  doc.text(`RELATÓRIO TÉCNICO DE IMPLEMENTAÇÕES — ${sistemaSlug.toUpperCase()}`, 14, 15);
+  doc.text("GRUPO BLOCO", ESQ, 11);
 
-  let y = 32;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.text("RELATÓRIO DE IMPLEMENTAÇÕES", ESQ, 18);
+
+  doc.setFontSize(8.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Emitido em: ${dataEmissao}`, 140, 18);
+
+  let y = 34;
+
+  // O que este documento cobre.
+  doc.setFillColor(...cinzaClaro);
+  doc.roundedRect(ESQ, y, LARGURA, nomeDoFiltro ? 21 : 15, 2, 2, "F");
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...cinzaEscuro);
-  doc.text(`Período: ${formatarData(inicio.toISOString())} a ${formatarData(fim.toISOString())}`, 14, y);
-  doc.text(`Total de Implementações: ${atividades.length}`, 140, y);
+  doc.text(
+    `Período: ${formatarData(inicio.toISOString())} a ${fimParaImpressao(fim.toISOString())}`,
+    ESQ + 4,
+    y + 6,
+  );
 
-  y += 8;
+  const semRelato = linhas.filter((l) => relatoPreenchido(l).length === 0).length;
+  const semClassificacao = linhas.filter((l) => !l.classificacao).length;
+  const pontos = linhas.reduce((s, l) => s + (l.pontos ?? 0), 0);
 
-  const linhas = atividades.map((a) => [
-    a.ticket_code,
-    a.titulo,
-    a.responsavel_nome || "—",
-    formatarData(a.concluida_em),
-    a.classificacao_rotulo || "Não classificada",
-    a.pontos !== null ? `${a.pontos} pts` : "—",
-  ]);
+  doc.text(
+    `Entregas: ${linhas.length}  |  Pontos: ${pontos}  |  Sem relato: ${semRelato}  |  Sem classificação: ${semClassificacao}`,
+    ESQ + 4,
+    y + 11.5,
+  );
 
-  autoTable(doc, {
-    startY: y,
-    head: [["Código", "Título / Funcionalidade", "Desenvolvedor", "Conclusão", "Classificação", "Pontos"]],
-    body: linhas,
-    theme: "striped",
-    headStyles: { fillColor: azulEscuro, textColor: 255, fontSize: 8.5 },
-    bodyStyles: { fontSize: 8, textColor: [30, 41, 59] },
-    columnStyles: {
-      0: { cellWidth: 24 },
-      1: { cellWidth: 70 },
-      2: { cellWidth: 35 },
-      3: { cellWidth: 22 },
-      4: { cellWidth: 25 },
-      5: { cellWidth: 16, halign: "right" },
-    },
-    margin: { left: 14, right: 14 },
+  if (nomeDoFiltro) {
+    doc.setFont("helvetica", "bold");
+    doc.text(`Sistema: ${nomeDoFiltro}`, ESQ + 4, y + 17);
+    doc.setFont("helvetica", "normal");
+  }
+
+  y += (nomeDoFiltro ? 21 : 15) + 8;
+
+  /** Abre página nova quando o que vem a seguir não caberia. */
+  const garantirEspaco = (altura: number) => {
+    if (y + altura > RODAPE - 6) {
+      doc.addPage();
+      y = 20;
+    }
+  };
+
+  if (linhas.length === 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...cinzaEscuro);
+    doc.text("Nenhuma entrega concluída no período com os filtros aplicados.", ESQ, y);
+  }
+
+  linhas.forEach((l, idx) => {
+    const relato = relatoPreenchido(l);
+
+    // Reserva o cabeçalho do bloco inteiro: separar o título da entrega da
+    // primeira linha do relato dela, numa quebra de página, é o tipo de defeito
+    // que faz o leitor atribuir o relato à demanda anterior.
+    garantirEspaco(26);
+
+    if (idx > 0) {
+      doc.setDrawColor(226, 232, 240);
+      doc.line(ESQ, y - 4, ESQ + LARGURA, y - 4);
+    }
+
+    // Código e título.
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...azulEscuro);
+    const cabecalho = doc.splitTextToSize(
+      `${l.ticket_code} — ${l.titulo}`,
+      LARGURA,
+    ) as string[];
+    for (const linha of cabecalho) {
+      doc.text(linha, ESQ, y);
+      y += 5;
+    }
+
+    // A ficha da entrega, em uma linha.
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...cinzaEscuro);
+    const ficha = [
+      nomeDoSistemaPeloSlug(l.sistema_slug) ?? l.sistema_slug ?? "sistema não identificado",
+      l.responsavel_nome ?? "sem responsável",
+      `concluída em ${formatarData(l.concluida_em)}${l.procedencia !== "confirmada" ? " (data inferida)" : ""}`,
+      l.classificacao_rotulo ?? "não classificada",
+      l.pontos !== null ? `${l.pontos} pts` : "sem pontos",
+      l.ciclo_rotulo ?? "fora de ciclo",
+    ].join("  ·  ");
+    for (const linha of doc.splitTextToSize(ficha, LARGURA) as string[]) {
+      doc.text(linha, ESQ, y);
+      y += 4;
+    }
+
+    y += 2;
+
+    if (relato.length === 0) {
+      garantirEspaco(6);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...ambar);
+      doc.text("Relato técnico não registrado — fechamento pendente.", ESQ, y);
+      y += 7;
+      return;
+    }
+
+    for (const campo of relato) {
+      const corpo = doc.splitTextToSize(campo.texto, LARGURA - 2) as string[];
+
+      // O rótulo nunca fica órfão no pé da página: ele e a primeira linha do
+      // texto entram juntos ou vão juntos para a página seguinte.
+      garantirEspaco(4 + 4);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...azulEscuro);
+      doc.text(campo.rotulo, ESQ, y);
+      y += 4;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(51, 65, 85);
+      for (const linha of corpo) {
+        garantirEspaco(4);
+        doc.text(linha, ESQ + 2, y);
+        y += 4;
+      }
+
+      y += 1.5;
+    }
+
+    if (l.fechamento_evidencias && l.fechamento_evidencias.length > 0) {
+      garantirEspaco(8);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...azulEscuro);
+      doc.text("Evidências", ESQ, y);
+      y += 4;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(51, 65, 85);
+      for (const link of l.fechamento_evidencias) {
+        for (const linha of doc.splitTextToSize(link, LARGURA - 2) as string[]) {
+          garantirEspaco(4);
+          doc.text(linha, ESQ + 2, y);
+          y += 4;
+        }
+      }
+      y += 1.5;
+    }
+
+    if (l.fechamento_por) {
+      garantirEspaco(5);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...cinzaEscuro);
+      doc.text(
+        `Relato registrado por ${l.fechamento_por}${
+          l.fechamento_em ? ` em ${formatarData(l.fechamento_em)}` : ""
+        }.`,
+        ESQ,
+        y,
+      );
+      y += 4;
+    }
+
+    y += 4;
   });
 
+  // Trilha de auditoria, no fim do documento.
+  garantirEspaco(14);
+  y += 2;
+  doc.setDrawColor(226, 232, 240);
+  doc.line(ESQ, y, ESQ + LARGURA, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...cinzaEscuro);
+  doc.text(`Gerado por: ${geradoPorEmail || "Sistema Automatizado"} em ${dataEmissao}.`, ESQ, y);
+  y += 4;
+  doc.text(
+    "O relato de cada entrega é o texto registrado no fechamento técnico pela pessoa responsável.",
+    ESQ,
+    y,
+  );
+
+  // Rodapé em todas as páginas
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pageCount = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
-    doc.text(`Grupo Bloco — Relatório Técnico (${sistemaSlug})`, 14, 287);
+    doc.line(ESQ, 282, ESQ + LARGURA, 282);
+    doc.text("Grupo Bloco — Relatório de Implementações", ESQ, 287);
     doc.text(`Página ${i} de ${pageCount}`, 175, 287);
   }
 
-  doc.save(`relatorio-tecnico-${sistemaSlug}.pdf`);
+  const sufixo = sistemaSlug ? `-${sistemaSlug}` : "";
+  doc.save(`implementacoes${sufixo}-${inicio.toISOString().slice(0, 10)}.pdf`);
 }
