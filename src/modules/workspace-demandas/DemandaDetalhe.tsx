@@ -21,8 +21,11 @@ import {
 import { rascunhoDeDemanda } from "@/domain/knowledge";
 import {
   buscarFechamento,
+  classificar,
   salvarFechamento,
+  sugerirClassificacao,
 } from "@/modules/relatorios/services/fechamento-data";
+import { ConcluirDemanda } from "./demanda/ConcluirDemanda";
 import {
   PRIORIDADE_ROTULO,
   RISCO_ROTULO,
@@ -161,6 +164,7 @@ export default function DemandaDetalhe() {
    * em vez de a demanda inteira quebrar por causa de um botão.
    */
   const [temRelato, setTemRelato] = useState(false);
+  const [concluindo, setConcluindo] = useState(false);
   const recarregarRelato = useMemo(
     () => async () => {
       if (!id) return;
@@ -436,6 +440,22 @@ export default function DemandaDetalhe() {
                 disabled={!daEquipe}
                 etapas={etapas.filter((e) => normalizarEtapa(e.rotulo) !== ETAPA_FORA_DO_FLUXO)}
                 onMoverStatus={async (novoStatusId) => {
+                  /**
+                   * Concluir não é só mudar de coluna.
+                   *
+                   * É o momento em que existe alguém que sabe descrever o que
+                   * foi feito, e é o único momento em que isso é barato. Pedir
+                   * depois, em outra tela, é o que fez 45 de 46 entregas
+                   * ficarem sem relato. A caixa faz as quatro coisas de uma
+                   * vez: move, avisa quem pediu, grava o relato e classifica.
+                   *
+                   * Só para a equipe e só quando ainda não há relato — com
+                   * relato gravado, a caixa sobrescreveria em silêncio.
+                   */
+                  if (novoStatusId === "concluido" && daEquipe && !temRelato) {
+                    setConcluindo(true);
+                    return;
+                  }
                   try {
                     await acoesDemanda.mover({ demandaId: d.id, statusId: novoStatusId });
                     toast.success("Status atualizado com sucesso.");
@@ -603,6 +623,57 @@ export default function DemandaDetalhe() {
               pelo assistente têm o fio completo.
             </div>
           )}
+
+          {/* A ORDEM AQUI IMPORTA, e cada passo pode falhar sozinho.
+              Mover primeiro: é o que o usuário pediu ao clicar, e o que
+              dispara a data de conclusão. Comentar depois: se falhar, a
+              demanda está concluída e a pessoa reenvia. Relato por último
+              entre os três: se falhar, o resumo ainda está no chat e dá para
+              recuperar pelo botão "usar como relato". */}
+          <ConcluirDemanda
+            aberto={concluindo}
+            ticket={d.referencia ?? d.id.slice(0, 8)}
+            onFechar={() => setConcluindo(false)}
+            onConcluir={async (resumo) => {
+              await acoesDemanda.mover({ demandaId: d.id, statusId: "concluido" });
+              try {
+                await fio.comentar(resumo, false);
+              } catch {
+                toast.error("A demanda foi concluída, mas o aviso no chat falhou.");
+              }
+              try {
+                await salvarFechamento(d.id, {
+                  o_que_foi_solicitado: d.descricao ?? null,
+                  solucao_implementada: resumo,
+                  situacao: "concluido",
+                });
+                await recarregarRelato();
+              } catch (e) {
+                toast.error("O relato técnico não foi gravado", {
+                  description: (e as Error).message,
+                });
+                return null;
+              }
+              toast.success("Demanda concluída e relato registrado");
+              return sugerirClassificacao({
+                titulo: d.titulo,
+                pedido: d.descricao,
+                relato: resumo,
+                sistemas: d.sistema?.nome ? [d.sistema.nome] : [],
+              });
+            }}
+            onClassificar={async (codigo, justificativa) => {
+              try {
+                await classificar(d.id, codigo, justificativa);
+                toast.success("Classificação registrada");
+              } catch (e) {
+                toast.error("Não foi possível classificar", {
+                  description: (e as Error).message,
+                });
+                throw e;
+              }
+            }}
+          />
         </main>
 
         {painel && (

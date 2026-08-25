@@ -146,6 +146,50 @@ export async function buscarResolucaoDoFio(demandaId: string): Promise<FalaDoFio
   return (data ?? []) as unknown as FalaDoFio[];
 }
 
+// ---------------------------------------------------------------------------
+// Sugestão de classificação
+// ---------------------------------------------------------------------------
+
+export interface SugestaoDeClassificacao {
+  classificacao: "facil" | "media" | "dificil";
+  justificativa: string;
+  confianca: "alta" | "media" | "baixa";
+}
+
+/**
+ * Pede ao Blink um palpite de classificação a partir do relato.
+ *
+ * SUGESTÃO, NUNCA DECISÃO. Quem grava é `relatorio_classificar()`, com a
+ * sessão de uma pessoa e o nome dela no histórico. A tela mostra o nível já
+ * marcado e a justificativa já escrita; falta um clique, e é esse clique que
+ * põe alguém para sustentar a decisão numa revisão futura.
+ *
+ * Devolve `null` em qualquer falha — função não publicada, IA fora do ar,
+ * resposta ilegível. É de propósito: a conclusão da demanda não pode depender
+ * disto. Sem sugestão, a pessoa classifica como sempre classificou.
+ */
+export async function sugerirClassificacao(entrada: {
+  titulo?: string;
+  pedido?: string | null;
+  relato: string;
+  sistemas?: string[];
+}): Promise<SugestaoDeClassificacao | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke("sugerir-classificacao", {
+      body: {
+        titulo: entrada.titulo,
+        pedido: entrada.pedido ?? null,
+        relato: entrada.relato,
+        sistemas: entrada.sistemas ?? [],
+      },
+    });
+    if (error || !data || (data as { error?: string }).error) return null;
+    return data as SugestaoDeClassificacao;
+  } catch {
+    return null;
+  }
+}
+
 export type RascunhoDeFechamento = Partial<Omit<FechamentoTecnico, "demanda_id" | "updated_at">>;
 
 export async function salvarFechamento(
