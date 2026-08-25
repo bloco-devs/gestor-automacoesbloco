@@ -41,47 +41,39 @@ export const BlinkCarregando = memo(function BlinkCarregando({
       )}
 
       <div className={cn("parachutist-wrapper relative z-10", t.wrapper)}>
-        {/* BACK SVG: Canopy and Legs */}
         <svg
-          className="absolute inset-0 w-full h-full drop-shadow-md z-0"
-          viewBox="0 0 100 120"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Canopy - Using primary brand color for the parachute */}
-          <path d="M 10 40 Q 50 -10 90 40 Z" fill="hsl(var(--primary))"></path>
-          <path d="M 30 28 Q 50 0 70 28 L 50 35 Z" fill="#FFFFFF" opacity="0.3"></path>
-
-          {/* Legs */}
-          <path d="M 40 100 Q 35 110 32 114" fill="none" stroke="#16171A" strokeWidth="4" strokeLinecap="round" />
-          <rect x="29" y="112" width="7" height="5" rx="2.5" fill="#F2C230" />
-
-          <path d="M 60 100 Q 65 110 68 114" fill="none" stroke="#16171A" strokeWidth="4" strokeLinecap="round" />
-          <rect x="64" y="112" width="7" height="5" rx="2.5" fill="#F2C230" />
-        </svg>
-
-        {/* Parachutist (Blink) */}
-        <div className="absolute top-[52%] left-1/2 -translate-x-1/2 w-[42%] z-10 flex justify-center">
-          <Blink className="w-full h-auto drop-shadow-md text-foreground" />
-        </div>
-
-        {/* FRONT SVG: Cords and Arms */}
-        <svg
-          className="absolute inset-0 w-full h-full z-20 pointer-events-none"
+          className="parachute-svg absolute inset-0 w-full h-full drop-shadow-md z-0"
           viewBox="0 0 100 120"
           xmlns="http://www.w3.org/2000/svg"
         >
           {/* Cords */}
-          <line x1="10" y1="40" x2="45" y2="70" stroke="currentColor" strokeWidth="2" className="text-foreground/30"></line>
-          <line x1="90" y1="40" x2="55" y2="70" stroke="currentColor" strokeWidth="2" className="text-foreground/30"></line>
-          <line x1="50" y1="35" x2="50" y2="70" stroke="currentColor" strokeWidth="2" className="text-foreground/30"></line>
+          <line x1="10" y1="40" x2="45" y2="80" stroke="currentColor" strokeWidth="2" className="text-foreground/30"></line>
+          <line x1="90" y1="40" x2="55" y2="80" stroke="currentColor" strokeWidth="2" className="text-foreground/30"></line>
+          <line x1="50" y1="35" x2="50" y2="80" stroke="currentColor" strokeWidth="2" className="text-foreground/30"></line>
 
-          {/* Arms */}
-          <path d="M 32 82 Q 35 75 45 70" fill="none" stroke="#16171A" strokeWidth="3" strokeLinecap="round" />
-          <circle cx="45" cy="70" r="3.5" fill="#F2C230" />
+          {/* Canopy - Using primary brand color for the parachute */}
+          <path d="M 10 40 Q 50 -10 90 40 Z" fill="hsl(var(--primary))"></path>
+          <path d="M 30 28 Q 50 0 70 28 L 50 35 Z" fill="#FFFFFF" opacity="0.3"></path>
+
+          {/* Body and Limbs */}
+          {/* Corpo Escuro do Blink (#16171A), ou bg da IA. Vamos usar #16171A para combinar perfeitamente com a cabeça original dele */}
+          <rect x="42" y="93" width="16" height="20" rx="5" fill="#16171A"></rect>
           
-          <path d="M 68 82 Q 65 75 55 70" fill="none" stroke="#16171A" strokeWidth="3" strokeLinecap="round" />
-          <circle cx="55" cy="70" r="3.5" fill="#F2C230" />
+          {/* Arms (Upwards to hold the cords) */}
+          <path d="M 42 95 L 30 85" stroke="#16171A" strokeWidth="3" strokeLinecap="round"></path>
+          <path d="M 58 95 L 70 85" stroke="#16171A" strokeWidth="3" strokeLinecap="round"></path>
+          
+          {/* Legs (Dangling) */}
+          <path d="M 45 113 L 40 120" stroke="#16171A" strokeWidth="3" strokeLinecap="round"></path>
+          <path d="M 55 113 L 60 120" stroke="#16171A" strokeWidth="3" strokeLinecap="round"></path>
         </svg>
+
+        {/* Parachutist Head (Blink) - Posicionado no lugar do antigo circle (cx=50, cy=85). */}
+        {/* r=12 faria um width=24. O topo seria 85 - 12 = 73. */}
+        {/* 73 / 120 = 60.83% */}
+        <div className="absolute top-[60.83%] left-1/2 -translate-x-1/2 w-[24%] z-10 flex justify-center">
+          <Blink className="w-full h-auto drop-shadow-md text-foreground" />
+        </div>
       </div>
 
       {mensagem && (
