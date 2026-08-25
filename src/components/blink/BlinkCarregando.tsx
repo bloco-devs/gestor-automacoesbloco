@@ -88,7 +88,9 @@ export const BlinkCarregando = memo(function BlinkCarregando({
           </g>
 
           {/* ROSTO DO BLINK INCORPORADO COMO SVG */}
-          <Blink className="w-[66px] h-[66px]" x="67" y="112" />
+          <svg x="67" y="112" width="66" height="66">
+            <Blink className="w-full h-full" />
+          </svg>
         </svg>
       </div>
 
