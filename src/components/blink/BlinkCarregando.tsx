@@ -41,39 +41,55 @@ export const BlinkCarregando = memo(function BlinkCarregando({
       )}
 
       <div className={cn("parachutist-wrapper relative z-10", t.wrapper)}>
-        <svg
-          className="parachute-svg absolute inset-0 w-full h-full drop-shadow-md z-0"
-          viewBox="0 0 100 120"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Cords */}
-          <line x1="10" y1="40" x2="45" y2="80" stroke="currentColor" strokeWidth="2" className="text-foreground/30"></line>
-          <line x1="90" y1="40" x2="55" y2="80" stroke="currentColor" strokeWidth="2" className="text-foreground/30"></line>
-          <line x1="50" y1="35" x2="50" y2="80" stroke="currentColor" strokeWidth="2" className="text-foreground/30"></line>
+        <svg viewBox="0 0 200 300" className="w-full h-full drop-shadow-md z-10 relative" xmlns="http://www.w3.org/2000/svg">
+          {/* CORDAS DO PARAQUEDAS */}
+          <g id="parachute-cords" stroke="hsl(var(--foreground)/0.3)" strokeWidth="2">
+            <line x1="40" y1="60" x2="85" y2="120" />
+            <line x1="160" y1="60" x2="115" y2="120" />
+            <line x1="100" y1="50" x2="100" y2="120" />
+          </g>
 
-          {/* Canopy - Using primary brand color for the parachute */}
-          <path d="M 10 40 Q 50 -10 90 40 Z" fill="hsl(var(--primary))"></path>
-          <path d="M 30 28 Q 50 0 70 28 L 50 35 Z" fill="#FFFFFF" opacity="0.3"></path>
+          {/* CANOPY / PARAQUEDAS */}
+          <path d="M 20 60 Q 100 -20 180 60 Z" fill="hsl(var(--primary))"></path>
+          <path d="M 60 40 Q 100 -5 140 40 L 100 50 Z" fill="#FFFFFF" opacity="0.3"></path>
 
-          {/* Body and Limbs */}
-          {/* Corpo Escuro do Blink (#16171A), ou bg da IA. Vamos usar #16171A para combinar perfeitamente com a cabeça original dele */}
-          <rect x="42" y="93" width="16" height="20" rx="5" fill="#16171A"></rect>
-          
-          {/* Arms (Upwards to hold the cords) */}
-          <path d="M 42 95 L 30 85" stroke="#16171A" strokeWidth="3" strokeLinecap="round"></path>
-          <path d="M 58 95 L 70 85" stroke="#16171A" strokeWidth="3" strokeLinecap="round"></path>
-          
-          {/* Legs (Dangling) */}
-          <path d="M 45 113 L 40 120" stroke="#16171A" strokeWidth="3" strokeLinecap="round"></path>
-          <path d="M 55 113 L 60 120" stroke="#16171A" strokeWidth="3" strokeLinecap="round"></path>
+          {/* BRAÇO ESQUERDO */}
+          <g id="arm-left" className="animate-swing-left" style={{ transformOrigin: '80px 130px' }}>
+            <circle cx="80" cy="130" r="6" fill="#F2C230" /> {/* Ombro */}
+            <rect x="50" y="126" width="30" height="8" rx="4" fill="#16171A" stroke="#F2C230" strokeWidth="1.5" transform="rotate(-45 80 130)" />
+            <circle cx="57" cy="107" r="5" fill="#F2C230" /> {/* Mão */}
+          </g>
+
+          {/* BRAÇO DIREITO */}
+          <g id="arm-right" className="animate-swing-right" style={{ transformOrigin: '120px 130px' }}>
+            <circle cx="120" cy="130" r="6" fill="#F2C230" /> {/* Ombro */}
+            <rect x="120" y="126" width="30" height="8" rx="4" fill="#16171A" stroke="#F2C230" strokeWidth="1.5" transform="rotate(45 120 130)" />
+            <circle cx="143" cy="107" r="5" fill="#F2C230" /> {/* Mão */}
+          </g>
+
+          {/* PERNA ESQUERDA */}
+          <g id="leg-left" className="animate-flail-left" style={{ transformOrigin: '85px 180px' }}>
+            <circle cx="85" cy="180" r="6" fill="#F2C230" /> {/* Quadril */}
+            <rect x="65" y="180" width="8" height="35" rx="4" fill="#16171A" stroke="#F2C230" strokeWidth="1.5" transform="rotate(20 85 180)" />
+            <circle cx="73" cy="211" r="5.5" fill="#F2C230" /> {/* Pé */}
+          </g>
+
+          {/* PERNA DIREITA */}
+          <g id="leg-right" className="animate-flail-right" style={{ transformOrigin: '115px 180px' }}>
+            <circle cx="115" cy="180" r="6" fill="#F2C230" /> {/* Quadril */}
+            <rect x="127" y="180" width="8" height="35" rx="4" fill="#16171A" stroke="#F2C230" strokeWidth="1.5" transform="rotate(-20 115 180)" />
+            <circle cx="127" cy="211" r="5.5" fill="#F2C230" /> {/* Pé */}
+          </g>
+
+          {/* CHASSI / CORPO PRINCIPAL */}
+          <g id="main-body">
+            <rect x="75" y="120" width="50" height="65" rx="15" fill="#16171A" stroke="#F2C230" strokeWidth="2.5" />
+            <rect x="85" y="175" width="30" height="10" rx="5" fill="#0B0C0E" /> {/* Detalhe inferior */}
+          </g>
+
+          {/* ROSTO DO BLINK INCORPORADO COMO SVG */}
+          <Blink className="w-[66px] h-[66px]" x="67" y="112" />
         </svg>
-
-        {/* Parachutist Head (Blink) - Posicionado no lugar do antigo circle (cx=50, cy=85). */}
-        {/* r=12 faria um width=24. O topo seria 85 - 12 = 73. */}
-        {/* 73 / 120 = 60.83% */}
-        <div className="absolute top-[60.83%] left-1/2 -translate-x-1/2 w-[24%] z-10 flex justify-center">
-          <Blink className="w-full h-auto drop-shadow-md text-foreground" />
-        </div>
       </div>
 
       {mensagem && (

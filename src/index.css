@@ -483,6 +483,20 @@
   50% { transform: translateY(-5%) rotate(5deg); }
 }
 
+@keyframes swing-limbs {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(15deg); }
+}
+@keyframes swing-limbs-reverse {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-15deg); }
+}
+
+.animate-swing-left { animation: swing-limbs 2s ease-in-out infinite; }
+.animate-swing-right { animation: swing-limbs-reverse 2s ease-in-out infinite; }
+.animate-flail-left { animation: swing-limbs-reverse 1.7s ease-in-out infinite; }
+.animate-flail-right { animation: swing-limbs 1.7s ease-in-out infinite; }
+
 @keyframes moveCloudsUp {
   0% { bottom: -100px; opacity: 0; }
   20% { opacity: 0.9; }
