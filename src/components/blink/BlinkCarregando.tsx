@@ -39,6 +39,23 @@ const CORDA_DIR = 66;
 /** O Blink ocupa daqui até o espelho disto — precisa conter as cordas. */
 const LARGURA_BLINK = 46;
 
+/**
+ * O VÃO ENTRE A CORDA E A CABEÇA, e por que ele existia.
+ *
+ * O `<Blink />` tem viewBox 220×220, mas o desenho só começa em y≈34 — a
+ * ponta da antena. Ou seja, 15% da altura dele é espaço vazio no topo. As
+ * cordas terminavam no fim do MEU svg, vinha esse vazio, e só então a cabeça:
+ * as cordas ficavam penduradas no ar.
+ *
+ * O recuo desfaz isso. Margem percentual resolve contra a LARGURA do pai (o
+ * conjunto), então: 15,5% do vazio × 46% que o Blink ocupa ≈ 7% — e uso 10%
+ * para as cordas entrarem um pouco atrás da cabeça, que é como arnês parece
+ * de verdade. Ele desenha depois no DOM, então cobre as pontas sozinho.
+ *
+ * Se o desenho do Blink mudar de enquadramento, este número muda junto.
+ */
+const RECUO_BLINK = 10;
+
 export const BlinkCarregando = memo(function BlinkCarregando({
   mensagem,
   nuvens = true,
@@ -119,10 +136,11 @@ export const BlinkCarregando = memo(function BlinkCarregando({
           </g>
         </svg>
 
-        {/* O BLINK ORIGINAL, inteiro e no lugar.
-            `-mt-[2px]` cobre a emenda entre o fim das cordas e o topo da
-            cabeça — sem isso aparece um fio de fundo entre os dois. */}
-        <div className="mx-auto -mt-[2px]" style={{ width: `${LARGURA_BLINK}%` }}>
+        {/* O BLINK ORIGINAL, inteiro e no lugar. */}
+        <div
+          className="relative mx-auto"
+          style={{ width: `${LARGURA_BLINK}%`, marginTop: `-${RECUO_BLINK}%` }}
+        >
           <Blink className="h-auto w-full" />
         </div>
       </div>
