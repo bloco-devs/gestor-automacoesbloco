@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { isPasswordRecoveryIntent } from "@/lib/auth-recovery";
-import { BoasVindas } from "@/components/BoasVindas";
+import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
 import type { Role } from "@/lib/types";
 
 export function ProtectedRoute({
@@ -35,7 +35,11 @@ export function ProtectedRoute({
    * Isto não substitui padrão nenhum: antes não havia nada neste ponto.
    */
   if (loading) {
-    return <BoasVindas estado="Abrindo o sistema…" />;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+        <BlinkCarregando tamanho="lg" mensagem="Abrindo o sistema…" />
+      </div>
+    );
   }
   if (!user || !session) return <Navigate to="/auth" replace />;
   // Administrador (mesmo com viewAs em outro perfil) tem acesso pleno a rotas
