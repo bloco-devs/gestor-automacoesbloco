@@ -76,6 +76,7 @@ function Cartao({
   const [justificativa, setJustificativa] = useState("");
   const [motivo, setMotivo] = useState("");
   const [verHistorico, setVerHistorico] = useState(false);
+  const [alterando, setAlterando] = useState(false);
 
   const historico = useQuery({
     queryKey: ["relatorio", "historico-classificacao", item.demanda_id],
@@ -215,18 +216,28 @@ function Cartao({
           </div>
 
           <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg bg-muted/40 p-3 text-[13px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <Clock className="size-3.5" aria-hidden />
-              {item.minutos_lancados > 0
-                ? formatarDuracao(item.minutos_lancados)
-                : "sem tempo lançado"}
-            </span>
-            <span>
-              {item.tarefas_total > 0
-                ? `${item.tarefas_feitas}/${item.tarefas_total} critérios`
-                : "sem critérios"}
-            </span>
-            <span>{item.anexos} anexo{item.anexos === 1 ? "" : "s"}</span>
+            {/* SÓ O QUE EXISTE.
+                "sem tempo lançado", "sem critérios" e "0 anexos" ocupavam a
+                linha anunciando ausências — e ausência aqui não é pendência:
+                lançar hora é opcional e, por regra do módulo, tempo NUNCA
+                determina classificação. Escrito ao lado do formulário, parecia
+                item a preencher antes de classificar. Nada disso bloqueia. */}
+            {item.minutos_lancados > 0 && (
+              <span className="inline-flex items-center gap-1">
+                <Clock className="size-3.5" aria-hidden />
+                {formatarDuracao(item.minutos_lancados)}
+              </span>
+            )}
+            {item.tarefas_total > 0 && (
+              <span>
+                {item.tarefas_feitas}/{item.tarefas_total} critérios
+              </span>
+            )}
+            {item.anexos > 0 && (
+              <span>
+                {item.anexos} anexo{item.anexos === 1 ? "" : "s"}
+              </span>
+            )}
           </div>
 
           {/* --------------------------------------------------------- */}
@@ -250,6 +261,20 @@ function Cartao({
             </div>
           )}
 
+          {/* JÁ CLASSIFICADA NÃO MOSTRA FORMULÁRIO VAZIO.
+              Antes, o cartão exibia a decisão salva e logo abaixo o formulário
+              em branco, com "Justificativa obrigatória" vazia. Lido de cima
+              para baixo, parecia que algo não tinha sido preenchido — o André
+              leu exatamente assim depois de classificar pelo modal. Alterar
+              uma decisão registrada é ato deliberado, e agora precisa ser
+              pedido. */}
+          {item.ja_classificada && !alterando ? (
+            <Button variant="outline" size="sm" className="w-fit" onClick={() => setAlterando(true)}>
+              <Scale className="size-4" aria-hidden />
+              Alterar classificação
+            </Button>
+          ) : (
+          <>
           <div>
             <Label>Classificação</Label>
             <p className="ds-caption mb-2 mt-0.5 text-muted-foreground">{CRITERIO}</p>
@@ -324,13 +349,26 @@ function Cartao({
               onClick={() => aoClassificar(escolha!, justificativa, motivo || undefined)}
             >
               <Scale className="size-4" aria-hidden />
-              {item.ja_classificada ? "Alterar classificação" : "Classificar"}
+              {item.ja_classificada ? "Salvar alteração" : "Classificar"}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setVerHistorico((v) => !v)}>
-              <History className="size-4" aria-hidden />
-              Histórico
-            </Button>
+            {alterando && (
+              <Button variant="ghost" size="sm" onClick={() => setAlterando(false)}>
+                Cancelar
+              </Button>
+            )}
           </div>
+          </>
+          )}
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-fit"
+            onClick={() => setVerHistorico((v) => !v)}
+          >
+            <History className="size-4" aria-hidden />
+            Histórico
+          </Button>
 
           {verHistorico && (
             <div className="rounded-lg border">
