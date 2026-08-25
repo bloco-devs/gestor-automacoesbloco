@@ -433,47 +433,55 @@
 .parachute-loader .wind-line {
   position: absolute;
   width: 2px;
-  background: hsl(var(--foreground) / 0.15);
+  background: hsl(var(--foreground) / 0.22);
   border-radius: 2px;
   bottom: -50px;
   animation: windUp 0.8s linear infinite;
 }
 
-.parachute-loader .wind-1 { left: 18%; height: 40px; animation-delay: 0s; animation-duration: 1.8s; }
-.parachute-loader .wind-2 { left: 82%; height: 60px; animation-delay: 0.4s; animation-duration: 2.2s; }
-.parachute-loader .wind-3 { left: 9%;  height: 30px; animation-delay: 0.9s; animation-duration: 2s; }
-.parachute-loader .wind-4 { left: 91%; height: 50px; animation-delay: 0.2s; animation-duration: 2.4s; }
 /* Fora do centro: em 50% a linha atravessava o boneco. */
-.parachute-loader .wind-5 { left: 64%; height: 25px; animation-delay: 0.5s; animation-duration: 1.6s; }
+
+/* NUVEM SEM EMENDA.
+   Antes era um círculo com `::before` e `::after` em posições fixas. Nesse
+   tamanho os três não se fundem: aparece o degrau retangular de cada
+   pseudo-elemento na borda, e o conjunto lê como mancha, não como nuvem.
+   Agora são três elipses no MESMO `background`. Gradientes de uma mesma
+   camada se misturam por definição, então não há emenda para aparecer — e
+   sai mais barato que `filter: blur()`, que obrigaria a compor a camada a
+   cada quadro enquanto ela sobe. */
+/* PERTO DE QUEM CAI.
+   Estavam em 9%, 18%, 64%, 82% e 91% — nas quatro quinas da tela. Vento
+   espalhado assim não lê como vento: lê como risco solto. O que dá a
+   sensação de queda é o ar passando JUNTO do corpo, então a faixa agora é
+   34%–70%, com duas linhas de cada lado bem coladas no centro. As que
+   cruzam o boneco passam por trás dele (`z-10` no conjunto), o que é
+   exatamente o que se quer — some atrás e reaparece embaixo. */
+.parachute-loader .wind-1 { left: 34%; height: 44px; animation-delay: 0s;   animation-duration: 1.8s; }
+.parachute-loader .wind-2 { left: 43%; height: 30px; animation-delay: 0.7s; animation-duration: 2.2s; }
+.parachute-loader .wind-3 { left: 49%; height: 56px; animation-delay: 1.2s; animation-duration: 2s;   }
+.parachute-loader .wind-4 { left: 57%; height: 34px; animation-delay: 0.3s; animation-duration: 2.4s; }
+.parachute-loader .wind-5 { left: 64%; height: 48px; animation-delay: 1.6s; animation-duration: 1.9s; }
+.parachute-loader .wind-6 { left: 39%; height: 26px; animation-delay: 2.1s; animation-duration: 2.3s; }
+.parachute-loader .wind-7 { left: 70%; height: 38px; animation-delay: 0.9s; animation-duration: 2.1s; }
 
 .parachute-loader .cloud {
   position: absolute;
-  background: hsl(var(--foreground));
-  border-radius: 50%;
-  bottom: -100px;
-  opacity: 0.06;
+  background:
+    radial-gradient(ellipse 44% 58% at 26% 64%, hsl(var(--foreground)) 0%, transparent 72%),
+    radial-gradient(ellipse 40% 82% at 52% 44%, hsl(var(--foreground)) 0%, transparent 72%),
+    radial-gradient(ellipse 42% 54% at 78% 66%, hsl(var(--foreground)) 0%, transparent 72%);
+  bottom: -20%;
   animation: moveCloudsUp 3s linear infinite;
 }
 
-.parachute-loader .cloud::after,
-.parachute-loader .cloud::before {
-  content: "";
-  position: absolute;
-  background: inherit;
-  border-radius: 50%;
-}
 
 .parachute-loader .cloud-1 {
   width: 84px; height: 84px; left: 6%; animation-duration: 11s;
 }
-.parachute-loader .cloud-1::after { width: 40px; height: 40px; top: -20px; left: 10px; }
-.parachute-loader .cloud-1::before { width: 50px; height: 50px; top: -10px; left: 30px; }
 
 .parachute-loader .cloud-2 {
   width: 110px; height: 110px; right: 8%; animation-duration: 9s; animation-delay: 2s;
 }
-.parachute-loader .cloud-2::after { width: 50px; height: 50px; top: -25px; left: 15px; }
-.parachute-loader .cloud-2::before { width: 60px; height: 60px; top: -15px; left: 40px; }
 
 .parachutist-wrapper {
   animation: sway 3s ease-in-out infinite;

@@ -77,11 +77,12 @@ export const BlinkCarregando = memo(function BlinkCarregando({
     >
       {nuvens && (
         <>
-          <div className="wind-line wind-1" />
-          <div className="wind-line wind-2" />
-          <div className="wind-line wind-3" />
-          <div className="wind-line wind-4" />
-          <div className="wind-line wind-5" />
+          {/* Sete linhas, não cinco: com poucas, cada uma é vista sozinha e
+              lê como risco perdido. É a quantidade que transforma traço em
+              fluxo. A posição e o ritmo de cada uma estão no CSS. */}
+          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+            <div key={n} className={`wind-line wind-${n}`} />
+          ))}
           <div className="cloud cloud-1" />
           <div className="cloud cloud-2" />
         </>
