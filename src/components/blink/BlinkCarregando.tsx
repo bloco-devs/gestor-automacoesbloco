@@ -31,23 +31,70 @@ import { Blink } from "./Blink";
  * acontecendo" justamente de quem mais precisa dele.
  */
 
+/**
+ * A referência é o efeito original: o ovo tem 150×200px e ocupa a tela de
+ * verdade. A primeira versão daqui saiu com 96px no maior tamanho, e o
+ * resultado foi um boneco pequeno demais para se ver saltando — o movimento
+ * existia e não comunicava nada, que é o pior dos dois mundos: custa
+ * atenção e não entrega presença.
+ *
+ * A caixa precisa ser bem mais alta que o Blink: o salto sobe 64px e a
+ * sombra fica embaixo. Caixa apertada corta o ápice do pulo.
+ */
 const TAMANHOS = {
-  sm: { caixa: "h-16", blink: "size-10", sombra: "w-10" },
-  md: { caixa: "h-28", blink: "size-16", sombra: "w-16" },
-  lg: { caixa: "h-40", blink: "size-24", sombra: "w-24" },
+  sm: { caixa: "h-28", blink: "size-14", sombra: "w-12", salto: 28, desloc: 14, nuvem: 0.6 },
+  md: { caixa: "h-44", blink: "size-24", sombra: "w-20", salto: 48, desloc: 22, nuvem: 0.8 },
+  lg: { caixa: "h-56", blink: "size-36", sombra: "w-28", salto: 64, desloc: 28, nuvem: 1 },
 } as const;
 
-function Nuvem({ classe, duracao, atraso }: { classe: string; duracao: string; atraso: string }) {
+/**
+ * Uma nuvem: a barra deitada mais a bolha por cima.
+ *
+ * As duas medidas são em pixel, não em percentual. A bolha é filha absoluta
+ * de uma barra de poucos pixels de altura, e `size-[70%]` resolvia a altura
+ * contra essa altura minúscula — o resultado era um risco achatado no lugar
+ * de uma bolha redonda.
+ *
+ * A cor é `foreground` com opacidade baixa, que atende os dois temas: no
+ * claro vira forma cinza sobre fundo branco, no escuro forma clara sobre
+ * fundo preto. Nos dois casos lê como nuvem passando, sem competir com o
+ * Blink.
+ */
+function Nuvem({
+  topo,
+  largura,
+  altura,
+  bolha,
+  opacidade,
+  duracao,
+  atraso,
+}: {
+  topo: string;
+  largura: number;
+  altura: number;
+  bolha: number;
+  opacidade: number;
+  duracao: string;
+  atraso: string;
+}) {
   return (
     <div
-      className={cn(
-        "blink-nuvem pointer-events-none absolute rounded-full bg-foreground/[0.06]",
-        "before:absolute before:-top-1/2 before:left-1/4 before:size-[70%] before:rounded-full before:bg-foreground/[0.06] before:content-['']",
-        classe,
-      )}
-      style={{ animationDuration: duracao, animationDelay: atraso }}
+      className="blink-nuvem pointer-events-none absolute rounded-full bg-foreground/[0.09]"
+      style={{
+        top: topo,
+        width: largura,
+        height: altura,
+        opacity: opacidade,
+        animationDuration: duracao,
+        animationDelay: atraso,
+      }}
       aria-hidden
-    />
+    >
+      <div
+        className="absolute rounded-full bg-foreground/[0.09]"
+        style={{ width: bolha, height: bolha, top: -bolha * 0.55, left: largura * 0.22 }}
+      />
+    </div>
   );
 }
 
@@ -77,12 +124,49 @@ export const BlinkCarregando = memo(function BlinkCarregando({
       role="status"
       aria-live="polite"
     >
-      <div className={cn("relative flex w-full items-end justify-center overflow-hidden", t.caixa)}>
+      <div
+        className={cn("relative flex w-full items-end justify-center overflow-hidden", t.caixa)}
+        /**
+         * A altura e o deslocamento do salto entram por variável. Fixos em
+         * pixel, o mesmo pulo que cabe no tamanho grande estoura a caixa do
+         * pequeno e o ápice fica cortado pelo `overflow-hidden`.
+         */
+        style={
+          {
+            "--blink-salto": `${t.salto}px`,
+            "--blink-desloc": `${t.desloc}px`,
+          } as React.CSSProperties
+        }
+      >
         {nuvens && (
           <>
-            <Nuvem classe="left-0 top-[15%] h-2 w-14" duracao="6s" atraso="0s" />
-            <Nuvem classe="left-0 top-[38%] h-1.5 w-10 opacity-70" duracao="4.5s" atraso="-1.5s" />
-            <Nuvem classe="left-0 top-[8%] h-1.5 w-12 opacity-50" duracao="7.5s" atraso="-3s" />
+            <Nuvem
+              topo="12%"
+              largura={72 * t.nuvem}
+              altura={16 * t.nuvem}
+              bolha={28 * t.nuvem}
+              opacidade={1}
+              duracao="9s"
+              atraso="0s"
+            />
+            <Nuvem
+              topo="42%"
+              largura={52 * t.nuvem}
+              altura={12 * t.nuvem}
+              bolha={20 * t.nuvem}
+              opacidade={0.65}
+              duracao="7s"
+              atraso="-2.5s"
+            />
+            <Nuvem
+              topo="26%"
+              largura={60 * t.nuvem}
+              altura={13 * t.nuvem}
+              bolha={22 * t.nuvem}
+              opacidade={0.45}
+              duracao="11s"
+              atraso="-5s"
+            />
           </>
         )}
 
@@ -92,9 +176,15 @@ export const BlinkCarregando = memo(function BlinkCarregando({
           </div>
           {/* A sombra fica FORA do elemento que salta: se estivesse dentro,
               herdaria o mesmo transform e subiria junto com ele — que é
-              exatamente o que uma sombra não faz. */}
+              exatamente o que uma sombra não faz.
+
+              PRETO NOS DOIS TEMAS, com opacidades diferentes. Usava
+              `bg-foreground`, que no tema escuro é claro — ou seja, uma sombra
+              BRANCA embaixo do boneco. Sombra é escurecimento da superfície, e
+              não muda de cor com o tema; o que muda é o quanto ela precisa
+              pesar para aparecer sobre um fundo já escuro. */}
           <div
-            className={cn("blink-chao mt-1 h-1.5 rounded-[50%] bg-foreground", t.sombra)}
+            className={cn("blink-chao mt-1.5 h-2 rounded-[50%] bg-black/25 dark:bg-black/60", t.sombra)}
             aria-hidden
           />
         </div>

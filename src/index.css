@@ -441,12 +441,16 @@
    saltava dentro de uma tela de demonstração larga; aqui precisa
    caber em caixa de diálogo e em canto de tela.
    ------------------------------------------------------------ */
+/* A altura e o deslocamento vêm de variável, não fixos.
+   Com valores absolutos, o mesmo salto de 64px que cabe no tamanho grande
+   estoura a caixa do pequeno e o ápice do pulo fica cortado. Cada tamanho
+   define os seus e a curva continua a mesma. */
 @keyframes blink-saltar {
   0%   { transform: scale(1, 1) translateY(0); }
   10%  { transform: scale(1.1, 0.9) translateY(0); }
-  30%  { transform: scale(0.9, 1.1) translateY(-42px) translateX(18px); }
-  50%  { transform: scale(1.05, 0.95) translateY(0) translateX(18px) rotate(-10deg); }
-  58%  { transform: scale(1, 1) translateY(-5px) translateX(0); }
+  30%  { transform: scale(0.9, 1.1) translateY(calc(var(--blink-salto, 64px) * -1)) translateX(var(--blink-desloc, 28px)); }
+  50%  { transform: scale(1.05, 0.95) translateY(0) translateX(var(--blink-desloc, 28px)) rotate(-10deg); }
+  58%  { transform: scale(1, 1) translateY(calc(var(--blink-salto, 64px) * -0.11)) translateX(0); }
   65%  { transform: scale(1, 1) translateY(0); }
   100% { transform: scale(1, 1) translateY(0); }
 }
@@ -454,25 +458,45 @@
 /* A sombra conta a mesma história por baixo: encolhe quando ele
    sobe, acompanha o deslocamento, e volta. Sem ela o salto fica
    sem chão e o boneco parece flutuar. */
+/* Só transform, nunca `opacity`.
+   A opacidade da sombra vem de classe, porque ela precisa ser DIFERENTE em
+   cada tema: sombra é escurecimento da superfície, e no tema escuro a
+   superfície já é escura — 20% de preto ali some. Se a keyframe também
+   mexesse em opacity, os dois valores se multiplicariam e o ajuste por tema
+   deixaria de funcionar. */
 @keyframes blink-sombra {
-  0%   { transform: translateX(0) scale(1); opacity: 0.22; }
-  10%  { transform: translateX(0) scale(0.8); opacity: 0.26; }
-  30%  { transform: translateX(18px) scale(0.6); opacity: 0.1; }
-  50%  { transform: translateX(18px) scale(0.7); opacity: 0.16; }
-  58%  { transform: translateX(10px) scale(0.9); opacity: 0.2; }
-  65%  { transform: translateX(0) scale(1); opacity: 0.22; }
-  100% { transform: translateX(0) scale(1); opacity: 0.22; }
+  0%   { transform: translateX(0) scale(1); }
+  10%  { transform: translateX(0) scale(0.82); }
+  30%  { transform: translateX(var(--blink-desloc, 28px)) scale(0.55); }
+  50%  { transform: translateX(var(--blink-desloc, 28px)) scale(0.7); }
+  58%  { transform: translateX(calc(var(--blink-desloc, 28px) * 0.5)) scale(0.9); }
+  65%  { transform: translateX(0) scale(1); }
+  100% { transform: translateX(0) scale(1); }
 }
 
 /* Nuvens ao fundo, atravessando. Só para dar sensação de
    movimento contínuo enquanto se espera. */
+/* `left`, e não `translateX`.
+   Percentual em `translateX` resolve contra a largura do PRÓPRIO elemento —
+   uma nuvem de 56px andava 67px e tremia no canto, em vez de atravessar. Em
+   `left`, o percentual é da caixa que a contém, que é o comportamento
+   pretendido. O original resolvia isso com pixels fixos (500px), o que só
+   funciona em tela de largura conhecida. */
 @keyframes blink-nuvens {
-  from { transform: translateX(120%); }
-  to   { transform: translateX(-220%); }
+  from { left: 105%; }
+  to   { left: -45%; }
 }
 
-.blink-salta  { animation: blink-saltar 1s linear infinite; }
-.blink-chao   { animation: blink-sombra 1s linear infinite; }
+/* RITMO — 1,6s, e não 1s como no original.
+   A curva ocupa só os primeiros 65% do ciclo; os 35% finais são pausa em
+   repouso. A 1s isso dava 0,65s de movimento, rápido demais para o olho
+   acompanhar o agachar e o giro — via-se que algo mexeu, não o quê. A 1,6s
+   são ~1,04s de salto e ~0,56s parado: dá para ler cada fase e ainda existe
+   uma batida de descanso entre um pulo e o outro.
+   Mais que isso começa a parecer travado, que é o oposto do que um
+   carregador deve comunicar. */
+.blink-salta  { animation: blink-saltar var(--blink-ritmo, 1.6s) linear infinite; }
+.blink-chao   { animation: blink-sombra var(--blink-ritmo, 1.6s) linear infinite; }
 .blink-nuvem  { animation: blink-nuvens linear infinite; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -494,7 +518,6 @@
   }
   .blink-chao {
     animation: none;
-    opacity: 0.18;
   }
 }
 
