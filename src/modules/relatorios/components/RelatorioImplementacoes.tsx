@@ -41,7 +41,11 @@ import { toCsv, downloadCsv } from "@/modules/analytics/utils/csv";
 import { useRelatorioImplementacoes } from "../hooks/useRelatorioImplementacoes";
 import { formatarData } from "../services/relatorios-service";
 import { nomeCurto } from "../nomes";
-import { formatarReferenciaComSigla, obterEstiloDoSistema } from "@/domain/demand";
+import {
+  formatarReferenciaComSigla,
+  nomeDoSistemaPeloSlug,
+  obterEstiloDoSistema,
+} from "@/domain/demand";
 import { cn } from "@/lib/utils";
 import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 import type { LinhaDeImplementacao } from "../services/relatorios-data";
@@ -152,7 +156,9 @@ function RelatorioImplementacoesImpl() {
     const linhas = r.linhas.map((l) => ({
       Demanda: l.ticket_code,
       Título: l.titulo,
-      Sistema: l.sistema_slug ?? "Não identificado",
+      // O nome, não o slug: "produtividade" é o Gestão de Obra, e ninguém
+      // do Grupo Bloco chama assim.
+      Sistema: nomeDoSistemaPeloSlug(l.sistema_slug) ?? l.sistema_slug ?? "Não identificado",
       Categoria: TIPO_ROTULO[l.tipo] ?? l.tipo,
       Classificação: l.classificacao_rotulo ?? "Não classificada",
       Pontos: l.pontos ?? "",
@@ -455,7 +461,7 @@ function RelatorioImplementacoesImpl() {
                       <TableCell className="max-w-[320px] truncate">{l.titulo}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-normal">
-                          {l.sistema_slug ?? "não identificado"}
+                          {nomeDoSistemaPeloSlug(l.sistema_slug) ?? l.sistema_slug ?? "não identificado"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-[13px]" title={l.responsavel_nome ?? undefined}>

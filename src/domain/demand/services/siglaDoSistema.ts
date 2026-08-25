@@ -290,6 +290,27 @@ export function formatarReferenciaComSigla(
   return codigoOriginal ?? `#${hashId}`;
 }
 
+/**
+ * O NOME QUE AS PESSOAS USAM, a partir do slug gravado no banco.
+ *
+ * `sistema_slug` é identificador interno: `produtividade`, `incorporacao`,
+ * `nakhon-contratos`. Nenhum deles é como alguém do Grupo Bloco chama o
+ * sistema — `produtividade` é o "Gestão de Obra", e ver o slug num relatório
+ * oficial levou à conclusão razoável de que o sistema não existia.
+ *
+ * Relatório é lido por quem não abre o banco. Slug é para o banco.
+ */
+export function nomeDoSistemaPeloSlug(slug: string | null | undefined): string | null {
+  if (!slug) return null;
+  const chave = slug.trim().toLowerCase();
+  const achado = SISTEMAS_ECOSSISTEMA_BLOCO_ID[chave];
+  if (achado) return achado.nome;
+  // Slug fora do catálogo não vira nome inventado: devolve como está, para a
+  // tela decidir se mostra cru ou como "não identificado". Silenciar aqui
+  // esconderia um slug novo que ninguém cadastrou.
+  return null;
+}
+
 export function nomeDoSistemaPelaSigla(sigla: string | null): string | null {
   if (!sigla) return null;
   for (const info of Object.values(SISTEMAS_ECOSSISTEMA_BLOCO_ID)) {

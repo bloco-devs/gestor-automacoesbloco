@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatarData, percentualDeAlcance } from "./relatorios-service";
+import { nomeDoSistemaPeloSlug } from "@/domain/demand";
 import { formatarReais, formatarPercentual, type ResultadoDoCiclo } from "./apuracao-data";
 import type { LinhaDaApuracao, LinhaDeImplementacao } from "./relatorios-data";
 
@@ -299,7 +300,7 @@ export function exportarPdfExecutivo(dados: DadosRelatorioExecutivo) {
   const linhasAtividades = atividades.map((atv) => [
     atv.ticket_code,
     atv.titulo.length > 40 ? atv.titulo.substring(0, 37) + "..." : atv.titulo,
-    atv.sistema_slug || "—",
+    nomeDoSistemaPeloSlug(atv.sistema_slug) || atv.sistema_slug || "—",
     atv.responsavel_nome || "—",
     formatarData(atv.concluida_em),
     atv.classificacao_rotulo || "Não classificada",
