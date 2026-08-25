@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
-import { BlinkSaltando } from "@/components/blink/BlinkSaltando";
+import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
 
 /**
  * A TELA DE ENTRADA DO SISTEMA
@@ -92,11 +92,11 @@ export const BoasVindas = memo(function BoasVindas({
           </h1>
 
           <p className="max-w-md text-balance text-[15px] leading-relaxed text-muted-foreground">
-            Peça o que atrapalha. A equipe cuida do resto.
+            Sua central de demandas e automações. Você pede, acompanha, e a equipe cuida do resto.
           </p>
         </div>
 
-        <BlinkSaltando tamanho="lg" nuvens />
+        <BlinkCarregando tamanho="lg" nuvens />
 
         {estado && (
           <div
