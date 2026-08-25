@@ -13,7 +13,11 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { exportarPdfExecutivo } from "../services/pdf-exporter";
-import { formatarReferenciaComSigla, obterEstiloDoSistema } from "@/domain/demand";
+import {
+  formatarReferenciaComSigla,
+  nomeDoSistemaPeloSlug,
+  obterEstiloDoSistema,
+} from "@/domain/demand";
 import { cn } from "@/lib/utils";
 import { EmptyPanel, PageHeader, PageShell, Section } from "@/design-system";
 import { Badge } from "@/components/ui/badge";
@@ -170,9 +174,10 @@ function Apurar() {
       `apuracao-${r?.ciclo_rotulo?.replace("/", "-") ?? "ciclo"}.csv`,
       toCsv(
         linhas.map((l) => ({
-          Demanda: l.ticket_code,
+          // A sigla real, não o REC-/REQ- genérico — igual à tabela da tela.
+          Demanda: formatarReferenciaComSigla(l.ticket_code, l.sistema_slug, l.demanda_id, l.titulo),
           Título: l.titulo,
-          Sistema: l.sistema_slug ?? "Não identificado",
+          Sistema: nomeDoSistemaPeloSlug(l.sistema_slug) ?? l.sistema_slug ?? "Não identificado",
           Responsável: l.responsavel_nome ?? "—",
           Conclusão: formatarData(l.concluida_em),
           Classificação: l.classificacao_rotulo ?? "Não classificada",

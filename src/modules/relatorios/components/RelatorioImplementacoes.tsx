@@ -150,7 +150,8 @@ function RelatorioImplementacoesImpl() {
 
   function exportar() {
     const linhas = r.linhas.map((l) => ({
-      Demanda: l.ticket_code,
+      // A sigla real, não o REC-/REQ- genérico — igual à tabela da tela.
+      Demanda: formatarReferenciaComSigla(l.ticket_code, l.sistema_slug, l.demanda_id, l.titulo),
       Título: l.titulo,
       // O nome, não o slug: "produtividade" é o Gestão de Obra, e ninguém
       // do Grupo Bloco chama assim. Slug fora do catálogo aparece cru de

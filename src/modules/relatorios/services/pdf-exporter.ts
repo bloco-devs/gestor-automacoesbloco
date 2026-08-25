@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { formatarData, percentualDeAlcance } from "./relatorios-service";
 import { formatarReais, formatarPercentual, type ResultadoDoCiclo } from "./apuracao-data";
 import { relatoPreenchido } from "./relato-campos";
-import { nomeDoSistemaPeloSlug } from "@/domain/demand";
+import { formatarReferenciaComSigla, nomeDoSistemaPeloSlug } from "@/domain/demand";
 import type { LinhaDaApuracao, LinhaDeImplementacao } from "./relatorios-data";
 
 export interface DadosRelatorioExecutivo {
@@ -299,7 +299,8 @@ export function exportarPdfExecutivo(dados: DadosRelatorioExecutivo) {
   y += 4;
 
   const linhasAtividades = atividades.map((atv) => [
-    atv.ticket_code,
+    // A sigla real do sistema, não o prefixo genérico REC-/REQ-.
+    formatarReferenciaComSigla(atv.ticket_code, atv.sistema_slug, atv.demanda_id, atv.titulo),
     atv.titulo.length > 40 ? atv.titulo.substring(0, 37) + "..." : atv.titulo,
     // O nome do sistema. Imprimia `sistema_slug` cru, e um documento assinado
     // que vai à Diretoria listava "produtividade" como se fosse um sistema.
@@ -586,7 +587,7 @@ export function exportarPdfImplementacoes(dados: DadosRelatorioImplementacoes) {
     doc.setFontSize(10);
     doc.setTextColor(...azulEscuro);
     const cabecalho = doc.splitTextToSize(
-      `${l.ticket_code} — ${l.titulo}`,
+      `${formatarReferenciaComSigla(l.ticket_code, l.sistema_slug, l.demanda_id, l.titulo)} — ${l.titulo}`,
       LARGURA,
     ) as string[];
     for (const linha of cabecalho) {

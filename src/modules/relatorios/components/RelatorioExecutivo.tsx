@@ -48,7 +48,7 @@ import {
 } from "../services/relatorios-data";
 import { formatarData, percentualDeAlcance } from "../services/relatorios-service";
 import { exportarPdfExecutivo } from "../services/pdf-exporter";
-import { nomeDoSistemaPeloSlug } from "@/domain/demand";
+import { formatarReferenciaComSigla, nomeDoSistemaPeloSlug } from "@/domain/demand";
 import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 
 export function RelatorioExecutivo() {
@@ -157,7 +157,10 @@ export function RelatorioExecutivo() {
       `relatorio-executivo-${r.ciclo_rotulo.replace("/", "-")}.csv`,
       toCsv(
         linhas.map((l) => ({
-          Demanda: l.ticket_code,
+          // A sigla real, não o REC-/REQ- genérico. A tabela da tela já
+          // fazia isso; o CSV saía com o código cru, então o mesmo item
+          // aparecia com dois nomes dependendo de onde se olhava.
+          Demanda: formatarReferenciaComSigla(l.ticket_code, l.sistema_slug, l.demanda_id, l.titulo),
           Título: l.titulo,
           Sistema: nomeDoSistemaPeloSlug(l.sistema_slug) ?? l.sistema_slug ?? "Não informado",
           Responsável: l.responsavel_nome ?? "—",
@@ -452,7 +455,9 @@ export function RelatorioExecutivo() {
                 ) : (
                   linhas.map((atv) => (
                     <TableRow key={atv.demanda_id}>
-                      <TableCell className="font-mono text-xs text-muted-foreground">{atv.ticket_code}</TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
+                        {formatarReferenciaComSigla(atv.ticket_code, atv.sistema_slug, atv.demanda_id, atv.titulo)}
+                      </TableCell>
                       <TableCell className="font-medium text-sm">{atv.titulo}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {nomeDoSistemaPeloSlug(atv.sistema_slug) || atv.sistema_slug || "—"}

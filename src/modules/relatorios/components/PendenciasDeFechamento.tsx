@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { buscarPendencias, buscarRegistradas, formatarDuracao } from "../services/fechamento-data";
 import { formatarData } from "../services/relatorios-service";
+import { formatarReferenciaComSigla, nomeDoSistemaPeloSlug } from "@/domain/demand";
 import { VoltarParaRelatorios } from "./VoltarParaRelatorios";
 
 const SITUACAO: Record<string, { rotulo: string; variante: "outline" | "secondary" }> = {
@@ -132,11 +133,13 @@ function PendenciasDeFechamentoImpl() {
                 <TableBody>
                   {prontas.map((p) => (
                     <TableRow key={p.demanda_id}>
-                      <TableCell className="font-mono text-[12px]">{p.ticket_code}</TableCell>
+                      <TableCell className="font-mono text-[12px]">
+                        {formatarReferenciaComSigla(p.ticket_code, p.sistema_slug, p.demanda_id, p.titulo)}
+                      </TableCell>
                       <TableCell className="max-w-[300px] truncate">{p.titulo}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-normal">
-                          {p.sistema_slug ?? "não identificado"}
+                          {nomeDoSistemaPeloSlug(p.sistema_slug) ?? p.sistema_slug ?? "não identificado"}
                         </Badge>
                       </TableCell>
                       <TableCell className="tabular-nums text-[13px]">
@@ -208,11 +211,13 @@ function PendenciasDeFechamentoImpl() {
                   const s = SITUACAO[p.situacao] ?? SITUACAO.sem_registro;
                   return (
                     <TableRow key={p.demanda_id}>
-                      <TableCell className="font-mono text-[12px]">{p.ticket_code}</TableCell>
+                      <TableCell className="font-mono text-[12px]">
+                        {formatarReferenciaComSigla(p.ticket_code, p.sistema_slug, p.demanda_id, p.titulo)}
+                      </TableCell>
                       <TableCell className="max-w-[300px] truncate">{p.titulo}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-normal">
-                          {p.sistema_slug ?? "não identificado"}
+                          {nomeDoSistemaPeloSlug(p.sistema_slug) ?? p.sistema_slug ?? "não identificado"}
                         </Badge>
                       </TableCell>
                       <TableCell className="tabular-nums text-[13px]">
