@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
-import { BlinkSaltando } from "@/components/blink/BlinkSaltando";
+import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
 
 /**
  * A TELA DE ENTRADA DO SISTEMA
@@ -25,7 +25,7 @@ import { BlinkSaltando } from "@/components/blink/BlinkSaltando";
  *
  * HIERARQUIA
  * Marca (contexto) → nome do sistema (identidade) → uma linha do que ele faz
- * → o Blink saltando → o estado atual, miúdo. O movimento fica ABAIXO do
+ * → o Blink descendo → o estado atual, miúdo. O movimento fica ABAIXO do
  * texto de propósito: acima, ele roubaria a leitura do nome do sistema no
  * primeiro instante, que é o que esta tela tem para dizer.
  *
@@ -34,7 +34,7 @@ import { BlinkSaltando } from "@/components/blink/BlinkSaltando";
  * Esta é uma das poucas em que ela cabe: não há conteúdo aqui, só identidade.
  *
  * MOVIMENTO
- * Só o Blink e o ponto do estado se mexem, e os dois param com
+ * Só o carregador e o ponto do estado se mexem, e os dois param com
  * `prefers-reduced-motion`. Fundo animado numa tela que aparece em toda
  * entrada seria custo permanente por um efeito que ninguém pediu.
  */
@@ -91,12 +91,27 @@ export const BoasVindas = memo(function BoasVindas({
             Gestor de Automações
           </h1>
 
+          {/* Descrição do sistema, não slogan.
+              As versões anteriores falavam com o leitor em segunda pessoa
+              ("você pede", "peça o que atrapalha") — tom de material de
+              divulgação, não de ferramenta interna. Quem lê esta tela já
+              trabalha aqui e já sabe o que veio fazer; o que ela precisa
+              dizer é o que este sistema é, em uma linha. */}
           <p className="max-w-md text-balance text-[15px] leading-relaxed text-muted-foreground">
-            Sua central de demandas e automações. Você pede, acompanha, e a equipe cuida do resto.
+            Demandas, automações e acompanhamento de entregas.
           </p>
         </div>
 
-        <BlinkSaltando tamanho="lg" nuvens />
+        {/* O MESMO CARREGADOR DE TODO O SISTEMA.
+            Usava o salto, que o André descreveu como "bater numa parede
+            invisível" — e era mesmo: o ápice do pulo encostava no topo da
+            caixa e o `overflow-hidden` cortava. Um carregamento não tem
+            impacto, tem continuidade; e ter dois mascotes diferentes,
+            um na entrada e outro nas telas, é o tipo de inconsistência
+            que faz parecer que uma das duas está quebrada. */}
+        <div className="h-[340px] w-full max-w-2xl">
+          <BlinkCarregando nuvens />
+        </div>
 
         {estado && (
           <div

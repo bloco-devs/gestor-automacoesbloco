@@ -2,101 +2,133 @@ import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { Blink } from "./Blink";
 
-const TAMANHOS = {
-  sm: { wrapper: "w-[60px] h-[72px]" },
-  md: { wrapper: "w-[100px] h-[120px]" },
-  lg: { wrapper: "w-[160px] h-[192px]" },
-} as const;
+/**
+ * BLINK DE PARAQUEDAS — o carregamento do sistema.
+ *
+ * POR QUE A VERSÃO ANTERIOR NÃO PARECIA UM PARAQUEDISTA
+ *
+ * Ela montava tudo dentro de um `<svg>` e, lá dentro, abria outro `<svg>` que
+ * continha o componente `<Blink />` — que por sua vez é um terceiro `<svg>`.
+ * Três níveis aninhados, e o `className="w-full h-full"` do meio não faz nada
+ * dentro de SVG (não é HTML: quem manda ali é `width`/`height`/`viewBox`). O
+ * rosto saía fora de escala e desalinhado do corpo.
+ *
+ * O corpo também era o problema: retângulos finos com contorno de 1px, braços
+ * e pernas do mesmo peso das cordas. Lido de longe, vira vareta.
+ *
+ * COMO É AGORA
+ *
+ * Composição em HTML, não aninhamento: um SVG desenha só o velame e as
+ * cordas, e o `<Blink />` original entra abaixo como irmão, no tamanho que
+ * ele já sabe se desenhar. Zero duplicação da arte dele, zero conflito de
+ * viewBox — e no dia em que o desenho do Blink mudar, isto acompanha sozinho.
+ *
+ * As cordas terminam exatamente onde a cabeça dele começa, então a emenda
+ * some. É o único acerto de números que este arquivo pede: `CORDA_ESQ` e
+ * `CORDA_DIR` precisam bater com `LARGURA_BLINK`.
+ *
+ * TAMANHO
+ * `clamp(170px, 24vmin, 280px)`: substancial no celular, sem virar outdoor no
+ * monitor grande. `vmin` e não `vw` porque em tela deitada e baixa (notebook
+ * antigo) o `vw` estouraria a altura disponível.
+ */
+
+/** Onde as cordas encostam, em % da largura do conjunto. */
+const CORDA_ESQ = 34;
+const CORDA_DIR = 66;
+/** O Blink ocupa daqui até o espelho disto — precisa conter as cordas. */
+const LARGURA_BLINK = 46;
 
 export const BlinkCarregando = memo(function BlinkCarregando({
-  tamanho = "md",
   mensagem,
   nuvens = true,
   className,
 }: {
-  tamanho?: keyof typeof TAMANHOS;
   mensagem?: string;
+  /** Desligue em caixa pequena: vento e nuvens precisam de altura para subir. */
   nuvens?: boolean;
   className?: string;
 }) {
-  const t = TAMANHOS[tamanho];
-
   return (
     <div
-      className={cn("relative flex flex-col items-center justify-center w-full h-full min-h-[200px] overflow-hidden parachute-loader", className)}
+      className={cn(
+        "parachute-loader relative flex h-full w-full min-h-[220px] flex-col items-center justify-center overflow-hidden",
+        className,
+      )}
       role="status"
       aria-live="polite"
     >
       {nuvens && (
         <>
-          <div className="wind-line wind-1"></div>
-          <div className="wind-line wind-2"></div>
-          <div className="wind-line wind-3"></div>
-          <div className="wind-line wind-4"></div>
-          <div className="wind-line wind-5"></div>
-
-          <div className="cloud cloud-1"></div>
-          <div className="cloud cloud-2"></div>
+          <div className="wind-line wind-1" />
+          <div className="wind-line wind-2" />
+          <div className="wind-line wind-3" />
+          <div className="wind-line wind-4" />
+          <div className="wind-line wind-5" />
+          <div className="cloud cloud-1" />
+          <div className="cloud cloud-2" />
         </>
       )}
 
-      <div className={cn("parachutist-wrapper relative z-10", t.wrapper)}>
-        <svg viewBox="0 0 200 300" className="w-full h-full drop-shadow-md z-10 relative" xmlns="http://www.w3.org/2000/svg">
-          {/* CANOPY / PARAQUEDAS */}
-          <path d="M 20 50 Q 100 -30 180 50 Z" fill="hsl(var(--primary))"></path>
-          <path d="M 60 25 Q 100 -10 140 25 L 100 40 Z" fill="#FFFFFF" opacity="0.3"></path>
+      <div
+        className="parachutist-wrapper relative z-10"
+        style={{ width: "clamp(170px, 24vmin, 280px)" }}
+      >
+        {/* VELAME E CORDAS.
+            `overflow-visible` porque o brilho do velame passa da borda do
+            viewBox, e cortado ali ele ganharia uma linha reta no topo. */}
+        <svg
+          viewBox="0 0 200 132"
+          className="block w-full overflow-visible"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden
+        >
+          {/* Cúpula. Um arco só, largo e baixo — cúpula alta demais lê como
+              balão, e o gesto que queremos é de descida controlada. */}
+          <path d="M 12 72 Q 100 -8 188 72 Z" fill="hsl(var(--primary))" />
 
-          {/* CORDAS DO PARAQUEDAS */}
-          <g id="parachute-cords" stroke="hsl(var(--foreground)/0.3)" strokeWidth="2">
-            <line x1="50" y1="50" x2="85" y2="120" />
-            <line x1="150" y1="50" x2="115" y2="120" />
-          </g>
+          {/* Gomos: o mesmo desenho repartido, com preto por cima em opacidade
+              baixa. É o que dá volume sem precisar de gradiente — e gradiente
+              em SVG de tela de carregamento é peso que não se paga. */}
+          <path d="M 12 72 Q 56 8 68 72 Z" fill="hsl(0 0% 0% / 0.14)" />
+          <path d="M 132 72 Q 144 8 188 72 Z" fill="hsl(0 0% 0% / 0.14)" />
+          <path d="M 68 72 Q 100 -2 132 72 Z" fill="hsl(0 0% 100% / 0.16)" />
 
-          {/* BRAÇO ESQUERDO */}
-          <g id="arm-left" className="animate-swing-left" style={{ transformOrigin: '80px 130px' }}>
-            <circle cx="80" cy="130" r="6" fill="#F2C230" /> {/* Ombro */}
-            <rect x="50" y="126" width="30" height="8" rx="4" fill="#16171A" stroke="#F2C230" strokeWidth="1" transform="rotate(-45 80 130)" />
-            <circle cx="50" cy="100" r="5" fill="#F2C230" /> {/* Mão */}
-          </g>
+          {/* Borda inferior do velame: uma sombra fina que separa o pano do
+              ar e evita o aspecto de recorte chapado. */}
+          <path
+            d="M 12 72 Q 100 60 188 72"
+            fill="none"
+            stroke="hsl(0 0% 0% / 0.22)"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
 
-          {/* BRAÇO DIREITO */}
-          <g id="arm-right" className="animate-swing-right" style={{ transformOrigin: '120px 130px' }}>
-            <circle cx="120" cy="130" r="6" fill="#F2C230" /> {/* Ombro */}
-            <rect x="120" y="126" width="30" height="8" rx="4" fill="#16171A" stroke="#F2C230" strokeWidth="1" transform="rotate(45 120 130)" />
-            <circle cx="150" cy="100" r="5" fill="#F2C230" /> {/* Mão */}
-          </g>
-
-          {/* PERNA ESQUERDA */}
-          <g id="leg-left" className="animate-flail-left" style={{ transformOrigin: '85px 180px' }}>
-            <circle cx="85" cy="180" r="6" fill="#F2C230" /> {/* Quadril */}
-            <rect x="65" y="180" width="8" height="35" rx="4" fill="#16171A" stroke="#F2C230" strokeWidth="1" transform="rotate(20 85 180)" />
-            <circle cx="73" cy="215" r="5" fill="#F2C230" /> {/* Pé */}
-          </g>
-
-          {/* PERNA DIREITA */}
-          <g id="leg-right" className="animate-flail-right" style={{ transformOrigin: '115px 180px' }}>
-            <circle cx="115" cy="180" r="6" fill="#F2C230" /> {/* Quadril */}
-            <rect x="127" y="180" width="8" height="35" rx="4" fill="#16171A" stroke="#F2C230" strokeWidth="1" transform="rotate(-20 115 180)" />
-            <circle cx="127" cy="215" r="5" fill="#F2C230" /> {/* Pé */}
-          </g>
-
-          {/* CHASSI / CORPO PRINCIPAL */}
-          <g id="main-body">
-            <rect x="75" y="120" width="50" height="65" rx="15" fill="#16171A" stroke="#F2C230" strokeWidth="2" />
-            <rect x="85" y="175" width="30" height="15" rx="5" fill="#0B0C0E" /> {/* Detalhe inferior */}
-          </g>
-
-          {/* AQUI ENTRA O SEU SVG DO ROSTO */}
-          <g id="blink-face" transform="translate(64, 115)">
-            <svg width="72" height="72">
-              <Blink className="w-full h-full" />
-            </svg>
+          {/* Cordas. Quatro, e não duas: com duas o conjunto lê como balão
+              amarrado; a quarta corda é o que diz "paraquedas". */}
+          <g
+            stroke="hsl(var(--foreground) / 0.45)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            fill="none"
+          >
+            <line x1="14" y1="72" x2={CORDA_ESQ * 2} y2="130" />
+            <line x1="70" y1="70" x2={CORDA_ESQ * 2 + 8} y2="130" />
+            <line x1="130" y1="70" x2={CORDA_DIR * 2 - 8} y2="130" />
+            <line x1="186" y1="72" x2={CORDA_DIR * 2} y2="130" />
           </g>
         </svg>
+
+        {/* O BLINK ORIGINAL, inteiro e no lugar.
+            `-mt-[2px]` cobre a emenda entre o fim das cordas e o topo da
+            cabeça — sem isso aparece um fio de fundo entre os dois. */}
+        <div className="mx-auto -mt-[2px]" style={{ width: `${LARGURA_BLINK}%` }}>
+          <Blink className="h-auto w-full" />
+        </div>
       </div>
 
       {mensagem && (
-        <div className="relative z-20 mt-6 max-w-xs text-center text-[14px] font-medium tracking-wide text-muted-foreground animate-pulse uppercase">
+        <div className="relative z-20 mt-8 max-w-xs text-center text-[13px] text-muted-foreground">
           {mensagem}
         </div>
       )}

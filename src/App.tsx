@@ -208,7 +208,7 @@ function RouteFallback() {
           acontecia — parecia dois carregadores diferentes, ou defeito. Um
           elemento de identidade precisa ser reconhecível igual em todo lugar;
           o que muda entre os contextos é o texto ao redor, não ele. */}
-      <BlinkCarregando tamanho="lg" mensagem="Carregando…" />
+      <BlinkCarregando mensagem="Carregando…" />
     </div>
   );
 }

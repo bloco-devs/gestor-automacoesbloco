@@ -13,7 +13,7 @@ export default function ManagerInboxPage() {
       <Suspense
         fallback={
           <div className="flex h-full items-center justify-center py-16">
-            <BlinkCarregando tamanho="lg" mensagem="Carregando…" />
+            <BlinkCarregando mensagem="Carregando…" />
           </div>
         }>
         <Inbox />
