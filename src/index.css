@@ -447,10 +447,10 @@
 
 .parachute-loader .cloud {
   position: absolute;
-  background: hsl(var(--foreground) / 0.05);
+  background: hsl(var(--foreground));
   border-radius: 50%;
   bottom: -100px;
-  opacity: 0.8;
+  opacity: 0.06;
   animation: moveCloudsUp 3s linear infinite;
 }
 
