@@ -487,16 +487,19 @@
   to   { left: -45%; }
 }
 
-/* RITMO — 1,6s, e não 1s como no original.
+/* RITMO — 2,2s, contra 1s do original.
    A curva ocupa só os primeiros 65% do ciclo; os 35% finais são pausa em
-   repouso. A 1s isso dava 0,65s de movimento, rápido demais para o olho
-   acompanhar o agachar e o giro — via-se que algo mexeu, não o quê. A 1,6s
-   são ~1,04s de salto e ~0,56s parado: dá para ler cada fase e ainda existe
-   uma batida de descanso entre um pulo e o outro.
-   Mais que isso começa a parecer travado, que é o oposto do que um
-   carregador deve comunicar. */
-.blink-salta  { animation: blink-saltar var(--blink-ritmo, 1.6s) linear infinite; }
-.blink-chao   { animation: blink-sombra var(--blink-ritmo, 1.6s) linear infinite; }
+   repouso. Isso engana na hora de escolher a duração: a 1s sobravam 0,65s de
+   movimento para cinco fases distintas (agachar, subir, girar, achatar,
+   assentar) — cada uma durava ~0,13s, tempo em que o olho registra que algo
+   mexeu mas não o quê.
+   A 2,2s são ~1,43s de salto e ~0,77s parado. Cada fase ganha ~0,29s, que é
+   perto do mínimo para ser percebida como gesto e não como tremor, e a pausa
+   entre pulos vira batida em vez de emenda.
+   Passando de ~2,5s começa a ler como travado, que é o oposto do que um
+   carregador precisa comunicar. */
+.blink-salta  { animation: blink-saltar var(--blink-ritmo, 2.2s) linear infinite; }
+.blink-chao   { animation: blink-sombra var(--blink-ritmo, 2.2s) linear infinite; }
 .blink-nuvem  { animation: blink-nuvens linear infinite; }
 
 @media (prefers-reduced-motion: reduce) {

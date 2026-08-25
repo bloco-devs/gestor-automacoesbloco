@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
-import { Loader2 } from "lucide-react";
 import { WorkspaceShell } from "@/modules/workspace-unified";
+import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
 
 const DeveloperCenter = lazy(() => import("@/pages/developer/Index"));
 
@@ -13,11 +13,10 @@ export default function WorkspaceDevToolsPage() {
       <div className="h-full min-h-0 overflow-auto">
         <Suspense
           fallback={
-            <div className="flex h-full items-center justify-center">
-              <Loader2 className="size-5 animate-spin text-muted-foreground" />
-            </div>
-          }
-        >
+          <div className="flex h-full items-center justify-center py-16">
+            <BlinkCarregando tamanho="lg" mensagem="Carregando…" />
+          </div>
+        }>
           <DeveloperCenter />
         </Suspense>
       </div>

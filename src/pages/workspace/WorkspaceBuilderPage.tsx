@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Workflow, LayoutTemplate, Boxes, Store, Code2, Loader2 } from "lucide-react";
 import { WorkspaceShell } from "@/modules/workspace-unified";
 import { cn } from "@/lib/utils";
+import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
 
 const WorkflowsPage = lazy(() => import("@/pages/admin/Workflows"));
 const StudioPage = lazy(() => import("@/pages/Studio"));
@@ -63,11 +64,10 @@ export default function WorkspaceBuilderPage() {
         <div className="min-h-0 flex-1 overflow-auto">
           <Suspense
             fallback={
-              <div className="flex h-full items-center justify-center">
-                <Loader2 className="size-5 animate-spin text-muted-foreground" />
-              </div>
-            }
-          >
+          <div className="flex h-full items-center justify-center py-16">
+            <BlinkCarregando tamanho="lg" mensagem="Carregando…" />
+          </div>
+        }>
             {tab === "workflow" && <WorkflowsPage />}
             {tab === "studio" && <StudioPage />}
             {tab === "plugins" && <DevPlugins />}

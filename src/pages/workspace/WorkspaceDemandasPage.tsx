@@ -1,8 +1,8 @@
 import { lazy, Suspense } from "react";
 import { useParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import { WorkspaceShell } from "@/modules/workspace-unified";
 import { SelecaoDeProjetos } from "@/modules/workspace-demandas/components/SelecaoDeProjetos";
+import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
 
 const WorkspaceDemandas = lazy(() => import("@/modules/workspace-demandas/WorkspaceDemandas"));
 
@@ -26,12 +26,10 @@ export default function WorkspaceDemandasPage() {
     <WorkspaceShell>
       <Suspense
         fallback={
-          <div className="flex h-full items-center justify-center py-24" role="status" aria-live="polite">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
-            <span className="sr-only">Carregando…</span>
+          <div className="flex h-full items-center justify-center py-16">
+            <BlinkCarregando tamanho="lg" mensagem="Carregando…" />
           </div>
-        }
-      >
+        }>
         {projetoId ? <WorkspaceDemandas /> : <SelecaoDeProjetos />}
       </Suspense>
     </WorkspaceShell>

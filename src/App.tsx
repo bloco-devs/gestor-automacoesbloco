@@ -202,8 +202,13 @@ const queryClient = new QueryClient({
  */
 function RouteFallback() {
   return (
-    <div className="flex min-h-[40dvh] items-center justify-center">
-      <BlinkCarregando mensagem="Carregando…" />
+    <div className="flex min-h-[60dvh] items-center justify-center">
+      {/* `lg`, o mesmo tamanho da tela de abertura.
+          Estava em `md` e o Blink mudava de tamanho conforme onde a espera
+          acontecia — parecia dois carregadores diferentes, ou defeito. Um
+          elemento de identidade precisa ser reconhecível igual em todo lugar;
+          o que muda entre os contextos é o texto ao redor, não ele. */}
+      <BlinkCarregando tamanho="lg" mensagem="Carregando…" />
     </div>
   );
 }

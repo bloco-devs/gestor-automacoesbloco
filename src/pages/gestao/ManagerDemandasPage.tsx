@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
-import { Loader2 } from "lucide-react";
 import { ManagerShell } from "@/modules/manager-unified";
+import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
 
 /**
  * /gestao/demandas — reutiliza EXATAMENTE a mesma página de demandas do Workspace.
@@ -13,11 +13,10 @@ export default function ManagerDemandasPage() {
     <ManagerShell>
       <Suspense
         fallback={
-          <div className="flex h-full items-center justify-center">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          <div className="flex h-full items-center justify-center py-16">
+            <BlinkCarregando tamanho="lg" mensagem="Carregando…" />
           </div>
-        }
-      >
+        }>
         <WorkspaceDemandasPage />
       </Suspense>
     </ManagerShell>
