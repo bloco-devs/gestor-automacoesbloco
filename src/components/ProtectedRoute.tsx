@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { isPasswordRecoveryIntent } from "@/lib/auth-recovery";
+import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
 import type { Role } from "@/lib/types";
 
 export function ProtectedRoute({
@@ -23,7 +24,23 @@ export function ProtectedRoute({
     return <Navigate to={`/redefinir-senha${location.search}${location.hash}`} replace />;
   }
 
-  if (loading) return null;
+  /**
+   * A ABERTURA DO SISTEMA.
+   *
+   * Aqui devolvia `null`: enquanto a sessão resolvia, a tela ficava em branco.
+   * Funciona, mas não informa nada — em conexão lenta parece que o sistema não
+   * carregou, e a reação natural é recarregar a página, o que reinicia a
+   * espera.
+   *
+   * Isto não substitui padrão nenhum: antes não havia nada neste ponto.
+   */
+  if (loading) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center">
+        <BlinkCarregando tamanho="lg" mensagem="Abrindo o sistema…" />
+      </div>
+    );
+  }
   if (!user || !session) return <Navigate to="/auth" replace />;
   // Administrador (mesmo com viewAs em outro perfil) tem acesso pleno a rotas
   // protegidas por role="developer" para não ficar preso sem como voltar.
