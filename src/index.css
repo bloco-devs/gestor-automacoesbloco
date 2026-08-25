@@ -423,6 +423,96 @@
 .blink-olho-e { animation: blink-piscar 5.5s ease-in-out infinite; }
 .blink-olho-d { animation: blink-piscar-um 5.5s ease-in-out infinite; }
 
+/* ============================================================
+   Parachute Loader — O carregamento do sistema
+   ============================================================ */
+.parachute-loader {
+  /* No fixed size or background so it takes the container's space */
+}
+
+.parachute-loader .wind-line {
+  position: absolute;
+  width: 2px;
+  background: hsl(var(--foreground) / 0.15);
+  border-radius: 2px;
+  bottom: -50px;
+  animation: windUp 0.8s linear infinite;
+}
+
+.parachute-loader .wind-1 { left: 20%; height: 40px; animation-delay: 0s; animation-duration: 0.5s; }
+.parachute-loader .wind-2 { left: 80%; height: 60px; animation-delay: 0.2s; animation-duration: 0.7s; }
+.parachute-loader .wind-3 { left: 10%; height: 30px; animation-delay: 0.4s; animation-duration: 0.6s; }
+.parachute-loader .wind-4 { left: 90%; height: 50px; animation-delay: 0.1s; animation-duration: 0.8s; }
+.parachute-loader .wind-5 { left: 50%; height: 25px; animation-delay: 0.5s; animation-duration: 0.4s; }
+
+.parachute-loader .cloud {
+  position: absolute;
+  background: hsl(var(--foreground) / 0.05);
+  border-radius: 50%;
+  bottom: -100px;
+  opacity: 0.8;
+  animation: moveCloudsUp 3s linear infinite;
+}
+
+.parachute-loader .cloud::after,
+.parachute-loader .cloud::before {
+  content: "";
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+
+.parachute-loader .cloud-1 {
+  width: 60px; height: 60px; left: 10%; animation-duration: 2.5s;
+}
+.parachute-loader .cloud-1::after { width: 40px; height: 40px; top: -20px; left: 10px; }
+.parachute-loader .cloud-1::before { width: 50px; height: 50px; top: -10px; left: 30px; }
+
+.parachute-loader .cloud-2 {
+  width: 80px; height: 80px; right: 15%; animation-duration: 3.2s; animation-delay: 1s; opacity: 0.6;
+}
+.parachute-loader .cloud-2::after { width: 50px; height: 50px; top: -25px; left: 15px; }
+.parachute-loader .cloud-2::before { width: 60px; height: 60px; top: -15px; left: 40px; }
+
+.parachutist-wrapper {
+  animation: sway 3s ease-in-out infinite;
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: translateY(-5%) rotate(5deg); }
+}
+
+@keyframes moveCloudsUp {
+  0% { bottom: -100px; opacity: 0; }
+  20% { opacity: 0.9; }
+  80% { opacity: 0.9; }
+  100% { bottom: 120%; opacity: 0; }
+}
+
+@keyframes windUp {
+  0% { bottom: -60px; opacity: 0; }
+  50% { opacity: 1; }
+  100% { bottom: 120%; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parachute-loader .wind-line,
+  .parachute-loader .cloud {
+    animation: none;
+    display: none;
+  }
+
+  .parachutist-wrapper {
+    animation: blink-respira 2s ease-in-out infinite;
+  }
+}
+
+@keyframes blink-respira {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
 /* ------------------------------------------------------------
    Blink saltando — o carregamento do sistema
    ------------------------------------------------------------
@@ -524,10 +614,6 @@
   }
 }
 
-@keyframes blink-respira {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.55; }
-}
 
 /* ============================================================
    Rolagem discreta — some quando ninguém está rolando

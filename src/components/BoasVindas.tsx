@@ -90,10 +90,6 @@ export const BoasVindas = memo(function BoasVindas({
           <h1 className="font-brand text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
             Gestor de Automações
           </h1>
-
-          <p className="max-w-md text-balance text-[15px] leading-relaxed text-muted-foreground">
-            Peça o que atrapalha. A equipe cuida do resto.
-          </p>
         </div>
 
         <BlinkCarregando tamanho="lg" nuvens />
