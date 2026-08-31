@@ -1,5 +1,7 @@
-import { lazy, Suspense, type ReactElement } from "react";
+import { lazy, Suspense, useState, type ReactElement } from "react";
 import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
+import { BlinkLoader } from "@/components/BlinkLoader";
+import { BLINK_FRAMES_URL } from "@/lib/constants";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { UxRewriteGate } from "@/modules/portal-unified";
@@ -553,27 +555,52 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <ContextProvider>
-            <LanguageProvider>
-              <PlatformProvider>
-                <WorkflowRuntimeProvider>
-                  <RecoveryGuard />
-                  <AppRoutes />
-                </WorkflowRuntimeProvider>
-              </PlatformProvider>
-            </LanguageProvider>
-          </ContextProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+/**
+ * A ABERTURA DO SISTEMA.
+ *
+ * `booting` começa em `true` no primeiro render — não em `useEffect`. Se a
+ * montagem do splash esperasse um efeito, o navegador pintaria um quadro do app
+ * antes dele: pisca a tela de login e só então cobre. O que se quer esconder é
+ * exatamente esse quadro.
+ *
+ * O `BlinkLoader` entra como IRMÃO da árvore, nunca envolvendo-a. Assim o boot
+ * de verdade (sessão, perfil, módulos) roda atrás da tela, e não depois dela —
+ * o splash é uma cortina, não uma etapa.
+ *
+ * A barra hoje é simulada (6 s). Quando `progress`/`ready` estiverem ligados nas
+ * etapas reais do boot, a espera passa a ser a espera de fato — quem abre o
+ * sistema dez vezes por dia não deve pagar 6 s fixos.
+ */
+const App = () => {
+  const [booting, setBooting] = useState(true);
+
+  return (
+    <>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <ContextProvider>
+                <LanguageProvider>
+                  <PlatformProvider>
+                    <WorkflowRuntimeProvider>
+                      <RecoveryGuard />
+                      <AppRoutes />
+                    </WorkflowRuntimeProvider>
+                  </PlatformProvider>
+                </LanguageProvider>
+              </ContextProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+      {booting && (
+        <BlinkLoader baseUrl={BLINK_FRAMES_URL} onEnter={() => setBooting(false)} />
+      )}
+    </>
+  );
+};
 
 export default App;

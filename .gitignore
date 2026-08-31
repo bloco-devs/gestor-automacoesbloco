@@ -32,3 +32,9 @@ dist-ssr
 *.gz
 *.patch
 supabase/.temp/
+
+# Insumos da tela de abertura (BLINK). Os quadros vivem no Storage do Supabase,
+# não no git: 5,6 MB de webp que o build não importa. Quem os gera é o ffmpeg da
+# Etapa 1 e quem os publica é scripts/upload-blink-frames.mjs.
+BLINK.mp4
+/frames/

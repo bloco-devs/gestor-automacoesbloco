@@ -7,6 +7,32 @@
     <meta name="description" content="Plataforma interna para registrar e priorizar demandas de automação e aplicativos.">
     <meta name="author" content="Automation Hub" />
 
+    <!-- A tela de abertura pinta #16323e no canvas; o body precisa nascer na
+         mesma cor, senão o primeiro quadro do navegador é um flash branco. A
+         folha de estilo do app entra depois e retoma o tema normal. -->
+    <meta name="theme-color" content="#16323e" />
+    <style>
+      html, body { background: #16323e; }
+    </style>
+
+    <!-- Nunito (título) e Manrope (texto) da tela de abertura. `as="style"` com
+         a troca no onload: a fonte é buscada com prioridade alta sem bloquear o
+         primeiro render — a tela aparece na fonte do sistema e troca sozinha. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Manrope:wght@400;600;700&display=swap"
+      onload="this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Manrope:wght@400;600;700&display=swap"
+      />
+    </noscript>
+
     
     
     <meta property="og:type" content="website" />
