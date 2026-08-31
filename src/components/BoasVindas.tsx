@@ -336,7 +336,7 @@ export const BoasVindas = memo(function BoasVindas({
   return (
     <div
       className={cn(
-        "relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[#16323e]",
+        "fixed inset-0 z-[2147483000] flex flex-col items-center justify-center overflow-hidden bg-[#16323e]",
         className,
       )}
     >
