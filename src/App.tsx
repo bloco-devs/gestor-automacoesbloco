@@ -562,7 +562,7 @@ const AppRoutes = () => {
  * antes dele: pisca a tela de login e só então cobre. O que se quer esconder é
  * exatamente esse quadro.
  *
- * O `BlinkLoader` entra como IRMÃO da árvore, nunca envolvendo-a. Assim o boot
+ * O `BoasVindas` entra como IRMÃO da árvore, nunca envolvendo-a. Assim o boot
  * de verdade (sessão, perfil, módulos) roda atrás da tela, e não depois dela —
  * o splash é uma cortina, não uma etapa.
  *

@@ -33,8 +33,10 @@ dist-ssr
 *.patch
 supabase/.temp/
 
-# Insumos da tela de abertura (BLINK). Os quadros vivem no Storage do Supabase,
-# não no git: 5,6 MB de webp que o build não importa. Quem os gera é o ffmpeg da
-# Etapa 1 e quem os publica é scripts/upload-blink-frames.mjs.
+# Insumos da tela de entrada (BLINK). Os quadros SERVIDOS ficam em
+# public/blink/frames/ e vão para o git — é o que garante que eles e o código
+# que os lê viajem no mesmo deploy. Fora ficam o vídeo fonte e a pasta de
+# trabalho da extração, que ninguém consome em runtime.
 BLINK.mp4
+BLINK4K.mp4
 /frames/
