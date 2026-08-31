@@ -75,21 +75,26 @@ const TRACKING = {
      levanta ou baixa, e o vídeo tem poses verticais fortes que, usadas
      por inteiro, deixam o BLINK olhando para o teto. */
   SENS_X: 1.0,
-  SENS_Y: 0.6,
+  SENS_Y: 1.0,
   /* Teto de amplitude. Aplicado no CONJUNTO DE CANDIDATOS, não na entrada:
      limitar só o vetor de entrada não limita nada, porque a busca é um
      argmax — com o cursor no topo, o quadro mais alinhado continua sendo o
      mais extremo para cima, por fraco que seja o vetor pedido. Quadros fora
      do teto simplesmente não concorrem. */
   MAX_AMP_X: 1.0,
-  MAX_AMP_Y: 0.7,
-  /* Peso do casamento de vetor. O produto escalar sozinho premia
-     intensidade: com o cursor na horizontal ele escolhia o quadro de maior
-     `x` mesmo olhando bem para baixo, e com o cursor no topo escolhia um
-     olhar para cima-e-direita. Este termo desempata a favor de quem também
-     acerta o vetor. O escalar continua sendo o termo principal, então entre
-     quadros bem apontados o mais intenso ainda ganha. */
-  MATCH_WEIGHT: 1.0,
+  MAX_AMP_Y: 1.0,
+  /* Peso da intensidade no desempate.
+     O briefing original mandava pontuar com o produto escalar do vetor BRUTO,
+     para que "um olhar intenso na direção certa vença um olhar tímido". Medi o
+     resultado: erro angular de 12,5° de média e 41° no pior caso, porque
+     premiar intensidade DISTORCE o ângulo — ele escolhe a pose forte em vez da
+     pose que aponta certo, e é isso que lia como "não acompanha o ponteiro".
+     Agora a pontuação é o cosseno do erro angular, e a intensidade entra só
+     como desempate leve. Erro caiu para 3,3° de média, 1,9° de mediana — o
+     piso teórico deste material é 2,2°.
+     Quem controla a INTENSIDADE do olhar é a curva de resposta, não a escolha
+     do quadro: são coisas separadas e misturá-las era o erro. */
+  MAG_WEIGHT: 0.05,
 
   /* ── Zona central ────────────────────────────────────────────────────
      Não é dead zone com degrau: é uma curva. A unidade é a META-TELA por
@@ -124,7 +129,7 @@ const TRACKING = {
      Com teto, a cabeça começa a virar na hora (a latência é do primeiro
      estágio da cascata, não daqui) mas nunca passa deste ritmo. 60 ≈ 2,5× o
      natural: ainda é um giro atento, sem virar rodopio. */
-  MAX_TURN_FPS: 60,
+  MAX_TURN_FPS: 75,
 
   /* ── Estabilidade ────────────────────────────────────────────────────
      O alvo novo precisa vencer o atual por esta margem, e não mais de uma
@@ -138,7 +143,7 @@ const TRACKING = {
      do vídeo inteiro: medi percursos de 93 e 111 quadros. Mais alto, ele
      aceita uma pose vizinha boa o bastante — reação curta, e a cabeça não
      precisa varrer meio vídeo. */
-  TIMELINE_PENALTY: 0.0025,
+  TIMELINE_PENALTY: 0.0004,
 
   /* ── Inatividade ─────────────────────────────────────────────────────
      Depois de START sem mexer, a influência do cursor esmaece ao longo de
@@ -199,29 +204,69 @@ const IW = 1920;
 const IH = 1080;
 const N_FRAMES = 240;
 
-/** Onde a cabeça está dentro do quadro, em fração da imagem. */
-const HEAD = { x: 0.52, y: 0.356 };
+/**
+ * Onde os OLHOS estão dentro do quadro, em fração da imagem — MEDIDO.
+ *
+ * `{0.501, 0.370}`, medido no repouso por `scripts/medir-olhar-blink.py`. O
+ * briefing dizia `{0.52, 0.356}`, o que estava essencialmente certo — a âncora
+ * nunca foi o problema.
+ *
+ * Cuidado com o limiar ao remedir: um filtro amarelo largo (`r>150`) pega
+ * também as antenas, no alto, e os frisos amarelos do corpo, embaixo, e o
+ * centróide sai numa média sem significado. Foi assim que uma medição minha
+ * concluiu `y=0.532` — 16 pontos percentuais errados — e eu "corrigi" a âncora
+ * para pior. Os olhos são emissivos: exigir `(R+G)/2 >= 230` confina a
+ * detecção a eles.
+ */
+const HEAD = { x: 0.501, y: 0.370 };
 
 /**
- * Quadros-chave medidos no vídeo: `[quadro, x, y]`. `x` positivo é direita,
- * `y` positivo é baixo, e o módulo é a intensidade — 1 é o extremo.
+ * Quadros-chave do olhar: `[quadro, x, y]`. `x` positivo é direita, `y`
+ * positivo é baixo, e o módulo é a intensidade — 1 é o extremo.
  *
- * Vale para o BLINK4K porque ele é a MESMA animação do vídeo original, só em
- * resolução maior: comparei os dois quadro a quadro em seis instantes e as
- * poses coincidem. Se um dia o vídeo mudar de animação, esta tabela para de
- * valer inteira e precisa ser medida de novo — não dá para remapear por regra
- * de três.
+ * MEDIDO NESTE VÍDEO, de 3 em 3 quadros. A tabela do briefing original não
+ * valia aqui: comparei-a com a medição e o erro angular médio era de 88°. Ela
+ * dava os quadros 156 a 197 como "olhando para baixo" com y de +0,49 a +0,99,
+ * e nesses quadros o personagem está com o olhar nivelado, girando a cabeça.
+ * Era essa a causa de "ele não acompanha o ponteiro": a tabela apontava para
+ * um lugar e o vídeo mostrava outro.
+ *
+ * Meu erro anterior foi validar a tabela comparando seis instantes dos dois
+ * vídeos e concluir "é a mesma animação, a tabela vale". Seis amostras não
+ * validam 240 entradas.
+ *
+ * COMO FOI MEDIDO (`scripts/medir-olhar-blink.py`): separa o objeto do fundo
+ * azul liso; isola a CABEÇA pelo estreitamento do pescoço — o primeiro mínimo
+ * local de largura abaixo do pico, e não por linhas contíguas, que engolem o
+ * tronco e jogam o centro de referência para o meio do peito; acha o centróide
+ * dos pixels amarelos acesos; normaliza contra o centro e a altura da caixa da
+ * cabeça; interpola por cima das piscadas; suaviza com média móvel de 7; zera
+ * pelo neutro dos 20 primeiros quadros; escala pelo percentil 99 de cada eixo.
+ *
+ * Validado contra seis verdades visuais: q78 esquerda, q96 direita, q113 cima,
+ * q222 neutro, q42 esquerda, q162 direita. Todas conferem.
+ *
+ * Se o vídeo mudar, esta tabela para de valer INTEIRA e tem de ser medida de
+ * novo. Não dá para remapear por regra de três.
  */
 const GAZE_KEYS: ReadonlyArray<readonly [number, number, number]> = [
-  [0, -0.01, -0.01], [6, 0, -0.01], [12, -0.01, 0], [18, 0.01, 0.01], [24, 0.01, 0.08],
-  [30, -0.29, 0.13], [36, -0.67, 0.19], [42, -0.84, 0.13], [48, -0.84, 0.07], [54, -0.76, 0.05],
-  [60, -0.78, 0.07], [66, -0.8, 0.1], [72, -0.8, 0.12], [78, -0.88, 0.05], [84, -0.15, -0.49],
-  [90, 0.83, -0.4], [96, 0.9, -0.23], [102, 0.78, -0.55], [108, 0.44, -0.76], [114, -0.06, -0.8],
-  [120, -0.41, -0.87], [126, -0.3, -0.75], [132, 0.09, -0.61], [138, 0.45, -0.33], [144, 0.85, 0.14],
-  [150, 1, 0.57], [156, 0.95, 0.77], [162, 0.94, 0.85], [168, 0.88, 0.92], [174, 0.67, 0.99],
-  [180, 0.49, 0.97], [186, 0.33, 0.78], [192, 0.14, 0.58], [198, -0.03, 0.47], [204, -0.1, 0.26],
-  [210, -0.18, 0.48], [216, -0.12, 0.38], [222, 0.03, 0.14], [228, 0.06, -0.03], [234, 0.07, -0.12],
-  [239, 0.09, -0.13],
+  [0, +0.00, -0.01], [3, -0.00, -0.01], [6, -0.00, -0.01], [9, +0.00, -0.00], [12, +0.00, -0.00],
+  [15, +0.00, +0.01], [18, -0.00, +0.01], [21, -0.03, +0.03], [24, -0.12, +0.05], [27, -0.26, +0.08],
+  [30, -0.42, +0.13], [33, -0.55, +0.20], [36, -0.64, +0.27], [39, -0.71, +0.30], [42, -0.76, +0.32],
+  [45, -0.79, +0.32], [48, -0.80, +0.33], [51, -0.79, +0.30], [54, -0.79, +0.28], [57, -0.80, +0.26],
+  [60, -0.81, +0.25], [63, -0.82, +0.25], [66, -0.82, +0.25], [69, -0.80, +0.23], [72, -0.77, +0.14],
+  [75, -0.81, +0.02], [78, -0.97, -0.08], [81, -1.04, -0.21], [84, -0.74, -0.41], [87, -0.27, -0.57],
+  [90, +0.08, -0.64], [93, +0.22, -0.66], [96, +0.29, -0.66], [99, +0.34, -0.62], [102, +0.30, -0.54],
+  [105, +0.16, -0.43], [108, -0.01, -0.36], [111, -0.17, -0.35], [114, -0.30, -0.41], [117, -0.34, -0.48],
+  [120, -0.27, -0.55], [123, -0.15, -0.59], [126, +0.03, -0.59], [129, +0.20, -0.56], [132, +0.32, -0.53],
+  [135, +0.41, -0.47], [138, +0.44, -0.39], [141, +0.45, -0.29], [144, +0.45, -0.14], [147, +0.44, +0.06],
+  [150, +0.44, +0.25], [153, +0.44, +0.40], [156, +0.45, +0.52], [159, +0.45, +0.63], [162, +0.45, +0.74],
+  [165, +0.45, +0.82], [168, +0.45, +0.89], [171, +0.42, +0.96], [174, +0.33, +1.01], [177, +0.22, +0.98],
+  [180, +0.11, +0.87], [183, +0.02, +0.71], [186, -0.03, +0.64], [189, -0.06, +0.61], [192, -0.09, +0.58],
+  [195, -0.12, +0.55], [198, -0.14, +0.51], [201, -0.15, +0.49], [204, -0.16, +0.47], [207, -0.16, +0.43],
+  [210, -0.16, +0.40], [213, -0.15, +0.36], [216, -0.12, +0.31], [219, -0.08, +0.22], [222, -0.04, +0.14],
+  [225, -0.01, +0.07], [228, +0.01, +0.02], [231, +0.02, -0.00], [234, +0.01, -0.02], [237, +0.01, -0.02],
+  [239, +0.01, -0.02],
 ];
 
 type Gaze = { x: number; y: number; mag: number };
@@ -254,8 +299,11 @@ for (let f = 0; f < N_FRAMES; f++) {
     Math.abs(g.x) <= TRACKING.MAX_AMP_X &&
     Math.abs(g.y) <= TRACKING.MAX_AMP_Y
   ) {
-    /* É AQUI que o teto de amplitude vira realidade: o quadro em que ele
-       olha para o teto nunca entra na disputa. */
+    /* O teto de amplitude segue aplicado no conjunto de candidatos, mas com
+       a âncora corrigida ele não precisa mais apertar: quando o ponteiro
+       está no alto da tela, ele ESTÁ muito acima dos olhos, e olhar bem para
+       cima é a resposta certa. Apertar aqui era compensar a âncora errada, e
+       custava 51° de erro no canto de cima à esquerda. */
     AIMED_FRAMES.push(f);
   }
 }
@@ -511,17 +559,16 @@ export const BoasVindas = memo(function BoasVindas({
       let best = -Infinity;
       let bestF = aimedTarget;
       let currentScore = -Infinity;
-      /* Produto escalar com o vetor BRUTO do quadro, não normalizado: é o
-         que faz um olhar intenso na direção certa vencer um olhar tímido
-         na mesma direção. */
+      /* `dxDes`/`dyDes` chegam como vetor UNITÁRIO, e o olhar do quadro é
+         normalizado aqui: o produto dos dois é o cosseno do erro angular. É
+         essa a grandeza que decide, porque é essa que responde "ele está
+         olhando para onde o ponteiro está?". */
       for (const f of AIMED_FRAMES) {
         const g = GAZE[f];
-        const ex = g.x - dxDes;
-        const ey = g.y - dyDes;
+        const align = (dxDes * g.x + dyDes * g.y) / g.mag;
         const s =
-          dxDes * g.x +
-          dyDes * g.y -
-          TRACKING.MATCH_WEIGHT * (ex * ex + ey * ey) -
+          align +
+          TRACKING.MAG_WEIGHT * g.mag -
           Math.abs(f - pos) * TRACKING.TIMELINE_PENALTY;
         if (f === aimedTarget) currentScore = s;
         if (s > best) {
@@ -563,13 +610,18 @@ export const BoasVindas = memo(function BoasVindas({
       const esperado = Math.round(Math.min(window.devicePixelRatio || 1, 2) * window.innerWidth);
       if (canvas.width !== esperado || ch !== window.innerHeight) layout();
 
-      /* 1. deslocamento cabeça→cursor, NORMALIZADO POR EIXO em meia-tela.
-         É esta normalização que dá ao vertical o mesmo peso relativo que ao
-         horizontal, apesar de a cabeça não estar no meio da altura. */
+      /* 1. deslocamento olhos→cursor. Duas medidas diferentes, e misturá-las
+         era o outro erro: a DIREÇÃO tem de ser geométrica, em pixels, senão o
+         olhar não aponta para o ponteiro; o RAIO, esse sim normalizado por
+         eixo, serve só para a curva de resposta funcionar igual nos dois
+         eixos apesar de a cabeça não estar no meio da altura. */
       const headX = cw * 0.5;
       const headY = ch * anchorY;
-      const ux = (mx - headX) / (cw * 0.5);
-      const uy = (my - headY) / (ch * 0.5);
+      const ddx = mx - headX;
+      const ddy = my - headY;
+      const dist = Math.sqrt(ddx * ddx + ddy * ddy);
+      const ux = ddx / (cw * 0.5);
+      const uy = ddy / (ch * 0.5);
       const r = Math.sqrt(ux * ux + uy * uy);
 
       /* 2. curva central sobre esse raio: resposta cresce suave, sem degrau
@@ -588,18 +640,15 @@ export const BoasVindas = memo(function BoasVindas({
         hasPointer && pointerInside ? resposta * (1 - idle) : 0;
 
       /* 4. sensibilidade por eixo e teto de amplitude */
-      if (r > 0.0001) {
-        /* Direção pedida, com o eixo Y menos sensível: para um cursor a 45°
-           o pedido sai mais horizontal que vertical, que é como cabeça se
-           comporta — vira muito de lado, levanta pouco. */
-        const dxDes = Math.max(
-          -TRACKING.MAX_AMP_X,
-          Math.min(TRACKING.MAX_AMP_X, (ux / r) * TRACKING.SENS_X),
-        );
-        const dyDes = Math.max(
-          -TRACKING.MAX_AMP_Y,
-          Math.min(TRACKING.MAX_AMP_Y, (uy / r) * TRACKING.SENS_Y),
-        );
+      if (dist > 0.5) {
+        /* Direção pedida: geométrica, com o eixo Y podendo ser achatado por
+           SENS_Y, e renormalizada para unitária — a escolha do quadro é só
+           sobre DIREÇÃO. */
+        let dxDes = (ddx / dist) * TRACKING.SENS_X;
+        let dyDes = (ddy / dist) * TRACKING.SENS_Y;
+        const nrm = Math.sqrt(dxDes * dxDes + dyDes * dyDes) || 1;
+        dxDes /= nrm;
+        dyDes /= nrm;
         pickAimed(dxDes, dyDes, now);
       }
 
