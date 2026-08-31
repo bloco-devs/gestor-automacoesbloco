@@ -176,7 +176,20 @@ export const BoasVindas = memo(function BoasVindas({
       s.currentFrame = nearestNeutral(0);
       s.targetFrame = s.currentFrame;
       video.currentTime = (s.currentFrame / N_FRAMES) * s.duration;
-      video.pause();
+      
+      // Safari/iOS e alguns navegadores em produção não atualizam visualmente
+      // o video.currentTime se o vídeo nunca foi 'tocado'. 
+      // Damos um play() e pause() silencioso para destravar o decodificador.
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          video.pause();
+        }).catch(() => {
+          video.pause();
+        });
+      } else {
+        video.pause();
+      }
     };
     video.addEventListener("loadeddata", onLoaded);
     if (video.readyState >= 2) onLoaded();
@@ -372,20 +385,20 @@ export const BoasVindas = memo(function BoasVindas({
         }}
       />
 
-      <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-6 mt-auto pb-[10vh] text-center px-4">
-        <div className="flex flex-col items-center gap-2">
-          <h1 className="text-[22px] font-bold leading-tight text-white/90 sm:text-[28px]">
+      <div className="absolute inset-x-0 bottom-8 z-10 flex w-full flex-col items-center gap-5 text-center px-6">
+        <div className="flex flex-col items-center gap-1">
+          <h1 className="text-[20px] font-bold leading-tight text-white/90 sm:text-[24px]">
             Bem-vindo ao<br/>
             <span className="text-[#FFDA5B]">Gestor de Automações</span>
           </h1>
         </div>
 
-        <p className="text-[14px] leading-relaxed text-white/70 shadow-sm">
+        <p className="text-[13px] leading-relaxed text-white/70 shadow-sm max-w-[280px]">
           Estamos preparando tudo. O BLINK fica de olho em você enquanto isso.
         </p>
 
-        <div className="w-full space-y-3">
-          <div className="relative h-[6px] w-full overflow-hidden rounded-full bg-white/10 shadow-[0_1px_10px_rgba(5,20,28,0.5)]">
+        <div className="w-full max-w-[280px] space-y-3">
+          <div className="relative h-[5px] w-full overflow-hidden rounded-full bg-white/10 shadow-[0_1px_10px_rgba(5,20,28,0.5)]">
             <div
               className="absolute inset-y-0 left-0 rounded-full transition-all duration-300 ease-out"
               style={{
@@ -396,17 +409,17 @@ export const BoasVindas = memo(function BoasVindas({
             />
           </div>
           
-          <div className="flex items-center justify-between text-[13px] text-white/60 font-medium tracking-wide">
+          <div className="flex items-center justify-between text-[12px] text-white/60 font-medium tracking-wide">
             <span>{pronto ? "Pronto" : (estado ?? "Carregando...")}</span>
             <span>{Math.round(progresso)}%</span>
           </div>
         </div>
 
-        <div className="h-14 mt-4 flex items-center justify-center">
+        <div className="h-14 mt-2 flex items-center justify-center">
           {pronto && onEnter && (
             <button
               onClick={enter}
-              className="rounded-full bg-[#FFDA5B] px-8 py-3 text-[15px] font-bold text-[#12242c] shadow-[0_8px_26px_rgba(255,216,61,0.26)] transition-all hover:-translate-y-[1px] hover:bg-[#ffe469] hover:shadow-[0_12px_30px_rgba(255,216,61,0.34)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFDA5B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#16323e]"
+              className="rounded-full bg-[#FFDA5B] px-8 py-3 text-[14px] font-bold text-[#12242c] shadow-[0_8px_26px_rgba(255,216,61,0.26)] transition-all hover:-translate-y-[1px] hover:bg-[#ffe469] hover:shadow-[0_12px_30px_rgba(255,216,61,0.34)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFDA5B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#16323e]"
               autoFocus
             >
               Entrar no sistema
