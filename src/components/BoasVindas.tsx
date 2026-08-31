@@ -108,7 +108,7 @@ const TRACKING = {
      AIM é o estágio que percebe; HEAD é o que acompanha. A distância
      entre os dois é a inércia. Quanto menor HEAD, mais peso. */
   SMOOTH_AIM: 12.0,
-  SMOOTH_HEAD: 7.0,
+  SMOOTH_HEAD: 5.0,
   /* Velocidade do retorno ao neutro — de propósito menor que SMOOTH_HEAD:
      voltar a encarar a câmera é gesto sem pressa. */
   RETURN_SMOOTH: 3.5,
@@ -116,15 +116,29 @@ const TRACKING = {
      cabeça teleportaria de uma vez. */
   DT_MAX: 0.05,
 
+  /* TETO DE VELOCIDADE DA CABEÇA, em quadros de linha do tempo por segundo.
+     É o número que controla "ele está girando a cabeça rápido".
+     Sem teto, medi picos de 410 quadros/s — dezessete vezes o ritmo em que o
+     vídeo foi animado (24 fps). A pose chegava rápido, mas o caminho até ela
+     era o personagem em avanço rápido.
+     Com teto, a cabeça começa a virar na hora (a latência é do primeiro
+     estágio da cascata, não daqui) mas nunca passa deste ritmo. 60 ≈ 2,5× o
+     natural: ainda é um giro atento, sem virar rodopio. */
+  MAX_TURN_FPS: 60,
+
   /* ── Estabilidade ────────────────────────────────────────────────────
      O alvo novo precisa vencer o atual por esta margem, e não mais de uma
      troca por COOLDOWN. Sem isso o olhar vibra entre dois quadros quase
      equivalentes. */
-  HYSTERESIS: 0.03,
-  SWITCH_COOLDOWN_MS: 60,
-  /* Preço de atravessar a linha do tempo: mantém a reação curta e vizinha
-     em vez de virar um passeio pelo vídeo inteiro. */
-  TIMELINE_PENALTY: 0.0004,
+  HYSTERESIS: 0.05,
+  SWITCH_COOLDOWN_MS: 110,
+  /* Preço de atravessar a linha do tempo. Este número decide o TAMANHO do
+     percurso, e portanto quanta animação própria do personagem é tocada em
+     avanço rápido para chegar à pose. Com 0,0004 ele escolhia a melhor pose
+     do vídeo inteiro: medi percursos de 93 e 111 quadros. Mais alto, ele
+     aceita uma pose vizinha boa o bastante — reação curta, e a cabeça não
+     precisa varrer meio vídeo. */
+  TIMELINE_PENALTY: 0.0025,
 
   /* ── Inatividade ─────────────────────────────────────────────────────
      Depois de START sem mexer, a influência do cursor esmaece ao longo de
@@ -618,7 +632,11 @@ export const BoasVindas = memo(function BoasVindas({
       const kPos = reduced ? 40 : kHead;
 
       aim += (target - aim) * (1 - Math.exp(-dt * kAim));
-      pos += (aim - pos) * (1 - Math.exp(-dt * kPos));
+      /* O passo é amortecido E limitado. O amortecimento dá a frenagem suave
+         na chegada; o teto impede que a partida seja um rodopio. */
+      const passo = (aim - pos) * (1 - Math.exp(-dt * kPos));
+      const passoMax = TRACKING.MAX_TURN_FPS * dt;
+      pos += Math.max(-passoMax, Math.min(passoMax, passo));
 
       /* 7. desenha TODO quadro de tela. Antes só desenhava quando o índice
          mudava, o que economizava trabalho e produzia imagem literalmente
