@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Sparkles, Loader2 } from "lucide-react";
 import { aiWorkspaceService } from "@/modules/ai/services/ai-workspace-service";
 import { useToast } from "@/hooks/use-toast";
+import { mensagemErroIA } from "@/lib/erro-ia";
 
 type Action = "melhorar" | "resumir" | "expandir" | "faq" | "tags" | "titulo";
 
@@ -49,7 +50,7 @@ export function AISuggestPanel({
     } catch (e) {
       toast({
         title: "IA indisponível",
-        description: e instanceof Error ? e.message : "Tente novamente.",
+        description: await mensagemErroIA(e, "Tente novamente."),
         variant: "destructive",
       });
     } finally {

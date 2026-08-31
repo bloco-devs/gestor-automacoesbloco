@@ -33,6 +33,7 @@ import {
   type DemandPriority,
   type DemandType,
 } from "../types";
+import { mensagemErroIA } from "@/lib/erro-ia";
 
 interface Props {
   open: boolean;
@@ -108,7 +109,7 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
     } catch (err) {
       toast({
         title: "IA indisponível",
-        description: err instanceof Error ? err.message : "Não foi possível obter sugestão agora.",
+        description: await mensagemErroIA(err, "Não foi possível obter sugestão agora."),
         variant: "destructive",
       });
     }

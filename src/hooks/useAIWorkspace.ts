@@ -20,6 +20,7 @@ import { useAIWorkspaceSnapshot } from "@/modules/context";
 import { useQuery } from "@tanstack/react-query";
 import { listSistemasDoCatalogo } from "@/modules/demands/service";
 import { casarSistema } from "@/modules/demands/casarSistema";
+import { mensagemErroIA } from "@/lib/erro-ia";
 
 export type ChatRole = "user" | "assistant";
 export type ChatMsg = { role: ChatRole; content: string };
@@ -236,10 +237,9 @@ export function useAIWorkspace() {
           setMessages((m) => [...m, { role: "assistant", content: turn.nextQuestion! }]);
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Erro ao conversar com a IA";
-        const friendly = /429|muitas solicita/i.test(msg)
-          ? "Muitas solicitações à IA. Aguarde alguns instantes."
-          : msg;
+        /* A mensagem boa está no corpo da resposta, não em `err.message` —
+           ver `mensagemErroIA`. */
+        const friendly = await mensagemErroIA(err, "Erro ao conversar com a IA");
         toast({ title: "IA indisponível", description: friendly, variant: "destructive" });
       } finally {
         setThinking(false);
