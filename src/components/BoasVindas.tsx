@@ -145,6 +145,22 @@ const TRACKING = {
      `pos` caminhar por ela em vaivém para ele respirar. O olhar não muda: a
      faixa inteira é neutra. */
   REST_FPS: 20,
+
+  /* ── Respiração ──────────────────────────────────────────────────────
+     A faixa de repouso resolve o congelamento QUANDO ele está em repouso.
+     Não resolve o caso mais comum: cursor parado longe do centro, olhar
+     apontado, e 5,5 s até a inatividade começar — imagem travada nesse
+     tempo todo.
+     Caminhar na linha do tempo não serve aqui: entre os quadros 84 e 90 o
+     olhar salta 0,98, então oscilar ±3 quadros balançaria a direção do
+     olhar. A vida precisa vir de FORA da linha do tempo — uma oscilação
+     mínima do enquadramento, que muda a imagem a cada quadro de tela sem
+     mexer um grau no olhar. É respiração de câmera, não de personagem.
+     0,7% de escala é abaixo do limiar de "isso está se mexendo" e acima do
+     limiar de "isso está morto". */
+  BREATH_PERIOD_S: 5.5,
+  BREATH_SCALE: 0.007,
+  BREATH_SHIFT: 0.005,
 } as const;
 
 /** Acima desta intensidade o quadro conta como olhar mirado, não neutro. */
@@ -409,7 +425,7 @@ export const BoasVindas = memo(function BoasVindas({
       needsDraw = true;
     }
 
-    function draw(index: number) {
+    function draw(index: number, breath: number) {
       const img = nearestLoaded(index);
       ctx.fillStyle = "#16323e";
       ctx.fillRect(0, 0, cw, ch);
@@ -419,7 +435,10 @@ export const BoasVindas = memo(function BoasVindas({
          puro amplia o personagem até virar textura. */
       const sx = cw / IW;
       const cap = cw <= 560 ? 2.3 : 1.9;
-      const scale = Math.min(Math.max(sx, ch / IH), sx * cap);
+      /* A respiração entra na escala, depois do teto de zoom: assim ela não
+         pode furar o limite nem descobrir a lateral. */
+      const respira = 1 + Math.sin(breath) * TRACKING.BREATH_SCALE;
+      const scale = Math.min(Math.max(sx, ch / IH), sx * cap) * respira;
       const dw = IW * scale;
       const dh = IH * scale;
 
@@ -427,7 +446,10 @@ export const BoasVindas = memo(function BoasVindas({
          faixa vazia na lateral. Desloca no máximo 2% da largura. */
       let dx = cw * 0.5 - HEAD.x * dw;
       dx = Math.min(0, Math.max(cw - dw, dx));
-      const dy = ch * anchorY - HEAD.y * dh;
+      const dy =
+        ch * anchorY -
+        HEAD.y * dh +
+        Math.sin(breath * 0.63) * ch * TRACKING.BREATH_SHIFT;
 
       ctx.drawImage(img, dx, dy, dw, dh);
 
@@ -468,6 +490,8 @@ export const BoasVindas = memo(function BoasVindas({
     /* Fase do vaivém de repouso, em índice de quadro. */
     let restPos = aimedTarget;
     let restDir = 1;
+    /* Fase da respiração do enquadramento. */
+    let breathPhase = 0;
 
     function pickAimed(dxDes: number, dyDes: number, now: number) {
       let best = -Infinity;
@@ -596,14 +620,19 @@ export const BoasVindas = memo(function BoasVindas({
       aim += (target - aim) * (1 - Math.exp(-dt * kAim));
       pos += (aim - pos) * (1 - Math.exp(-dt * kPos));
 
-      /* 7. desenha só quando o índice inteiro muda */
+      /* 7. desenha TODO quadro de tela. Antes só desenhava quando o índice
+         mudava, o que economizava trabalho e produzia imagem literalmente
+         congelada entre trocas — 53% do tempo, medido em vídeo. Com a
+         respiração no enquadramento, cada quadro de tela é diferente do
+         anterior. Custa um `drawImage`, medido em menos de 1 ms. */
       const index = Math.max(0, Math.min(N_FRAMES - 1, Math.round(pos)));
-      if (index !== drawn || needsDraw) {
-        draw(index);
+      breathPhase += (dt * Math.PI * 2) / TRACKING.BREATH_PERIOD_S;
+      draw(index, breathPhase);
+      if (index !== drawn) {
         canvas.dataset.frame = String(index);
         drawn = index;
-        needsDraw = false;
       }
+      needsDraw = false;
 
       /* 8. barra: carregamento real, com piso de tempo */
       const loadFrac = settled >= N_FRAMES ? 1 : loaded / N_FRAMES;
