@@ -110,7 +110,7 @@ const TRACKING = {
   IDLE_MS: 5000,
   SWITCH_MARGIN: 0.08,
   SWITCH_COOLDOWN_MS: 160,
-  TIMELINE_PENALTY: 0.0008,
+  TIMELINE_PENALTY: 0.0015,
   
   // ── Zona Central (Dead zone suave) ────────────────────────────────
   DEAD_ZONE_RADIUS: 0.05,
@@ -297,16 +297,13 @@ export const BoasVindas = memo(function BoasVindas({
 
       pickTarget(now);
 
-      // F = ω²·(target - pos) - 2ζω·vel
-      const omega = TRACKING.SPRING_FREQUENCY;
-      const omegaSq = omega * omega;
-      const dampCoeff = 2 * TRACKING.DAMPING_RATIO * omega;
-
-      const force = omegaSq * (s.targetFrame - s.currentFrame);
-      const drag = dampCoeff * s.velocityFrame;
+      // FÍSICA: Suavização Exponencial com correção de tempo (time-corrected lerp)
+      // Evita o overshoot da mola e reduz o stress do decodificador de vídeo,
+      // resolvendo os movimentos "estranhos" ou glitchy durante o scrub de MP4.
+      const smoothing = 4.0; // Velocidade da transição (menor = mais inércia)
+      const factor = 1 - Math.exp(-dt * smoothing);
       
-      s.velocityFrame += (force - drag) * dt;
-      s.currentFrame += s.velocityFrame * dt;
+      s.currentFrame += (s.targetFrame - s.currentFrame) * factor;
 
       // Clamp para manter nos limites do vídeo
       const clampedFrame = Math.max(0, Math.min(N_FRAMES - 1, s.currentFrame));
