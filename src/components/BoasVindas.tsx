@@ -177,22 +177,25 @@ export const BoasVindas = memo(function BoasVindas({
       s.targetFrame = s.currentFrame;
       video.currentTime = (s.currentFrame / N_FRAMES) * s.duration;
       
-      // Safari/iOS e alguns navegadores em produção não atualizam visualmente
-      // o video.currentTime se o vídeo nunca foi 'tocado'. 
-      // Damos um play() e pause() silencioso para destravar o decodificador.
+      // Tentativa de destrave imediato
       const playPromise = video.play();
       if (playPromise !== undefined) {
-        playPromise.then(() => {
-          video.pause();
-        }).catch(() => {
-          video.pause();
-        });
+        playPromise.then(() => video.pause()).catch(() => video.pause());
       } else {
         video.pause();
       }
     };
     video.addEventListener("loadeddata", onLoaded);
     if (video.readyState >= 2) onLoaded();
+
+    // Destrave absoluto: garante que ao primeiro toque/clique na tela o vídeo seja destravado
+    const unlockMedia = () => {
+      video.play().then(() => video.pause()).catch(() => {});
+      document.removeEventListener("pointerdown", unlockMedia);
+      document.removeEventListener("keydown", unlockMedia);
+    };
+    document.addEventListener("pointerdown", unlockMedia, { once: true });
+    document.addEventListener("keydown", unlockMedia, { once: true });
 
     // ── Mouse Handlers ──
     const onMove = (e: MouseEvent | PointerEvent) => {
@@ -359,6 +362,7 @@ export const BoasVindas = memo(function BoasVindas({
         src="/blink4k.mp4"
         muted
         playsInline
+        autoPlay
         preload="auto"
         aria-hidden
         className="pointer-events-none absolute inset-0 h-full w-full object-cover"
