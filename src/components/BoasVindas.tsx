@@ -106,15 +106,14 @@ const TRACKING = {
   DAMPING_RATIO: 1.0,        // ζ: 1.0 = crítico (sem oscilar no final)
   
   // ── Escolha de alvos ──────────────────────────────────────────────
-  NEAR_PX: 100,              // Se o mouse estiver mais perto que isso, encara o usuário
-  IDLE_MS: 5000,             // Tempo para considerar inativo e voltar ao neutro
-  SWITCH_MARGIN: 0.08,       // Histerese: novo alvo precisa ser 8% melhor
-  SWITCH_COOLDOWN_MS: 160,   // Tempo mínimo entre trocas de alvo
-  TIMELINE_PENALTY: 0.0008,  // Penalidade por pular quadros distantes
+  NEAR_PX: 30,               // Se o mouse estiver muito perto, encara
+  IDLE_MS: 5000,
+  SWITCH_MARGIN: 0.08,
+  SWITCH_COOLDOWN_MS: 160,
+  TIMELINE_PENALTY: 0.0008,
   
   // ── Zona Central (Dead zone suave) ────────────────────────────────
-  // Se o mouse estiver muito perto do centro (em % da tela), considera "neutro"
-  DEAD_ZONE_RADIUS: 0.10,
+  DEAD_ZONE_RADIUS: 0.05,
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -272,17 +271,18 @@ export const BoasVindas = memo(function BoasVindas({
     }
 
     // ── Loop de Animação ──
-    const tick = (timestamp: number) => {
+    const tick = () => {
       s.rafId = requestAnimationFrame(tick);
       const vid = videoRef.current;
       if (!vid || !s.duration) return;
 
+      const now = performance.now();
       const dt = s.lastFrameTime
-        ? Math.min((timestamp - s.lastFrameTime) / 1000, 0.1)
+        ? Math.min((now - s.lastFrameTime) / 1000, 0.1)
         : 1 / 60;
-      s.lastFrameTime = timestamp;
+      s.lastFrameTime = now;
 
-      pickTarget(timestamp);
+      pickTarget(now);
 
       // F = ω²·(target - pos) - 2ζω·vel
       const omega = TRACKING.SPRING_FREQUENCY;
@@ -301,9 +301,13 @@ export const BoasVindas = memo(function BoasVindas({
       // Converte frame (0..240) para tempo (0..duration)
       const targetTime = (clampedFrame / N_FRAMES) * s.duration;
 
-      // Só faz seek se houver mudança perceptível
-      if (Math.abs(vid.currentTime - targetTime) > 0.005) {
-        vid.currentTime = targetTime;
+      // Só faz seek se houver mudança perceptível e o vídeo estiver pronto
+      if (vid.readyState >= 2 && Math.abs(vid.currentTime - targetTime) > 0.005) {
+        try {
+          vid.currentTime = targetTime;
+        } catch (e) {
+          // Ignora erros de seek no boot
+        }
       }
     };
 
