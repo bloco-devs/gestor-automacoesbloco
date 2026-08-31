@@ -75,14 +75,14 @@ const TRACKING = {
      levanta ou baixa, e o vídeo tem poses verticais fortes que, usadas
      por inteiro, deixam o BLINK olhando para o teto. */
   SENS_X: 1.0,
-  SENS_Y: 0.5,
+  SENS_Y: 0.6,
   /* Teto de amplitude. Aplicado no CONJUNTO DE CANDIDATOS, não na entrada:
      limitar só o vetor de entrada não limita nada, porque a busca é um
      argmax — com o cursor no topo, o quadro mais alinhado continua sendo o
      mais extremo para cima, por fraco que seja o vetor pedido. Quadros fora
      do teto simplesmente não concorrem. */
   MAX_AMP_X: 1.0,
-  MAX_AMP_Y: 0.6,
+  MAX_AMP_Y: 0.7,
   /* Peso do casamento de vetor. O produto escalar sozinho premia
      intensidade: com o cursor na horizontal ele escolhia o quadro de maior
      `x` mesmo olhando bem para baixo, e com o cursor no topo escolhia um
@@ -101,17 +101,17 @@ const TRACKING = {
      Dentro de INNER a resposta é ~zero; de INNER a OUTER cresce por
      smoothstep elevado a CURVE, e é esse pé plano que mata o tremor. */
   CENTER_INNER: 0.08,
-  CENTER_OUTER: 0.55,
-  CENTER_CURVE: 1.7,
+  CENTER_OUTER: 0.42,
+  CENTER_CURVE: 1.35,
 
   /* ── Amortecimento em cascata (1/s, com dt real) ──────────────────────
      AIM é o estágio que percebe; HEAD é o que acompanha. A distância
      entre os dois é a inércia. Quanto menor HEAD, mais peso. */
-  SMOOTH_AIM: 6.0,
-  SMOOTH_HEAD: 2.6,
+  SMOOTH_AIM: 12.0,
+  SMOOTH_HEAD: 7.0,
   /* Velocidade do retorno ao neutro — de propósito menor que SMOOTH_HEAD:
      voltar a encarar a câmera é gesto sem pressa. */
-  RETURN_SMOOTH: 1.6,
+  RETURN_SMOOTH: 3.5,
   /* Teto de dt. Aba oculta acumula segundos; sem isto, ao voltar o foco a
      cabeça teleportaria de uma vez. */
   DT_MAX: 0.05,
@@ -120,11 +120,11 @@ const TRACKING = {
      O alvo novo precisa vencer o atual por esta margem, e não mais de uma
      troca por COOLDOWN. Sem isso o olhar vibra entre dois quadros quase
      equivalentes. */
-  HYSTERESIS: 0.07,
-  SWITCH_COOLDOWN_MS: 150,
+  HYSTERESIS: 0.03,
+  SWITCH_COOLDOWN_MS: 60,
   /* Preço de atravessar a linha do tempo: mantém a reação curta e vizinha
      em vez de virar um passeio pelo vídeo inteiro. */
-  TIMELINE_PENALTY: 0.0008,
+  TIMELINE_PENALTY: 0.0004,
 
   /* ── Inatividade ─────────────────────────────────────────────────────
      Depois de START sem mexer, a influência do cursor esmaece ao longo de
@@ -134,6 +134,17 @@ const TRACKING = {
   /* Quanto o ponteiro precisa andar para contar como movimento. Evita que
      tremor de trackpad ou 1px de scroll cancele a inatividade. */
   MOVE_EPS_PX: 3,
+
+  /* ── Vida no repouso ─────────────────────────────────────────────────
+     Sem isto o BLINK CONGELA numa foto quando o olhar assenta: medi 17
+     trocas de quadro por segundo na média, e quase todas concentradas nas
+     transições — o resto do tempo, imagem parada. Era isso que lia como
+     travado, não o rastreamento.
+     A faixa de repouso tem movimento próprio (0,53 de diferença média entre
+     quadros consecutivos, contra 1,07 do vídeo todo), então basta deixar
+     `pos` caminhar por ela em vaivém para ele respirar. O olhar não muda: a
+     faixa inteira é neutra. */
+  REST_FPS: 20,
 } as const;
 
 /** Acima desta intensidade o quadro conta como olhar mirado, não neutro. */
@@ -217,6 +228,34 @@ for (let f = 0; f < N_FRAMES; f++) {
        olha para o teto nunca entra na disputa. */
     AIMED_FRAMES.push(f);
   }
+}
+
+/**
+ * As faixas contíguas de repouso, derivadas de `NEUTRAL_FRAMES`.
+ *
+ * São duas neste vídeo (o começo e o fim), e não uma: dá para percorrer cada
+ * uma em vaivém sem corte, mas não dá para emendar as duas — entre elas está
+ * o vídeo inteiro.
+ */
+const REST_BANDS: Array<{ ini: number; fim: number }> = [];
+for (const f of NEUTRAL_FRAMES) {
+  const ultima = REST_BANDS[REST_BANDS.length - 1];
+  if (ultima && f === ultima.fim + 1) ultima.fim = f;
+  else REST_BANDS.push({ ini: f, fim: f });
+}
+
+/** A faixa de repouso mais próxima de onde o olhar está agora. */
+function restBand(from: number): { ini: number; fim: number } {
+  let best = REST_BANDS[0];
+  let bestD = Infinity;
+  for (const b of REST_BANDS) {
+    const d = from < b.ini ? b.ini - from : from > b.fim ? from - b.fim : 0;
+    if (d < bestD) {
+      bestD = d;
+      best = b;
+    }
+  }
+  return best;
 }
 
 function nearestNeutral(from: number): number {
@@ -426,6 +465,9 @@ export const BoasVindas = memo(function BoasVindas({
     let lastSwitch = 0;
     let aim = aimedTarget;
     let pos = aimedTarget;
+    /* Fase do vaivém de repouso, em índice de quadro. */
+    let restPos = aimedTarget;
+    let restDir = 1;
 
     function pickAimed(dxDes: number, dyDes: number, now: number) {
       let best = -Infinity;
@@ -523,11 +565,26 @@ export const BoasVindas = memo(function BoasVindas({
         pickAimed(dxDes, dyDes, now);
       }
 
-      /* 5. ALVO: mistura contínua entre encarar a câmera e o quadro mirado.
-         É a mesma engrenagem servindo a três requisitos — zona central,
-         retorno ao neutro e inatividade — e por ser mistura, nunca snap. */
-      const neutro = nearestNeutral(pos);
-      const target = neutro + (aimedTarget - neutro) * influencia;
+      /* 5. REPOUSO VIVO. A faixa neutra mais próxima é escolhida uma vez e
+         percorrida em vaivém no ritmo do próprio vídeo. É o que impede a
+         imagem de virar uma foto quando ninguém mexe o mouse. */
+      const banda = restBand(pos);
+      if (restPos < banda.ini || restPos > banda.fim) {
+        restPos = Math.min(banda.fim, Math.max(banda.ini, restPos));
+      }
+      restPos += restDir * TRACKING.REST_FPS * dt;
+      if (restPos >= banda.fim) {
+        restPos = banda.fim;
+        restDir = -1;
+      } else if (restPos <= banda.ini) {
+        restPos = banda.ini;
+        restDir = 1;
+      }
+
+      /* ALVO: mistura contínua entre o repouso e o quadro mirado. É a mesma
+         engrenagem servindo a três requisitos — zona central, retorno ao
+         neutro e inatividade — e por ser mistura, nunca snap. */
+      const target = restPos + (aimedTarget - restPos) * influencia;
 
       /* 6. cascata com dt real. Perto do neutro o segundo estágio fica
          ainda mais lento: voltar a encarar é gesto sem pressa. */
