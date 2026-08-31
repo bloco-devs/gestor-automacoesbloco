@@ -1,7 +1,6 @@
 import { lazy, Suspense, useState, type ReactElement } from "react";
 import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
-import { BlinkLoader } from "@/components/BlinkLoader";
-import { BLINK_FRAMES_URL } from "@/lib/constants";
+import { BoasVindas } from "@/components/BoasVindas";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { UxRewriteGate } from "@/modules/portal-unified";
@@ -597,7 +596,7 @@ const App = () => {
         </TooltipProvider>
       </QueryClientProvider>
       {booting && (
-        <BlinkLoader baseUrl={BLINK_FRAMES_URL} onEnter={() => setBooting(false)} />
+        <BoasVindas onEnter={() => setBooting(false)} />
       )}
     </>
   );
