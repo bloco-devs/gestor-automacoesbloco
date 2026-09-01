@@ -94,7 +94,6 @@ const TRACKING = {
      piso teórico deste material é 2,2°.
      Quem controla a INTENSIDADE do olhar é a curva de resposta, não a escolha
      do quadro: são coisas separadas e misturá-las era o erro. */
-  MAG_WEIGHT: 0.05,
 
   /* ── Zona central ────────────────────────────────────────────────────
      Não é dead zone com degrau: é uma curva. A unidade é a META-TELA por
@@ -290,7 +289,23 @@ function buildGaze(): Gaze[] {
 const GAZE = buildGaze();
 const NEUTRAL_FRAMES: number[] = [];
 const AIMED_FRAMES: number[] = [];
+/**
+ * TODOS os quadros concorrem na busca.
+ *
+ * Antes só os "mirados" (intensidade >= 0,3) concorriam, e a intensidade do
+ * olhar vinha de misturar o índice do quadro mirado com o índice do repouso.
+ * Índice não é grandeza interpolável: a média entre "olhar para a esquerda" e
+ * "repouso" caía num quadro arbitrário. Medido numa varredura horizontal, isso
+ * produzia 27% da tela sem resposta, um salto de 68 quadros entre paradas
+ * vizinhas, e o cursor à direita do centro escolhendo uma pose de olhar para a
+ * esquerda.
+ * Com todos os quadros concorrendo e a intensidade PEDIDA entrando na
+ * pontuação, o resultado é sempre uma pose real, e a resposta cresce contínua
+ * do repouso ao extremo.
+ */
+const ALL_FRAMES: number[] = [];
 for (let f = 0; f < N_FRAMES; f++) {
+  ALL_FRAMES.push(f);
   const g = GAZE[f];
   if (g.mag < REST_MAG) {
     NEUTRAL_FRAMES.push(f);
@@ -555,7 +570,7 @@ export const BoasVindas = memo(function BoasVindas({
     /* Fase da respiração do enquadramento. */
     let breathPhase = 0;
 
-    function pickAimed(dxDes: number, dyDes: number, now: number) {
+    function pickAimed(alvoX: number, alvoY: number, now: number) {
       let best = -Infinity;
       let bestF = aimedTarget;
       let currentScore = -Infinity;
@@ -563,12 +578,15 @@ export const BoasVindas = memo(function BoasVindas({
          normalizado aqui: o produto dos dois é o cosseno do erro angular. É
          essa a grandeza que decide, porque é essa que responde "ele está
          olhando para onde o ponteiro está?". */
-      for (const f of AIMED_FRAMES) {
+      for (const f of ALL_FRAMES) {
         const g = GAZE[f];
-        const align = (dxDes * g.x + dyDes * g.y) / g.mag;
+        /* Distância entre o olhar pedido e o olhar do quadro, como vetores.
+           Direção e intensidade num só número, e ambas com significado: o
+           pedido tem magnitude de verdade agora. */
+        const ex = g.x - alvoX;
+        const ey = g.y - alvoY;
         const s =
-          align +
-          TRACKING.MAG_WEIGHT * g.mag -
+          -(ex * ex + ey * ey) -
           Math.abs(f - pos) * TRACKING.TIMELINE_PENALTY;
         if (f === aimedTarget) currentScore = s;
         if (s > best) {
@@ -639,22 +657,40 @@ export const BoasVindas = memo(function BoasVindas({
       const influencia =
         hasPointer && pointerInside ? resposta * (1 - idle) : 0;
 
-      /* 4. sensibilidade por eixo e teto de amplitude */
-      if (dist > 0.5) {
-        /* Direção pedida: geométrica, com o eixo Y podendo ser achatado por
-           SENS_Y, e renormalizada para unitária — a escolha do quadro é só
-           sobre DIREÇÃO. */
-        let dxDes = (ddx / dist) * TRACKING.SENS_X;
-        let dyDes = (ddy / dist) * TRACKING.SENS_Y;
-        const nrm = Math.sqrt(dxDes * dxDes + dyDes * dyDes) || 1;
-        dxDes /= nrm;
-        dyDes /= nrm;
-        pickAimed(dxDes, dyDes, now);
-      }
+      /*
+       * OLHAR PEDIDO — proporcional à POSIÇÃO do cursor, não só à direção.
+       *
+       * Antes eu pedia apenas a direção (vetor unitário) e a intensidade vinha
+       * da distância. Com o cursor à esquerda na altura dos olhos, a direção é
+       * ~180° esteja ele a 60 px ou a 440 px da borda: o mesmo quadro ganhava em
+       * todas as posições. Medido numa varredura de 15 paradas, cinco paradas
+       * seguidas caíam no MESMO quadro em cada extremo — um terço da tela sem
+       * resposta, que é exatamente "ele não acompanha".
+       *
+       * Agora cada eixo é medido em meia-tela e vira componente do vetor
+       * pedido. Cursor na metade do caminho pede metade do olhar. A resposta
+       * passa a ser graduada em toda a tela.
+       */
+      const dxDes = Math.max(
+        -TRACKING.MAX_AMP_X,
+        Math.min(TRACKING.MAX_AMP_X, ux * TRACKING.SENS_X),
+      );
+      const dyDes = Math.max(
+        -TRACKING.MAX_AMP_Y,
+        Math.min(TRACKING.MAX_AMP_Y, uy * TRACKING.SENS_Y),
+      );
+      /* `influencia` é o multiplicador único: já traz a curva central (pé
+         plano contra tremor), o esmaecimento por inatividade E a checagem do
+         ponteiro. Usar `resposta * (1 - idle)` aqui esquecia o ponteiro fora da
+         janela, e ele congelaria na pose em vez de voltar ao repouso. */
+      const alvoX = dxDes * influencia;
+      const alvoY = dyDes * influencia;
+      const alvoMag = Math.sqrt(alvoX * alvoX + alvoY * alvoY);
+      pickAimed(alvoX, alvoY, now);
 
-      /* 5. REPOUSO VIVO. A faixa neutra mais próxima é escolhida uma vez e
-         percorrida em vaivém no ritmo do próprio vídeo. É o que impede a
-         imagem de virar uma foto quando ninguém mexe o mouse. */
+      /* 5. REPOUSO VIVO. A faixa neutra mais próxima é percorrida em vaivém no
+         ritmo do próprio vídeo, para a imagem não virar foto quando ninguém
+         mexe o mouse. */
       const banda = restBand(pos);
       if (restPos < banda.ini || restPos > banda.fim) {
         restPos = Math.min(banda.fim, Math.max(banda.ini, restPos));
@@ -668,10 +704,11 @@ export const BoasVindas = memo(function BoasVindas({
         restDir = 1;
       }
 
-      /* ALVO: mistura contínua entre o repouso e o quadro mirado. É a mesma
-         engrenagem servindo a três requisitos — zona central, retorno ao
-         neutro e inatividade — e por ser mistura, nunca snap. */
-      const target = restPos + (aimedTarget - restPos) * influencia;
+      /* ALVO: o quadro que a busca escolheu, e nada de média. Só quando a
+         intensidade pedida é baixa o vaivém do repouso assume — e aí a busca
+         já devolveu um quadro da mesma faixa neutra, então a troca é de poucos
+         quadros, não de meio vídeo. */
+      const target = alvoMag < REST_MAG ? restPos : aimedTarget;
 
       /* 6. cascata com dt real. Perto do neutro o segundo estágio fica
          ainda mais lento: voltar a encarar é gesto sem pressa. */
