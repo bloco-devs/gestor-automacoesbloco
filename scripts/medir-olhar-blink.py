@@ -16,7 +16,14 @@ from PIL import Image
 fs = sorted(glob.glob('frames/f*.webp'))
 if not fs:
     sys.exit("nenhum quadro em frames/ — rode a extracao primeiro")
+
+# O video termina com uma REACAO (o BLINK fica feliz e pula), que nao e olhar e
+# nao pode entrar na medicao: bracos no alto mudam a caixa da cabeca e esticam o
+# percentil que normaliza a amplitude. Medimos so a parte de rastreamento.
+TRACK_END = int(sys.argv[1]) if len(sys.argv) > 1 else 212
+fs = fs[:TRACK_END + 1]
 N = len(fs)
+print(f"medindo os quadros 0..{TRACK_END} (a reacao final fica fora)")
 
 def medir(caminho):
     a = np.asarray(Image.open(caminho).convert('RGB'), dtype=np.int16)
@@ -62,7 +69,7 @@ hx0, hx1, hy0, hy1 = col(5), col(6), col(7), col(8)
 ax, ay = cx / Wv, cy / Hv
 print(f"ANCORA DOS OLHOS  x {np.nanmin(ax):.3f}..{np.nanmax(ax):.3f} (media {np.nanmean(ax):.3f})")
 print(f"                  y {np.nanmin(ay):.3f}..{np.nanmax(ay):.3f} (media {np.nanmean(ay):.3f})")
-rep = np.concatenate([np.arange(0, 28), np.arange(222, N)])
+rep = np.arange(0, 28)
 print(f"  no repouso: x {np.nanmean(ax[rep]):.3f}  y {np.nanmean(ay[rep]):.3f}")
 
 # olhar: centroide dos olhos contra o centro e a altura da CABECA
@@ -84,7 +91,7 @@ x = np.clip(x / (np.percentile(np.abs(x), 99) or 1), -1.1, 1.1)
 y = np.clip(y / (np.percentile(np.abs(y), 99) or 1), -1.1, 1.1)
 print(f"AMPLITUDE  x {x.min():+.2f}..{x.max():+.2f}   y {y.min():+.2f}..{y.max():+.2f}")
 print("\nVALIDACAO visual:")
-for f, esp in [(78,"esquerda x<0"),(96,"direita x>0"),(113,"cima y<0"),(222,"neutro ~0"),(42,"esquerda x<0"),(162,"direita x>0"),(174,"baixo? y")]:
+for f, esp in [(78,"esquerda x<0"),(96,"direita x>0"),(113,"cima y<0"),(10,"neutro ~0"),(42,"esquerda x<0"),(162,"direita x>0"),(180,"baixo y>0")]:
     print(f"  q{f:3d}  ({x[f]:+.2f},{y[f]:+.2f})   esperado {esp}")
 np.save('/tmp/gx.npy', x); np.save('/tmp/gy.npy', y)
 np.save('/tmp/ax.npy', ax); np.save('/tmp/ay.npy', ay)

@@ -164,6 +164,19 @@ const TRACKING = {
      faixa inteira é neutra. */
   REST_FPS: 20,
 
+  /* ── Reação do clique ────────────────────────────────────────────────
+     A reação toca no ritmo em que foi ANIMADA (24 fps, o do vídeo): é uma
+     performance, não um rastreamento, e acelerar estragaria a comemoração.
+
+     Chegar até ela é o problema interessante. Avançar pela linha do tempo custou
+     0,9 s tocando TODA a coreografia de olhar a 4× a velocidade — o mesmo
+     fast-forward esquisito que eu já tinha combatido no rastreamento. Cortar
+     seco seria um salto de pose visível. Então é um dissolve curto: a pose atual
+     desaparece por cima do primeiro quadro da reação. 180 ms é o bastante para
+     não ler como corte e curto o bastante para não ler como espera. */
+  REACTION_FPS: 24,
+  REACTION_FADE_MS: 180,
+
   /* ── Respiração ──────────────────────────────────────────────────────
      A faixa de repouso resolve o congelamento QUANDO ele está em repouso.
      Não resolve o caso mais comum: cursor parado longe do centro, olhar
@@ -220,6 +233,25 @@ const MAX_CANVAS_W = 2400;
 const N_FRAMES = 240;
 
 /**
+ * O VÍDEO TEM DUAS PARTES.
+ *
+ * 0..TRACK_END é o olhar: é daqui que a busca escolhe quadro para acompanhar o
+ * ponteiro. REACTION_START..N_FRAMES-1 é a REAÇÃO — o BLINK fica com a cara
+ * feliz e pula comemorando —, e ela só toca quando a pessoa clica em "Entrar no
+ * sistema".
+ *
+ * A separação não é cosmética. Se a reação entrasse no rastreamento, ele pularia
+ * no meio do olhar; e a faixa de repouso antiga era 222-239, que neste vídeo é
+ * exatamente o pulo — o BLINK "descansaria" comemorando.
+ *
+ * O limite foi medido comparando este vídeo com o anterior quadro a quadro: até
+ * 212 a diferença é a linha de base da regravação; em 213 ela começa a subir (a
+ * cara mudando) e em 222 dispara (os braços). Ver `scripts/medir-olhar-blink.py`.
+ */
+const TRACK_END = 212;
+const REACTION_START = 213;
+
+/**
  * Onde os OLHOS estão dentro do quadro, em fração da imagem — MEDIDO.
  *
  * `{0.501, 0.370}`, medido no repouso por `scripts/medir-olhar-blink.py`. O
@@ -265,31 +297,33 @@ const HEAD = { x: 0.501, y: 0.370 };
  * novo. Não dá para remapear por regra de três.
  */
 const GAZE_KEYS: ReadonlyArray<readonly [number, number, number]> = [
-  [0, +0.00, -0.01], [3, -0.00, -0.01], [6, -0.00, -0.01], [9, +0.00, -0.00], [12, +0.00, -0.00],
-  [15, +0.00, +0.01], [18, -0.00, +0.01], [21, -0.03, +0.03], [24, -0.12, +0.05], [27, -0.26, +0.08],
-  [30, -0.42, +0.13], [33, -0.55, +0.20], [36, -0.64, +0.27], [39, -0.71, +0.30], [42, -0.76, +0.32],
-  [45, -0.79, +0.32], [48, -0.80, +0.33], [51, -0.79, +0.30], [54, -0.79, +0.28], [57, -0.80, +0.26],
-  [60, -0.81, +0.25], [63, -0.82, +0.25], [66, -0.82, +0.25], [69, -0.80, +0.23], [72, -0.77, +0.14],
-  [75, -0.81, +0.02], [78, -0.97, -0.08], [81, -1.04, -0.21], [84, -0.74, -0.41], [87, -0.27, -0.57],
-  [90, +0.08, -0.64], [93, +0.22, -0.66], [96, +0.29, -0.66], [99, +0.34, -0.62], [102, +0.30, -0.54],
-  [105, +0.16, -0.43], [108, -0.01, -0.36], [111, -0.17, -0.35], [114, -0.30, -0.41], [117, -0.34, -0.48],
-  [120, -0.27, -0.55], [123, -0.15, -0.59], [126, +0.03, -0.59], [129, +0.20, -0.56], [132, +0.32, -0.53],
-  [135, +0.41, -0.47], [138, +0.44, -0.39], [141, +0.45, -0.29], [144, +0.45, -0.14], [147, +0.44, +0.06],
-  [150, +0.44, +0.25], [153, +0.44, +0.40], [156, +0.45, +0.52], [159, +0.45, +0.63], [162, +0.45, +0.74],
-  [165, +0.45, +0.82], [168, +0.45, +0.89], [171, +0.42, +0.96], [174, +0.33, +1.01], [177, +0.22, +0.98],
-  [180, +0.11, +0.87], [183, +0.02, +0.71], [186, -0.03, +0.64], [189, -0.06, +0.61], [192, -0.09, +0.58],
-  [195, -0.12, +0.55], [198, -0.14, +0.51], [201, -0.15, +0.49], [204, -0.16, +0.47], [207, -0.16, +0.43],
-  [210, -0.16, +0.40], [213, -0.15, +0.36], [216, -0.12, +0.31], [219, -0.08, +0.22], [222, -0.04, +0.14],
-  [225, -0.01, +0.07], [228, +0.01, +0.02], [231, +0.02, -0.00], [234, +0.01, -0.02], [237, +0.01, -0.02],
-  [239, +0.01, -0.02],
+  [0, +0.00, -0.01], [3, +0.00, -0.01], [6, +0.00, -0.01], [9, +0.00, -0.00], [12, -0.00, +0.00],
+  [15, -0.00, +0.01], [18, -0.00, +0.01], [21, -0.03, +0.03], [24, -0.12, +0.05], [27, -0.26, +0.09],
+  [30, -0.42, +0.14], [33, -0.55, +0.20], [36, -0.65, +0.30], [39, -0.73, +0.37], [42, -0.76, +0.35],
+  [45, -0.77, +0.29], [48, -0.78, +0.30], [51, -0.79, +0.30], [54, -0.81, +0.28], [57, -0.83, +0.27],
+  [60, -0.84, +0.24], [63, -0.85, +0.23], [66, -0.85, +0.23], [69, -0.82, +0.22], [72, -0.79, +0.15],
+  [75, -0.82, +0.04], [78, -0.96, -0.10], [81, -1.02, -0.21], [84, -0.71, -0.40], [87, -0.24, -0.57],
+  [90, +0.09, -0.67], [93, +0.22, -0.69], [96, +0.29, -0.68], [99, +0.34, -0.64], [102, +0.29, -0.55],
+  [105, +0.14, -0.43], [108, -0.03, -0.37], [111, -0.19, -0.37], [114, -0.33, -0.43], [117, -0.36, -0.51],
+  [120, -0.30, -0.58], [123, -0.18, -0.62], [126, -0.01, -0.63], [129, +0.18, -0.60], [132, +0.31, -0.56],
+  [135, +0.41, -0.49], [138, +0.46, -0.40], [141, +0.45, -0.29], [144, +0.44, -0.14], [147, +0.43, +0.06],
+  [150, +0.44, +0.27], [153, +0.44, +0.44], [156, +0.44, +0.55], [159, +0.42, +0.58], [162, +0.42, +0.64],
+  [165, +0.42, +0.77], [168, +0.43, +0.93], [171, +0.40, +0.99], [174, +0.33, +1.03], [177, +0.20, +0.92],
+  [180, +0.09, +0.78], [183, +0.01, +0.73], [186, -0.05, +0.67], [189, -0.08, +0.63], [192, -0.11, +0.61],
+  [195, -0.13, +0.58], [198, -0.14, +0.54], [201, -0.15, +0.51], [204, -0.16, +0.48], [207, -0.17, +0.45],
+  [210, -0.17, +0.43], [212, -0.17, +0.42],
 ];
 
 type Gaze = { x: number; y: number; mag: number };
 
 function buildGaze(): Gaze[] {
+  /* O array vai até N_FRAMES para o desenho poder indexar qualquer quadro, mas
+     só a faixa de rastreamento recebe valor medido. A reação fica zerada — e
+     como `ALL_FRAMES` também para em TRACK_END, ela nunca concorre na busca. */
   const out: Gaze[] = new Array(N_FRAMES);
+  for (let f = REACTION_START; f < N_FRAMES; f++) out[f] = { x: 0, y: 0, mag: 0 };
   let k = 0;
-  for (let f = 0; f < N_FRAMES; f++) {
+  for (let f = 0; f <= TRACK_END; f++) {
     while (k < GAZE_KEYS.length - 2 && GAZE_KEYS[k + 1][0] <= f) k += 1;
     const a = GAZE_KEYS[k];
     const b = GAZE_KEYS[k + 1] ?? a;
@@ -320,7 +354,7 @@ const AIMED_FRAMES: number[] = [];
  * do repouso ao extremo.
  */
 const ALL_FRAMES: number[] = [];
-for (let f = 0; f < N_FRAMES; f++) {
+for (let f = 0; f <= TRACK_END; f++) {
   ALL_FRAMES.push(f);
   const g = GAZE[f];
   if (g.mag < REST_MAG) {
@@ -407,10 +441,22 @@ export const BoasVindas = memo(function BoasVindas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [progresso, setProgresso] = useState(0);
   const [pronto, setPronto] = useState(false);
+  const [reagindo, setReagindo] = useState(false);
+  /** O laço lê daqui; `useState` sozinho não chega até ele. */
+  const reagindoRef = useRef(false);
 
+  /**
+   * O clique não entra no sistema: ele dispara a reação. Quem entra é o laço,
+   * quando o último quadro do pulo passa.
+   */
   const enter = useCallback(() => {
-    if (onEnter) onEnter();
-  }, [onEnter]);
+    if (reagindoRef.current) return;
+    reagindoRef.current = true;
+    setReagindo(true);
+  }, []);
+
+  const onEnterRef = useRef(onEnter);
+  onEnterRef.current = onEnter;
 
   /**
    * UM único efeito, UM único rAF, UM único par de listeners. Toda a
@@ -516,11 +562,17 @@ export const BoasVindas = memo(function BoasVindas({
       needsDraw = true;
     }
 
-    function draw(index: number) {
+    function draw(index: number, alpha = 1) {
       const img = nearestLoaded(index);
-      ctx.fillStyle = "#16323e";
-      ctx.fillRect(0, 0, cw, ch);
+      /* Com `alpha < 1` o quadro entra POR CIMA do que já está no canvas: é o
+         dissolve da reação. Nesse modo não se pinta o fundo, senão apagaria a
+         pose de baixo. */
+      if (alpha >= 1) {
+        ctx.fillStyle = "#16323e";
+        ctx.fillRect(0, 0, cw, ch);
+      }
       if (!img) return;
+      ctx.globalAlpha = alpha;
 
       /* Cover com teto de zoom vertical: em tela alta e estreita o cover
          puro amplia o personagem até virar textura. */
@@ -555,6 +607,7 @@ export const BoasVindas = memo(function BoasVindas({
         ctx.fillStyle = g;
         ctx.fillRect(0, bottom - 1, cw, faixa);
       }
+      ctx.globalAlpha = 1;
     }
 
     /* ── estado do rastreamento ───────────────────────────────────── */
@@ -577,6 +630,11 @@ export const BoasVindas = memo(function BoasVindas({
     let restDir = 1;
     /* Fase da respiração do enquadramento. */
     let breathPhase = 0;
+    /** Trava para `onEnter` disparar uma vez só no fim da reação. */
+    let entrou = false;
+    /** Pose de onde o dissolve da reação parte; -1 = reação ainda não começou. */
+    let fadeDe = -1;
+    let fadeFase = 0;
 
     function pickAimed(alvoX: number, alvoY: number, now: number) {
       let best = -Infinity;
@@ -640,6 +698,39 @@ export const BoasVindas = memo(function BoasVindas({
       );
       const esperado = Math.round(dprAgora * window.innerWidth);
       if (canvas.width !== esperado || ch !== window.innerHeight) layout();
+
+      /*
+       * MODO REAÇÃO. Curto-circuita o rastreamento inteiro: o cursor não manda
+       * mais nada, e a linha do tempo passa a ser tocada, não buscada.
+       */
+      if (reagindoRef.current) {
+        if (fadeDe < 0) {
+          /* Primeiro quadro da reação: guarda a pose de saída e salta o alvo
+             para o começo do pulo. O dissolve cobre a diferença. */
+          fadeDe = drawn >= 0 ? drawn : REACTION_START;
+          pos = REACTION_START;
+        }
+        if (fadeFase < 1) {
+          fadeFase = Math.min(1, fadeFase + (dt * 1000) / TRACKING.REACTION_FADE_MS);
+          draw(fadeDe);
+          draw(REACTION_START, fadeFase);
+          canvas.dataset.frame = String(REACTION_START);
+          drawn = REACTION_START;
+        } else {
+          pos += TRACKING.REACTION_FPS * dt;
+          const iReacao = Math.min(N_FRAMES - 1, Math.round(pos));
+          if (iReacao !== drawn) {
+            draw(iReacao);
+            canvas.dataset.frame = String(iReacao);
+            drawn = iReacao;
+          }
+          if (pos >= N_FRAMES - 1 && !entrou) {
+            entrou = true;
+            onEnterRef.current?.();
+          }
+        }
+        return;
+      }
 
       /* 1. deslocamento olhos→cursor. Duas medidas diferentes, e misturá-las
          era o outro erro: a DIREÇÃO tem de ser geométrica, em pixels, senão o
@@ -917,10 +1008,11 @@ export const BoasVindas = memo(function BoasVindas({
           {pronto && onEnter && (
             <button
               onClick={enter}
+              disabled={reagindo}
               className="rounded-full bg-[#FFDA5B] px-8 py-3 text-[14px] font-bold text-[#12242c] shadow-[0_8px_26px_rgba(255,216,61,0.26)] transition-all hover:-translate-y-[1px] hover:bg-[#ffe469] hover:shadow-[0_12px_30px_rgba(255,216,61,0.34)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFDA5B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#16323e]"
               autoFocus
             >
-              Entrar no sistema
+              {reagindo ? "Vamos lá!" : "Entrar no sistema"}
             </button>
           )}
         </div>
