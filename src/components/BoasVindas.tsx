@@ -134,21 +134,21 @@ const TRACKING = {
      amortecidos, eles não vibram sozinhos, e a margem pode ser pequena — só o
      bastante para desempatar poses equidistantes. */
   POSE_STICKY: 0.006,
-  /* ── Mescla entre as duas poses mais próximas ─────────────────────────
-     A mescla só é segura entre poses quase iguais. Entre poses distintas ela
-     vira dupla exposição: com peso 0,46 eu vi olhos e contorno duplicados na
-     tela — o "BLINK no fundo".
-     SEP_MAX é a separação, em unidades de olhar, acima da qual não se mistura
-     nada. A separação mediana entre poses vizinhas do atlas é 0,024, então em
-     boa parte do espaço a mescla continua valendo. */
-  BLEND_SEP_MAX: 0.05,
-  /* E as duas poses precisam ser VIZINHAS NA LINHA DO TEMPO. Proximidade no
-     espaço de olhar não garante proximidade visual: duas poses podem pedir o
-     mesmo olhar sendo renders bem diferentes, e mesclá-las duplica o contorno.
-     Quadros consecutivos, ao contrário, são quase a mesma imagem — mesclá-los é
-     interpolação de verdade, que é o que o modelo antigo fazia ao percorrer a
-     linha do tempo. */
-  BLEND_IDX_MAX: 3,
+  /* ── Transição entre poses ───────────────────────────────────────────
+     A pose nova entra por cima da ANTERIOR EXIBIDA, com a opacidade da camada
+     de saída caindo de 1 a 0. É crossfade A/B, o mesmo de vídeo.
+
+     Antes eu mesclava com a "segunda pose mais próxima" e travei essa mescla
+     para matar um fantasma. Foi remédio errado: as travas desligaram a
+     interpolação quase em todo lugar, e a imagem passou a mudar em 27% dos
+     quadros de tela, com saltos grandes — "várias fotos". Mesclar com a pose
+     anterior funciona sempre, por longe que as duas estejam, porque não se
+     supõe nada sobre elas: é uma dissolução, não uma média de vizinhas.
+
+     130 ms é mais longo que o intervalo típico entre trocas de pose (~50 ms),
+     de propósito: assim uma transição emenda na seguinte e a opacidade está
+     sempre em movimento. É isso que faz a imagem mudar em todo quadro de tela. */
+  POSE_FADE_MS: 130,
   /* Teto do peso. Meio a meio é o pior caso para dupla exposição, e não traz
      fluidez a mais que 0,35 já não traga. */
   BLEND_W_MAX: 0.35,
@@ -572,9 +572,11 @@ export const BoasVindas = memo(function BoasVindas({
     let anchorY = 0.36;
     let needsDraw = true;
     let drawn = -1;
-    /** Pose desenhada na camada de cima, e a opacidade já aplicada nela. */
-    let drawnB = -1;
+    /** Opacidade da camada de saída (1 = pose antiga inteira; 0 = já saiu). */
+    let fadeSaida = 0;
     let opAplicada = 0;
+    /** O primeiro quadro da reação só precisa ser pintado uma vez. */
+    let reacaoPintada = false;
 
     function layout() {
       cw = window.innerWidth;
@@ -589,7 +591,6 @@ export const BoasVindas = memo(function BoasVindas({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctxB.setTransform(dpr, 0, 0, dpr, 0, 0);
       /* Redimensionar limpa o canvas: as duas camadas têm de ser repintadas. */
-      drawnB = -1;
       /* Em tela estreita o painel de texto come o rodapé, então a cabeça
          sobe para não ficar atrás da barra de progresso. */
       anchorY = cw <= 560 ? 0.28 : cw <= 900 ? 0.32 : 0.36;
@@ -701,51 +702,32 @@ export const BoasVindas = memo(function BoasVindas({
      * quase equidistantes sem introduzir atraso perceptível.
      */
     /**
-     * As DUAS poses do atlas mais próximas do olhar pedido, e o peso da segunda.
+     * A pose do atlas mais próxima do olhar pedido.
      *
-     * Por que duas, e não a mais próxima. Saltar para a mais próxima faz a
-     * imagem mudar só ao cruzar fronteira entre poses: medi 9 a 15 trocas por
-     * segundo numa varredura contínua, contra 36 do modelo antigo de percorrer a
-     * linha do tempo — e era essa escassez que lia como "não está fluida".
-     * Mesclando as duas mais próximas com peso pela distância, a imagem muda em
-     * TODO quadro de tela, porque o peso muda continuamente. Sem atravessar a
-     * linha do tempo, então sem a coreografia de rolagem do meio.
-     *
-     * As duas são vizinhas no espaço de olhar (distância mediana 0,024), ou seja
-     * poses quase iguais: a mescla lê como movimento, não como fantasma.
+     * Distância euclidiana em (yaw, pitch). Função PURA do olhar pedido: o mesmo
+     * ponto da tela sempre devolve a mesma pose, não importa por onde o cursor
+     * passou. A suavidade não vem daqui — vem do crossfade no desenho.
      */
-    function duasMaisProximas(yaw: number, pitch: number): [number, number, number] {
-      let f1 = ATLAS[0];
-      let f2 = ATLAS[0];
-      let d1 = Infinity;
-      let d2 = Infinity;
+    function poseMaisProxima(yaw: number, pitch: number, atual: number): number {
+      let melhor = atual;
+      let dMelhor = Infinity;
       for (const f of ATLAS) {
         const g = GAZE[f];
         const d = (g.x - yaw) ** 2 + (g.y - pitch) ** 2;
-        if (d < d1) {
-          d2 = d1;
-          f2 = f1;
-          d1 = d;
-          f1 = f;
-        } else if (d < d2) {
-          d2 = d;
-          f2 = f;
+        if (d < dMelhor) {
+          dMelhor = d;
+          melhor = f;
         }
       }
-      const r1 = Math.sqrt(d1);
-      const r2 = Math.sqrt(d2);
-      /* Peso da segunda: cresce quando as distâncias empatam, e MORRE quando as
-         duas poses são visualmente distintas. É o segundo fator que impede a
-         dupla exposição — sem ele, um empate entre poses diferentes desenha as
-         duas por cima uma da outra. */
-      const g1 = GAZE[f1];
-      const g2 = GAZE[f2];
-      const sep = Math.hypot(g1.x - g2.x, g1.y - g2.y);
-      const vizinhas = Math.abs(f1 - f2) <= TRACKING.BLEND_IDX_MAX;
-      const seguro = vizinhas ? clamp01(1 - sep / TRACKING.BLEND_SEP_MAX) : 0;
-      const razao = r1 + r2 > 1e-6 ? r1 / (r1 + r2) : 0;
-      const w = Math.min(TRACKING.BLEND_W_MAX, razao) * seguro;
-      return [f1, f2, w];
+      if (melhor === atual) return atual;
+      const ga = GAZE[atual];
+      const da = (ga.x - yaw) ** 2 + (ga.y - pitch) ** 2;
+      /* Margem só para desempatar poses equidistantes. Pequena de propósito:
+         com 0,035 ela era maior que a distância entre poses vizinhas (mediana
+         0,024) e bloqueava 63% das trocas legítimas. */
+      return Math.sqrt(da) - Math.sqrt(dMelhor) > TRACKING.POSE_STICKY
+        ? melhor
+        : atual;
     }
 
     let last = 0;
@@ -787,14 +769,17 @@ export const BoasVindas = memo(function BoasVindas({
           pos = REACTION_START;
         }
         if (fadeFase < 1) {
+          /* A reação usa as mesmas duas camadas, com os papéis invertidos: a
+             pose de saída fica embaixo e o primeiro quadro do pulo entra por
+             cima. Cada uma é pintada uma vez só. */
           fadeFase = Math.min(1, fadeFase + (dt * 1000) / TRACKING.REACTION_FADE_MS);
           if (drawn !== fadeDe) {
             draw(fadeDe);
             drawn = fadeDe;
           }
-          if (drawnB !== REACTION_START) {
+          if (!reacaoPintada) {
             draw(REACTION_START, ctxB);
-            drawnB = REACTION_START;
+            reacaoPintada = true;
           }
           canvasB.style.opacity = fadeFase.toFixed(3);
           opAplicada = fadeFase;
@@ -881,8 +866,6 @@ export const BoasVindas = memo(function BoasVindas({
          imagem de virar foto quando ninguém mexe o mouse. Por virem do atlas,
          essas poses também têm roll baixo. */
       let alvoPose: number;
-      let mesclaPose = -1;
-      let mesclaPeso = 0;
       if (Math.hypot(yaw, pitch) < REST_MAG && ATLAS_REPOUSO.length > 1) {
         restPos += restDir * TRACKING.REST_FPS * dt;
         if (restPos >= ATLAS_REPOUSO.length - 1) {
@@ -894,10 +877,7 @@ export const BoasVindas = memo(function BoasVindas({
         }
         alvoPose = ATLAS_REPOUSO[Math.round(restPos)];
       } else {
-        const [f1, f2, w] = duasMaisProximas(yaw, pitch);
-        alvoPose = f1;
-        mesclaPose = f2;
-        mesclaPeso = w;
+        alvoPose = poseMaisProxima(yaw, pitch, poseAtual);
       }
 
       /*
@@ -907,8 +887,7 @@ export const BoasVindas = memo(function BoasVindas({
        * duplicava o que a mescla já faz, e disparando 20 vezes por segundo no
        * ciclo de repouso dobrava o desenho de graça.
        */
-      poseAtual = alvoPose;
-      pos = poseAtual;
+      pos = alvoPose;
 
       /*
        * 7. DESENHO E RESPIRAÇÃO, separados de propósito.
@@ -925,26 +904,33 @@ export const BoasVindas = memo(function BoasVindas({
        * tela continua mudando em todo quadro — sem congelar e sem custar.
        */
       /*
-       * DUAS CAMADAS, cada uma redesenhada só quando a SUA pose muda. A mistura
-       * entre elas é `opacity`, escrita todo quadro — propriedade que o
-       * compositor resolve na GPU. É isso que dá imagem mudando em todo quadro de
-       * tela sem pagar `drawImage` em todo quadro de tela: com a mescla feita no
-       * canvas, medi 50% dos quadros passando de 32 ms.
+       * CROSSFADE A/B em duas camadas.
+       *
+       * Ao trocar de pose: a pose que sai é pintada na camada de cima com
+       * opacidade 1, a que entra vai para a de baixo, e a de cima cai a 0. Dois
+       * `drawImage` por TROCA DE POSE — não por quadro de tela —, e uma escrita
+       * de opacidade por quadro, que o compositor resolve na GPU.
+       *
+       * Mesclar no canvas custava 50% dos quadros passando de 32 ms; desenhar só
+       * na troca e deixar a mistura para o compositor custa ~0.
        */
-      if (poseAtual !== drawn || needsDraw) {
+      if (poseAtual !== alvoPose || needsDraw) {
+        if (poseAtual !== alvoPose && drawn >= 0) {
+          draw(drawn, ctxB);
+          fadeSaida = 1;
+        }
+        poseAtual = alvoPose;
         draw(poseAtual);
         canvas.dataset.frame = String(poseAtual);
         drawn = poseAtual;
         needsDraw = false;
       }
-      if (mesclaPose >= 0 && mesclaPose !== drawnB) {
-        draw(mesclaPose, ctxB);
-        drawnB = mesclaPose;
+      if (fadeSaida > 0) {
+        fadeSaida = Math.max(0, fadeSaida - (dt * 1000) / TRACKING.POSE_FADE_MS);
       }
-      const opB = mesclaPose >= 0 ? mesclaPeso : 0;
-      if (Math.abs(opB - opAplicada) > 0.002) {
-        canvasB.style.opacity = opB.toFixed(3);
-        opAplicada = opB;
+      if (Math.abs(fadeSaida - opAplicada) > 0.002) {
+        canvasB.style.opacity = fadeSaida.toFixed(3);
+        opAplicada = fadeSaida;
       }
 
       breathPhase += (dt * Math.PI * 2) / TRACKING.BREATH_PERIOD_S;
