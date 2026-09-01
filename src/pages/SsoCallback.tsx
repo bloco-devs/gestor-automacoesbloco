@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { BLOCO_ID_LAUNCHER_URL } from "@/lib/bloco-id";
-import { BoasVindas } from "@/components/BoasVindas";
+import { BlinkCarregando } from "@/components/blink/BlinkCarregando";
 
 const LAUNCHER_URL = BLOCO_ID_LAUNCHER_URL;
 
@@ -42,16 +42,23 @@ export default function SsoCallback() {
   }, [params]);
 
   /**
-   * A chegada pelo Bloco ID era um círculo girando sobre fundo vazio: nenhuma
-   * informação de onde a pessoa acabou de entrar, e em conexão lenta a
-   * impressão de que travou.
+   * A ESPERA DA TROCA DE TOKEN — e por que NÃO é o `BoasVindas` aqui.
    *
-   * O `return` sai antes em vez de aninhar: `BoasVindas` já ocupa a tela
-   * inteira, e ficaria espremida dentro do `max-w-md` que existe para a
-   * mensagem de erro.
+   * O `BoasVindas` é montado pelo `App` como splash de boot, e o `App` envolve
+   * esta rota. Renderizá-lo aqui também montava DOIS ao mesmo tempo: dois
+   * canvas, dois laços de `requestAnimationFrame` e dois carregamentos dos 240
+   * quadros em 1920×1080. O sintoma era a barra de carregamento aparecendo
+   * duas vezes — uma sem o BLINK, outra com — e a tela lagando.
+   *
+   * Esta rota termina em `window.location.replace("/")`, então o splash de
+   * verdade vem depois da recarga, uma vez só. Aqui basta a espera leve.
    */
   if (!error) {
-    return <BoasVindas estado="Validando seu acesso pelo Bloco ID…" />;
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-[#16323e]">
+        <BlinkCarregando mensagem="Validando seu acesso pelo Bloco ID…" />
+      </div>
+    );
   }
 
   return (

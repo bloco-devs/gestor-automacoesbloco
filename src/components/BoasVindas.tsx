@@ -201,6 +201,22 @@ const REST_MAG = 0.18;
 /** Quadros extraídos do BLINK4K.mp4 — 10 s a 24 fps, 1920×1080. */
 const IW = 1920;
 const IH = 1080;
+
+/**
+ * Teto de largura do canvas em pixels de dispositivo.
+ *
+ * A fonte tem 1920 px. Com `dpr 2` num monitor de 1440 o canvas ia a 2880, e
+ * numa janela de 2032 ia a 4064 — ou seja, eu ampliava a imagem e pagava o
+ * dobro do trabalho de rasterização para não ganhar detalhe nenhum.
+ *
+ * O preço apareceu na medição: com o mouse parado, 0% de quadros longos; com o
+ * mouse em movimento, quando o índice muda a cada quadro e o `drawImage` roda
+ * 60 vezes por segundo, 13% dos quadros passavam de 32 ms. Era a lag.
+ *
+ * 2400 dá uma folga sobre os 1920 da fonte para as bordas ficarem nítidas, e
+ * corta o trabalho quase pela metade nas telas grandes, que é onde doía.
+ */
+const MAX_CANVAS_W = 2400;
 const N_FRAMES = 240;
 
 /**
@@ -382,11 +398,9 @@ const smoothstep = (u: number) => u * u * (3 - 2 * u);
    ═══════════════════════════════════════════════════════════════════════ */
 
 export const BoasVindas = memo(function BoasVindas({
-  estado,
   className,
   onEnter,
 }: {
-  estado?: string;
   className?: string;
   onEnter?: () => void;
 }) {
@@ -488,9 +502,9 @@ export const BoasVindas = memo(function BoasVindas({
     let drawn = -1;
 
     function layout() {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
       cw = window.innerWidth;
       ch = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2, MAX_CANVAS_W / Math.max(1, cw));
       canvas.width = Math.round(dpr * cw);
       canvas.height = Math.round(dpr * ch);
       canvas.style.width = `${cw}px`;
@@ -502,7 +516,7 @@ export const BoasVindas = memo(function BoasVindas({
       needsDraw = true;
     }
 
-    function draw(index: number, breath: number) {
+    function draw(index: number) {
       const img = nearestLoaded(index);
       ctx.fillStyle = "#16323e";
       ctx.fillRect(0, 0, cw, ch);
@@ -512,10 +526,7 @@ export const BoasVindas = memo(function BoasVindas({
          puro amplia o personagem até virar textura. */
       const sx = cw / IW;
       const cap = cw <= 560 ? 2.3 : 1.9;
-      /* A respiração entra na escala, depois do teto de zoom: assim ela não
-         pode furar o limite nem descobrir a lateral. */
-      const respira = 1 + Math.sin(breath) * TRACKING.BREATH_SCALE;
-      const scale = Math.min(Math.max(sx, ch / IH), sx * cap) * respira;
+      const scale = Math.min(Math.max(sx, ch / IH), sx * cap);
       const dw = IW * scale;
       const dh = IH * scale;
 
@@ -523,10 +534,7 @@ export const BoasVindas = memo(function BoasVindas({
          faixa vazia na lateral. Desloca no máximo 2% da largura. */
       let dx = cw * 0.5 - HEAD.x * dw;
       dx = Math.min(0, Math.max(cw - dw, dx));
-      const dy =
-        ch * anchorY -
-        HEAD.y * dh +
-        Math.sin(breath * 0.63) * ch * TRACKING.BREATH_SHIFT;
+      const dy = ch * anchorY - HEAD.y * dh;
 
       ctx.drawImage(img, dx, dy, dw, dh);
 
@@ -625,7 +633,12 @@ export const BoasVindas = memo(function BoasVindas({
       /* Aba oculta na montagem entrega `innerWidth` de mentira e o canvas
          nasce do tamanho errado. Conferir por quadro cobre isso, rotação de
          tela e troca de monitor de uma vez. */
-      const esperado = Math.round(Math.min(window.devicePixelRatio || 1, 2) * window.innerWidth);
+      const dprAgora = Math.min(
+        window.devicePixelRatio || 1,
+        2,
+        MAX_CANVAS_W / Math.max(1, window.innerWidth),
+      );
+      const esperado = Math.round(dprAgora * window.innerWidth);
       if (canvas.width !== esperado || ch !== window.innerHeight) layout();
 
       /* 1. deslocamento olhos→cursor. Duas medidas diferentes, e misturá-las
@@ -724,19 +737,34 @@ export const BoasVindas = memo(function BoasVindas({
       const passoMax = TRACKING.MAX_TURN_FPS * dt;
       pos += Math.max(-passoMax, Math.min(passoMax, passo));
 
-      /* 7. desenha TODO quadro de tela. Antes só desenhava quando o índice
-         mudava, o que economizava trabalho e produzia imagem literalmente
-         congelada entre trocas — 53% do tempo, medido em vídeo. Com a
-         respiração no enquadramento, cada quadro de tela é diferente do
-         anterior. Custa um `drawImage`, medido em menos de 1 ms. */
+      /*
+       * 7. DESENHO E RESPIRAÇÃO, separados de propósito.
+       *
+       * O `drawImage` só roda quando o índice inteiro muda. Eu já tentei
+       * desenhar em todo quadro de tela, para a respiração aparecer, e medi o
+       * preço: 82 quadros longos (>32 ms) em 178 durante o movimento do mouse,
+       * ou seja metade dos quadros perdidos. Reescalar 1920×1080 para um canvas
+       * de 2880×1720 sessenta vezes por segundo é caro, e em tela maior é pior.
+       *
+       * A respiração é uma transformação geométrica da imagem inteira, e isso é
+       * trabalho de compositor: vai num `transform` de CSS, na GPU, de graça. O
+       * canvas continua sendo desenhado só quando o quadro muda, e a imagem na
+       * tela continua mudando em todo quadro — sem congelar e sem custar.
+       */
       const index = Math.max(0, Math.min(N_FRAMES - 1, Math.round(pos)));
-      breathPhase += (dt * Math.PI * 2) / TRACKING.BREATH_PERIOD_S;
-      draw(index, breathPhase);
-      if (index !== drawn) {
+      if (index !== drawn || needsDraw) {
+        draw(index);
         canvas.dataset.frame = String(index);
         drawn = index;
+        needsDraw = false;
       }
-      needsDraw = false;
+
+      breathPhase += (dt * Math.PI * 2) / TRACKING.BREATH_PERIOD_S;
+      const escala = 1 + Math.sin(breathPhase) * TRACKING.BREATH_SCALE;
+      /* O deslocamento fica dentro da margem que a escala cria (0,7% de 860 px
+         são ~6 px contra ~4 px de deslocamento), então nunca descobre borda. */
+      const desloca = Math.sin(breathPhase * 0.63) * ch * TRACKING.BREATH_SHIFT;
+      canvas.style.transform = `scale(${escala.toFixed(5)}) translateY(${desloca.toFixed(2)}px)`;
 
       /* 8. barra: carregamento real, com piso de tempo */
       const loadFrac = settled >= N_FRAMES ? 1 : loaded / N_FRAMES;
@@ -828,7 +856,7 @@ export const BoasVindas = memo(function BoasVindas({
         role="img"
         aria-label="BLINK, o assistente do Gestor de Automações, acompanha o cursor com o olhar enquanto o sistema carrega."
         className="pointer-events-none absolute inset-0 h-full w-full"
-        style={{ opacity: 0, transition: "opacity .5s ease" }}
+        style={{ opacity: 0, transition: "opacity .5s ease", willChange: "transform", transformOrigin: "center center" }}
       />
 
       <div
@@ -880,7 +908,7 @@ export const BoasVindas = memo(function BoasVindas({
           </div>
 
           <div className="flex items-center justify-between text-[12px] text-white/60 font-medium tracking-wide">
-            <span aria-live="polite">{pronto ? "Pronto" : (estado ?? "Carregando...")}</span>
+            <span aria-live="polite">{pronto ? "Pronto" : "Carregando..."}</span>
             <span>{Math.round(progresso)}%</span>
           </div>
         </div>
