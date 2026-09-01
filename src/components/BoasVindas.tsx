@@ -120,29 +120,23 @@ const TRACKING = {
      cabeça teleportaria de uma vez. */
   DT_MAX: 0.05,
 
-  /* TETO DE VELOCIDADE DA CABEÇA, em quadros de linha do tempo por segundo.
-     É o número que controla "ele está girando a cabeça rápido".
-     Sem teto, medi picos de 410 quadros/s — dezessete vezes o ritmo em que o
-     vídeo foi animado (24 fps). A pose chegava rápido, mas o caminho até ela
-     era o personagem em avanço rápido.
-     Com teto, a cabeça começa a virar na hora (a latência é do primeiro
-     estágio da cascata, não daqui) mas nunca passa deste ritmo. 60 ≈ 2,5× o
-     natural: ainda é um giro atento, sem virar rodopio. */
-  MAX_TURN_FPS: 75,
 
   /* ── Estabilidade ────────────────────────────────────────────────────
-     O alvo novo precisa vencer o atual por esta margem, e não mais de uma
-     troca por COOLDOWN. Sem isso o olhar vibra entre dois quadros quase
-     equivalentes. */
-  HYSTERESIS: 0.05,
-  SWITCH_COOLDOWN_MS: 110,
-  /* Preço de atravessar a linha do tempo. Este número decide o TAMANHO do
-     percurso, e portanto quanta animação própria do personagem é tocada em
-     avanço rápido para chegar à pose. Com 0,0004 ele escolhia a melhor pose
-     do vídeo inteiro: medi percursos de 93 e 111 quadros. Mais alto, ele
-     aceita uma pose vizinha boa o bastante — reação curta, e a cabeça não
-     precisa varrer meio vídeo. */
-  TIMELINE_PENALTY: 0.0004,
+     A pose só troca se a candidata for MELHOR QUE A ATUAL por esta margem, em
+     unidades de olhar. Sem isso, duas poses quase equidistantes se alternariam
+     com o cursor parado. É a defesa contra tremor, e vive no espaço de
+     yaw/pitch — não mais no índice do quadro, onde a margem não tinha
+     significado geométrico. */
+  POSE_STICKY: 0.035,
+  /* Dissolve entre poses. Curto o bastante para ler como a cabeça virando, e
+     não como um morph: 110 ms. */
+  POSE_FADE_MS: 110,
+  /* Só vale dissolver troca GRANDE de pose. Entre quadros vizinhos o corte é
+     invisível — e dissolver de graça custa caro: o ciclo de repouso troca de
+     pose 20 vezes por segundo, os dissolves de 110 ms se sobrepunham e o
+     desenho dobrava permanentemente. Medi 24% de quadros longos com o mouse
+     PARADO por causa disso. */
+  POSE_CUT_MAX: 8,
 
   /* ── Inatividade ─────────────────────────────────────────────────────
      Depois de START sem mexer, a influência do cursor esmaece ao longo de
@@ -211,9 +205,21 @@ const REST_MAG = 0.18;
    O VÍDEO E A TABELA DO OLHAR
    ═══════════════════════════════════════════════════════════════════════ */
 
-/** Quadros extraídos do BLINK4K.mp4 — 10 s a 24 fps, 1920×1080. */
-const IW = 1920;
-const IH = 1080;
+/**
+ * Dimensão dos quadros: 2560×1440.
+ *
+ * A fonte é 1920×1080, então isto é AMPLIAÇÃO — e ampliar antes só compensa
+ * porque não é a mesma ampliação que o navegador faria. Aqui é lanczos com
+ * `unsharp` leve, offline; lá é o escalador do compositor, em tempo real.
+ * Medido contra a referência sem perda, ampliando os dois para os ~3440 px de
+ * dispositivo que a tela usa: 1920 dá -3,5% de nitidez, 2560 dá +16,8%.
+ *
+ * 3840 foi testado e sai PIOR (+11,2%): para o arquivo caber, a compressão tem
+ * de baixar tanto que come o ganho de pixels. Não existe 4K a extrair de um
+ * master 1080p — só interpolação mais cara.
+ */
+const IW = 2560;
+const IH = 1440;
 
 /**
  * Teto de largura do canvas em pixels de dispositivo.
@@ -314,6 +320,8 @@ const GAZE_KEYS: ReadonlyArray<readonly [number, number, number]> = [
   [210, -0.17, +0.43], [212, -0.17, +0.42],
 ];
 
+
+
 type Gaze = { x: number; y: number; mag: number };
 
 function buildGaze(): Gaze[] {
@@ -337,25 +345,44 @@ function buildGaze(): Gaze[] {
 }
 
 const GAZE = buildGaze();
+
+
+/**
+ * ATLAS DE POSES — o conjunto de quadros exibíveis ao rastrear.
+ *
+ * É esta lista, e não a linha do tempo, que o rastreamento percorre. A diferença
+ * é o ponto central da refatoração: a pose deixou de ser uma POSIÇÃO num vídeo
+ * que se percorre e passou a ser uma ESCOLHA num conjunto. Nenhum quadro
+ * intermediário é exibido, então a coreografia de rolagem que existe entre duas
+ * poses nunca toca.
+ *
+ * Cheguei a filtrar o atlas por roll baixo, para travar o eixo Z de forma
+ * estrita. Medi o custo e desisti: as poses de roll pequeno VERIFICÁVEL cobrem
+ * yaw de -0,92 a +0,09 — não existe olhar para a direita sem roll neste vídeo,
+ * e o filtro custaria a metade direita do rastreamento.
+ *
+ * SÃO 88 POSES, e não os 213 quadros de rastreamento. Como nenhuma travessia de
+ * linha do tempo acontece mais, quadro que não pode ser escolhido é peso morto:
+ * não é baixado, não ocupa memória. 80 delas foram escolhidas por distância máxima
+ * no espaço (yaw, pitch) — erro médio 0,165 contra 0,159 do atlas inteiro, ou
+ * seja 4% —, e outras 8 são poses de repouso adicionadas de propósito: a poda
+ * por distância guardava só 3 delas, porque poses neutras são próximas entre si,
+ * e com 3 o ciclo de repouso deixava de respirar. Em troca, 125 arquivos a
+ * menos.
+ */
+const ATLAS: number[] = [0,2,5,8,11,13,16,19,22,23,25,27,28,29,31,33,35,38,50,65,72,75,76,77,79,81,82,83,84,85,86,90,91,93,97,100,102,103,104,105,106,107,109,111,112,114,116,119,121,124,125,126,127,128,129,134,136,138,140,142,143,144,145,146,147,148,149,150,151,152,154,156,162,164,165,167,170,174,175,177,178,179,180,183,186,193,200,212];
+
+/** Limites de yaw e pitch: são os extremos que o atlas realmente contém. */
+const YAW_MIN = Math.min(...ATLAS.map((f) => GAZE[f].x));
+const YAW_MAX = Math.max(...ATLAS.map((f) => GAZE[f].x));
+const PITCH_MIN = Math.min(...ATLAS.map((f) => GAZE[f].y));
+const PITCH_MAX = Math.max(...ATLAS.map((f) => GAZE[f].y));
+
+/** Poses de repouso dentro do atlas, para o ciclo de vida em repouso. */
+const ATLAS_REPOUSO = ATLAS.filter((f) => GAZE[f].mag < REST_MAG);
 const NEUTRAL_FRAMES: number[] = [];
 const AIMED_FRAMES: number[] = [];
-/**
- * TODOS os quadros concorrem na busca.
- *
- * Antes só os "mirados" (intensidade >= 0,3) concorriam, e a intensidade do
- * olhar vinha de misturar o índice do quadro mirado com o índice do repouso.
- * Índice não é grandeza interpolável: a média entre "olhar para a esquerda" e
- * "repouso" caía num quadro arbitrário. Medido numa varredura horizontal, isso
- * produzia 27% da tela sem resposta, um salto de 68 quadros entre paradas
- * vizinhas, e o cursor à direita do centro escolhendo uma pose de olhar para a
- * esquerda.
- * Com todos os quadros concorrendo e a intensidade PEDIDA entrando na
- * pontuação, o resultado é sempre uma pose real, e a resposta cresce contínua
- * do repouso ao extremo.
- */
-const ALL_FRAMES: number[] = [];
 for (let f = 0; f <= TRACK_END; f++) {
-  ALL_FRAMES.push(f);
   const g = GAZE[f];
   if (g.mag < REST_MAG) {
     NEUTRAL_FRAMES.push(f);
@@ -371,47 +398,6 @@ for (let f = 0; f <= TRACK_END; f++) {
        custava 51° de erro no canto de cima à esquerda. */
     AIMED_FRAMES.push(f);
   }
-}
-
-/**
- * As faixas contíguas de repouso, derivadas de `NEUTRAL_FRAMES`.
- *
- * São duas neste vídeo (o começo e o fim), e não uma: dá para percorrer cada
- * uma em vaivém sem corte, mas não dá para emendar as duas — entre elas está
- * o vídeo inteiro.
- */
-const REST_BANDS: Array<{ ini: number; fim: number }> = [];
-for (const f of NEUTRAL_FRAMES) {
-  const ultima = REST_BANDS[REST_BANDS.length - 1];
-  if (ultima && f === ultima.fim + 1) ultima.fim = f;
-  else REST_BANDS.push({ ini: f, fim: f });
-}
-
-/** A faixa de repouso mais próxima de onde o olhar está agora. */
-function restBand(from: number): { ini: number; fim: number } {
-  let best = REST_BANDS[0];
-  let bestD = Infinity;
-  for (const b of REST_BANDS) {
-    const d = from < b.ini ? b.ini - from : from > b.fim ? from - b.fim : 0;
-    if (d < bestD) {
-      bestD = d;
-      best = b;
-    }
-  }
-  return best;
-}
-
-function nearestNeutral(from: number): number {
-  let best = NEUTRAL_FRAMES[0] ?? 0;
-  let bestD = Infinity;
-  for (const f of NEUTRAL_FRAMES) {
-    const d = Math.abs(f - from);
-    if (d < bestD) {
-      bestD = d;
-      best = f;
-    }
-  }
-  return best;
 }
 
 /* ── Carregamento progressivo ──────────────────────────────────────────
@@ -484,16 +470,26 @@ export const BoasVindas = memo(function BoasVindas({
     let settled = 0;
     const pending = new Set<HTMLImageElement>();
 
+    /* Só os quadros que o motor pode exibir: as 80 poses do atlas e os 27 da
+       reação. Os outros 133 não são servidos nem baixados. */
+    const NECESSARIOS: number[] = [
+      ...ATLAS,
+      ...Array.from({ length: N_FRAMES - REACTION_START }, (_, i) => REACTION_START + i),
+    ].sort((a, b) => a - b);
+    const totalNecessario = NECESSARIOS.length;
+
     const queue: number[] = [];
     const queued = new Set<number>();
     for (const stride of PASSES) {
-      for (let i = 0; i < N_FRAMES; i += stride) {
-        if (!queued.has(i)) {
-          queued.add(i);
-          queue.push(i);
+      for (let i = 0; i < NECESSARIOS.length; i += stride) {
+        const f = NECESSARIOS[i];
+        if (!queued.has(f)) {
+          queued.add(f);
+          queue.push(f);
         }
       }
     }
+
     let cursor = 0;
     let visible = false;
 
@@ -573,6 +569,20 @@ export const BoasVindas = memo(function BoasVindas({
       }
       if (!img) return;
       ctx.globalAlpha = alpha;
+      /*
+       * SEM CONTRA-ROTAÇÃO, e por um motivo medido.
+       *
+       * Tentei cancelar o roll de cada quadro girando o desenho por -roll. Cai
+       * por falta de dado confiável: medir roll num render 2D de cabeça virada
+       * exige achar os dois olhos, e em 69 dos 213 quadros de rastreamento um
+       * deles está oculto. Duas medições minhas divergiram entre si em até
+       * 19,9°, e agir sobre isso giraria a cabeça com base em palpite.
+       *
+       * O que resolve o "mergulho" não é esta trava, e sim o dissolve entre
+       * poses: nenhum quadro intermediário é exibido, então a coreografia de
+       * rolagem do meio do vídeo nunca toca. O roll ESTÁTICO que cada pose tem
+       * permanece — é o que o animador desenhou.
+       */
 
       /* Cover com teto de zoom vertical: em tela alta e estreita o cover
          puro amplia o personagem até virar textura. */
@@ -620,13 +630,18 @@ export const BoasVindas = memo(function BoasVindas({
 
     /* Alvo e cascata. `aim` percebe, `pos` acompanha — a folga entre os
        dois é a inércia. */
-    let aimedTarget = nearestNeutral(0);
-    let aimedScore = -Infinity;
-    let lastSwitch = 0;
-    let aim = aimedTarget;
-    let pos = aimedTarget;
-    /* Fase do vaivém de repouso, em índice de quadro. */
-    let restPos = aimedTarget;
+    /* Yaw e pitch em fração do olhar extremo; dois estágios por eixo. */
+    let yaw = 0;
+    let pitch = 0;
+    let yawAim = 0;
+    let pitchAim = 0;
+    /* Pose exibida, pose de onde o dissolve parte, e o andamento do dissolve. */
+    let poseAtual = ATLAS_REPOUSO[0] ?? ATLAS[0];
+    let poseAnterior = poseAtual;
+    let poseFade = 1;
+    let pos = poseAtual;
+    /* Índice dentro de `ATLAS_REPOUSO`, em vaivém. */
+    let restPos = 0;
     let restDir = 1;
     /* Fase da respiração do enquadramento. */
     let breathPhase = 0;
@@ -636,40 +651,39 @@ export const BoasVindas = memo(function BoasVindas({
     let fadeDe = -1;
     let fadeFase = 0;
 
-    function pickAimed(alvoX: number, alvoY: number, now: number) {
-      let best = -Infinity;
-      let bestF = aimedTarget;
-      let currentScore = -Infinity;
-      /* `dxDes`/`dyDes` chegam como vetor UNITÁRIO, e o olhar do quadro é
-         normalizado aqui: o produto dos dois é o cosseno do erro angular. É
-         essa a grandeza que decide, porque é essa que responde "ele está
-         olhando para onde o ponteiro está?". */
-      for (const f of ALL_FRAMES) {
+    /**
+     * A pose do atlas mais próxima do olhar pedido.
+     *
+     * Distância euclidiana em (yaw, pitch) — nada de índice de quadro, nada de
+     * penalidade de linha do tempo. A escolha é função PURA do olhar pedido, e
+     * é isso que a torna à prova de confusão: o mesmo ponto da tela sempre
+     * devolve a mesma pose, não importa por onde o cursor passou antes.
+     *
+     * A única memória é o `POSE_STICKY`: a candidata precisa ser melhor que a
+     * pose atual por essa margem. Isso mata a alternância entre duas poses
+     * quase equidistantes sem introduzir atraso perceptível.
+     */
+    function poseMaisProxima(yaw: number, pitch: number, atual: number): number {
+      let melhor = atual;
+      let dMelhor = Infinity;
+      for (const f of ATLAS) {
         const g = GAZE[f];
-        /* Distância entre o olhar pedido e o olhar do quadro, como vetores.
-           Direção e intensidade num só número, e ambas com significado: o
-           pedido tem magnitude de verdade agora. */
-        const ex = g.x - alvoX;
-        const ey = g.y - alvoY;
-        const s =
-          -(ex * ex + ey * ey) -
-          Math.abs(f - pos) * TRACKING.TIMELINE_PENALTY;
-        if (f === aimedTarget) currentScore = s;
-        if (s > best) {
-          best = s;
-          bestF = f;
+        const ex = g.x - yaw;
+        const ey = g.y - pitch;
+        const d = ex * ex + ey * ey;
+        if (d < dMelhor) {
+          dMelhor = d;
+          melhor = f;
         }
       }
-      if (bestF === aimedTarget) {
-        aimedScore = currentScore;
-        return;
-      }
-      if (now - lastSwitch < TRACKING.SWITCH_COOLDOWN_MS) return;
-      const reference = currentScore > -Infinity ? currentScore : aimedScore;
-      if (best <= reference + TRACKING.HYSTERESIS) return;
-      aimedTarget = bestF;
-      aimedScore = best;
-      lastSwitch = now;
+      if (melhor === atual) return atual;
+      const ga = GAZE[atual];
+      const da = (ga.x - yaw) ** 2 + (ga.y - pitch) ** 2;
+      /* Comparação em distância, não em distância ao quadrado: a margem é em
+         unidades de olhar. */
+      return Math.sqrt(da) - Math.sqrt(dMelhor) > TRACKING.POSE_STICKY
+        ? melhor
+        : atual;
     }
 
     let last = 0;
@@ -762,71 +776,69 @@ export const BoasVindas = memo(function BoasVindas({
         hasPointer && pointerInside ? resposta * (1 - idle) : 0;
 
       /*
-       * OLHAR PEDIDO — proporcional à POSIÇÃO do cursor, não só à direção.
+       * YAW E PITCH — dois escalares independentes.
        *
-       * Antes eu pedia apenas a direção (vetor unitário) e a intensidade vinha
-       * da distância. Com o cursor à esquerda na altura dos olhos, a direção é
-       * ~180° esteja ele a 60 px ou a 440 px da borda: o mesmo quadro ganhava em
-       * todas as posições. Medido numa varredura de 15 paradas, cinco paradas
-       * seguidas caíam no MESMO quadro em cada extremo — um terço da tela sem
-       * resposta, que é exatamente "ele não acompanha".
-       *
-       * Agora cada eixo é medido em meia-tela e vira componente do vetor
-       * pedido. Cursor na metade do caminho pede metade do olhar. A resposta
-       * passa a ser graduada em toda a tela.
+       * Cada eixo é medido em meia-tela, escalado pela sensibilidade do eixo e
+       * preso aos limites que o ATLAS realmente contém. Mover o mouse na
+       * horizontal mexe só no yaw; na vertical, só no pitch. Nada aqui é ângulo
+       * em graus, porque o meio é vídeo: a unidade é fração do olhar extremo, e
+       * YAW_MIN/YAW_MAX vêm medidos das poses disponíveis.
        */
-      const dxDes = Math.max(
-        -TRACKING.MAX_AMP_X,
-        Math.min(TRACKING.MAX_AMP_X, ux * TRACKING.SENS_X),
-      );
-      const dyDes = Math.max(
-        -TRACKING.MAX_AMP_Y,
-        Math.min(TRACKING.MAX_AMP_Y, uy * TRACKING.SENS_Y),
-      );
-      /* `influencia` é o multiplicador único: já traz a curva central (pé
-         plano contra tremor), o esmaecimento por inatividade E a checagem do
-         ponteiro. Usar `resposta * (1 - idle)` aqui esquecia o ponteiro fora da
-         janela, e ele congelaria na pose em vez de voltar ao repouso. */
-      const alvoX = dxDes * influencia;
-      const alvoY = dyDes * influencia;
-      const alvoMag = Math.sqrt(alvoX * alvoX + alvoY * alvoY);
-      pickAimed(alvoX, alvoY, now);
+      const yawPedido =
+        Math.max(YAW_MIN, Math.min(YAW_MAX, ux * TRACKING.SENS_X)) * influencia;
+      const pitchPedido =
+        Math.max(PITCH_MIN, Math.min(PITCH_MAX, uy * TRACKING.SENS_Y)) * influencia;
 
-      /* 5. REPOUSO VIVO. A faixa neutra mais próxima é percorrida em vaivém no
-         ritmo do próprio vídeo, para a imagem não virar foto quando ninguém
-         mexe o mouse. */
-      const banda = restBand(pos);
-      if (restPos < banda.ini || restPos > banda.fim) {
-        restPos = Math.min(banda.fim, Math.max(banda.ini, restPos));
-      }
-      restPos += restDir * TRACKING.REST_FPS * dt;
-      if (restPos >= banda.fim) {
-        restPos = banda.fim;
-        restDir = -1;
-      } else if (restPos <= banda.ini) {
-        restPos = banda.ini;
-        restDir = 1;
-      }
-
-      /* ALVO: o quadro que a busca escolheu, e nada de média. Só quando a
-         intensidade pedida é baixa o vaivém do repouso assume — e aí a busca
-         já devolveu um quadro da mesma faixa neutra, então a troca é de poucos
-         quadros, não de meio vídeo. */
-      const target = alvoMag < REST_MAG ? restPos : aimedTarget;
-
-      /* 6. cascata com dt real. Perto do neutro o segundo estágio fica
-         ainda mais lento: voltar a encarar é gesto sem pressa. */
-      const kHead =
+      /* Cascata POR EIXO, com dt real. Dois estágios: o primeiro percebe, o
+         segundo acompanha, e a folga entre eles é a inércia. Perto do neutro o
+         segundo fica mais lento — voltar a encarar é gesto sem pressa. */
+      const kSegundo =
         TRACKING.SMOOTH_HEAD * influencia + TRACKING.RETURN_SMOOTH * (1 - influencia);
-      const kAim = reduced ? 40 : TRACKING.SMOOTH_AIM;
-      const kPos = reduced ? 40 : kHead;
+      const passoAim = 1 - Math.exp(-dt * (reduced ? 40 : TRACKING.SMOOTH_AIM));
+      const passoSeg = 1 - Math.exp(-dt * (reduced ? 40 : kSegundo));
+      yawAim += (yawPedido - yawAim) * passoAim;
+      pitchAim += (pitchPedido - pitchAim) * passoAim;
+      yaw += (yawAim - yaw) * passoSeg;
+      pitch += (pitchAim - pitch) * passoSeg;
 
-      aim += (target - aim) * (1 - Math.exp(-dt * kAim));
-      /* O passo é amortecido E limitado. O amortecimento dá a frenagem suave
-         na chegada; o teto impede que a partida seja um rodopio. */
-      const passo = (aim - pos) * (1 - Math.exp(-dt * kPos));
-      const passoMax = TRACKING.MAX_TURN_FPS * dt;
-      pos += Math.max(-passoMax, Math.min(passoMax, passo));
+      /* REPOUSO VIVO. Com o olhar praticamente neutro, a pose percorre as poses
+         de repouso do atlas em vaivém, no ritmo do vídeo: é o que impede a
+         imagem de virar foto quando ninguém mexe o mouse. Por virem do atlas,
+         essas poses também têm roll baixo. */
+      let alvoPose: number;
+      if (Math.hypot(yaw, pitch) < REST_MAG && ATLAS_REPOUSO.length > 1) {
+        restPos += restDir * TRACKING.REST_FPS * dt;
+        if (restPos >= ATLAS_REPOUSO.length - 1) {
+          restPos = ATLAS_REPOUSO.length - 1;
+          restDir = -1;
+        } else if (restPos <= 0) {
+          restPos = 0;
+          restDir = 1;
+        }
+        alvoPose = ATLAS_REPOUSO[Math.round(restPos)];
+      } else {
+        alvoPose = poseMaisProxima(yaw, pitch, poseAtual);
+      }
+
+      /*
+       * TROCA DE POSE POR DISSOLVE, não por travessia.
+       *
+       * É aqui que o "mergulho" morre. Antes a pose era um ponto na linha do
+       * tempo, e mudar de pose significava PERCORRER o vídeo entre as duas —
+       * tocando toda a coreografia do meio, inclusive o roll de +17,2° do
+       * quadro 80 e o de -8,7° do 88. Agora nenhum quadro intermediário é
+       * exibido: a pose antiga se dissolve na nova. Sem arco, sem tombo, sem
+       * passeio pela linha do tempo.
+       */
+      if (alvoPose !== poseAtual) {
+        const salto = Math.abs(alvoPose - poseAtual);
+        poseAnterior = poseAtual;
+        poseAtual = alvoPose;
+        /* Vizinho: corta. Distante: dissolve. */
+        poseFade = salto > TRACKING.POSE_CUT_MAX ? 0 : 1;
+      }
+      if (poseFade < 1) poseFade = Math.min(1, poseFade + (dt * 1000) / TRACKING.POSE_FADE_MS);
+      pos = poseAtual;
 
       /*
        * 7. DESENHO E RESPIRAÇÃO, separados de propósito.
@@ -842,11 +854,19 @@ export const BoasVindas = memo(function BoasVindas({
        * canvas continua sendo desenhado só quando o quadro muda, e a imagem na
        * tela continua mudando em todo quadro — sem congelar e sem custar.
        */
-      const index = Math.max(0, Math.min(N_FRAMES - 1, Math.round(pos)));
-      if (index !== drawn || needsDraw) {
-        draw(index);
-        canvas.dataset.frame = String(index);
-        drawn = index;
+      /* Enquanto o dissolve corre, são dois desenhos por quadro de tela: a
+         pose que sai por baixo e a que entra por cima, com alpha. Passado o
+         dissolve, volta a um desenho só quando a pose muda. */
+      if (poseFade < 1) {
+        draw(poseAnterior);
+        draw(poseAtual, poseFade);
+        canvas.dataset.frame = String(poseAtual);
+        drawn = poseAtual;
+        needsDraw = false;
+      } else if (poseAtual !== drawn || needsDraw) {
+        draw(poseAtual);
+        canvas.dataset.frame = String(poseAtual);
+        drawn = poseAtual;
         needsDraw = false;
       }
 
@@ -858,7 +878,7 @@ export const BoasVindas = memo(function BoasVindas({
       canvas.style.transform = `scale(${escala.toFixed(5)}) translateY(${desloca.toFixed(2)}px)`;
 
       /* 8. barra: carregamento real, com piso de tempo */
-      const loadFrac = settled >= N_FRAMES ? 1 : loaded / N_FRAMES;
+      const loadFrac = settled >= totalNecessario ? 1 : loaded / totalNecessario;
       const timeFrac = (now - started) / MIN_LOAD_MS;
       const v = Math.min(loadFrac, Math.min(1, timeFrac));
       if (v > shown) {
