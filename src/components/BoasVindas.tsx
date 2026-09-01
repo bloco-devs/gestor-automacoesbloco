@@ -126,17 +126,32 @@ const TRACKING = {
      unidades de olhar. Sem isso, duas poses quase equidistantes se alternariam
      com o cursor parado. É a defesa contra tremor, e vive no espaço de
      yaw/pitch — não mais no índice do quadro, onde a margem não tinha
-     significado geométrico. */
-  POSE_STICKY: 0.035,
-  /* Dissolve entre poses. Curto o bastante para ler como a cabeça virando, e
-     não como um morph: 110 ms. */
-  POSE_FADE_MS: 110,
-  /* Só vale dissolver troca GRANDE de pose. Entre quadros vizinhos o corte é
-     invisível — e dissolver de graça custa caro: o ciclo de repouso troca de
-     pose 20 vezes por segundo, os dissolves de 110 ms se sobrepunham e o
-     desenho dobrava permanentemente. Medi 24% de quadros longos com o mouse
-     PARADO por causa disso. */
-  POSE_CUT_MAX: 8,
+     significado geométrico.
+     O VALOR IMPORTA MUITO. Com 0,035 a margem era maior que a distância entre
+     poses vizinhas do atlas (mediana 0,013), então bloqueava 87% das trocas
+     legítimas: a granularidade do movimento caía para 9 trocas de pose por
+     segundo e a animação lia como travada. Como yaw e pitch já vêm fortemente
+     amortecidos, eles não vibram sozinhos, e a margem pode ser pequena — só o
+     bastante para desempatar poses equidistantes. */
+  POSE_STICKY: 0.006,
+  /* ── Mescla entre as duas poses mais próximas ─────────────────────────
+     A mescla só é segura entre poses quase iguais. Entre poses distintas ela
+     vira dupla exposição: com peso 0,46 eu vi olhos e contorno duplicados na
+     tela — o "BLINK no fundo".
+     SEP_MAX é a separação, em unidades de olhar, acima da qual não se mistura
+     nada. A separação mediana entre poses vizinhas do atlas é 0,024, então em
+     boa parte do espaço a mescla continua valendo. */
+  BLEND_SEP_MAX: 0.05,
+  /* E as duas poses precisam ser VIZINHAS NA LINHA DO TEMPO. Proximidade no
+     espaço de olhar não garante proximidade visual: duas poses podem pedir o
+     mesmo olhar sendo renders bem diferentes, e mesclá-las duplica o contorno.
+     Quadros consecutivos, ao contrário, são quase a mesma imagem — mesclá-los é
+     interpolação de verdade, que é o que o modelo antigo fazia ao percorrer a
+     linha do tempo. */
+  BLEND_IDX_MAX: 3,
+  /* Teto do peso. Meio a meio é o pior caso para dupla exposição, e não traz
+     fluidez a mais que 0,35 já não traga. */
+  BLEND_W_MAX: 0.35,
 
   /* ── Inatividade ─────────────────────────────────────────────────────
      Depois de START sem mexer, a influência do cursor esmaece ao longo de
@@ -206,20 +221,22 @@ const REST_MAG = 0.18;
    ═══════════════════════════════════════════════════════════════════════ */
 
 /**
- * Dimensão dos quadros: 2560×1440.
+ * Dimensão dos quadros: 1920×1080 — a resolução NATIVA do vídeo, sem ampliação.
  *
- * A fonte é 1920×1080, então isto é AMPLIAÇÃO — e ampliar antes só compensa
- * porque não é a mesma ampliação que o navegador faria. Aqui é lanczos com
- * `unsharp` leve, offline; lá é o escalador do compositor, em tempo real.
- * Medido contra a referência sem perda, ampliando os dois para os ~3440 px de
- * dispositivo que a tela usa: 1920 dá -3,5% de nitidez, 2560 dá +16,8%.
+ * Cheguei a extrair em 2560 achando que ampliar antes ajudava. Medi e o ganho
+ * era de outra coisa: o filtro `unsharp` da extração. Contra a referência sem
+ * perda, ampliando ambos para os ~3440 px de dispositivo que a tela usa:
  *
- * 3840 foi testado e sai PIOR (+11,2%): para o arquivo caber, a compressão tem
- * de baixar tanto que come o ganho de pixels. Não existe 4K a extrair de um
- * master 1080p — só interpolação mais cara.
+ *   1920 sem realce   -3,5%
+ *   2560 com realce  +16,8%
+ *   1920 COM realce  +25,1%   <- e ainda é o mais leve
+ *
+ * Ou seja: ampliar antes só interpola e depois amacia. Realçar na resolução
+ * nativa é melhor em nitidez, em bytes e em memória decodificada (2,07 Mpx por
+ * quadro contra 3,69). Não existe 4K a extrair de um master 1080p.
  */
-const IW = 2560;
-const IH = 1440;
+const IW = 1920;
+const IH = 1080;
 
 /**
  * Teto de largura do canvas em pixels de dispositivo.
@@ -361,16 +378,16 @@ const GAZE = buildGaze();
  * yaw de -0,92 a +0,09 — não existe olhar para a direita sem roll neste vídeo,
  * e o filtro custaria a metade direita do rastreamento.
  *
- * SÃO 88 POSES, e não os 213 quadros de rastreamento. Como nenhuma travessia de
- * linha do tempo acontece mais, quadro que não pode ser escolhido é peso morto:
- * não é baixado, não ocupa memória. 80 delas foram escolhidas por distância máxima
- * no espaço (yaw, pitch) — erro médio 0,165 contra 0,159 do atlas inteiro, ou
- * seja 4% —, e outras 8 são poses de repouso adicionadas de propósito: a poda
- * por distância guardava só 3 delas, porque poses neutras são próximas entre si,
- * e com 3 o ciclo de repouso deixava de respirar. Em troca, 125 arquivos a
- * menos.
+ * SÃO TODAS as 213 poses de rastreamento, e não um subconjunto.
+ *
+ * Cheguei a podar para 88 poses bem espalhadas, porque o erro de apontamento
+ * subia só 4% (0,165 contra 0,159) e economizava 125 arquivos. Foi troca ruim, e
+ * a medição mostrou por quê: a granularidade do movimento caiu de 36 para 8,5
+ * trocas de pose por segundo numa varredura contínua. Precisão quase igual,
+ * fluidez quatro vezes pior — e fluidez era justamente a reclamação.
  */
-const ATLAS: number[] = [0,2,5,8,11,13,16,19,22,23,25,27,28,29,31,33,35,38,50,65,72,75,76,77,79,81,82,83,84,85,86,90,91,93,97,100,102,103,104,105,106,107,109,111,112,114,116,119,121,124,125,126,127,128,129,134,136,138,140,142,143,144,145,146,147,148,149,150,151,152,154,156,162,164,165,167,170,174,175,177,178,179,180,183,186,193,200,212];
+const ATLAS: number[] = [];
+for (let f = 0; f <= TRACK_END; f++) ATLAS.push(f);
 
 /** Limites de yaw e pitch: são os extremos que o atlas realmente contém. */
 const YAW_MIN = Math.min(...ATLAS.map((f) => GAZE[f].x));
@@ -424,7 +441,17 @@ export const BoasVindas = memo(function BoasVindas({
   className?: string;
   onEnter?: () => void;
 }) {
+  /**
+   * DOIS canvas empilhados, e não um.
+   *
+   * A mescla entre duas poses é composição de duas imagens. Feita no canvas,
+   * custa dois `drawImage` por quadro de tela: medi 50% dos quadros passando de
+   * 32 ms. Feita com `opacity` em dois canvas empilhados, custa uma escrita de
+   * estilo — o compositor faz o resto na GPU. Cada canvas só é redesenhado
+   * quando a SUA pose muda.
+   */
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasBRef = useRef<HTMLCanvasElement>(null);
   const [progresso, setProgresso] = useState(0);
   const [pronto, setPronto] = useState(false);
   const [reagindo, setReagindo] = useState(false);
@@ -452,9 +479,12 @@ export const BoasVindas = memo(function BoasVindas({
    */
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvasB = canvasBRef.current;
+    if (!canvas || !canvasB) return;
     const ctx = canvas.getContext("2d", { alpha: false });
-    if (!ctx) return;
+    /* O de cima precisa de alpha: ele é a camada que se mistura. */
+    const ctxB = canvasB.getContext("2d", { alpha: true });
+    if (!ctx || !ctxB) return;
 
     const base = BLINK_FRAMES_URL.replace(/\/+$/, "");
     const reduced =
@@ -542,33 +572,41 @@ export const BoasVindas = memo(function BoasVindas({
     let anchorY = 0.36;
     let needsDraw = true;
     let drawn = -1;
+    /** Pose desenhada na camada de cima, e a opacidade já aplicada nela. */
+    let drawnB = -1;
+    let opAplicada = 0;
 
     function layout() {
       cw = window.innerWidth;
       ch = window.innerHeight;
       dpr = Math.min(window.devicePixelRatio || 1, 2, MAX_CANVAS_W / Math.max(1, cw));
-      canvas.width = Math.round(dpr * cw);
-      canvas.height = Math.round(dpr * ch);
-      canvas.style.width = `${cw}px`;
-      canvas.style.height = `${ch}px`;
+      for (const c of [canvas, canvasB]) {
+        c.width = Math.round(dpr * cw);
+        c.height = Math.round(dpr * ch);
+        c.style.width = `${cw}px`;
+        c.style.height = `${ch}px`;
+      }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctxB.setTransform(dpr, 0, 0, dpr, 0, 0);
+      /* Redimensionar limpa o canvas: as duas camadas têm de ser repintadas. */
+      drawnB = -1;
       /* Em tela estreita o painel de texto come o rodapé, então a cabeça
          sobe para não ficar atrás da barra de progresso. */
       anchorY = cw <= 560 ? 0.28 : cw <= 900 ? 0.32 : 0.36;
       needsDraw = true;
     }
 
-    function draw(index: number, alpha = 1) {
+    function draw(index: number, alvo: CanvasRenderingContext2D = ctx) {
       const img = nearestLoaded(index);
-      /* Com `alpha < 1` o quadro entra POR CIMA do que já está no canvas: é o
-         dissolve da reação. Nesse modo não se pinta o fundo, senão apagaria a
-         pose de baixo. */
-      if (alpha >= 1) {
-        ctx.fillStyle = "#16323e";
-        ctx.fillRect(0, 0, cw, ch);
+      /* A camada de baixo pinta o fundo; a de cima é transparente e limpa, para
+         a mistura acontecer no compositor. */
+      if (alvo === ctx) {
+        alvo.fillStyle = "#16323e";
+        alvo.fillRect(0, 0, cw, ch);
+      } else {
+        alvo.clearRect(0, 0, cw, ch);
       }
       if (!img) return;
-      ctx.globalAlpha = alpha;
       /*
        * SEM CONTRA-ROTAÇÃO, e por um motivo medido.
        *
@@ -598,26 +636,26 @@ export const BoasVindas = memo(function BoasVindas({
       dx = Math.min(0, Math.max(cw - dw, dx));
       const dy = ch * anchorY - HEAD.y * dh;
 
-      ctx.drawImage(img, dx, dy, dw, dh);
+      alvo.drawImage(img, dx, dy, dw, dh);
 
       /* Falta céu em cima: estica a primeira linha do quadro. É a cor exata
          do fundo do vídeo, então a emenda não aparece. */
-      if (dy > 0) ctx.drawImage(img, 0, 0, IW, 1, dx, 0, dw, Math.ceil(dy) + 1);
+      if (dy > 0) alvo.drawImage(img, 0, 0, IW, 1, dx, 0, dw, Math.ceil(dy) + 1);
 
       /* Falta chão embaixo: a última linha esticada mata a emenda, e o
          degradê por cima faz o piso recuar para a sombra. */
       const bottom = dy + dh;
       if (bottom < ch) {
         const faixa = ch - bottom + 2;
-        ctx.drawImage(img, 0, IH - 1, IW, 1, dx, bottom - 1, dw, faixa);
-        const g = ctx.createLinearGradient(0, bottom - 1, 0, ch);
+        alvo.drawImage(img, 0, IH - 1, IW, 1, dx, bottom - 1, dw, faixa);
+        const g = alvo.createLinearGradient(0, bottom - 1, 0, ch);
         g.addColorStop(0, "rgba(95,127,139,0)");
         g.addColorStop(0.45, "rgba(44,77,92,0.74)");
         g.addColorStop(1, "#16323e");
-        ctx.fillStyle = g;
-        ctx.fillRect(0, bottom - 1, cw, faixa);
+        alvo.fillStyle = g;
+        alvo.fillRect(0, bottom - 1, cw, faixa);
       }
-      ctx.globalAlpha = 1;
+      
     }
 
     /* ── estado do rastreamento ───────────────────────────────────── */
@@ -637,8 +675,7 @@ export const BoasVindas = memo(function BoasVindas({
     let pitchAim = 0;
     /* Pose exibida, pose de onde o dissolve parte, e o andamento do dissolve. */
     let poseAtual = ATLAS_REPOUSO[0] ?? ATLAS[0];
-    let poseAnterior = poseAtual;
-    let poseFade = 1;
+
     let pos = poseAtual;
     /* Índice dentro de `ATLAS_REPOUSO`, em vaivém. */
     let restPos = 0;
@@ -663,27 +700,52 @@ export const BoasVindas = memo(function BoasVindas({
      * pose atual por essa margem. Isso mata a alternância entre duas poses
      * quase equidistantes sem introduzir atraso perceptível.
      */
-    function poseMaisProxima(yaw: number, pitch: number, atual: number): number {
-      let melhor = atual;
-      let dMelhor = Infinity;
+    /**
+     * As DUAS poses do atlas mais próximas do olhar pedido, e o peso da segunda.
+     *
+     * Por que duas, e não a mais próxima. Saltar para a mais próxima faz a
+     * imagem mudar só ao cruzar fronteira entre poses: medi 9 a 15 trocas por
+     * segundo numa varredura contínua, contra 36 do modelo antigo de percorrer a
+     * linha do tempo — e era essa escassez que lia como "não está fluida".
+     * Mesclando as duas mais próximas com peso pela distância, a imagem muda em
+     * TODO quadro de tela, porque o peso muda continuamente. Sem atravessar a
+     * linha do tempo, então sem a coreografia de rolagem do meio.
+     *
+     * As duas são vizinhas no espaço de olhar (distância mediana 0,024), ou seja
+     * poses quase iguais: a mescla lê como movimento, não como fantasma.
+     */
+    function duasMaisProximas(yaw: number, pitch: number): [number, number, number] {
+      let f1 = ATLAS[0];
+      let f2 = ATLAS[0];
+      let d1 = Infinity;
+      let d2 = Infinity;
       for (const f of ATLAS) {
         const g = GAZE[f];
-        const ex = g.x - yaw;
-        const ey = g.y - pitch;
-        const d = ex * ex + ey * ey;
-        if (d < dMelhor) {
-          dMelhor = d;
-          melhor = f;
+        const d = (g.x - yaw) ** 2 + (g.y - pitch) ** 2;
+        if (d < d1) {
+          d2 = d1;
+          f2 = f1;
+          d1 = d;
+          f1 = f;
+        } else if (d < d2) {
+          d2 = d;
+          f2 = f;
         }
       }
-      if (melhor === atual) return atual;
-      const ga = GAZE[atual];
-      const da = (ga.x - yaw) ** 2 + (ga.y - pitch) ** 2;
-      /* Comparação em distância, não em distância ao quadrado: a margem é em
-         unidades de olhar. */
-      return Math.sqrt(da) - Math.sqrt(dMelhor) > TRACKING.POSE_STICKY
-        ? melhor
-        : atual;
+      const r1 = Math.sqrt(d1);
+      const r2 = Math.sqrt(d2);
+      /* Peso da segunda: cresce quando as distâncias empatam, e MORRE quando as
+         duas poses são visualmente distintas. É o segundo fator que impede a
+         dupla exposição — sem ele, um empate entre poses diferentes desenha as
+         duas por cima uma da outra. */
+      const g1 = GAZE[f1];
+      const g2 = GAZE[f2];
+      const sep = Math.hypot(g1.x - g2.x, g1.y - g2.y);
+      const vizinhas = Math.abs(f1 - f2) <= TRACKING.BLEND_IDX_MAX;
+      const seguro = vizinhas ? clamp01(1 - sep / TRACKING.BLEND_SEP_MAX) : 0;
+      const razao = r1 + r2 > 1e-6 ? r1 / (r1 + r2) : 0;
+      const w = Math.min(TRACKING.BLEND_W_MAX, razao) * seguro;
+      return [f1, f2, w];
     }
 
     let last = 0;
@@ -726,11 +788,24 @@ export const BoasVindas = memo(function BoasVindas({
         }
         if (fadeFase < 1) {
           fadeFase = Math.min(1, fadeFase + (dt * 1000) / TRACKING.REACTION_FADE_MS);
-          draw(fadeDe);
-          draw(REACTION_START, fadeFase);
+          if (drawn !== fadeDe) {
+            draw(fadeDe);
+            drawn = fadeDe;
+          }
+          if (drawnB !== REACTION_START) {
+            draw(REACTION_START, ctxB);
+            drawnB = REACTION_START;
+          }
+          canvasB.style.opacity = fadeFase.toFixed(3);
+          opAplicada = fadeFase;
           canvas.dataset.frame = String(REACTION_START);
-          drawn = REACTION_START;
         } else {
+          if (opAplicada !== 0) {
+            /* Acabou o dissolve da reação: a camada de cima sai de cena. */
+            canvasB.style.opacity = "0";
+            opAplicada = 0;
+            drawn = -1;
+          }
           pos += TRACKING.REACTION_FPS * dt;
           const iReacao = Math.min(N_FRAMES - 1, Math.round(pos));
           if (iReacao !== drawn) {
@@ -806,6 +881,8 @@ export const BoasVindas = memo(function BoasVindas({
          imagem de virar foto quando ninguém mexe o mouse. Por virem do atlas,
          essas poses também têm roll baixo. */
       let alvoPose: number;
+      let mesclaPose = -1;
+      let mesclaPeso = 0;
       if (Math.hypot(yaw, pitch) < REST_MAG && ATLAS_REPOUSO.length > 1) {
         restPos += restDir * TRACKING.REST_FPS * dt;
         if (restPos >= ATLAS_REPOUSO.length - 1) {
@@ -817,27 +894,20 @@ export const BoasVindas = memo(function BoasVindas({
         }
         alvoPose = ATLAS_REPOUSO[Math.round(restPos)];
       } else {
-        alvoPose = poseMaisProxima(yaw, pitch, poseAtual);
+        const [f1, f2, w] = duasMaisProximas(yaw, pitch);
+        alvoPose = f1;
+        mesclaPose = f2;
+        mesclaPeso = w;
       }
 
       /*
-       * TROCA DE POSE POR DISSOLVE, não por travessia.
-       *
-       * É aqui que o "mergulho" morre. Antes a pose era um ponto na linha do
-       * tempo, e mudar de pose significava PERCORRER o vídeo entre as duas —
-       * tocando toda a coreografia do meio, inclusive o roll de +17,2° do
-       * quadro 80 e o de -8,7° do 88. Agora nenhum quadro intermediário é
-       * exibido: a pose antiga se dissolve na nova. Sem arco, sem tombo, sem
-       * passeio pela linha do tempo.
+       * A pose vira a escolhida na hora, sem transição própria: a suavidade vem
+       * da MESCLA com a segunda pose mais próxima, feita por `opacity` na camada
+       * de cima. Um dissolve por salto de pose existia aqui e foi removido — ele
+       * duplicava o que a mescla já faz, e disparando 20 vezes por segundo no
+       * ciclo de repouso dobrava o desenho de graça.
        */
-      if (alvoPose !== poseAtual) {
-        const salto = Math.abs(alvoPose - poseAtual);
-        poseAnterior = poseAtual;
-        poseAtual = alvoPose;
-        /* Vizinho: corta. Distante: dissolve. */
-        poseFade = salto > TRACKING.POSE_CUT_MAX ? 0 : 1;
-      }
-      if (poseFade < 1) poseFade = Math.min(1, poseFade + (dt * 1000) / TRACKING.POSE_FADE_MS);
+      poseAtual = alvoPose;
       pos = poseAtual;
 
       /*
@@ -854,20 +924,27 @@ export const BoasVindas = memo(function BoasVindas({
        * canvas continua sendo desenhado só quando o quadro muda, e a imagem na
        * tela continua mudando em todo quadro — sem congelar e sem custar.
        */
-      /* Enquanto o dissolve corre, são dois desenhos por quadro de tela: a
-         pose que sai por baixo e a que entra por cima, com alpha. Passado o
-         dissolve, volta a um desenho só quando a pose muda. */
-      if (poseFade < 1) {
-        draw(poseAnterior);
-        draw(poseAtual, poseFade);
-        canvas.dataset.frame = String(poseAtual);
-        drawn = poseAtual;
-        needsDraw = false;
-      } else if (poseAtual !== drawn || needsDraw) {
+      /*
+       * DUAS CAMADAS, cada uma redesenhada só quando a SUA pose muda. A mistura
+       * entre elas é `opacity`, escrita todo quadro — propriedade que o
+       * compositor resolve na GPU. É isso que dá imagem mudando em todo quadro de
+       * tela sem pagar `drawImage` em todo quadro de tela: com a mescla feita no
+       * canvas, medi 50% dos quadros passando de 32 ms.
+       */
+      if (poseAtual !== drawn || needsDraw) {
         draw(poseAtual);
         canvas.dataset.frame = String(poseAtual);
         drawn = poseAtual;
         needsDraw = false;
+      }
+      if (mesclaPose >= 0 && mesclaPose !== drawnB) {
+        draw(mesclaPose, ctxB);
+        drawnB = mesclaPose;
+      }
+      const opB = mesclaPose >= 0 ? mesclaPeso : 0;
+      if (Math.abs(opB - opAplicada) > 0.002) {
+        canvasB.style.opacity = opB.toFixed(3);
+        opAplicada = opB;
       }
 
       breathPhase += (dt * Math.PI * 2) / TRACKING.BREATH_PERIOD_S;
@@ -875,7 +952,9 @@ export const BoasVindas = memo(function BoasVindas({
       /* O deslocamento fica dentro da margem que a escala cria (0,7% de 860 px
          são ~6 px contra ~4 px de deslocamento), então nunca descobre borda. */
       const desloca = Math.sin(breathPhase * 0.63) * ch * TRACKING.BREATH_SHIFT;
-      canvas.style.transform = `scale(${escala.toFixed(5)}) translateY(${desloca.toFixed(2)}px)`;
+      const t = `scale(${escala.toFixed(5)}) translateY(${desloca.toFixed(2)}px)`;
+      canvas.style.transform = t;
+      canvasB.style.transform = t;
 
       /* 8. barra: carregamento real, com piso de tempo */
       const loadFrac = settled >= totalNecessario ? 1 : loaded / totalNecessario;
@@ -943,6 +1022,7 @@ export const BoasVindas = memo(function BoasVindas({
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("orientationchange", onResize);
+      canvasB.style.opacity = "0";
       /* 240 quadros de 1920×1080 é memória demais para deixar pendurada num
          componente que já saiu da tela. */
       for (const img of pending) {
@@ -968,6 +1048,16 @@ export const BoasVindas = memo(function BoasVindas({
         aria-label="BLINK, o assistente do Gestor de Automações, acompanha o cursor com o olhar enquanto o sistema carrega."
         className="pointer-events-none absolute inset-0 h-full w-full"
         style={{ opacity: 0, transition: "opacity .5s ease", willChange: "transform", transformOrigin: "center center" }}
+      />
+      {/* Camada de mistura: a segunda pose mais próxima do olhar pedido. Quem
+          varia é a `opacity`, escrita a cada quadro pelo laço — o compositor
+          resolve a mistura na GPU. `aria-hidden` porque é a mesma imagem da
+          camada de baixo, meio caminho adiante. */}
+      <canvas
+        ref={canvasBRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        style={{ opacity: 0, willChange: "transform, opacity", transformOrigin: "center center" }}
       />
 
       <div
