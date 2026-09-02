@@ -111,7 +111,7 @@ const TRACKING = {
   /* ── Amortecimento em cascata (1/s, com dt real) ──────────────────────
      AIM é o estágio que percebe; HEAD é o que acompanha. A distância
      entre os dois é a inércia. Quanto menor HEAD, mais peso. */
-  SMOOTH_AIM: 12.0,
+  SMOOTH_AIM: 20.0,
   SMOOTH_HEAD: 5.0,
   /* Velocidade do retorno ao neutro — de propósito menor que SMOOTH_HEAD:
      voltar a encarar a câmera é gesto sem pressa. */
@@ -133,22 +133,32 @@ const TRACKING = {
      segundo e a animação lia como travada. Como yaw e pitch já vêm fortemente
      amortecidos, eles não vibram sozinhos, e a margem pode ser pequena — só o
      bastante para desempatar poses equidistantes. */
-  POSE_STICKY: 0.006,
-  /* ── Transição entre poses ───────────────────────────────────────────
-     A pose nova entra por cima da ANTERIOR EXIBIDA, com a opacidade da camada
-     de saída caindo de 1 a 0. É crossfade A/B, o mesmo de vídeo.
+  /* O alvo só muda se o candidato ganhar por esta margem, em unidades de
+     distância de olhar ao quadrado. Sem ela o alvo persegue melhora marginal e
+     `pos` chega a andar PARA TRÁS antes de seguir em frente — medi o percurso
+     77→66→48→49→66→82→99→115→133 numa travessia da esquerda para a direita.
+     Aquela ida a 48 é o "pescoço travando" ao virar de um lado para o outro. */
+  TARGET_STICKY: 0.02,
+  /* ── Percurso na linha do tempo ──────────────────────────────────────
+     A pose exibida caminha pela linha do tempo até o quadro alvo, em vez de
+     saltar para ele. Cada quadro exibido é um render de verdade — o tween entre
+     poses vizinhas é o que o animador já desenhou —, então não há mescla, não há
+     camada por cima e não há fantasma possível.
 
-     Antes eu mesclava com a "segunda pose mais próxima" e travei essa mescla
-     para matar um fantasma. Foi remédio errado: as travas desligaram a
-     interpolação quase em todo lugar, e a imagem passou a mudar em 27% dos
-     quadros de tela, com saltos grandes — "várias fotos". Mesclar com a pose
-     anterior funciona sempre, por longe que as duas estejam, porque não se
-     supõe nada sobre elas: é uma dissolução, não uma média de vizinhas.
+     Tentei o contrário: escolher a pose e dissolver da anterior para a nova.
+     Crossfade entre poses SEMPRE mostra imagem dupla no meio; só parece
+     movimento se as duas forem quase idênticas. Com trocas a cada ~40 ms e
+     dissolução de 130 ms, a opacidade de saída nunca fechava — ficava entre 0,7
+     e 1,0 —, e a pose anterior ficava permanentemente sobreposta. Era o rastro.
 
-     130 ms é mais longo que o intervalo típico entre trocas de pose (~50 ms),
-     de propósito: assim uma transição emenda na seguinte e a opacidade está
-     sempre em movimento. É isso que faz a imagem mudar em todo quadro de tela. */
-  POSE_FADE_MS: 130,
+     PENALIDADE alta de propósito: ela faz o alvo ser o melhor olhar ao ALCANCE,
+     não o melhor do vídeo inteiro. Percurso curto significa pouca coreografia
+     alheia atravessada, que era a origem do "mergulho". Com 0,0004 os percursos
+     iam a 126 quadros; com 0,004, ficam locais. */
+  TIMELINE_PENALTY: 0.0008,
+  /* Teto de velocidade do percurso, em quadros de linha do tempo por segundo.
+     24 é o ritmo em que o vídeo foi animado; 90 é ágil sem virar rodopio. */
+  MAX_TURN_FPS: 90,
   /* Teto do peso. Meio a meio é o pior caso para dupla exposição, e não traz
      fluidez a mais que 0,35 já não traga. */
   BLEND_W_MAX: 0.35,
@@ -422,7 +432,18 @@ for (let f = 0; f <= TRACK_END; f++) {
    pelos 10 segundos, então o BLINK já responde ao mouse antes do resto
    existir. As seguintes preenchem o meio. */
 const PASSES = [24, 12, 6, 3, 1] as const;
-const CONCURRENCY = 8;
+/**
+ * Requisições de quadro em paralelo.
+ *
+ * Eram 8. Baixou para 4 porque o splash aparece EXATAMENTE quando o app está
+ * subindo — sessão, perfil, consultas — e oito conexões buscando 11 MB de webp
+ * competem com as chamadas de API do boot. O sintoma relatado foi o sistema
+ * lagando ao entrar pelo Bloco ID.
+ *
+ * Não atrasa a cena: as passadas de densidade crescente mostram o BLINK com 12
+ * quadros na memória, e esses 12 chegam igual.
+ */
+const CONCURRENCY = 4;
 const SHOW_AT = 12;
 /** Piso de tempo em tela, para dar tempo de ele te acompanhar com o olhar. */
 const MIN_LOAD_MS = 5500;
@@ -442,13 +463,17 @@ export const BoasVindas = memo(function BoasVindas({
   onEnter?: () => void;
 }) {
   /**
-   * DOIS canvas empilhados, e não um.
+   * DOIS canvas: o de baixo é o rastreamento, o de cima existe só para a
+   * transição da REAÇÃO.
    *
-   * A mescla entre duas poses é composição de duas imagens. Feita no canvas,
-   * custa dois `drawImage` por quadro de tela: medi 50% dos quadros passando de
-   * 32 ms. Feita com `opacity` em dois canvas empilhados, custa uma escrita de
-   * estilo — o compositor faz o resto na GPU. Cada canvas só é redesenhado
-   * quando a SUA pose muda.
+   * O rastreamento não usa o de cima, e isso é decisão, não esquecimento: mesclar
+   * duas poses sempre mostra imagem dupla no meio, e com trocas a cada ~40 ms a
+   * mescla nunca fechava — a pose anterior ficava sobreposta entre 70% e 100%.
+   * Era o rastro que aparecia na tela. O rastreamento agora percorre quadros
+   * vizinhos, que já são o tween que o animador desenhou.
+   *
+   * A reação é diferente: uma transição só, não interrompida, da pose atual para
+   * o primeiro quadro do pulo. Ali a dissolução fecha, e vale.
    */
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasBRef = useRef<HTMLCanvasElement>(null);
@@ -572,8 +597,7 @@ export const BoasVindas = memo(function BoasVindas({
     let anchorY = 0.36;
     let needsDraw = true;
     let drawn = -1;
-    /** Opacidade da camada de saída (1 = pose antiga inteira; 0 = já saiu). */
-    let fadeSaida = 0;
+    /** Opacidade já aplicada na camada de cima (usada só pela reação). */
     let opAplicada = 0;
     /** O primeiro quadro da reação só precisa ser pintado uma vez. */
     let reacaoPintada = false;
@@ -675,9 +699,10 @@ export const BoasVindas = memo(function BoasVindas({
     let yawAim = 0;
     let pitchAim = 0;
     /* Pose exibida, pose de onde o dissolve parte, e o andamento do dissolve. */
-    let poseAtual = ATLAS_REPOUSO[0] ?? ATLAS[0];
 
-    let pos = poseAtual;
+    let pos = ATLAS_REPOUSO[0] ?? ATLAS[0];
+    /** Alvo da vez, para a histerese poder compará-lo. */
+    let alvoAnterior = pos;
     /* Índice dentro de `ATLAS_REPOUSO`, em vaivém. */
     let restPos = 0;
     let restDir = 1;
@@ -690,44 +715,30 @@ export const BoasVindas = memo(function BoasVindas({
     let fadeFase = 0;
 
     /**
-     * A pose do atlas mais próxima do olhar pedido.
+     * O quadro alvo: melhor casamento de olhar, penalizado pela distância na
+     * linha do tempo.
      *
-     * Distância euclidiana em (yaw, pitch) — nada de índice de quadro, nada de
-     * penalidade de linha do tempo. A escolha é função PURA do olhar pedido, e
-     * é isso que a torna à prova de confusão: o mesmo ponto da tela sempre
-     * devolve a mesma pose, não importa por onde o cursor passou antes.
-     *
-     * A única memória é o `POSE_STICKY`: a candidata precisa ser melhor que a
-     * pose atual por essa margem. Isso mata a alternância entre duas poses
-     * quase equidistantes sem introduzir atraso perceptível.
+     * A penalidade é o que mantém o percurso curto — e percurso curto é o que
+     * impede a cabeça de atravessar coreografia alheia para chegar à pose.
      */
-    /**
-     * A pose do atlas mais próxima do olhar pedido.
-     *
-     * Distância euclidiana em (yaw, pitch). Função PURA do olhar pedido: o mesmo
-     * ponto da tela sempre devolve a mesma pose, não importa por onde o cursor
-     * passou. A suavidade não vem daqui — vem do crossfade no desenho.
-     */
-    function poseMaisProxima(yaw: number, pitch: number, atual: number): number {
+    function quadroAlvo(yaw: number, pitch: number, atual: number): number {
       let melhor = atual;
-      let dMelhor = Infinity;
+      let bs = Infinity;
+      let sAtual = Infinity;
       for (const f of ATLAS) {
         const g = GAZE[f];
-        const d = (g.x - yaw) ** 2 + (g.y - pitch) ** 2;
-        if (d < dMelhor) {
-          dMelhor = d;
+        const s =
+          (g.x - yaw) ** 2 +
+          (g.y - pitch) ** 2 +
+          Math.abs(f - pos) * TRACKING.TIMELINE_PENALTY;
+        if (f === atual) sAtual = s;
+        if (s < bs) {
+          bs = s;
           melhor = f;
         }
       }
-      if (melhor === atual) return atual;
-      const ga = GAZE[atual];
-      const da = (ga.x - yaw) ** 2 + (ga.y - pitch) ** 2;
-      /* Margem só para desempatar poses equidistantes. Pequena de propósito:
-         com 0,035 ela era maior que a distância entre poses vizinhas (mediana
-         0,024) e bloqueava 63% das trocas legítimas. */
-      return Math.sqrt(da) - Math.sqrt(dMelhor) > TRACKING.POSE_STICKY
-        ? melhor
-        : atual;
+      /* Troca só por ganho relevante: é o que impede o vaivém do alvo. */
+      return sAtual - bs > TRACKING.TARGET_STICKY ? melhor : atual;
     }
 
     let last = 0;
@@ -877,7 +888,18 @@ export const BoasVindas = memo(function BoasVindas({
         }
         alvoPose = ATLAS_REPOUSO[Math.round(restPos)];
       } else {
-        alvoPose = poseMaisProxima(yaw, pitch, poseAtual);
+        /*
+         * O alvo sai do primeiro estágio (`yawAim`), quase cru, e NÃO do segundo
+         * (`yaw`), amortecido. A razão é que o mesmo valor de olhar existe em
+         * vários pontos do vídeo: se o alvo acompanhar o pedido interpolado, ele
+         * passa pelos valores intermediários e escolhe quadros do outro lado da
+         * linha do tempo — medi o percurso 75→66→50→42→59→75→93→110→126 numa
+         * travessia da esquerda para a direita, ou seja uma ida a mais para a
+         * esquerda antes de virar. Era o "pescoço travando".
+         * Com o alvo quase cru ele vai direto ao destino, e a suavidade fica toda
+         * em `pos`, que caminha monotônico até lá.
+         */
+        alvoPose = quadroAlvo(yawAim, pitchAim, alvoAnterior);
       }
 
       /*
@@ -887,7 +909,6 @@ export const BoasVindas = memo(function BoasVindas({
        * duplicava o que a mescla já faz, e disparando 20 vezes por segundo no
        * ciclo de repouso dobrava o desenho de graça.
        */
-      pos = alvoPose;
 
       /*
        * 7. DESENHO E RESPIRAÇÃO, separados de propósito.
@@ -904,33 +925,22 @@ export const BoasVindas = memo(function BoasVindas({
        * tela continua mudando em todo quadro — sem congelar e sem custar.
        */
       /*
-       * CROSSFADE A/B em duas camadas.
-       *
-       * Ao trocar de pose: a pose que sai é pintada na camada de cima com
-       * opacidade 1, a que entra vai para a de baixo, e a de cima cai a 0. Dois
-       * `drawImage` por TROCA DE POSE — não por quadro de tela —, e uma escrita
-       * de opacidade por quadro, que o compositor resolve na GPU.
-       *
-       * Mesclar no canvas custava 50% dos quadros passando de 32 ms; desenhar só
-       * na troca e deixar a mistura para o compositor custa ~0.
+       * O PERCURSO. `pos` é fracionário e persegue o alvo com amortecimento em
+       * cascata e teto de velocidade: arranque pronto, frenagem suave, e os
+       * quadros do meio passam na tela. São renders de verdade, então a imagem
+       * é sempre nítida e nunca há duas poses somadas.
        */
-      if (poseAtual !== alvoPose || needsDraw) {
-        if (poseAtual !== alvoPose && drawn >= 0) {
-          draw(drawn, ctxB);
-          fadeSaida = 1;
-        }
-        poseAtual = alvoPose;
-        draw(poseAtual);
-        canvas.dataset.frame = String(poseAtual);
-        drawn = poseAtual;
+      alvoAnterior = alvoPose;
+      const passo = (alvoPose - pos) * (1 - Math.exp(-dt * (reduced ? 40 : kSegundo)));
+      const passoMax = TRACKING.MAX_TURN_FPS * dt;
+      pos += Math.max(-passoMax, Math.min(passoMax, passo));
+
+      const idx = Math.max(0, Math.min(N_FRAMES - 1, Math.round(pos)));
+      if (idx !== drawn || needsDraw) {
+        draw(idx);
+        canvas.dataset.frame = String(idx);
+        drawn = idx;
         needsDraw = false;
-      }
-      if (fadeSaida > 0) {
-        fadeSaida = Math.max(0, fadeSaida - (dt * 1000) / TRACKING.POSE_FADE_MS);
-      }
-      if (Math.abs(fadeSaida - opAplicada) > 0.002) {
-        canvasB.style.opacity = fadeSaida.toFixed(3);
-        opAplicada = fadeSaida;
       }
 
       breathPhase += (dt * Math.PI * 2) / TRACKING.BREATH_PERIOD_S;
