@@ -133,12 +133,14 @@ const TRACKING = {
      segundo e a animação lia como travada. Como yaw e pitch já vêm fortemente
      amortecidos, eles não vibram sozinhos, e a margem pode ser pequena — só o
      bastante para desempatar poses equidistantes. */
-  /* O alvo só muda se o candidato ganhar por esta margem, em unidades de
-     distância de olhar ao quadrado. Sem ela o alvo persegue melhora marginal e
-     `pos` chega a andar PARA TRÁS antes de seguir em frente — medi o percurso
-     77→66→48→49→66→82→99→115→133 numa travessia da esquerda para a direita.
-     Aquela ida a 48 é o "pescoço travando" ao virar de um lado para o outro. */
-  TARGET_STICKY: 0.02,
+  /* O alvo só muda se o candidato ganhar por esta margem.
+     A ESCALA É COSSENO, não distância ao quadrado — a pontuação virou
+     alinhamento angular e eu esqueci de reescalar esta margem. Com 0,02 o alvo
+     ficava preso: rastreei uma varredura lenta e ele passou 1117 ms parado no
+     quadro 60 enquanto a direção pedida girava de -0,96 para -0,85 em X e de
+     0,18 para 0,53 em Y. Era o "travando ao olhar para os lados". 0,004 em
+     cosseno são ~1° de tolerância: mata empate, não trava progressão. */
+  TARGET_STICKY: 0.0004,
   /* Peso da intensidade no desempate. A pontuação principal é o cosseno do erro
      angular; a intensidade entra só para não escolher uma pose fraca quando há
      uma forte apontando igual. */
@@ -159,7 +161,7 @@ const TRACKING = {
      não o melhor do vídeo inteiro. Percurso curto significa pouca coreografia
      alheia atravessada, que era a origem do "mergulho". Com 0,0004 os percursos
      iam a 126 quadros; com 0,004, ficam locais. */
-  TIMELINE_PENALTY: 0.0008,
+  TIMELINE_PENALTY: 0.00004,
   /* Teto de velocidade do percurso, em quadros de linha do tempo por segundo.
      24 é o ritmo em que o vídeo foi animado; 90 é ágil sem virar rodopio. */
   MAX_TURN_FPS: 90,
@@ -205,7 +207,13 @@ const TRACKING = {
      A troca é um dissolve pela camada de cima, e não um percurso na linha do
      tempo: caminhar de uma pose de rastreamento até o 217 atravessaria o vídeo
      todo. */
-  HOVER_FRAME: 217,
+  /* A expressão do hover é uma ANIMAÇÃO curta, não um quadro.
+     Com um quadro só, o BLINK virava uma foto parada no momento em que a pessoa
+     vai clicar — foi relatado exatamente assim. Agora a cara feliz se forma
+     (213→220) e depois respira num vaivém curto, então continua vivo. */
+  HOVER_INI: 213 as number,
+  HOVER_FIM: 221 as number,
+  HOVER_FPS: 22,
   HOVER_FADE_MS: 160,
 
   REACTION_FPS: 24,
@@ -230,6 +238,18 @@ const TRACKING = {
 
 /** Acima desta intensidade o quadro conta como olhar mirado, não neutro. */
 const NEUTRAL_MAG = 0.3;
+/**
+ * Histerese da fronteira repouso/mira.
+ *
+ * Um limiar único fazia o motor oscilar entre os dois ramos quando o olhar
+ * pedido passava perto dele: rastreei a sequência de alvos 207→192→22→24→156
+ * numa varredura, e os 22/24 são quadros de REPOUSO escolhidos no meio de um
+ * movimento porque o módulo do pedido caiu para 0,16, logo abaixo de 0,18. Com
+ * duas soleiras, entra em repouso mais fundo do que sai.
+ */
+const REST_ENTRA = 0.11;
+const REST_SAI = 0.20;
+
 /**
  * Limiar do POSE DE DESCANSO, mais apertado que o de cima.
  *
@@ -632,7 +652,10 @@ export const BoasVindas = memo(function BoasVindas({
     let reacaoPintada = false;
     /** Estado do dissolve da expressão do hover. */
     let hoverFade = 0;
-    let hoverPintado = false;
+    /** Quadro já pintado na camada de cima pelo hover; -1 = nenhum. */
+    let hoverPintado = -1;
+    let hoverPos = TRACKING.HOVER_INI;
+    let hoverDir = 1;
 
     function layout() {
       cw = window.innerWidth;
@@ -739,6 +762,8 @@ export const BoasVindas = memo(function BoasVindas({
     /** Alvo da vez, para a histerese poder compará-lo. */
     let alvoAnterior = pos;
     /* Índice dentro de `ATLAS_REPOUSO`, em vaivém. */
+    /** Está no ramo de repouso? Com histerese, para não oscilar na fronteira. */
+    let emRepouso = true;
     let restPos = 0;
     let restDir = 1;
     /* Fase da respiração do enquadramento. */
@@ -826,7 +851,7 @@ export const BoasVindas = memo(function BoasVindas({
         if (hoverFade !== 0) {
           /* A reação assume a camada de cima; o hover sai. */
           hoverFade = 0;
-          hoverPintado = false;
+          hoverPintado = -1;
           opAplicada = 0;
         }
         if (fadeDe < 0) {
@@ -954,7 +979,9 @@ export const BoasVindas = memo(function BoasVindas({
          imagem de virar foto quando ninguém mexe o mouse. Por virem do atlas,
          essas poses também têm roll baixo. */
       let alvoPose: number;
-      if (Math.hypot(yaw, pitch) < REST_MAG && ATLAS_REPOUSO.length > 1) {
+      const forca = Math.hypot(yaw, pitch);
+      emRepouso = emRepouso ? forca < REST_SAI : forca < REST_ENTRA;
+      if (emRepouso && ATLAS_REPOUSO.length > 1) {
         restPos += restDir * TRACKING.REST_FPS * dt;
         if (restPos >= ATLAS_REPOUSO.length - 1) {
           restPos = ATLAS_REPOUSO.length - 1;
@@ -1027,9 +1054,21 @@ export const BoasVindas = memo(function BoasVindas({
        * rodando embaixo, invisível, e volta a aparecer quando o ponteiro sai.
        */
       const querHover = sobreBotaoRef.current;
-      if (querHover && !hoverPintado) {
-        draw(TRACKING.HOVER_FRAME, ctxB);
-        hoverPintado = true;
+      if (querHover) {
+        /* Avança até o fim da faixa feliz e depois faz vaivém dentro dela. */
+        hoverPos += hoverDir * TRACKING.HOVER_FPS * dt;
+        if (hoverPos >= TRACKING.HOVER_FIM) {
+          hoverPos = TRACKING.HOVER_FIM;
+          hoverDir = -1;
+        } else if (hoverPos <= TRACKING.HOVER_INI + 4) {
+          hoverPos = TRACKING.HOVER_INI + 4;
+          hoverDir = 1;
+        }
+        const hq = Math.round(hoverPos);
+        if (hq !== hoverPintado) {
+          draw(hq, ctxB);
+          hoverPintado = hq;
+        }
       }
       const alvoHover = querHover ? 1 : 0;
       if (hoverFade !== alvoHover) {
@@ -1042,7 +1081,11 @@ export const BoasVindas = memo(function BoasVindas({
           canvasB.style.opacity = hoverFade.toFixed(3);
           opAplicada = hoverFade;
         }
-        if (hoverFade === 0) hoverPintado = false;
+        if (hoverFade === 0) {
+          hoverPintado = -1;
+          hoverPos = TRACKING.HOVER_INI;
+          hoverDir = 1;
+        }
       }
 
       breathPhase += (dt * Math.PI * 2) / TRACKING.BREATH_PERIOD_S;
