@@ -139,6 +139,10 @@ const TRACKING = {
      77→66→48→49→66→82→99→115→133 numa travessia da esquerda para a direita.
      Aquela ida a 48 é o "pescoço travando" ao virar de um lado para o outro. */
   TARGET_STICKY: 0.02,
+  /* Peso da intensidade no desempate. A pontuação principal é o cosseno do erro
+     angular; a intensidade entra só para não escolher uma pose fraca quando há
+     uma forte apontando igual. */
+  MAG_WEIGHT: 0.05,
   /* ── Percurso na linha do tempo ──────────────────────────────────────
      A pose exibida caminha pela linha do tempo até o quadro alvo, em vez de
      saltar para ele. Cada quadro exibido é um render de verdade — o tween entre
@@ -193,6 +197,17 @@ const TRACKING = {
      seco seria um salto de pose visível. Então é um dissolve curto: a pose atual
      desaparece por cima do primeiro quadro da reação. 180 ms é o bastante para
      não ler como corte e curto o bastante para não ler como espera. */
+  /* ── Expressão do hover no botão ─────────────────────────────────────
+     Ao passar o ponteiro no botão, o BLINK troca de expressão: fica feliz. O
+     quadro vem da faixa da REAÇÃO, onde a cara feliz já existe — 214 a 222 têm
+     olhos em arco e sorriso aberto com os braços ainda baixos, então servem como
+     pose estática. Fora dessa faixa o vídeo não tem expressão feliz nenhuma.
+     A troca é um dissolve pela camada de cima, e não um percurso na linha do
+     tempo: caminhar de uma pose de rastreamento até o 217 atravessaria o vídeo
+     todo. */
+  HOVER_FRAME: 217,
+  HOVER_FADE_MS: 160,
+
   REACTION_FPS: 24,
   REACTION_FADE_MS: 180,
 
@@ -407,6 +422,17 @@ const PITCH_MAX = Math.max(...ATLAS.map((f) => GAZE[f].y));
 
 /** Poses de repouso dentro do atlas, para o ciclo de vida em repouso. */
 const ATLAS_REPOUSO = ATLAS.filter((f) => GAZE[f].mag < REST_MAG);
+
+/**
+ * Poses que podem ser ESCOLHIDAS por direção.
+ *
+ * Quadro de repouso não entra: ele não tem direção de olhar, e a pontuação por
+ * alinhamento divide pela intensidade — com intensidade quase nula, o
+ * arredondamento da tabela leva a razão a ~1, ou seja "alinhamento perfeito"
+ * para uma pose que não olha para lugar nenhum. Foi assim que o cursor no rodapé
+ * passou a devolver o quadro 18. Repouso é assunto do outro ramo.
+ */
+const ATLAS_MIRA = ATLAS.filter((f) => GAZE[f].mag >= NEUTRAL_MAG);
 const NEUTRAL_FRAMES: number[] = [];
 const AIMED_FRAMES: number[] = [];
 for (let f = 0; f <= TRACK_END; f++) {
@@ -482,6 +508,9 @@ export const BoasVindas = memo(function BoasVindas({
   const [reagindo, setReagindo] = useState(false);
   /** O laço lê daqui; `useState` sozinho não chega até ele. */
   const reagindoRef = useRef(false);
+  /** Ponteiro sobre o botão. Vem dos eventos do próprio botão, não de
+      hit-test de retângulo: assim acompanha o layout sem duplicar medidas. */
+  const sobreBotaoRef = useRef(false);
 
   /**
    * O clique não entra no sistema: ele dispara a reação. Quem entra é o laço,
@@ -601,6 +630,9 @@ export const BoasVindas = memo(function BoasVindas({
     let opAplicada = 0;
     /** O primeiro quadro da reação só precisa ser pintado uma vez. */
     let reacaoPintada = false;
+    /** Estado do dissolve da expressão do hover. */
+    let hoverFade = 0;
+    let hoverPintado = false;
 
     function layout() {
       cw = window.innerWidth;
@@ -698,6 +730,9 @@ export const BoasVindas = memo(function BoasVindas({
     let pitch = 0;
     let yawAim = 0;
     let pitchAim = 0;
+    /** Direção pedida, amortecida e sem teto — é ela que escolhe o quadro. */
+    let dirX = 0;
+    let dirY = 0;
     /* Pose exibida, pose de onde o dissolve parte, e o andamento do dissolve. */
 
     let pos = ATLAS_REPOUSO[0] ?? ATLAS[0];
@@ -721,24 +756,39 @@ export const BoasVindas = memo(function BoasVindas({
      * A penalidade é o que mantém o percurso curto — e percurso curto é o que
      * impede a cabeça de atravessar coreografia alheia para chegar à pose.
      */
-    function quadroAlvo(yaw: number, pitch: number, atual: number): number {
+    function quadroAlvo(rx: number, ry: number, atual: number): number {
+      /*
+       * PONTUAÇÃO POR ALINHAMENTO ANGULAR, e não por distância de vetor.
+       *
+       * A distância de vetor parece natural e erra feio, porque ela mistura
+       * direção com intensidade. Somada ao teto por eixo, o resultado foi este:
+       * com o cursor no canto superior direito, a direção geométrica é -22°
+       * (quase horizontal), mas aparar o x no teto do vídeo (+0,46) deixando o y
+       * em -0,63 gira o pedido para -54°. Ele obedecia e olhava para CIMA —
+       * medi 44° de erro onde havia quadro de 2°.
+       *
+       * Aqui `rx`/`ry` chegam como vetor UNITÁRIO e o olhar do quadro é
+       * normalizado: o produto é o cosseno do erro angular. Direção decide;
+       * intensidade entra só como desempate leve, e quem controla a intensidade
+       * do olhar é a curva de resposta.
+       */
       let melhor = atual;
-      let bs = Infinity;
-      let sAtual = Infinity;
-      for (const f of ATLAS) {
+      let bs = -Infinity;
+      let sAtual = -Infinity;
+      for (const f of ATLAS_MIRA) {
         const g = GAZE[f];
         const s =
-          (g.x - yaw) ** 2 +
-          (g.y - pitch) ** 2 +
+          (rx * g.x + ry * g.y) / g.mag +
+          TRACKING.MAG_WEIGHT * g.mag -
           Math.abs(f - pos) * TRACKING.TIMELINE_PENALTY;
         if (f === atual) sAtual = s;
-        if (s < bs) {
+        if (s > bs) {
           bs = s;
           melhor = f;
         }
       }
       /* Troca só por ganho relevante: é o que impede o vaivém do alvo. */
-      return sAtual - bs > TRACKING.TARGET_STICKY ? melhor : atual;
+      return bs - sAtual > TRACKING.TARGET_STICKY ? melhor : atual;
     }
 
     let last = 0;
@@ -773,6 +823,12 @@ export const BoasVindas = memo(function BoasVindas({
        * mais nada, e a linha do tempo passa a ser tocada, não buscada.
        */
       if (reagindoRef.current) {
+        if (hoverFade !== 0) {
+          /* A reação assume a camada de cima; o hover sai. */
+          hoverFade = 0;
+          hoverPintado = false;
+          opAplicada = 0;
+        }
         if (fadeDe < 0) {
           /* Primeiro quadro da reação: guarda a pose de saída e salta o alvo
              para o começo do pulo. O dissolve cobre a diferença. */
@@ -799,6 +855,7 @@ export const BoasVindas = memo(function BoasVindas({
           if (opAplicada !== 0) {
             /* Acabou o dissolve da reação: a camada de cima sai de cena. */
             canvasB.style.opacity = "0";
+      sobreBotaoRef.current = false;
             opAplicada = 0;
             drawn = -1;
           }
@@ -860,6 +917,21 @@ export const BoasVindas = memo(function BoasVindas({
       const pitchPedido =
         Math.max(PITCH_MIN, Math.min(PITCH_MAX, uy * TRACKING.SENS_Y)) * influencia;
 
+      /*
+       * DIREÇÃO e INTENSIDADE seguem caminhos separados daqui para frente, e
+       * misturá-las foi a origem de um erro grande.
+       *
+       * A DIREÇÃO é geométrica, em pixels, e NUNCA é aparada — aparar o eixo X
+       * no teto do que o vídeo alcança à direita, deixando o Y inteiro, girava o
+       * pedido de -22° para -54° e ele obedecia olhando para cima: 50° de erro
+       * onde havia quadro de 2°.
+       *
+       * A INTENSIDADE (`yaw`/`pitch`, com teto e com `influencia`) segue só para
+       * decidir repouso e para a curva de resposta.
+       */
+      const dirAlvoX = dist > 0.5 ? ddx / dist : 0;
+      const dirAlvoY = dist > 0.5 ? (ddy / dist) * TRACKING.SENS_Y : 0;
+
       /* Cascata POR EIXO, com dt real. Dois estágios: o primeiro percebe, o
          segundo acompanha, e a folga entre eles é a inércia. Perto do neutro o
          segundo fica mais lento — voltar a encarar é gesto sem pressa. */
@@ -869,6 +941,11 @@ export const BoasVindas = memo(function BoasVindas({
       const passoSeg = 1 - Math.exp(-dt * (reduced ? 40 : kSegundo));
       yawAim += (yawPedido - yawAim) * passoAim;
       pitchAim += (pitchPedido - pitchAim) * passoAim;
+      /* A direção também é amortecida, no primeiro estágio: é ela que escolhe o
+         quadro, e o alvo tem de chegar rápido ao destino para o percurso sair
+         monotônico. */
+      dirX += (dirAlvoX - dirX) * passoAim;
+      dirY += (dirAlvoY - dirY) * passoAim;
       yaw += (yawAim - yaw) * passoSeg;
       pitch += (pitchAim - pitch) * passoSeg;
 
@@ -899,7 +976,8 @@ export const BoasVindas = memo(function BoasVindas({
          * Com o alvo quase cru ele vai direto ao destino, e a suavidade fica toda
          * em `pos`, que caminha monotônico até lá.
          */
-        alvoPose = quadroAlvo(yawAim, pitchAim, alvoAnterior);
+        const nrm = Math.hypot(dirX, dirY) || 1;
+        alvoPose = quadroAlvo(dirX / nrm, dirY / nrm, alvoAnterior);
       }
 
       /*
@@ -941,6 +1019,30 @@ export const BoasVindas = memo(function BoasVindas({
         canvas.dataset.frame = String(idx);
         drawn = idx;
         needsDraw = false;
+      }
+
+      /*
+       * EXPRESSÃO DO HOVER. A camada de cima recebe o quadro feliz e sobe de
+       * opacidade enquanto o ponteiro está no botão; o rastreamento continua
+       * rodando embaixo, invisível, e volta a aparecer quando o ponteiro sai.
+       */
+      const querHover = sobreBotaoRef.current;
+      if (querHover && !hoverPintado) {
+        draw(TRACKING.HOVER_FRAME, ctxB);
+        hoverPintado = true;
+      }
+      const alvoHover = querHover ? 1 : 0;
+      if (hoverFade !== alvoHover) {
+        const passoH = (dt * 1000) / TRACKING.HOVER_FADE_MS;
+        hoverFade =
+          alvoHover > hoverFade
+            ? Math.min(1, hoverFade + passoH)
+            : Math.max(0, hoverFade - passoH);
+        if (Math.abs(hoverFade - opAplicada) > 0.002 || hoverFade === alvoHover) {
+          canvasB.style.opacity = hoverFade.toFixed(3);
+          opAplicada = hoverFade;
+        }
+        if (hoverFade === 0) hoverPintado = false;
       }
 
       breathPhase += (dt * Math.PI * 2) / TRACKING.BREATH_PERIOD_S;
@@ -1114,6 +1216,12 @@ export const BoasVindas = memo(function BoasVindas({
           {pronto && onEnter && (
             <button
               onClick={enter}
+              onPointerEnter={() => {
+                sobreBotaoRef.current = true;
+              }}
+              onPointerLeave={() => {
+                sobreBotaoRef.current = false;
+              }}
               disabled={reagindo}
               className="rounded-full bg-[#FFDA5B] px-8 py-3 text-[14px] font-bold text-[#12242c] shadow-[0_8px_26px_rgba(255,216,61,0.26)] transition-all hover:-translate-y-[1px] hover:bg-[#ffe469] hover:shadow-[0_12px_30px_rgba(255,216,61,0.34)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFDA5B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#16323e]"
               autoFocus
