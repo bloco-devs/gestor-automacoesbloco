@@ -570,8 +570,31 @@ const AppRoutes = () => {
  * etapas reais do boot, a espera passa a ser a espera de fato — quem abre o
  * sistema dez vezes por dia não deve pagar 6 s fixos.
  */
+/**
+ * O SPLASH 3D É DA ABERTURA DO SISTEMA, NÃO DE TODO CARREGAMENTO.
+ *
+ * Num F5 quem aparece é o BLINK de paraquedas — o `BlinkCarregando` que o
+ * `ProtectedRoute` e o fallback de rota já usam nas esperas. O render 3D
+ * fotorrealista fica reservado para quando a pessoa ENTRA no sistema.
+ *
+ * A distinção vem do próprio navegador, que informa o tipo da navegação:
+ * `reload` é F5, `navigate` é abertura. Sem `sessionStorage`, sem heurística —
+ * e sem estado que possa ficar preso numa aba.
+ */
+function abriuOSistema(): boolean {
+  try {
+    const nav = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    return nav?.type !== "reload";
+  } catch {
+    /* Navegador sem a API: mostra o splash, que é o comportamento principal. */
+    return true;
+  }
+}
+
 const App = () => {
-  const [booting, setBooting] = useState(true);
+  const [booting, setBooting] = useState(abriuOSistema);
 
   return (
     <>

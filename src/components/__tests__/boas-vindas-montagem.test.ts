@@ -37,6 +37,17 @@ describe("montagem do BoasVindas", () => {
     expect(montagens).toEqual(["App.tsx"]);
   });
 
+  it("o splash 3D é da abertura: num F5 quem aparece é o de paraquedas", () => {
+    /* A distinção vem do tipo de navegação que o navegador informa. Sem
+       sessionStorage e sem heurística — estado guardado poderia ficar preso numa
+       aba e esconder o splash para sempre. */
+    const app = readFileSync("src/App.tsx", "utf8");
+    expect(app).toMatch(/getEntriesByType\("navigation"\)/);
+    expect(app).toMatch(/!==\s*"reload"/);
+    /* E o splash tem de nascer desse teste, não de `true`. */
+    expect(app).toMatch(/useState\(abriuOSistema\)/);
+  });
+
   it("o SsoCallback não monta o splash — ele termina em recarga de página", () => {
     const sso = readFileSync("src/pages/SsoCallback.tsx", "utf8");
     expect(sso).not.toMatch(/<BoasVindas/);

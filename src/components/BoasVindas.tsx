@@ -491,8 +491,26 @@ const PASSES = [24, 12, 6, 3, 1] as const;
  */
 const CONCURRENCY = 4;
 const SHOW_AT = 12;
-/** Piso de tempo em tela, para dar tempo de ele te acompanhar com o olhar. */
-const MIN_LOAD_MS = 5500;
+/**
+ * Piso de tempo em tela.
+ *
+ * Era 5500 ms, pedido para dar tempo de ver o BLINK acompanhar o cursor. Medi o
+ * que isso custava: a cena fica pronta em ~1,2 s e o botão só aparecia em 6,1 s,
+ * com a barra subindo LINEAR no tempo — ou seja, 5 dos 6 segundos eram espera
+ * pura, não carregamento. Quem entra várias vezes por dia paga isso todas.
+ */
+const MIN_LOAD_MS = 2200;
+
+/**
+ * Quantos quadros bastam para liberar a entrada.
+ *
+ * Exigir os 240 amarrava o botão ao último byte de 11 MB. Com 96 o rastreamento
+ * já é fluido (as passadas de densidade crescente trazem justamente os quadros
+ * espalhados primeiro), e o resto continua chegando em segundo plano enquanto a
+ * pessoa olha a tela. A barra mede o caminho até ESTAR PRONTO, que é o que ela
+ * significa para quem espera — não a fração de arquivos baixados.
+ */
+const FRAMES_PRONTO = 96;
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const smoothstep = (u: number) => u * u * (3 - 2 * u);
@@ -1098,7 +1116,8 @@ export const BoasVindas = memo(function BoasVindas({
       canvasB.style.transform = t;
 
       /* 8. barra: carregamento real, com piso de tempo */
-      const loadFrac = settled >= totalNecessario ? 1 : loaded / totalNecessario;
+      const loadFrac =
+        settled >= totalNecessario ? 1 : Math.min(1, loaded / FRAMES_PRONTO);
       const timeFrac = (now - started) / MIN_LOAD_MS;
       const v = Math.min(loadFrac, Math.min(1, timeFrac));
       if (v > shown) {
