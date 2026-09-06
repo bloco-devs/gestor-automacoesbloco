@@ -10,7 +10,10 @@ describe("platform/routes-catalog", () => {
   const catalogo = catalogoDeRotas();
 
   it("indexa muito mais que os 16 destinos originais", () => {
-    expect(catalogo.length).toBeGreaterThan(50);
+    // Era >50 quando o menu ainda tinha o grupo Governança. As quinze telas de
+    // catálogo estático foram removidas do sistema, não escondidas — a paleta
+    // encolheu junto porque deriva do mesmo registry, e é isso que se espera.
+    expect(catalogo.length).toBeGreaterThan(40);
   });
 
   it("alcança as páginas administrativas que saíram do menu", () => {

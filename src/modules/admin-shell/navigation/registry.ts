@@ -33,12 +33,6 @@ export const ADMIN_GROUPS: AdminGroup[] = [
   { id: "operacional", label: "Operacional", description: "Workflows, SLA, integrações e portal." },
   { id: "seguranca", label: "Segurança", description: "Usuários, papéis, permissões e sessões." },
   { id: "desenvolvimento", label: "Desenvolvimento", description: "Diagramas, ecossistema e diagnóstico." },
-  {
-    id: "governanca",
-    label: "Governança (documentos)",
-    description:
-      "Catálogos escritos à mão e buffers de sessão. Não consultam o banco: são documento, não observabilidade.",
-  },
 ];
 
 /**
@@ -87,73 +81,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
     href: "/admin/dashboard",
     icon: LayoutDashboard,
   },
-  {
-    id: "quality",
-    group: "governanca",
-    label: "Quality Center",
-    description: "Governança técnica, catalog e score.",
-    href: "/admin/quality",
-    icon: Gauge,
-    keywords: ["governança", "score", "catalog", "release"],
-    details: "Somente leitura — inventário, dependências, reuso e prontidão.",
-  },
   // FEATURE 023 — Production Hardening
-  {
-    id: "platform-health",
-    group: "governanca",
-    label: "Platform Health",
-    description: "Status consolidado de runtimes, performance e sistema.",
-    href: "/admin/platform",
-    icon: Activity,
-  },
-  {
-    id: "errors",
-    group: "governanca",
-    label: "Error Center",
-    description: "Ring buffer de erros JS, promise e módulos.",
-    href: "/admin/errors",
-    icon: Bug,
-  },
-  {
-    id: "performance",
-    group: "governanca",
-    label: "Performance Center",
-    description: "Latência agregada por camada.",
-    href: "/admin/performance",
-    icon: Gauge,
-  },
-  {
-    id: "release",
-    group: "governanca",
-    label: "Release Center",
-    description: "Checklist automático de prontidão para produção.",
-    href: "/admin/release",
-    icon: ShieldCheck,
-  },
-  {
-    id: "feature-flags",
-    group: "governanca",
-    label: "Feature Flags",
-    description: "Ativação seletiva de funcionalidades.",
-    href: "/admin/feature-flags",
-    icon: FileCode2,
-  },
-  {
-    id: "settings-center",
-    group: "governanca",
-    label: "Config Center",
-    description: "Configurações versionadas com rollback.",
-    href: "/admin/settings",
-    icon: Cog,
-  },
-  {
-    id: "secrets",
-    group: "governanca",
-    label: "Secrets & Env",
-    description: "Status dos secrets (nunca exibe valores).",
-    href: "/admin/secrets",
-    icon: KeyRound,
-  },
   {
     id: "sessions-center",
     group: "seguranca",
@@ -165,63 +93,6 @@ export const ADMIN_NAV: AdminNavItem[] = [
   },
 
   // FEATURE 024 — Enterprise Security
-  {
-    id: "security-center",
-    group: "governanca",
-    label: "Security Center",
-    description: "Score geral, compliance, ameaças, integridade e relatórios.",
-    href: "/admin/security",
-    icon: ShieldCheck,
-    keywords: ["security", "lgpd", "compliance", "iso", "owasp", "soc2", "nist"],
-  },
-  {
-    id: "security-compliance",
-    group: "governanca",
-    label: "Compliance",
-    description: "LGPD, ISO 27001, OWASP, SOC 2 e NIST.",
-    href: "/admin/security/compliance",
-    icon: FileWarning,
-  },
-  {
-    id: "security-permissions",
-    group: "governanca",
-    label: "Permission Explorer",
-    description: "Roles, capabilities, plugins e extensões.",
-    href: "/admin/security/permissions",
-    icon: Users,
-  },
-  {
-    id: "security-policies",
-    group: "governanca",
-    label: "Policy Center",
-    description: "Políticas de segurança versionadas (client-side).",
-    href: "/admin/security/policies",
-    icon: ShieldCheck,
-  },
-  {
-    id: "security-integrity",
-    group: "governanca",
-    label: "Integrity Center",
-    description: "Providers, versões, assinaturas e dependências.",
-    href: "/admin/security/integrity",
-    icon: Network,
-  },
-  {
-    id: "security-timeline",
-    group: "governanca",
-    label: "Security Timeline",
-    description: "Trilha unificada de Audit, Errors, Threats e Mesh.",
-    href: "/admin/security/timeline",
-    icon: Activity,
-  },
-  {
-    id: "security-reports",
-    group: "governanca",
-    label: "Enterprise Reports",
-    description: "Exportação CSV consolidada.",
-    href: "/admin/security/reports",
-    icon: FileCode2,
-  },
 
 
   // IA & Conhecimento

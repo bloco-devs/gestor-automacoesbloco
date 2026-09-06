@@ -1,5 +1,4 @@
 import { lazy, Suspense, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { Shield, ShieldAlert, Activity, KeyRound, Users, FileWarning, FileCode2, Cog, Bug, Boxes, Sparkles, Workflow, Radar, Network } from "lucide-react";
 import { PageShell, PageHeader, Section, KpiRow, StatCard } from "@/design-system";
 import { computeSecurityScore } from "@/modules/security";
@@ -8,19 +7,8 @@ import { useErrorHistory } from "@/modules/errors";
 import { useThreatHistory } from "@/modules/security";
 import { FRAMEWORKS, scoreFramework } from "@/modules/security";
 import { collectRuntimeHealth } from "@/modules/platform-health";
-import { Button } from "@/components/ui/button";
 
 const IntegrityPreview = lazy(() => import("./SecurityIntegrity").then((m) => ({ default: m.IntegrityInline })));
-
-const NAV: Array<{ href: string; label: string; description: string }> = [
-  { href: "/admin/security/threats", label: "Threat Center", description: "Ameaças, falhas de auth, plugins rejeitados." },
-  { href: "/admin/security/compliance", label: "Compliance", description: "LGPD · ISO 27001 · OWASP · SOC2 · NIST." },
-  { href: "/admin/security/permissions", label: "Permissions", description: "Explorer de roles, capabilities e extensões." },
-  { href: "/admin/security/policies", label: "Policy Center", description: "Cadastro de políticas de segurança." },
-  { href: "/admin/security/integrity", label: "Integrity", description: "Assinaturas, versões, providers e slots." },
-  { href: "/admin/security/timeline", label: "Timeline", description: "Trilha unificada de eventos." },
-  { href: "/admin/security/reports", label: "Enterprise Reports", description: "Exportação CSV consolidada." },
-];
 
 export default function SecurityCenterPage() {
   const audit = useAuditHistory();
@@ -60,30 +48,18 @@ export default function SecurityCenterPage() {
         <StatCard label="Event Bus" value="Ativo" icon={Activity} tone="success" />
       </KpiRow>
 
-      <Section title="Áreas do Security Center">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {NAV.map((n) => (
-            <Link key={n.href} to={n.href} className="rounded-2xl border p-4 hover:bg-muted/40 transition-colors">
-              <div className="ds-h3 mb-1 flex items-center gap-2"><Shield className="size-4 text-primary" aria-hidden /> {n.label}</div>
-              <p className="ds-caption text-muted-foreground">{n.description}</p>
-            </Link>
-          ))}
-        </div>
-      </Section>
-
       <Section title="Recomendações">
         <ul className="list-disc pl-5 space-y-1 text-sm">
           {score.recommendations.map((r, i) => (<li key={i}>{r}</li>))}
         </ul>
       </Section>
 
-      <Section title="Integridade rápida" description="Prévia dos achados atuais do Integrity Center.">
-        <Suspense fallback={<div className="text-sm text-muted-foreground">Carregando…</div>}>
+      {/* O botão levava ao Integrity Center, que saiu junto com o grupo
+          Governança. A prévia continua aqui, que é onde ela era lida. */}
+      <Section title="Integridade rápida" description="Achados atuais de integridade.">
+        <Suspense fallback={<div className="ds-caption text-muted-foreground">Carregando…</div>}>
           <IntegrityPreview limit={5} />
         </Suspense>
-        <div className="mt-3">
-          <Button asChild variant="outline" size="sm"><Link to="/admin/security/integrity">Abrir Integrity Center</Link></Button>
-        </div>
       </Section>
     </PageShell>
   );

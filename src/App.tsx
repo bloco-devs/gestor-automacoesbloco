@@ -102,7 +102,6 @@ const WorkflowEditorPage = lazy(() => import(/* webpackChunkName: "workflows" */
 const WorkflowExecutionsPage = lazy(() => import(/* webpackChunkName: "workflows" */ "./pages/admin/WorkflowExecutions"));
 const AdminHubLegado = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/AdminHub"));
 const AdminShellPage = lazy(() => import(/* webpackChunkName: "admin" */ "./modules/admin-shell/AdminShellPage"));
-const GovernancePage = lazy(() => import(/* webpackChunkName: "admin" */ "./modules/governance/GovernancePage"));
 const SdkSandbox = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SdkSandbox"));
 const MarketplacePage = lazy(() => import(/* webpackChunkName: "admin" */ "./plugins/marketplace/pages/MarketplacePage"));
 const SaudePage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Saude"));
@@ -124,23 +123,9 @@ const ManagerInsightsPage = lazy(() => import(/* webpackChunkName: "manager-unif
 const ManagerInboxPage = lazy(() => import(/* webpackChunkName: "manager-unified" */ "./pages/gestao/ManagerInboxPage"));
 
 // FEATURE 023 — Production Hardening
-const PlatformHealthPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/PlatformHealth"));
-const ErrorCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/ErrorCenter"));
-const FeatureFlagsPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/FeatureFlags"));
-const SettingsCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SettingsCenter"));
-const SecretsCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SecretsCenter"));
 const SessionsCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SessionsCenter"));
-const PerformanceCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/PerformanceCenter"));
-const ReleaseCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/ReleaseCenter"));
 
 // FEATURE 024 — Enterprise Security Center
-const SecurityCenterPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityCenter"));
-const SecurityCompliancePage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityCompliance"));
-const SecurityPermissionsPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityPermissions"));
-const SecurityPoliciesPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityPolicies"));
-const SecurityIntegrityPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityIntegrity"));
-const SecurityTimelinePage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityTimeline"));
-const SecurityReportsPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityReports"));
 
 // FEATURE 026 — Enterprise Observability
 const ObservabilityCenterPage = lazy(() => import(/* webpackChunkName: "observability" */ "./pages/admin/ObservabilityCenter"));
@@ -348,29 +333,14 @@ const AppRoutes = () => {
           <Route path="/admin/workflows/execucoes" element={<ProtectedRoute role="developer"><WorkflowExecutionsPage /></ProtectedRoute>} />
           <Route path="/admin/workflows/:id" element={<ProtectedRoute role="developer"><WorkflowEditorPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute role="developer"><AdminShellPage /></ProtectedRoute>} />
-          <Route path="/admin/quality" element={<ProtectedRoute role="developer"><GovernancePage /></ProtectedRoute>} />
           <Route path="/admin/sdk" element={<ProtectedRoute role="developer"><SdkSandbox /></ProtectedRoute>} />
           <Route path="/admin/marketplace" element={<ProtectedRoute role="developer"><MarketplacePage /></ProtectedRoute>} />
           <Route path="/admin/legado" element={<ProtectedRoute role="developer"><AdminHubLegado /></ProtectedRoute>} />
           <Route path="/admin/saude" element={<ProtectedRoute role="developer"><SaudePage /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute role="developer"><AnalyticsPage /></ProtectedRoute>} />
           {/* FEATURE 023 — Production Hardening */}
-          <Route path="/admin/platform" element={<ProtectedRoute role="developer"><PlatformHealthPage /></ProtectedRoute>} />
-          <Route path="/admin/errors" element={<ProtectedRoute role="developer"><ErrorCenterPage /></ProtectedRoute>} />
-          <Route path="/admin/feature-flags" element={<ProtectedRoute role="developer"><FeatureFlagsPage /></ProtectedRoute>} />
-          <Route path="/admin/settings" element={<ProtectedRoute role="developer"><SettingsCenterPage /></ProtectedRoute>} />
-          <Route path="/admin/secrets" element={<ProtectedRoute role="developer"><SecretsCenterPage /></ProtectedRoute>} />
           <Route path="/admin/sessions" element={<ProtectedRoute role="developer"><SessionsCenterPage /></ProtectedRoute>} />
-          <Route path="/admin/performance" element={<ProtectedRoute role="developer"><PerformanceCenterPage /></ProtectedRoute>} />
-          <Route path="/admin/release" element={<ProtectedRoute role="developer"><ReleaseCenterPage /></ProtectedRoute>} />
           {/* FEATURE 024 — Enterprise Security */}
-          <Route path="/admin/security" element={<ProtectedRoute role="developer"><SecurityCenterPage /></ProtectedRoute>} />
-          <Route path="/admin/security/compliance" element={<ProtectedRoute role="developer"><SecurityCompliancePage /></ProtectedRoute>} />
-          <Route path="/admin/security/permissions" element={<ProtectedRoute role="developer"><SecurityPermissionsPage /></ProtectedRoute>} />
-          <Route path="/admin/security/policies" element={<ProtectedRoute role="developer"><SecurityPoliciesPage /></ProtectedRoute>} />
-          <Route path="/admin/security/integrity" element={<ProtectedRoute role="developer"><SecurityIntegrityPage /></ProtectedRoute>} />
-          <Route path="/admin/security/timeline" element={<ProtectedRoute role="developer"><SecurityTimelinePage /></ProtectedRoute>} />
-          <Route path="/admin/security/reports" element={<ProtectedRoute role="developer"><SecurityReportsPage /></ProtectedRoute>} />
           {/* FEATURE 026 — Enterprise Observability */}
           <Route path="/admin/observability" element={<ProtectedRoute role="developer"><ObservabilityCenterPage /></ProtectedRoute>} />
           {/* FEATURE 027 — Enterprise Integration Hub */}
