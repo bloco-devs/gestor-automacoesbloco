@@ -6,10 +6,19 @@
  * volume de execuções. O modo demonstração ignora isso e põe todo mundo a
  * andar.
  *
- * Entre dois SISTEMAS a viagem virou conversa: os dois caminham até um ponto
- * de encontro no corredor, param, se viram um para o outro e trocam três
- * linhas. As palavras vêm de `conversas.ts`, a partir da relação entre as
- * duas áreas; o par continua vindo do HUB.
+ * A conversa nasce, em primeiro lugar, de um EVENTO REAL. A cada retrato novo
+ * do HUB o motor compara com o anterior e enfileira o que mudou de verdade;
+ * o sistema afetado então procura quem precisa saber. Quem precisa saber sai
+ * do grafo de integrações do HUB, com preferência para o Gestor de
+ * Automações — que é onde as integrações são acompanhadas.
+ *
+ * Só quando NÃO há evento pendente sobra a conversa ambiental, e ela é rara
+ * de propósito: escritório calado com um acontecimento real vale mais que
+ * vários BLINKs falando à toa.
+ *
+ * O motor é PERSISTENTE. `atualizarDados` recebe o retrato novo sem recriar
+ * nada: quem está andando continua andando, quem está conversando continua
+ * conversando.
  *
  * Um conector EXTERNO não conversa: ele entrega. Continua fazendo a viagem de
  * ida e volta com o rótulo da integração, como sempre fez.
@@ -26,7 +35,15 @@ import {
   type PortaExterna,
 } from "./layout";
 import { estaParado, estadoDoSistema, intervaloEntreViagens, type Estado, type SaudeSistema } from "./estado";
-import { criarRoteirista, type Fala } from "./conversas";
+import { criarRoteirista, dialogoDeEvento, type Fala } from "./conversas";
+import {
+  criarFilaDeEventos,
+  fonteDeRetratos,
+  type EventoEcossistema,
+  type FilaDeEventos,
+  type FonteDeEventos,
+  type Par,
+} from "./eventos";
 import type { DadosEscritorio } from "./dados";
 import { PERSONAGEM_H, TILE, type Direcao } from "./sprites";
 
@@ -39,6 +56,20 @@ const MAX_VIAGENS = 6;
 const MAX_CONVERSAS = 2;        // dois grupos, nunca o andar inteiro falando
 const LIMITE_ENCONTRO = 40;     // segundos até desistir de um encontro travado
 const INTERVALO_DEMO = 7;
+/**
+ * Conversa ambiental é secundária: só respira quando a fila está vazia e
+ * nenhum sistema está com problema em aberto. O intervalo é longo de
+ * propósito — antes era de 6 a 16 s e enchia o corredor.
+ */
+const INTERVALO_AMBIENTE = 180;
+const MAX_REGISTROS = 50;
+/**
+ * O Gestor de Automações é onde as integrações e demandas são acompanhadas,
+ * então tem preferência para receber um evento. NÃO é atalho: a preferência
+ * só vale se existir integração REAL entre ele e o sistema afetado. Se não
+ * existir, o destino sai do grafo como qualquer outro.
+ */
+const SISTEMA_HUB_OPERACIONAL = "automacoes";
 
 export type Fase = "mesa" | "indo" | "encarando" | "falando" | "voltando" | "oculto";
 
@@ -49,6 +80,18 @@ export interface Conversa {
   i: number;
   t: number;
   fase: "indo" | "encarando" | "falando" | "pausa";
+  /** Evento que provocou a conversa; ausente na conversa ambiental. */
+  evento?: EventoEcossistema;
+}
+
+/** Rastro de depuração. Só ids e decisões — nada de dado sensível. */
+export interface RegistroConversa {
+  em: number;
+  evento: string;
+  origem: string;
+  destino: string | null;
+  prioridade: number;
+  resultado: "iniciada" | "sem-destino" | "sem-vaga" | "sem-rota";
 }
 
 export interface Viagem {
@@ -87,6 +130,15 @@ export interface Motor {
   conversas: Conversa[];
   atualizar(dt: number, demo: boolean): void;
   viagensAtivas(): number;
+  /**
+   * Retrato novo do HUB. NÃO recria nada: atualiza a saúde de cada BLINK e
+   * enfileira o que mudou. É o que faz uma conversa sobreviver ao refresh.
+   */
+  atualizarDados(novos: DadosEscritorio, agora?: number): EventoEcossistema[];
+  /** Sistemas com problema em aberto, ainda pendentes. */
+  pendentes(): string[];
+  fila: FilaDeEventos;
+  registros: RegistroConversa[];
 }
 
 function direcaoEntre(dx: number, dy: number, atual: Direcao): Direcao {
@@ -96,8 +148,13 @@ function direcaoEntre(dx: number, dy: number, atual: Direcao): Direcao {
 }
 
 export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.now()): Motor {
-  const saudeDe = (id: string): SaudeSistema | undefined => dados.saude[id];
-  const maiorExecs = Math.max(1, ...Object.values(dados.saude).map((s) => s.execs ?? 0));
+  /*
+   * `dadosAtual` é mutável de propósito: o refresh do HUB troca o retrato sem
+   * recriar o motor. Tudo que deriva dele é recalculado em `recalcular`.
+   */
+  let dadosAtual = dados;
+  const saudeDe = (id: string): SaudeSistema | undefined => dadosAtual.saude[id];
+  let maiorExecs = Math.max(1, ...Object.values(dados.saude).map((s) => s.execs ?? 0));
 
   const personagens: Personagem[] = [];
 
@@ -139,16 +196,31 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
 
   // Só vira viagem a integração cujos dois lados existem no andar.
   const saidasDe = new Map<string, { destino: Mesa; label: string }[]>();
-  for (const it of dados.integracoes) {
-    const destino = andar.mesaPorSistema.get(it.destino);
-    if (!destino) continue;
-    const origemTemMesa = andar.mesaPorSistema.has(it.origem);
-    const origemTemPorta = andar.portaPorConector.has(it.origem);
-    if (!origemTemMesa && !origemTemPorta) continue;
-    if (it.origem === it.destino) continue;
-    if (!saidasDe.has(it.origem)) saidasDe.set(it.origem, []);
-    saidasDe.get(it.origem)!.push({ destino, label: it.label || "dados" });
-  }
+  /** Grafo não direcionado: quem troca dados com quem, de verdade. */
+  const vizinhos = new Map<string, Set<string>>();
+
+  const recalcular = () => {
+    maiorExecs = Math.max(1, ...Object.values(dadosAtual.saude).map((s) => s.execs ?? 0));
+    saidasDe.clear();
+    vizinhos.clear();
+    for (const it of dadosAtual.integracoes) {
+      const destino = andar.mesaPorSistema.get(it.destino);
+      if (it.origem === it.destino) continue;
+      const origemTemMesa = andar.mesaPorSistema.has(it.origem);
+      const origemTemPorta = andar.portaPorConector.has(it.origem);
+      if (destino && (origemTemMesa || origemTemPorta)) {
+        if (!saidasDe.has(it.origem)) saidasDe.set(it.origem, []);
+        saidasDe.get(it.origem)!.push({ destino, label: it.label || "dados" });
+      }
+      if (origemTemMesa && destino) {
+        if (!vizinhos.has(it.origem)) vizinhos.set(it.origem, new Set());
+        if (!vizinhos.has(it.destino)) vizinhos.set(it.destino, new Set());
+        vizinhos.get(it.origem)!.add(it.destino);
+        vizinhos.get(it.destino)!.add(it.origem);
+      }
+    }
+  };
+  recalcular();
 
   const intervaloDe = (p: Personagem, demo: boolean): number => {
     if (demo) return INTERVALO_DEMO * (0.6 + Math.random() * 0.8);
@@ -156,7 +228,12 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     if (estaParado(p.estado)) return Infinity;
     const execs = saudeDe(p.id)?.execs ?? 0;
     const base = execs > 0 ? intervaloEntreViagens(execs, maiorExecs) : 45;
-    return base * (0.7 + Math.random() * 0.6);
+    /*
+     * A frequência derivada do volume continua mandando em QUANDO um sistema
+     * tem vontade de se mexer, mas a conversa ambiental agora é secundária:
+     * o piso longo evita que ela concorra com evento real.
+     */
+    return Math.max(INTERVALO_AMBIENTE, base) * (0.7 + Math.random() * 0.6);
   };
 
   const viagensAtivas = () => personagens.filter((p) => p.fase !== "mesa" && p.fase !== "oculto").length;
@@ -223,7 +300,12 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
    * Conversa entre dois sistemas. O par já veio do HUB; aqui só se resolve
    * onde os dois se encontram e o que dizem.
    */
-  const iniciarConversa = (a: Personagem, b: Personagem, label: string): boolean => {
+  const iniciarConversa = (
+    a: Personagem,
+    b: Personagem,
+    label: string,
+    evento?: EventoEcossistema,
+  ): boolean => {
     if (!a.mesa || !b.mesa) return false;
     if (b.fase !== "mesa" || b.conversa) return false;
     if (estaParado(b.estado)) return false;
@@ -245,7 +327,11 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     const conversa: Conversa = {
       a,
       b,
-      linhas: roteirista.dialogoPara(interlocutor(a), interlocutor(b), label, relogio),
+      evento,
+      // fala de evento tem duas linhas; a ambiental tem três
+      linhas: evento
+        ? dialogoDeEvento(evento, a.nome)
+        : roteirista.dialogoPara(interlocutor(a), interlocutor(b), label, relogio),
       i: 0,
       t: 0,
       fase: "indo",
@@ -292,6 +378,34 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
       p.y = p.mesa.pessoaY;
       p.direcao = "frente";
     }
+  };
+
+  /**
+   * Tenta transformar o próximo evento da fila em conversa. É a via
+   * principal: só quando ela não produz nada é que a ambiental tem vez.
+   */
+  const tentarEvento = (): boolean => {
+    if (conversas.length >= MAX_CONVERSAS) return false;
+    if (viagensAtivas() + 2 > MAX_VIAGENS) return false;
+
+    const escolha = fila.proximo(relogio, resolverDestino);
+    if (!escolha) return false;
+
+    const a = porId.get(escolha.par.origem);
+    const b = porId.get(escolha.par.destino);
+    if (!a || !b) return false;
+
+    const ok = iniciarConversa(a, b, "", escolha.evento);
+    anotar({
+      em: relogio,
+      evento: `${escolha.evento.tipo}:${escolha.evento.sistema}`,
+      origem: a.id,
+      destino: b.id,
+      prioridade: escolha.evento.prioridade,
+      resultado: ok ? "iniciada" : "sem-rota",
+    });
+    if (ok) fila.confirmar(escolha.evento, escolha.par, relogio);
+    return ok;
   };
 
   const avancarConversa = (c: Conversa, dt: number, demo: boolean) => {
@@ -355,6 +469,46 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     }
   };
 
+  const fonte: FonteDeEventos = fonteDeRetratos(dados.saude);
+  const fila = criarFilaDeEventos();
+  const registros: RegistroConversa[] = [];
+
+  const anotar = (r: RegistroConversa) => {
+    registros.push(r);
+    if (registros.length > MAX_REGISTROS) registros.shift();
+  };
+
+  /** Pode sair da mesa para conversar? Quem está ocioso ou sem dado, não. */
+  const disponivel = (p: Personagem | undefined): p is Personagem =>
+    !!p && p.tipo === "sistema" && !!p.mesa && p.fase === "mesa" && !p.conversa;
+
+  /**
+   * Quem precisa saber do evento.
+   *
+   * Sai do grafo REAL de integrações — nunca de uma lista escrita à mão. Em
+   * cima disso há uma única preferência de negócio: se o Gestor de Automações
+   * for vizinho do sistema afetado, é ele quem recebe, porque é ali que a
+   * integração é acompanhada. Nada disso olha QUAL é o sistema de origem, e
+   * por isso vale igual para RH, Obra, Financeiro ou qualquer um que entrar
+   * no ecossistema depois.
+   */
+  const resolverDestino = (evento: EventoEcossistema): Par | null => {
+    const origem = porId.get(evento.sistema);
+    if (!disponivel(origem)) return null;
+    // quem está em falha PODE avisar da própria falha; ocioso e sem dado, não
+    if (estaParado(origem.estado)) return null;
+
+    const candidatos = [...(vizinhos.get(evento.sistema) ?? [])]
+      .map((id) => porId.get(id))
+      .filter(disponivel)
+      .filter((p) => !estaParado(p.estado));
+    if (!candidatos.length) return null;
+
+    const hub = candidatos.find((p) => p.id === SISTEMA_HUB_OPERACIONAL);
+    const escolhido = hub ?? candidatos[Math.floor(Math.random() * candidatos.length)];
+    return { origem: origem.id, destino: escolhido.id };
+  };
+
   const andarAte = (p: Personagem, dt: number): boolean => {
     const v = p.viagem;
     if (!v) return true;
@@ -386,9 +540,34 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     porId,
     conversas,
     viagensAtivas,
+    fila,
+    registros,
+    pendentes: () => fonte.pendentes(),
+
+    /**
+     * Retrato novo do HUB.
+     *
+     * Não recria personagem, não mexe em posição, não cancela conversa. Só
+     * atualiza a saúde de cada um e enfileira o que mudou de verdade.
+     */
+    atualizarDados(novos: DadosEscritorio, quando = Date.now()) {
+      dadosAtual = novos;
+      recalcular();
+      for (const p of personagens) {
+        if (p.tipo !== "sistema") continue;
+        p.estado = estadoDoSistema(saudeDe(p.id), quando);
+      }
+      const eventos = fonte.observar(novos.saude, quando);
+      fila.registrar(eventos, relogio);
+      return eventos;
+    },
+
     atualizar(dt: number, demo: boolean) {
       relogio += dt;
       for (const c of [...conversas]) avancarConversa(c, dt, demo);
+
+      // evento real primeiro, sempre
+      tentarEvento();
 
       for (const p of personagens) {
         p.digitaT += dt;
@@ -398,7 +577,16 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
           case "oculto": {
             p.proxima -= dt;
             if (p.proxima <= 0) {
-              if (viagensAtivas() < MAX_VIAGENS) {
+              /*
+               * Interação ambiental é o último da fila. Se existe evento na
+               * fila ou sistema com problema em aberto, ninguém levanta para
+               * bater papo — seria o escritório conversando à toa enquanto há
+               * coisa real acontecendo.
+               */
+              const temCoisaReal = fila.tamanho() > 0 || fonte.pendentes().length > 0;
+              if (temCoisaReal && !demo) {
+                p.proxima = 15 + Math.random() * 20;
+              } else if (viagensAtivas() < MAX_VIAGENS) {
                 iniciarViagem(p, demo);
                 if (p.fase === "mesa" || p.fase === "oculto") p.proxima = intervaloDe(p, demo);
               } else {

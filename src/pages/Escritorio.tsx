@@ -37,10 +37,23 @@ export default function EscritorioPage() {
   }, []);
 
   const efetivos = dados ?? DADOS_SEMENTE;
-  const andar = useMemo(
-    () => montarAndar(efetivos.sistemas, efetivos.conectores),
+  /*
+   * A planta só é remontada quando a ESTRUTURA muda — sistema entrou, saiu,
+   * trocou de grupo, conector novo. `efetivos.sistemas` é array novo a cada
+   * busca do HUB, então depender dele remontava o andar inteiro (e apagava o
+   * motor junto) de minuto em minuto, mesmo sem nada ter mudado.
+   */
+  const estrutura = useMemo(
+    () =>
+      `${efetivos.sistemas.map((s) => `${s.id}:${s.grupo}`).join("|")}::` +
+      efetivos.conectores.map((c) => c.id).join("|"),
     [efetivos.sistemas, efetivos.conectores],
   );
+  const plantaRef = useRef<{ chave: string; andar: ReturnType<typeof montarAndar> } | null>(null);
+  if (!plantaRef.current || plantaRef.current.chave !== estrutura) {
+    plantaRef.current = { chave: estrutura, andar: montarAndar(efetivos.sistemas, efetivos.conectores) };
+  }
+  const andar = plantaRef.current.andar;
 
   const contagem = useMemo(() => {
     let trabalhando = 0;

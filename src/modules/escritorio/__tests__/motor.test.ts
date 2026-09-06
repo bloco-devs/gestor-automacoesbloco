@@ -217,3 +217,141 @@ describe("motor do escritório", () => {
     expect(saiu).toBe(true);
   });
 });
+
+/* ---------------------------------------------------- eventos reais --- */
+
+const ecossistema = [
+  { id: "rh", nome: "Gestão de RH", grupo: "Pessoas" },
+  { id: "automacoes", nome: "Gestor de Automações", grupo: "Tecnologia" },
+  { id: "obra", nome: "Gestão de Obra", grupo: "Operação" },
+];
+
+const saudavel = { execs: 1000, ok: 1000, falhas: 0, ultima: recente };
+const emFalha = { execs: 1000, ok: 700, falhas: 300, ultima: recente };
+
+const dadosEco: DadosEscritorio = {
+  fonte: "hub",
+  geradoEm: null,
+  sistemas: ecossistema,
+  conectores: [],
+  integracoes: [
+    { origem: "rh", destino: "automacoes", label: "colaboradores" },
+    { origem: "obra", destino: "automacoes", label: "medições" },
+  ],
+  saude: { rh: saudavel, automacoes: saudavel, obra: saudavel },
+};
+const andarEco = montarAndar(dadosEco.sistemas, dadosEco.conectores);
+
+/** Roda até uma conversa nascer, ou desiste. */
+function rodarAte(m: ReturnType<typeof criarMotor>, cond: () => boolean, segundos = 120) {
+  for (let i = 0; i < segundos * 30 && !cond(); i++) m.atualizar(1 / 30, false);
+  return cond();
+}
+
+describe("conversa nascida de evento real", () => {
+  it("sistema que entra em falha procura o Gestor de Automações", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA);
+
+    expect(rodarAte(m, () => m.conversas.length > 0)).toBe(true);
+    const c = m.conversas[0];
+    expect(c.evento?.tipo).toBe("entrou_em_falha");
+    expect(c.evento?.sistema).toBe("rh");
+    expect(c.a.id).toBe("rh");
+    expect(c.b.id).toBe("automacoes");
+  });
+
+  it("vale para qualquer sistema, sem regra especial para o RH", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, obra: emFalha } }, AGORA);
+    expect(rodarAte(m, () => m.conversas.length > 0)).toBe(true);
+    expect(m.conversas[0].a.id).toBe("obra");
+    expect(m.conversas[0].b.id).toBe("automacoes");
+  });
+
+  it("sem evento nenhum, ninguém levanta para avisar nada", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados(dadosEco, AGORA); // retrato idêntico
+    for (let i = 0; i < 30 * 60; i++) m.atualizar(1 / 30, false);
+    expect(m.conversas.filter((c) => c.evento)).toHaveLength(0);
+  });
+
+  it("o mesmo problema não vira conversa duas vezes", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA);
+    rodarAte(m, () => m.conversas.length > 0);
+    const iniciadas = () => m.registros.filter((r) => r.resultado === "iniciada").length;
+    const antes = iniciadas();
+    // o problema continua nos retratos seguintes
+    for (let ciclo = 1; ciclo <= 4; ciclo++) {
+      m.atualizarDados(
+        { ...dadosEco, saude: { ...dadosEco.saude, rh: { ...emFalha, falhas: 300 + ciclo * 50 } } },
+        AGORA + ciclo * 60_000,
+      );
+      for (let i = 0; i < 30 * 60; i++) m.atualizar(1 / 30, false);
+    }
+    expect(iniciadas()).toBe(antes);
+  });
+
+  it("quando o sistema volta, há uma conversa de recuperação", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA);
+    rodarAte(m, () => m.conversas.length > 0);
+    for (let i = 0; i < 30 * 90; i++) m.atualizar(1 / 30, false); // deixa terminar
+
+    const eventos = m.atualizarDados(dadosEco, AGORA + 600_000);
+    expect(eventos.map((e) => e.tipo)).toContain("recuperado");
+    expect(rodarAte(m, () => m.conversas.some((c) => c.evento?.tipo === "recuperado"), 300)).toBe(true);
+  });
+
+  it("nenhuma fala de evento contém número ou dado do payload", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA);
+    const ditas = new Set<string>();
+    for (let i = 0; i < 30 * 300; i++) {
+      m.atualizar(1 / 30, false);
+      for (const p of m.personagens) if (p.fala) ditas.add(p.fala);
+    }
+    expect(ditas.size).toBeGreaterThan(0);
+    for (const t of ditas) {
+      expect(/\d/.test(t), `fala com número: ${t}`).toBe(false);
+      expect(t).not.toContain("undefined");
+    }
+  });
+});
+
+describe("o motor sobrevive ao refresh do HUB", () => {
+  it("atualizar dados não teleporta ninguém", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA);
+    rodarAte(m, () => m.personagens.some((p) => p.fase === "indo"));
+    const andando = m.personagens.find((p) => p.fase === "indo")!;
+    const antes = { x: andando.x, y: andando.y, fase: andando.fase };
+
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA + 60_000);
+
+    expect(andando.x).toBe(antes.x);
+    expect(andando.y).toBe(antes.y);
+    expect(andando.fase).toBe(antes.fase);
+  });
+
+  it("uma conversa em curso não desaparece com o refresh", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA);
+    expect(rodarAte(m, () => m.conversas.length > 0)).toBe(true);
+    const conversa = m.conversas[0];
+
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA + 60_000);
+
+    expect(m.conversas).toContain(conversa);
+    expect(conversa.a.conversa).toBe(conversa);
+    expect(conversa.b.conversa).toBe(conversa);
+  });
+
+  it("o refresh atualiza a saúde de quem está na mesa", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    expect(m.porId.get("obra")!.estado).toBe("trabalhando");
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, obra: emFalha } }, AGORA);
+    expect(m.porId.get("obra")!.estado).toBe("falha");
+  });
+});

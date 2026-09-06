@@ -5,20 +5,24 @@
  * movimento e o balão não sabem o que está sendo dito. Eles pedem um roteiro
  * aqui e recebem uma lista de linhas.
  *
- * QUEM conversa com quem NÃO se decide aqui: isso vem das integrações reais
- * do HUB, no motor. Este módulo só escolhe AS PALAVRAS, a partir da relação
- * entre as duas áreas envolvidas. Quando nenhuma regra serve ao par, a
- * conversa cai no rótulo da própria integração — que também é contexto real.
+ * QUEM conversa com quem NÃO se decide aqui. Vem do EVENTO real e do grafo de
+ * integrações do HUB, no motor. Este módulo só escolhe AS PALAVRAS.
  *
- * A fronteira foi desenhada para que, mais adiante, `dialogoPara` possa vir
- * de evento do HUB (demanda parada, integração em falha, status mudou) sem
- * tocar em animação, mapa, grade de colisão ou balão.
+ * São duas origens de fala, nesta ordem de importância:
+ *
+ *  1. `dialogoDeEvento` — a conversa nasceu de uma mudança real no retrato do
+ *     ecossistema. A frase é montada SÓ com o tipo do evento, o nome do
+ *     sistema e, quando o dado sustenta, a marca de falha vinda de terceiro.
+ *
+ *  2. `dialogoPara` — conversa ambiental, sem evento por trás. Existe como
+ *     comportamento secundário e raro; nunca simula problema.
  *
  * REGRA DE CONTEÚDO: nenhuma fala cita pessoa, documento, valor, cliente ou
  * qualquer dado. Só o contexto funcional do sistema.
  */
 
 import { chaveDeGrupo } from "./layout";
+import type { EventoEcossistema, TipoEvento } from "./eventos";
 
 export interface Interlocutor {
   id: string;
@@ -200,6 +204,88 @@ export const REGRAS: RegraConversa[] = [
     ],
   },
 ];
+
+/**
+ * Falas por tipo de evento.
+ *
+ * `{sistema}` é o ÚNICO buraco interpolável, e recebe o NOME do sistema — o
+ * mesmo rótulo que já aparece na placa da mesa. Nenhum outro campo do evento
+ * chega ao balão: nada de id, contador, timestamp, integração ou payload.
+ */
+export const FALAS_DE_EVENTO: Record<TipoEvento, { abre: string[]; responde: string[] }> = {
+  entrou_em_falha: {
+    abre: [
+      "O {sistema} entrou em falha.",
+      "O {sistema} parou de responder.",
+      "O {sistema} caiu agora há pouco.",
+    ],
+    responde: ["Vou verificar a integração.", "Vou olhar o processamento.", "Já estou verificando."],
+  },
+  falha_nova: {
+    abre: [
+      "O {sistema} apresentou novas falhas.",
+      "Detectei falhas novas no {sistema}.",
+      "Começaram a aparecer falhas no {sistema}.",
+    ],
+    responde: ["Vou conferir o que aconteceu.", "Vou verificar a integração.", "Vou acompanhar isso agora."],
+  },
+  recuperado: {
+    abre: [
+      "O {sistema} voltou a funcionar.",
+      "O {sistema} normalizou.",
+      "O {sistema} está respondendo de novo.",
+    ],
+    responde: ["Boa. Vou acompanhar.", "Perfeito.", "Ótimo, fico de olho."],
+  },
+  voltou_a_reportar: {
+    abre: ["O {sistema} voltou a reportar.", "Voltamos a receber dados do {sistema}."],
+    responde: ["Boa. Vou acompanhar.", "Perfeito, obrigado."],
+  },
+  comecou_a_executar: {
+    abre: ["O {sistema} começou a executar.", "O {sistema} entrou em operação."],
+    responde: ["Ótimo, vou acompanhar.", "Perfeito."],
+  },
+};
+
+/**
+ * Quando o retrato diz que a maioria das falhas veio de fora, o tom muda.
+ * NÃO se diz QUAL serviço: esse dado não existe no retrato de hoje.
+ */
+export const FALAS_UPSTREAM = {
+  abre: [
+    "A falha do {sistema} parece vir de outro serviço.",
+    "O {sistema} falhou por causa de outro serviço.",
+  ],
+  responde: ["Vou verificar a integração.", "Vou olhar a origem disso."],
+};
+
+/** Único ponto de interpolação. Recebe o nome, nunca o evento inteiro. */
+function preencher(modelo: string, nomeDoSistema: string): string {
+  return modelo.replace("{sistema}", nomeDoSistema);
+}
+
+/**
+ * Roteiro de uma conversa que nasceu de um evento real.
+ *
+ * Olha apenas `tipo` e `contexto`. Se um campo novo aparecer no evento, ele
+ * não vaza para o balão sem alguém mexer aqui de propósito.
+ */
+export function dialogoDeEvento(
+  evento: Pick<EventoEcossistema, "tipo" | "contexto">,
+  nomeDaOrigem: string,
+  sorteio: () => number = Math.random,
+): Fala[] {
+  const upstream =
+    evento.contexto === "upstream" &&
+    (evento.tipo === "falha_nova" || evento.tipo === "entrou_em_falha");
+  const banco = upstream ? FALAS_UPSTREAM : FALAS_DE_EVENTO[evento.tipo];
+  const abre = banco.abre[Math.floor(sorteio() * banco.abre.length)] ?? banco.abre[0];
+  const responde = banco.responde[Math.floor(sorteio() * banco.responde.length)] ?? banco.responde[0];
+  return [
+    { quem: "a", texto: preencher(abre, nomeDaOrigem) },
+    { quem: "b", texto: responde },
+  ];
+}
 
 function casa(alvo: Alvo, quem: Interlocutor): boolean {
   if (alvo === "*") return true;

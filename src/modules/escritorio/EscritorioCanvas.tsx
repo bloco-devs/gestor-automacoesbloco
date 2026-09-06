@@ -105,9 +105,25 @@ export function EscritorioCanvas({
   }, [andar, dados.integracoes]);
 
   /* ------------------------------------------------------------ motor --- */
+  /*
+   * O motor nasce UMA vez por planta e sobrevive aos refreshes.
+   *
+   * Antes ele dependia de `[andar, dados]`, e `dados` é objeto novo a cada
+   * busca do HUB: de minuto em minuto todo mundo teleportava para a mesa e a
+   * conversa em curso sumia. Agora o retrato novo entra por `atualizarDados`,
+   * que atualiza a saúde e enfileira o que mudou sem tocar em posição, fase
+   * ou conversa.
+   */
+  const dadosRef = useRef(dados);
+  dadosRef.current = dados;
+
   useEffect(() => {
-    motorRef.current = criarMotor(andar, dados);
-  }, [andar, dados]);
+    motorRef.current = criarMotor(andar, dadosRef.current);
+  }, [andar]);
+
+  useEffect(() => {
+    motorRef.current?.atualizarDados(dados);
+  }, [dados]);
 
   /* ----------------------------------------------------------- câmera --- */
   const centralizar = useCallback(
