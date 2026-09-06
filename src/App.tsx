@@ -50,6 +50,7 @@ const SolucoesGantt = lazy(() => import("./pages/SolucoesGantt"));
 const SolucaoDetail = lazy(() => import("./pages/SolucaoDetail"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const Diagrama = lazy(() => import("./pages/Diagrama"));
+const Escritorio = lazy(() => import(/* webpackChunkName: "escritorio" */ "./pages/Escritorio"));
 const Atividades = lazy(() => import(/* webpackChunkName: "atividades" */ "./pages/Atividades"));
 const DemandaDetalhe = lazy(() => import("./modules/workspace-demandas/DemandaDetalhe"));
 const AtividadesBoard = lazy(() => import(/* webpackChunkName: "atividades" */ "./pages/AtividadesBoard"));
@@ -298,6 +299,7 @@ const AppRoutes = () => {
           <Route path="/solucoes/:id" element={<ProtectedRoute role="developer"><SolucaoDetail /></ProtectedRoute>} />
           <Route path="/configuracoes" element={<ProtectedRoute role="developer"><Configuracoes /></ProtectedRoute>} />
           <Route path="/diagrama" element={<ProtectedRoute role="developer"><Diagrama /></ProtectedRoute>} />
+          <Route path="/escritorio" element={<ProtectedRoute role="developer"><Escritorio /></ProtectedRoute>} />
           <Route
             path="/atividades"
             element={

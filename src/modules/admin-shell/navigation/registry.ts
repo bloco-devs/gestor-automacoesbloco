@@ -5,6 +5,7 @@ import {
   BookOpen,
   Boxes,
   Bug,
+  Building2,
   Gauge,
   Cog,
   FileCode2,
@@ -395,6 +396,14 @@ export const ADMIN_NAV: AdminNavItem[] = [
     description: "Mapa vivo do ecossistema.",
     href: "/diagrama",
     icon: Network,
+  },
+  {
+    id: "escritorio",
+    group: "desenvolvimento",
+    label: "Escritório do Ecossistema",
+    description: "O ecossistema em bonecos: quem trabalha, quem está parado e quem conversa com quem.",
+    href: "/escritorio",
+    icon: Building2,
   },
   {
     id: "ecossistema",

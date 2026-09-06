@@ -1,4 +1,4 @@
-import { Activity, BarChart3, BookOpen, Briefcase, Clock, Code2, FileSearch, GanttChartSquare, Gauge, GitMerge, HelpCircle, Headphones, Inbox, Layers, FolderKanban, KanbanSquare, LayoutDashboard, LifeBuoy, List, ListTodo, Mail, MessageCircleQuestion, Network, Plus, Plug, Repeat, Settings, Shield, Sparkles, Zap } from "lucide-react";
+import { Activity, BarChart3, BookOpen, Briefcase, Building2, Clock, Code2, FileSearch, GanttChartSquare, Gauge, GitMerge, HelpCircle, Headphones, Inbox, Layers, FolderKanban, KanbanSquare, LayoutDashboard, LifeBuoy, List, ListTodo, Mail, MessageCircleQuestion, Network, Plus, Plug, Repeat, Settings, Shield, Sparkles, Zap } from "lucide-react";
 
 export type NavItem = {
   to?: string;
@@ -56,6 +56,7 @@ export const devGroups: NavGroup[] = [
       { to: "/admin/workflows", label: "Workflows", icon: Repeat },
       { label: "Soluções", icon: Sparkles, matchPrefix: "/solucoes", children: solucoesChildren },
       { to: "/diagrama", label: "Diagrama", icon: Network },
+      { to: "/escritorio", label: "Escritório do Ecossistema", icon: Building2 },
       { to: "/observabilidade-ia", label: "Observabilidade IA", icon: Activity },
     ],
   },
@@ -141,6 +142,7 @@ export const builderGroups: NavGroup[] = [
     items: [
       { label: "Soluções", icon: Sparkles, matchPrefix: "/solucoes", children: solucoesChildren },
       { to: "/diagrama", label: "Diagrama", icon: Network },
+      { to: "/escritorio", label: "Escritório do Ecossistema", icon: Building2 },
     ],
   },
   {
