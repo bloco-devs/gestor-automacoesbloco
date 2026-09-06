@@ -12,7 +12,34 @@ export const MARGEM = 24;
 export const CORREDOR_X = 30;
 /** Precisa caber um personagem inteiro de pé (46 px) sem invadir as salas. */
 export const CORREDOR_Y = 46;
-export const SALAS_POR_LINHA = 4;
+/**
+ * Quantas salas por linha. Não é fixo: nove salas em linhas de quatro deixam
+ * a última com uma sala só e um terço do andar vazio — e como a altura é o
+ * que limita o zoom de "andar inteiro", esse vazio encolhe todo mundo.
+ * Escolhe-se a divisão cuja proporção mais se aproxima de uma tela larga.
+ */
+const PROPORCAO_ALVO = 2;
+
+export function salasPorLinha(quantasSalas: number): number {
+  if (quantasSalas <= 2) return quantasSalas || 1;
+  let melhor = 2;
+  let menorDesvio = Infinity;
+  for (let porLinha = 2; porLinha <= 6; porLinha++) {
+    const linhas = Math.ceil(quantasSalas / porLinha);
+    const largura = porLinha * SALA_W + (porLinha - 1) * CORREDOR_X;
+    const altura = linhas * (TOPO_SALA + PASSO_MESA_Y + PISO_SALA + CORREDOR_Y);
+    // Uma sala sozinha na última linha fica com cara de sobra; vale pagar um
+    // pouco de proporção para evitar.
+    const sobra = quantasSalas % porLinha;
+    const penalidade = sobra === 1 && linhas > 1 ? 0.6 : 0;
+    const desvio = Math.abs(largura / altura - PROPORCAO_ALVO) + penalidade;
+    if (desvio < menorDesvio) {
+      menorDesvio = desvio;
+      melhor = porLinha;
+    }
+  }
+  return melhor;
+}
 
 const COLUNAS_POR_SALA = 2;
 const PASSO_MESA_X = 60;
@@ -111,9 +138,10 @@ export function montarAndar(sistemas: SistemaEco[], conectores: ConectorEco[]): 
   const x0 = MARGEM + CORREDOR_X;
 
   // Altura de cada linha: manda a sala com mais fileiras de mesa.
+  const porLinha = salasPorLinha(grupos.length);
   const linhas: string[][] = [];
-  for (let i = 0; i < grupos.length; i += SALAS_POR_LINHA) {
-    linhas.push(grupos.slice(i, i + SALAS_POR_LINHA));
+  for (let i = 0; i < grupos.length; i += porLinha) {
+    linhas.push(grupos.slice(i, i + porLinha));
   }
   const alturaLinha = linhas.map((linha) => {
     const fileiras = Math.max(
@@ -172,12 +200,13 @@ export function montarAndar(sistemas: SistemaEco[], conectores: ConectorEco[]): 
     y += h + CORREDOR_Y;
   });
 
-  const largura = x0 + SALAS_POR_LINHA * SALA_W + (SALAS_POR_LINHA - 1) * CORREDOR_X + MARGEM;
+  const largura = x0 + porLinha * SALA_W + (porLinha - 1) * CORREDOR_X + MARGEM;
   const altura = y + MARGEM;
 
   // Conectores externos: portas na parede de baixo. Não moram no escritório.
   const portas: PortaExterna[] = [];
-  const passoPorta = 44;
+  // 44 colava as placas das portas umas nas outras numa barra escura só.
+  const passoPorta = 62;
   const larguraPortas = conectores.length * passoPorta;
   const inicioPortas = Math.max(MARGEM + 10, Math.floor((largura - larguraPortas) / 2));
   conectores.forEach((c, i) => {

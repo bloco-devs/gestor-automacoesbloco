@@ -285,14 +285,16 @@ export function EscritorioCanvas({
         y: (iy - cam.y) * cam.escala,
       });
 
-      if (cam.escala >= 1.8) {
+      if (cam.escala >= 1.15) {
         for (const s of andar.salas) {
           const t = paraTela(s.x + s.w / 2, s.y + 14);
           placa(ctx, t.x, t.y, s.grupo);
         }
         for (const p of andar.portas) {
           const t = paraTela(p.x + 13, p.y + 34);
-          placa(ctx, t.x, t.y, p.nome, true);
+          // As portas ficam a 44px uma da outra; sem teto as placas se fundem
+          // numa barra escura ilegível.
+          placa(ctx, t.x, t.y, p.nome, true, 58 * cam.escala);
         }
         for (const m of andar.mesas) {
           const p = naMesa.get(m.sistemaId);
@@ -300,14 +302,17 @@ export function EscritorioCanvas({
           const t = paraTela(m.x + MESA_W / 2, m.y + MESA_H + 26);
           // Mesa sozinha na fileira pode usar a sala inteira; com vizinha, só o passo entre mesas.
           const largura = (temVizinha.has(m.sistemaId) ? 58 : 130) * cam.escala;
-          etiqueta(ctx, t.x, t.y, m.nome, p.estado, largura);
+          etiqueta(ctx, t.x, t.y, m.nome, p.estado, largura, cam.escala < 1.8);
         }
       }
 
+      // Vários caminhantes no mesmo corredor empilhavam balões um sobre o outro
+      // e nenhum ficava legível. Cada novo balão sobe até achar espaço livre.
+      const ocupados: { x: number; y: number; w: number; h: number }[] = [];
       for (const p of personagens) {
         if (!p.viagem || p.fase === "mesa" || p.fase === "oculto") continue;
         const t = paraTela(p.x + PERSONAGEM_W / 2, p.y - 6);
-        balao(ctx, t.x, t.y, p.nome, p.viagem.label, p.viagem.falha);
+        balao(ctx, t.x, t.y, p.nome, p.viagem.label, p.viagem.falha, ocupados);
       }
 
       requestAnimationFrame(quadro);
@@ -410,9 +415,16 @@ const CORES: Record<string, [string, string]> = {
   falha: ["#fceceb", "#a3271c"],
 };
 
-function placa(ctx: CanvasRenderingContext2D, cx: number, cy: number, texto: string, externa = false) {
+function placa(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  texto: string,
+  externa = false,
+  larguraMax = Infinity,
+) {
   ctx.font = '700 11px ui-monospace, SFMono-Regular, Menlo, monospace';
-  const t = texto.toUpperCase();
+  const t = cortar(ctx, texto.toUpperCase(), larguraMax === Infinity ? Infinity : larguraMax - 16);
   const w = ctx.measureText(t).width + 22;
   const x = Math.round(cx - w / 2);
   const y = Math.round(cy - 10);
@@ -442,22 +454,28 @@ function etiqueta(
   nomeCompleto: string,
   estado: string,
   larguraMax = Infinity,
+  compacto = false,
 ) {
+  // Na vista do andar inteiro a escala fica perto de 1,5x. Com fonte de 12px
+  // sobrava espaço para meia palavra; 10px cabe o nome quase todo, e o estado
+  // já vem do halo e do alerta.
+  const fonteNome = compacto
+    ? '600 10px ui-monospace, SFMono-Regular, Menlo, monospace'
+    : '600 12px ui-monospace, SFMono-Regular, Menlo, monospace';
   const cor = CORES[estado] ?? CORES.ocioso;
   ctx.font = '600 10px ui-monospace, SFMono-Regular, Menlo, monospace';
   const larguraEstado = ctx.measureText(estado).width + 14;
-  // Com pouco espaço o chip sai e fica só o nome; o halo e o alerta já contam o estado.
-  const comChip = larguraMax === Infinity || larguraMax > larguraEstado + 70;
+  const comChip = !compacto && (larguraMax === Infinity || larguraMax > larguraEstado + 70);
   const we = comChip ? larguraEstado : 0;
-  ctx.font = '600 12px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.font = fonteNome;
   const nome = cortar(ctx, nomeCompleto, larguraMax === Infinity ? Infinity : larguraMax - we - 8);
   const wn = ctx.measureText(nome).width;
   const total = wn + (comChip ? 8 + we : 0);
   const x = Math.round(cx - total / 2);
   const y = Math.round(cy);
   ctx.fillStyle = "rgba(18,26,22,.80)";
-  ctx.fillRect(x - 8, y - 13, total + 16, 20);
-  ctx.font = '600 12px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.fillRect(x - 8, y - 13, total + 16, compacto ? 17 : 20);
+  ctx.font = fonteNome;
   ctx.fillStyle = "#f2efe6";
   ctx.fillText(nome, x, y + 1);
   if (!comChip) return;
@@ -481,6 +499,7 @@ function balao(
   nome: string,
   rotulo: string,
   falha: boolean,
+  ocupados: { x: number; y: number; w: number; h: number }[] = [],
 ) {
   // O HUB devolve rótulos longos ("Cronograma de produto (EAP, marcos) — somente
   // leitura · Baseline financeiro…"). Sem teto, o balão atravessa a tela inteira
@@ -497,7 +516,11 @@ function balao(
   // Preso dentro da tela: perto da borda o balão saía pela lateral e o texto sumia.
   const limite = ctx.canvas.width / (ctx.getTransform().a || 1);
   const x = Math.round(Math.min(limite - w - 4, Math.max(4, cx - w / 2)));
-  const y = Math.round(cy - h);
+  let y = Math.round(cy - h);
+  const bate = (yy: number) =>
+    ocupados.some((o) => x < o.x + o.w + 4 && o.x < x + w + 4 && yy < o.y + o.h + 4 && o.y < yy + h + 4);
+  for (let tentativa = 0; tentativa < 6 && bate(y); tentativa++) y -= h + 6;
+  ocupados.push({ x, y, w, h });
   ctx.fillStyle = "#15181d";
   ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
   ctx.fillStyle = falha ? "#fceceb" : "#ffffff";

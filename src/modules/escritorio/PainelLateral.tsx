@@ -59,7 +59,12 @@ export function PainelLateral({ dados, selecionado, onSelecionar }: Props) {
   return (
     <aside className="flex h-full min-h-0 flex-col rounded-xl border border-border bg-card">
       {selecionado && (sistema || conector) ? (
-        <div className="border-b border-border p-4">
+        /*
+         * `min-h-0` + `overflow-y-auto` + teto de altura: sem isso a ficha não
+         * encolhe, a área de rolagem da lista vai a zero e a lista inteira cai
+         * para fora do cartão — ninguém consegue clicar em outro sistema.
+         */
+        <div className="max-h-[55%] min-h-0 shrink overflow-y-auto border-b border-border p-4">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <h2 className="ds-h3 truncate">{sistema?.nome ?? conector?.nome}</h2>
@@ -115,7 +120,7 @@ export function PainelLateral({ dados, selecionado, onSelecionar }: Props) {
           </Button>
         </div>
       ) : (
-        <div className="border-b border-border p-4">
+        <div className="shrink-0 border-b border-border p-4">
           <h2 className="ds-h3">Quem está no andar</h2>
           <p className="ds-caption text-muted-foreground">
             Clique num BLINK, aqui ou na planta, para ver a saúde e as ligações dele.

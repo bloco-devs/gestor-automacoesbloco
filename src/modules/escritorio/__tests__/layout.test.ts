@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CORREDOR_Y, caminhoDaPorta, caminhoEntreMesas, montarAndar } from "../layout";
+import { CORREDOR_Y, caminhoDaPorta, caminhoEntreMesas, montarAndar, salasPorLinha } from "../layout";
 import { CONECTORES_EXTERNOS_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
 import { MESA_H, MESA_W, PERSONAGEM_H } from "../sprites";
 
@@ -114,5 +114,35 @@ describe("caminho entre mesas", () => {
       expect(mudaX && mudaY).toBe(false);
     }
     expect(pontos[pontos.length - 1].y).toBe(para.saidaY);
+  });
+});
+
+describe("aproveitamento do andar", () => {
+  it("não deixa uma linha com uma sala só quando dá para equilibrar", () => {
+    for (const n of [5, 6, 7, 9, 10, 11, 13]) {
+      const porLinha = salasPorLinha(n);
+      const ultima = n % porLinha;
+      if (ultima === 1 && n > porLinha) {
+        throw new Error(`${n} salas em linhas de ${porLinha} deixa a última com uma só`);
+      }
+    }
+  });
+
+  it("nunca vira uma torre: o andar nunca fica mais alto que largo", () => {
+    // 4 salas dão um quadrado 2x2 (proporção ~1), que é o certo para quatro.
+    // O que não pode é o andar crescer para baixo e o zoom encolher todo mundo.
+    for (const n of [4, 5, 9, 12, 16]) {
+      const sistemas = Array.from({ length: n }, (_, i) => ({ id: `s${i}`, nome: `S${i}`, grupo: `G${i}` }));
+      const a = montarAndar(sistemas, []);
+      expect(a.largura / a.altura, `${n} salas`).toBeGreaterThan(0.95);
+    }
+  });
+
+  it("com nove salas o andar cabe melhor numa tela larga do que em linhas de quatro", () => {
+    const nove = Array.from({ length: 9 }, (_, i) => ({ id: `s${i}`, nome: `S${i}`, grupo: `G${i}` }));
+    const a = montarAndar(nove, []);
+    const TELA = { l: 1450, a: 700 };
+    const escala = Math.min(TELA.l / a.largura, TELA.a / a.altura);
+    expect(escala).toBeGreaterThan(1.3);
   });
 });
