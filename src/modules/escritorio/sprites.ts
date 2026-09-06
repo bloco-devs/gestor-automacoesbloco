@@ -647,3 +647,85 @@ export function porta(c: Ctx, x: number, y: number, ativa: boolean) {
   r(c, x + 5, y + 6, 16, 4, ativa ? "#c4dfea" : "#7d7768");
   r(c, x + 19, y + 18, 3, 3, "#e4e1d8");
 }
+
+/* ------------------------------------------------- mobília de ambiente --- */
+
+/** Quadro branco na parede da sala. */
+export function quadroBranco(c: Ctx, x: number, y: number) {
+  r(c, x, y, 30, 11, TRACO);
+  r(c, x + 1, y + 1, 28, 9, "#f4f1e8");
+  r(c, x + 3, y + 3, 11, 2, "#3f6fc4");
+  r(c, x + 3, y + 6, 17, 2, "#c4463a");
+  r(c, x + 16, y + 3, 8, 2, "#2f9e69");
+}
+
+/** Quadro decorativo. */
+export function quadro(c: Ctx, x: number, y: number, cor: string) {
+  r(c, x, y, 14, 11, "#7d5a35");
+  r(c, x + 1, y + 1, 12, 9, "#f2efe6");
+  r(c, x + 3, y + 3, 8, 5, cor);
+}
+
+/** Arquivo de duas gavetas. */
+export function arquivo(c: Ctx, x: number, y: number) {
+  r(c, x, y, 16, 20, TRACO);
+  r(c, x + 1, y + 1, 14, 18, "#8d8272");
+  r(c, x + 1, y + 1, 14, 2, "#a2988a");
+  r(c, x + 2, y + 5, 12, 6, "#7a7062");
+  r(c, x + 2, y + 12, 12, 6, "#7a7062");
+  r(c, x + 6, y + 7, 4, 1, "#cfc7b8");
+  r(c, x + 6, y + 14, 4, 1, "#cfc7b8");
+}
+
+/** Impressora de chão. */
+export function impressora(c: Ctx, x: number, y: number) {
+  r(c, x, y, 20, 16, TRACO);
+  r(c, x + 1, y + 1, 18, 14, "#8f8a7d");
+  r(c, x + 3, y + 3, 14, 5, "#5c6470");
+  r(c, x + 3, y + 10, 14, 4, "#f4f1e8");
+  r(c, x + 5, y + 11, 10, 1, "#c8c4ba");
+}
+
+/** Banco comprido de corredor. */
+export function banco(c: Ctx, x: number, y: number) {
+  r(c, x, y, 30, 12, TRACO);
+  r(c, x + 1, y + 1, 28, 10, "#a3773f");
+  r(c, x + 1, y + 1, 28, 3, "#bb8b50");
+  r(c, x + 2, y + 11, 4, 4, "#6d4c2c");
+  r(c, x + 24, y + 11, 4, 4, "#6d4c2c");
+}
+
+/** Vaso alto, para quebrar corredor comprido. */
+export function vasoAlto(c: Ctx, x: number, y: number) {
+  r(c, x + 4, y + 16, 12, 10, "#b3653f");
+  r(c, x + 4, y + 16, 12, 2, "#c9784f");
+  r(c, x + 6, y + 6, 8, 11, "#2f7a4a");
+  r(c, x + 2, y + 9, 5, 6, "#39905a");
+  r(c, x + 13, y + 8, 5, 6, "#39905a");
+  r(c, x + 8, y, 4, 8, "#39905a");
+  r(c, x + 4, y + 3, 4, 4, "#2f7a4a");
+}
+
+/** Sofá de espera, visto de frente como o resto da mobília. */
+export function sofa(c: Ctx, x: number, y: number) {
+  r(c, x, y, 44, 20, TRACO);
+  r(c, x + 1, y + 1, 42, 18, "#8d5f6b");
+  r(c, x + 1, y + 1, 42, 4, "#a3737f");
+  r(c, x + 3, y + 7, 17, 10, "#a3737f");
+  r(c, x + 24, y + 7, 17, 10, "#a3737f");
+  r(c, x + 1, y + 19, 6, 4, "#5f3f48");
+  r(c, x + 37, y + 19, 6, 4, "#5f3f48");
+}
+
+/** Estante de livros. */
+export function estante(c: Ctx, x: number, y: number) {
+  r(c, x, y, 30, 26, TRACO);
+  r(c, x + 1, y + 1, 28, 24, "#8d6a3f");
+  for (let f = 0; f < 3; f++) {
+    r(c, x + 2, y + 3 + f * 8, 26, 6, "#7a5a34");
+    for (let i = 0; i < 5; i++) {
+      r(c, x + 3 + i * 5, y + 4 + f * 8, 4, 4,
+        ["#c4463a", "#3f6fc4", "#2f9e69", "#c9a227", "#7a4fc0"][(i + f) % 5]);
+    }
+  }
+}

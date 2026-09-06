@@ -6,6 +6,7 @@ import {
   aparenciaDoSistema,
   hash,
   mapaDeCascos,
+  portaSemUso,
   tom,
 } from "../aparencia";
 import { CONECTORES_EXTERNOS_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
@@ -106,5 +107,23 @@ describe("roupa e símbolo de quem é de fora", () => {
 
   it("serviço desconhecido cai na caixa de entrega, não em nada", () => {
     expect(aparenciaDeConector("servico-novo").acessorio).toBe("caixa");
+  });
+});
+
+describe("porta de serviço sem integração", () => {
+  const integracoes = [{ origem: "sienge" }, { origem: "n8n" }, { origem: "rh" }];
+
+  it("acende a porta de quem tem integração saindo", () => {
+    expect(portaSemUso("sienge", integracoes)).toBe(false);
+    expect(portaSemUso("n8n", integracoes)).toBe(false);
+  });
+
+  it("apaga a porta de quem o HUB não registra — hoje, Órulo e Sympla", () => {
+    expect(portaSemUso("orulo", integracoes)).toBe(true);
+    expect(portaSemUso("sympla", integracoes)).toBe(true);
+  });
+
+  it("ser destino não acende a porta: quem entrega é a origem", () => {
+    expect(portaSemUso("email", [{ origem: "rh" }])).toBe(true);
   });
 });

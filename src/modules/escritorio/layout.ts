@@ -46,7 +46,14 @@ const PASSO_MESA_X = 60;
 const PASSO_MESA_Y = 96;
 const PAREDE_SALA = 4;
 const TOPO_SALA = 20;
-const PISO_SALA = 10;
+/**
+ * Faixa livre no rodapé da sala.
+ *
+ * Eram 10 px: não cabia ninguém, e o caminho saía da mesa direto de lado até
+ * a porta, atravessando a mesa do vizinho. Com 40 existe um corredor interno
+ * por onde passar.
+ */
+const PISO_SALA = 40;
 
 const SALA_W = PAREDE_SALA * 2 + COLUNAS_POR_SALA * PASSO_MESA_X + 12;
 
@@ -244,6 +251,11 @@ function noCorredor(corredorY: number): number {
   return corredorY - Math.floor(PERSONAGEM_H / 2);
 }
 
+/** Faixa livre no rodapé da sala, por onde se anda sem cruzar mesa. */
+function noRodape(sala: { y: number; h: number }): number {
+  return sala.y + sala.h - 6 - PERSONAGEM_H;
+}
+
 export interface Ponto {
   x: number;
   y: number;
@@ -259,7 +271,9 @@ export function caminhoEntreMesas(andar: Andar, de: Mesa, para: Mesa): Ponto[] {
   const salaPara = andar.salas[para.salaIdx];
   const pontos: Ponto[] = [{ x: de.saidaX, y: de.saidaY }];
 
-  pontos.push({ x: salaDe.portaX - 11, y: de.saidaY });
+  // desce pelo próprio vão até o corredor interno antes de andar de lado
+  pontos.push({ x: de.saidaX, y: noRodape(salaDe) });
+  pontos.push({ x: salaDe.portaX - 11, y: noRodape(salaDe) });
   pontos.push({ x: salaDe.portaX - 11, y: noCorredor(salaDe.corredorY) });
 
   if (salaDe.linha !== salaPara.linha) {
@@ -268,7 +282,8 @@ export function caminhoEntreMesas(andar: Andar, de: Mesa, para: Mesa): Ponto[] {
   }
 
   pontos.push({ x: salaPara.portaX - 11, y: noCorredor(salaPara.corredorY) });
-  pontos.push({ x: salaPara.portaX - 11, y: para.saidaY });
+  pontos.push({ x: salaPara.portaX - 11, y: noRodape(salaPara) });
+  pontos.push({ x: para.saidaX + 26, y: noRodape(salaPara) });
   pontos.push({ x: para.saidaX + 26, y: para.saidaY });
   return pontos;
 }
@@ -283,7 +298,8 @@ export function caminhoDaPorta(andar: Andar, porta: PortaExterna, para: Mesa): P
     { x: andar.hallX - 11, y: noCorredor(ultimoCorredor) },
     { x: andar.hallX - 11, y: noCorredor(salaPara.corredorY) },
     { x: salaPara.portaX - 11, y: noCorredor(salaPara.corredorY) },
-    { x: salaPara.portaX - 11, y: para.saidaY },
+    { x: salaPara.portaX - 11, y: noRodape(salaPara) },
+    { x: para.saidaX + 26, y: noRodape(salaPara) },
     { x: para.saidaX + 26, y: para.saidaY },
   ];
 }

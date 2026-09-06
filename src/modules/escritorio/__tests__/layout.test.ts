@@ -146,3 +146,32 @@ describe("aproveitamento do andar", () => {
     expect(escala).toBeGreaterThan(1.3);
   });
 });
+
+describe("caminho sem atropelar móvel", () => {
+  it("sai da mesa descendo pelo próprio vão, nunca de lado por cima da vizinha", () => {
+    // O trecho horizontal dentro da sala cruzava a mesa do vizinho. Agora ele
+    // acontece só no rodapé, abaixo de todas as mesas.
+    for (const a of andar.mesas) {
+      for (const b of andar.mesas) {
+        if (a === b) continue;
+        const pontos = caminhoEntreMesas(andar, a, b);
+        const salaA = andar.salas[a.salaIdx];
+        const rodapeA = salaA.y + salaA.h - 6 - PERSONAGEM_H;
+        for (let i = 1; i < pontos.length; i++) {
+          const horizontal = pontos[i].y === pontos[i - 1].y;
+          const dentroDaSalaA =
+            pontos[i].y >= salaA.y && pontos[i].y < rodapeA &&
+            pontos[i].x >= salaA.x && pontos[i].x <= salaA.x + salaA.w;
+          expect(horizontal && dentroDaSalaA, `${a.sistemaId}→${b.sistemaId} anda de lado sobre as mesas`).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("a sala tem faixa livre embaixo, larga o bastante para alguém passar", () => {
+    for (const s of andar.salas) {
+      const ultimaMesa = Math.max(...andar.mesas.filter((m) => andar.salas[m.salaIdx] === s).map((m) => m.cadeiraY + 19));
+      expect(s.y + s.h - ultimaMesa, s.grupo).toBeGreaterThanOrEqual(PERSONAGEM_H / 2);
+    }
+  });
+});

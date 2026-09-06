@@ -128,6 +128,15 @@ export function aparenciaDeConector(id: string): Aparencia {
 }
 
 /**
+ * Porta apagada: o serviço está cadastrado mas o HUB não registra integração
+ * nenhuma saindo dele — hoje, Órulo e Sympla. Ninguém sai por ali, e a porta
+ * precisa dizer isso em vez de parecer uma porta que ninguém usa.
+ */
+export function portaSemUso(conectorId: string, integracoes: { origem: string }[]): boolean {
+  return !integracoes.some((i) => i.origem === conectorId);
+}
+
+/**
  * Distribui as cores de casco SEM repetir.
  *
  * `aparenciaDoSistema` sozinha não consegue: ela só vê um id por vez e não

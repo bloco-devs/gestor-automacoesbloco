@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type { Andar, Mesa } from "./layout";
 import { MARGEM } from "./layout";
 import { criarMotor, digitando, passoDe, type Motor, type Personagem } from "./motor";
-import { mapaDeCascos } from "./aparencia";
+import { mapaDeCascos, portaSemUso } from "./aparencia";
 import type { DadosEscritorio } from "./dados";
 import {
   MESA_H,
@@ -11,12 +11,16 @@ import {
   PERSONAGEM_W,
   TILE,
   alerta,
+  arquivo,
+  banco,
   bebedouro,
   cadeira,
   calendario,
   copa,
   divisoria,
+  estante,
   halo,
+  impressora,
   janela,
   maquina,
   mesa as desenhaMesa,
@@ -25,7 +29,11 @@ import {
   planta,
   porta as desenhaPorta,
   personagem,
+  quadro,
+  quadroBranco,
   relogio,
+  sofa,
+  vasoAlto,
 } from "./sprites";
 
 const ESCALA_MIN = 1;
@@ -112,7 +120,7 @@ export function EscritorioCanvas({
     janela(c, Math.floor(andar.largura / 2), 4);
     janela(c, andar.largura - MARGEM - 60, 4);
 
-    andar.salas.forEach((s) => {
+    andar.salas.forEach((s, i) => {
       divisoria(c, s.x, s.y, s.w, 20);
       divisoria(c, s.x, s.y + 20, 4, s.h - 20);
       divisoria(c, s.x + s.w - 4, s.y + 20, 4, s.h - 20);
@@ -120,7 +128,16 @@ export function EscritorioCanvas({
       const vaoDir = s.portaX + VAO_PORTA;
       divisoria(c, s.x, s.y + s.h - 4, vaoEsq - s.x, 4);
       divisoria(c, vaoDir, s.y + s.h - 4, s.x + s.w - vaoDir, 4);
-      planta(c, s.x + s.w - 22, s.y + 24);
+
+      // A sala tinha uma planta e nada mais; sobrava chão liso em toda ela.
+      quadroBranco(c, s.x + 10, s.y + 5);
+      quadro(c, s.x + s.w - 26, s.y + 5, ["#c4463a", "#3f6fc4", "#2f9e69"][i % 3]);
+      planta(c, s.x + s.w - 22, s.y + 26);
+      const rodape = s.y + s.h - 30;
+      if (i % 3 === 0) arquivo(c, s.x + 10, rodape - 4);
+      else if (i % 3 === 1) impressora(c, s.x + 10, rodape);
+      else estante(c, s.x + 10, rodape - 10);
+      vasoAlto(c, s.x + s.w - 26, rodape - 8);
     });
 
     // copa e máquinas ocupam a faixa livre do último corredor
@@ -128,11 +145,28 @@ export function EscritorioCanvas({
     copa(c, andar.largura - MARGEM - 70, ultimo - 6);
     maquina(c, andar.largura - MARGEM - 110, ultimo - 14);
     bebedouro(c, MARGEM + 6, ultimo - 10);
+    sofa(c, MARGEM + 30, ultimo - 8);
+    estante(c, MARGEM + 86, ultimo - 12);
 
-    andar.portas.forEach((p) => desenhaPorta(c, p.x, p.y, true));
+    // Corredor comprido e liso é o que mais fazia o andar parecer vazio.
+    // Alterna banco, vaso e planta entre as salas, sem tapar as portas.
+    const portas = new Set(andar.salas.map((s) => s.portaX));
+    const longe = (x: number) => [...portas].every((p) => Math.abs(p - x) > 40);
+    andar.corredores.slice(0, -1).forEach((cy, linha) => {
+      let k = linha;
+      for (let x = MARGEM + 40; x < andar.largura - MARGEM - 60; x += 104) {
+        if (!longe(x)) continue;
+        if (k % 3 === 0) banco(c, x, cy - 6);
+        else if (k % 3 === 1) vasoAlto(c, x, cy - 14);
+        else planta(c, x, cy - 10);
+        k++;
+      }
+    });
+
+    andar.portas.forEach((p) => desenhaPorta(c, p.x, p.y, !portaSemUso(p.conectorId, dados.integracoes)));
 
     fundoRef.current = f;
-  }, [andar]);
+  }, [andar, dados.integracoes]);
 
   /* ------------------------------------------------------------ motor --- */
   useEffect(() => {
@@ -519,6 +553,33 @@ function etiqueta(
  * Eram dois elementos — balão sobre a cabeça e etiqueta sob os pés. A etiqueta
  * caía justamente na placa da sala de baixo. Um elemento só resolve.
  */
+/**
+ * Quebra o rótulo em linhas dentro de um limite de largura.
+ *
+ * Cortar com reticências escondia justamente o que interessa: "Análises de
+ * viabilidade apr…" não diz nada. Quebrado em duas linhas, cabe inteiro.
+ */
+function quebrar(ctx: CanvasRenderingContext2D, texto: string, limite: number, maxLinhas: number): string[] {
+  const palavras = texto.split(/\s+/);
+  const linhas: string[] = [];
+  let atual = "";
+  for (const palavra of palavras) {
+    const tentativa = atual ? `${atual} ${palavra}` : palavra;
+    if (ctx.measureText(tentativa).width <= limite || !atual) {
+      atual = tentativa;
+    } else {
+      linhas.push(atual);
+      atual = palavra;
+      if (linhas.length === maxLinhas) break;
+    }
+  }
+  if (linhas.length < maxLinhas && atual) linhas.push(atual);
+  // sobrou palavra: a última linha avisa com reticências, mas só nesse caso
+  const usadas = linhas.join(" ").split(/\s+/).length;
+  if (usadas < palavras.length) linhas[linhas.length - 1] = cortar(ctx, linhas[linhas.length - 1] + " …", limite);
+  return linhas;
+}
+
 function balao(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -528,19 +589,16 @@ function balao(
   falha: boolean,
   ocupados: { x: number; y: number; w: number; h: number }[] = [],
 ) {
-  // O HUB devolve rótulos longos ("Cronograma de produto (EAP, marcos) — somente
-  // leitura · Baseline financeiro…"). Sem teto, o balão atravessa a tela inteira
-  // e tapa três salas. O texto completo fica no painel lateral.
-  const LARGURA_MAX = 190;
+  const LARGURA_MAX = 230;
+  const ALTURA_LINHA = 14;
+  ctx.font = '600 11px ui-monospace, SFMono-Regular, Menlo, monospace';
+  const linhas = quebrar(ctx, rotulo, LARGURA_MAX, 3);
+  const larguraRotulo = Math.max(...linhas.map((l) => ctx.measureText(l).width));
   ctx.font = '600 9px ui-monospace, SFMono-Regular, Menlo, monospace';
   const nomeCurto = cortar(ctx, nome, LARGURA_MAX);
-  const wNome = ctx.measureText(nomeCurto).width;
-  ctx.font = '600 11px ui-monospace, SFMono-Regular, Menlo, monospace';
-  const rotuloCurto = cortar(ctx, rotulo.split(" · ")[0], LARGURA_MAX);
-  const wRotulo = ctx.measureText(rotuloCurto).width;
-  const w = Math.max(wNome, wRotulo) + 14;
-  const h = 28;
-  // Preso dentro da tela: perto da borda o balão saía pela lateral e o texto sumia.
+  const w = Math.max(ctx.measureText(nomeCurto).width, larguraRotulo) + 14;
+  const h = 14 + linhas.length * ALTURA_LINHA;
+
   const limite = ctx.canvas.width / (ctx.getTransform().a || 1);
   const x = Math.round(Math.min(limite - w - 4, Math.max(4, cx - w / 2)));
   let y = Math.round(cy - h);
@@ -548,13 +606,13 @@ function balao(
     ocupados.some((o) => x < o.x + o.w + 4 && o.x < x + w + 4 && yy < o.y + o.h + 4 && o.y < yy + h + 4);
   for (let tentativa = 0; tentativa < 6 && bate(y); tentativa++) y -= h + 6;
   ocupados.push({ x, y, w, h });
+
   ctx.fillStyle = "#15181d";
   ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
   ctx.fillStyle = falha ? "#fceceb" : "#ffffff";
   ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = "#15181d";
-  // o rabinho aponta para o personagem, mesmo com o balão deslocado pela borda
   const rabo = Math.round(Math.min(x + w - 10, Math.max(x + 4, cx - 4)));
+  ctx.fillStyle = "#15181d";
   ctx.fillRect(rabo, y + h, 8, 4);
   ctx.fillRect(rabo, y + h + 4, 4, 3);
   ctx.font = '600 9px ui-monospace, SFMono-Regular, Menlo, monospace';
@@ -562,5 +620,5 @@ function balao(
   ctx.fillText(nomeCurto, x + 7, y + 11);
   ctx.font = '600 11px ui-monospace, SFMono-Regular, Menlo, monospace';
   ctx.fillStyle = falha ? "#a3271c" : "#15181d";
-  ctx.fillText(rotuloCurto, x + 7, y + 23);
+  linhas.forEach((linha, i) => ctx.fillText(linha, x + 7, y + 24 + i * ALTURA_LINHA));
 }
