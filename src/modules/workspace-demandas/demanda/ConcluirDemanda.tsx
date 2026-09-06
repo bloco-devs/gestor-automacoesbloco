@@ -162,14 +162,14 @@ function ConcluirDemandaImpl({ aberto, onFechar, onConcluir, onClassificar, tick
         ) : (
           <div className="flex flex-col gap-4">
             {!sugestao && (
-              <div className="rounded-md border border-border bg-muted/40 p-3 text-[13px]">
+              <div className="rounded-md border border-border bg-muted/40 p-3 ds-caption">
                 A demanda foi concluída e o relato ficou gravado. O Blink não conseguiu sugerir
                 uma classificação agora — escolha o nível e escreva a justificativa.
               </div>
             )}
 
             {sugestao && sugestao.confianca !== "alta" && (
-              <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-[13px]">
+              <div className="rounded-md border border-warning/40 bg-warning/10 p-3 ds-caption">
                 {CONFIANCA_AVISO[sugestao.confianca]}
               </div>
             )}
@@ -183,7 +183,7 @@ function ConcluirDemandaImpl({ aberto, onFechar, onConcluir, onClassificar, tick
                     type="button"
                     onClick={() => setEscolha(n.codigo)}
                     className={cn(
-                      "rounded-lg border px-4 py-2 text-[13px] transition-colors",
+                      "rounded-lg border px-4 py-2 ds-caption transition-colors",
                       escolha === n.codigo
                         ? "border-foreground bg-foreground text-background"
                         : "hover:bg-accent",

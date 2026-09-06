@@ -62,7 +62,7 @@ function ContextoDaInboxImpl({ aguardando }: { aguardando: number }) {
               type="button"
               onClick={() => navigate(`/workspace/demandas/${p.id}`)}
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px]",
+                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left ds-caption",
                 "transition-colors hover:bg-muted focus:outline-none focus-visible:bg-muted",
               )}
             >
@@ -75,7 +75,7 @@ function ContextoDaInboxImpl({ aguardando }: { aguardando: number }) {
             <button
               type="button"
               onClick={() => navigate("/workspace/demandas")}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:bg-muted"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left ds-caption text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:bg-muted"
             >
               <LayoutGrid className="size-3.5 shrink-0" aria-hidden />
               Todos os projetos

@@ -84,7 +84,7 @@ function quando(iso: string): string {
 
 function Mudanca({ evento }: { evento: Evento }) {
   return (
-    <li className="flex items-baseline gap-2 py-1 pl-9 text-[12px] text-muted-foreground">
+    <li className="flex items-baseline gap-2 py-1 pl-9 ds-small text-muted-foreground">
       <span aria-hidden className="size-1 shrink-0 rounded-full bg-border" />
       <span className="min-w-0">
         <span className="text-foreground/70">{evento.autor?.nome ?? "Sistema"}</span> {evento.texto}
@@ -122,7 +122,7 @@ function Dobra({ eventos }: { eventos: Evento[] }) {
           <button
             type="button"
             onClick={() => setAberta(false)}
-            className="rounded text-[12px] text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="rounded ds-small text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             Recolher
           </button>
@@ -138,7 +138,7 @@ function Dobra({ eventos }: { eventos: Evento[] }) {
         onClick={() => setAberta(true)}
         aria-expanded={false}
         className={cn(
-          "group/dobra flex w-full items-baseline gap-2 rounded text-left text-[12px] text-muted-foreground",
+          "group/dobra flex w-full items-baseline gap-2 rounded text-left ds-small text-muted-foreground",
           "transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         )}
       >
@@ -170,7 +170,7 @@ function Dobra({ eventos }: { eventos: Evento[] }) {
  */
 function Anexo({ evento, onAbrir }: { evento: Evento; onAbrir?: (anexoId: string) => void }) {
   return (
-    <li className="flex items-center gap-2 py-1.5 pl-9 text-[12px]">
+    <li className="flex items-center gap-2 py-1.5 pl-9 ds-small">
       <Paperclip className="size-3 shrink-0 text-muted-foreground" aria-hidden />
       <span className="text-muted-foreground">{evento.autor?.nome ?? "Alguém"} anexou</span>
       <button
@@ -564,7 +564,7 @@ function FioImpl({
           />
         )}
         {eventos.length === 0 && !pedido && (
-          <li className="py-8 text-center text-[13px] text-muted-foreground">{vazio}</li>
+          <li className="py-8 text-center ds-caption text-muted-foreground">{vazio}</li>
         )}
         {itens.map((item) => {
           if (item.tipo === "dobra") return <Dobra key={item.id} eventos={item.eventos} />;
@@ -665,7 +665,7 @@ function FioImpl({
                       <button
                         type="button"
                         onClick={() => seletorDoc.current?.click()}
-                        className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-accent"
+                        className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left ds-caption transition-colors hover:bg-accent"
                       >
                         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
                           <FileText className="size-4" aria-hidden />
@@ -681,7 +681,7 @@ function FioImpl({
                       <button
                         type="button"
                         onClick={() => seletorMedia.current?.click()}
-                        className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-accent"
+                        className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left ds-caption transition-colors hover:bg-accent"
                       >
                         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-600 dark:text-violet-400">
                           <ImageIcon className="size-4" aria-hidden />

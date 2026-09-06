@@ -45,7 +45,7 @@ function Campo({
 }) {
   return (
     <div className="space-y-1">
-      <label className="flex items-baseline gap-2 text-[12px] text-muted-foreground">
+      <label className="flex items-baseline gap-2 ds-small text-muted-foreground">
         {rotulo}
         {falta && <span className="text-warning">falta preencher</span>}
       </label>
@@ -79,7 +79,7 @@ function RascunhoDeArtigoImpl({ rascunho, aberto, onFechar, onPublicar }: Props)
             <Input
               value={r.titulo}
               onChange={(e) => setR({ ...r, titulo: e.target.value })}
-              className="text-[13px]"
+              className="ds-caption"
             />
           </Campo>
 
@@ -124,7 +124,7 @@ function RascunhoDeArtigoImpl({ rascunho, aberto, onFechar, onPublicar }: Props)
             <Input
               value={r.termos.join(", ")}
               onChange={(e) => setR({ ...r, termos: e.target.value.split(",").map((t) => t.trim()) })}
-              className="text-[13px]"
+              className="ds-caption"
             />
           </Campo>
         </div>
@@ -151,7 +151,7 @@ function RascunhoDeArtigoImpl({ rascunho, aberto, onFechar, onPublicar }: Props)
           {/* Bloquear a publicação sem solução é deliberado: artigo sem a parte
               que resolve ocupa a busca e devolve a pessoa ao ponto de partida. */}
           {semSolucao && (
-            <span className="text-[12px] text-muted-foreground">
+            <span className="ds-small text-muted-foreground">
               Descreva a solução antes de publicar.
             </span>
           )}

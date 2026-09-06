@@ -78,7 +78,7 @@ export const Secao = memo(function Secao({
           {titulo}
         </span>
         {contagem !== null && contagem !== undefined && contagem !== 0 && (
-          <span className="text-[12px] tabular-nums text-muted-foreground/70">{contagem}</span>
+          <span className="ds-small tabular-nums text-muted-foreground/70">{contagem}</span>
         )}
         {acao && <span className="ml-auto shrink-0">{acao}</span>}
       </button>

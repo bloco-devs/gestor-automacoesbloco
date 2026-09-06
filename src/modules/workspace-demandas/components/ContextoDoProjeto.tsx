@@ -74,7 +74,7 @@ function ContextoDoProjetoImpl({ projeto, resumo, onFila, onExcluir, excluindo }
           "flex shrink-0 items-center justify-center overflow-hidden rounded-[5px] border border-border/60 bg-muted leading-none",
           isBoardIconUrl(projeto.icone) && !projeto.capaUrl
             ? "size-7 rounded-md"
-            : "size-[18px] text-[10px]",
+            : "size-[18px] ds-micro",
         )}
         style={!projeto.capaUrl && projeto.cor && !isBoardIconUrl(projeto.icone) ? { backgroundColor: projeto.cor } : undefined}
       >
@@ -108,7 +108,7 @@ function ContextoDoProjetoImpl({ projeto, resumo, onFila, onExcluir, excluindo }
             type="button"
             onClick={() => navigate(`/workspace/demandas/${INBOX_ID}`)}
             className={cn(
-              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px]",
+              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left ds-caption",
               "transition-colors hover:bg-muted focus:outline-none focus-visible:bg-muted",
             )}
           >
@@ -124,7 +124,7 @@ function ContextoDoProjetoImpl({ projeto, resumo, onFila, onExcluir, excluindo }
                 type="button"
                 onClick={() => navigate(`/workspace/demandas/${p.id}`)}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px]",
+                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left ds-caption",
                   "transition-colors hover:bg-muted focus:outline-none focus-visible:bg-muted",
                   atual && "font-medium",
                 )}
@@ -142,7 +142,7 @@ function ContextoDoProjetoImpl({ projeto, resumo, onFila, onExcluir, excluindo }
             <button
               type="button"
               onClick={() => navigate("/workspace/demandas")}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:bg-muted"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left ds-caption text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:bg-muted"
             >
               <LayoutGrid className="size-3.5 shrink-0" aria-hidden />
               Todos os projetos

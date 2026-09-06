@@ -59,7 +59,7 @@ export function CardComentario({
         {comentario.autorAvatarUrl ? (
           <AvatarImage src={comentario.autorAvatarUrl} alt={comentario.autorNome ?? "Autor"} />
         ) : null}
-        <AvatarFallback className="text-[10px]">
+        <AvatarFallback className="ds-micro">
           {(comentario.autorNome ?? "?").trim().slice(0, 1).toUpperCase() || "?"}
         </AvatarFallback>
       </Avatar>

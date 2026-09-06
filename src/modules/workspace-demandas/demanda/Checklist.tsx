@@ -108,14 +108,14 @@ function ChecklistImpl({ itens, feitos, total, podeEditar, onMarcar, onAcrescent
               onBlur={() => !novo.trim() && setAbrindo(false)}
               placeholder="O que mais precisa estar pronto?"
               aria-label="Novo critério"
-              className="w-full rounded border border-border/60 bg-transparent px-2 py-1 text-[13px] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="w-full rounded border border-border/60 bg-transparent px-2 py-1 ds-caption focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             />
           </form>
         ) : (
           <button
             type="button"
             onClick={() => setAbrindo(true)}
-            className="mt-1.5 flex items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="mt-1.5 flex items-center gap-1 ds-small text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <Plus className="size-3" aria-hidden />
             {/* Acrescentar aqui é mudar a definição de pronto depois do

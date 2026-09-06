@@ -352,7 +352,7 @@ export default function DemandaDetalhe() {
         <p className="text-[15px] font-medium text-destructive">
           {erro ? "Não foi possível carregar a demanda" : "Demanda não encontrada"}
         </p>
-        {erro && <p className="mt-1 text-[13px] text-muted-foreground">{erro.message}</p>}
+        {erro && <p className="mt-1 ds-caption text-muted-foreground">{erro.message}</p>}
         <Button variant="ghost" size="sm" className="mt-4 gap-1.5" onClick={() => navigate(-1)}>
           <ArrowLeft className="size-3.5" aria-hidden />
           Voltar
@@ -466,7 +466,7 @@ export default function DemandaDetalhe() {
               />
             </div>
 
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted-foreground">
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 ds-small text-muted-foreground">
               {identidade.map((item, i) => (
                 <span key={item} className="flex items-center gap-2">
                   {i > 0 && <span aria-hidden>·</span>}

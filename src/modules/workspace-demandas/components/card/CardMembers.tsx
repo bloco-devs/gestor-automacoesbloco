@@ -40,7 +40,7 @@ export function CardMembersResumo({ cardId }: { cardId: string }) {
       {pessoas.map((u) => (
         <Avatar key={u.id} className="size-6 border border-border" title={u.nome}>
           {u.avatarUrl && <AvatarImage src={u.avatarUrl} alt={u.nome} />}
-          <AvatarFallback className="text-[10px]">{iniciais(u.nome)}</AvatarFallback>
+          <AvatarFallback className="ds-micro">{iniciais(u.nome)}</AvatarFallback>
         </Avatar>
       ))}
     </div>
@@ -102,7 +102,7 @@ export function CardMembersBotao({ cardId }: { cardId: string }) {
                   >
                     <Avatar className="size-6">
                       {u.avatarUrl && <AvatarImage src={u.avatarUrl} alt={u.nome} />}
-                      <AvatarFallback className="text-[10px]">{iniciais(u.nome)}</AvatarFallback>
+                      <AvatarFallback className="ds-micro">{iniciais(u.nome)}</AvatarFallback>
                     </Avatar>
                     <span className="min-w-0 flex-1 truncate">{u.nome}</span>
                     {marcado && <Check className="size-4 text-primary" aria-hidden />}

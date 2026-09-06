@@ -428,7 +428,7 @@ export function CardDetailModal({ cardId, boardId, onFechar }: Props) {
                       {user?.avatarUrl ? (
                         <AvatarImage src={user.avatarUrl} alt={user.nome ?? user.email ?? "Autor"} />
                       ) : null}
-                      <AvatarFallback className="text-[10px]">
+                      <AvatarFallback className="ds-micro">
                         {(user?.nome ?? user?.email ?? "?").slice(0, 1).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>

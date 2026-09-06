@@ -24,7 +24,7 @@ interface Props {
 function Secao({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
     <div className="flex gap-3 py-1">
-      <span className="w-[92px] shrink-0 text-[12px] text-muted-foreground">{rotulo}</span>
+      <span className="w-[92px] shrink-0 ds-small text-muted-foreground">{rotulo}</span>
       <div className="min-w-0 flex-1 text-[13px] leading-relaxed">{children}</div>
     </div>
   );

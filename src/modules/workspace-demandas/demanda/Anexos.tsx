@@ -267,7 +267,7 @@ function AnexosImpl({ anexos, podeAnexar, enviando, onEnviar, onExcluir, excluin
           <button
             type="button"
             onClick={() => input.current?.click()}
-            className="mt-2 flex items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="mt-2 flex items-center gap-1 ds-small text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <Upload className="size-3" aria-hidden />
             Anexar — ou arraste, ou cole um print
@@ -298,12 +298,12 @@ function AnexosImpl({ anexos, podeAnexar, enviando, onEnviar, onExcluir, excluin
             )
           ) : (
             <div className="p-8 text-center">
-              <p className="text-[13px]">{aberto?.nome}</p>
+              <p className="ds-caption">{aberto?.nome}</p>
               {aberto?.url && (
                 <a
                   href={aberto.url}
                   download={aberto.nome}
-                  className="mt-2 inline-block text-[13px] text-primary underline"
+                  className="mt-2 inline-block ds-caption text-primary underline"
                 >
                   Baixar
                 </a>
