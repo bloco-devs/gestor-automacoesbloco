@@ -12,6 +12,8 @@ export const TYPOGRAPHY_CLASSES = {
   body: "ds-body",
   bodyStrong: "ds-body-strong",
   caption: "ds-caption",
+  small: "ds-small",
+  micro: "ds-micro",
   label: "ds-label",
   helper: "ds-helper",
 } as const;

@@ -239,6 +239,11 @@
   .ds-body       { font-size: 0.875rem;  line-height: 1.375rem; font-weight: 400; }
   .ds-body-strong{ font-size: 0.875rem;  line-height: 1.375rem; font-weight: 500; }
   .ds-caption    { font-size: 0.8125rem; line-height: 1.125rem; font-weight: 400; }
+  /* Os dois degraus que faltavam. Sem eles o produto inventava `text-[12px]`
+   * (46 vezes) e `text-[10px]` (156 vezes) — a escala parava em 11px e a
+   * interface precisa de menos que isso em etiqueta, contador e metadado. */
+  .ds-small      { font-size: 0.75rem;   line-height: 1rem;     font-weight: 400; }
+  .ds-micro      { font-size: 0.625rem;  line-height: 0.875rem; font-weight: 400; }
   .ds-label      { font-size: 0.6875rem; line-height: 1rem;     font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
   .ds-helper     { font-size: 0.8125rem; line-height: 1.125rem; font-weight: 400; color: hsl(var(--muted-foreground)); }
 
