@@ -5,7 +5,7 @@
  * tamanho da tela — a câmera é quem recorta.
  */
 
-import { MESA_W, OFFSET_MESA, PESSOA_H, PESSOA_W } from "./sprites";
+import { MESA_W, OFFSET_MESA, PERSONAGEM_H, PERSONAGEM_W } from "./sprites";
 import type { ConectorEco, SistemaEco } from "./dados";
 
 export const MARGEM = 24;
@@ -158,11 +158,11 @@ export function montarAndar(sistemas: SistemaEco[], conectores: ConectorEco[]): 
           grupo,
           x: mx,
           y: my,
-          pessoaX: mx + Math.floor((MESA_W - PESSOA_W) / 2),
+          pessoaX: mx + Math.floor((MESA_W - PERSONAGEM_W) / 2),
           pessoaY: my - OFFSET_MESA,
           cadeiraX: mx + 13,
           cadeiraY: my + 30,
-          saidaX: mx + Math.floor(MESA_W / 2) - Math.floor(PESSOA_W / 2),
+          saidaX: mx + Math.floor(MESA_W / 2) - Math.floor(PERSONAGEM_W / 2),
           saidaY: my + 34,
           salaIdx,
         });
@@ -188,7 +188,7 @@ export function montarAndar(sistemas: SistemaEco[], conectores: ConectorEco[]): 
       x: px,
       y: altura - MARGEM - 24,
       frenteX: px + 2,
-      frenteY: altura - MARGEM - 24 - PESSOA_H,
+      frenteY: altura - MARGEM - 24 - PERSONAGEM_H,
     });
   });
 
@@ -212,7 +212,7 @@ export function montarAndar(sistemas: SistemaEco[], conectores: ConectorEco[]): 
  * atravessando a parede da sala de baixo.
  */
 function noCorredor(corredorY: number): number {
-  return corredorY - Math.floor(PESSOA_H / 2);
+  return corredorY - Math.floor(PERSONAGEM_H / 2);
 }
 
 export interface Ponto {

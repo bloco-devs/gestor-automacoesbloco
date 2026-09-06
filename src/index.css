@@ -134,6 +134,8 @@
     --sidebar-ring: 47 100% 50%;
 
     --surface-2: 0 0% 100%;
+    /* Fundo da planta do Escritório do Ecossistema, atrás do pixel art. */
+    --escritorio-fundo: 160 12% 13%;
 
     --elev-1: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --elev-2: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
@@ -204,6 +206,7 @@
     --sidebar-ring: 47 100% 68%;
 
     --surface-2: 30 4% 10%;
+    --escritorio-fundo: 160 14% 9%;
 
     /* DS 3.1 — no escuro a sombra sozinha some, então a profundidade vem da
      * combinação sombra + fio de luz na borda superior. */

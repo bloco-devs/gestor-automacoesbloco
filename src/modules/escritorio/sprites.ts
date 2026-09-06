@@ -6,13 +6,13 @@
  * sempre em pixels internos e inteiros — é isso que mantém o pixel nítido.
  */
 
-import { aparenciaDoSistema, tom, type Aparencia } from "./aparencia";
+import { aparenciaDeConector, aparenciaDoSistema, tom, type Acessorio, type Aparencia } from "./aparencia";
 
 export const TILE = 16;
 
-/** Altura total do personagem, do topo do cabelo à sola do sapato. */
-export const PESSOA_H = 46;
-export const PESSOA_W = 22;
+/** Altura total do personagem, da antena à sola do pé. */
+export const PERSONAGEM_H = 46;
+export const PERSONAGEM_W = 22;
 /**
  * Distância do topo do personagem até o tampo da mesa.
  *
@@ -193,12 +193,19 @@ export function cadeira(c: Ctx, x: number, y: number) {
   r(c, x + 13, y + 1, 2, 16, "#a3773f");
 }
 
-/* -------------------------------------------------------------- pessoa --- */
+/* ----------------------------------------------------------- personagem --- */
+
+/** Amarelo e preto do BLINK. Não variam: é a marca. */
+const BLINK_AMARELO = "#F2C230";
+const BLINK_AM_CLARO = "#ffe07a";
+const BLINK_CASCO = "#16171A";
+const BLINK_PLACA = "#0B0C0E";
+const TRACO = "#1b1c1f";
 
 export type Humor = "trabalhando" | "ocioso" | "falha";
 export type Direcao = "frente" | "esquerda" | "direita";
 
-export interface PessoaOpts {
+export interface PersonagemOpts {
   humor: Humor;
   direcao: Direcao;
   /** 0 = parado. 1 e 2 alternam as pernas na caminhada. */
@@ -206,6 +213,8 @@ export interface PessoaOpts {
   /** Levanta os braços 1px, para a animação de digitar. */
   digitando?: boolean;
   destacado?: boolean;
+  /** Conector externo: casco cinza e caixa de entrega. */
+  externo?: boolean;
 }
 
 /** Halo quente atrás de quem está ativo. */
@@ -214,139 +223,302 @@ export function halo(c: Ctx, cx: number, cy: number) {
   disco(c, cx, cy, 13, "rgba(240,214,140,.26)");
 }
 
-export function pessoa(c: Ctx, x: number, y: number, id: string, opts: PessoaOpts) {
-  desenhaPessoa(c, x, y, aparenciaDoSistema(id), opts);
+export function personagem(c: Ctx, x: number, y: number, id: string, opts: PersonagemOpts) {
+  desenhaBlink(c, x, y, opts.externo ? aparenciaDeConector(id) : aparenciaDoSistema(id), opts);
 }
 
-export function desenhaPessoa(c: Ctx, x: number, y: number, a: Aparencia, opts: PessoaOpts) {
+export function desenhaBlink(c: Ctx, x: number, y: number, a: Aparencia, opts: PersonagemOpts) {
   const { humor, direcao } = opts;
   const passo = opts.passo ?? 0;
-  const peleS = tom(a.pele, 0.86);
-  const peleE = tom(a.pele, 0.72);
+  const cascoE = tom(a.casco, 0.72);
+  const cascoC = tom(a.casco, 1.18);
+  const naCabeca = a.acessorio === "capacete" || a.acessorio === "headset";
 
   if (opts.destacado) {
-    // contorno, não bloco: um retângulo preenchido vira uma mancha branca atrás dele
     const luz = "rgba(255,255,255,.85)";
-    r(c, x - 1, y - 1, PESSOA_W + 2, 1, luz);
-    r(c, x - 1, y + PESSOA_H, PESSOA_W + 2, 1, luz);
-    r(c, x - 1, y - 1, 1, PESSOA_H + 2, luz);
-    r(c, x + PESSOA_W, y - 1, 1, PESSOA_H + 2, luz);
+    r(c, x - 1, y - 1, PERSONAGEM_W + 2, 1, luz);
+    r(c, x - 1, y + PERSONAGEM_H, PERSONAGEM_W + 2, 1, luz);
+    r(c, x - 1, y - 1, 1, PERSONAGEM_H + 2, luz);
+    r(c, x + PERSONAGEM_W, y - 1, 1, PERSONAGEM_H + 2, luz);
   }
-  r(c, x + 4, y + PESSOA_H, 14, 2, "rgba(0,0,0,.20)");
+  r(c, x + 4, y + PERSONAGEM_H, 14, 2, "rgba(0,0,0,.22)");
 
-  // cabelo e cabeça
-  r(c, x + 6, y, 10, 1, a.cabelo);
-  r(c, x + 5, y + 1, 12, 1, a.cabelo);
-  r(c, x + 4, y + 2, 14, 1, a.cabelo);
-  r(c, x + 7, y, 6, 1, tom(a.cabelo, 1.35));
-  r(c, x + 5, y + 3, 12, 10, a.pele);
-  r(c, x + 4, y + 6, 1, 3, a.pele);
-  r(c, x + 17, y + 6, 1, 3, a.pele);
-  r(c, x + 4, y + 7, 1, 1, peleS);
-  r(c, x + 17, y + 7, 1, 1, peleS);
-  r(c, x + 5, y + 3, 12, 1, a.cabelo);
-  if (a.estilo === 0) {
-    r(c, x + 4, y + 3, 2, 3, a.cabelo);
-    r(c, x + 16, y + 3, 2, 3, a.cabelo);
-  } else if (a.estilo === 1) {
-    r(c, x + 5, y + 4, 5, 1, a.cabelo);
-    r(c, x + 4, y + 3, 2, 4, a.cabelo);
-    r(c, x + 16, y + 3, 2, 3, a.cabelo);
-  } else {
-    r(c, x + 4, y + 3, 2, 5, a.cabelo);
-    r(c, x + 16, y + 3, 2, 5, a.cabelo);
-    r(c, x + 5, y + 4, 12, 1, a.cabelo);
+  // antenas — o capacete e o headset ocupam o lugar delas
+  if (!naCabeca) {
+    r(c, x + 6, y, 1, 3, BLINK_AMARELO);
+    r(c, x + 5, y, 2, 1, BLINK_AMARELO);
+    r(c, x + 15, y, 1, 3, BLINK_AMARELO);
+    r(c, x + 15, y, 2, 1, BLINK_AMARELO);
   }
 
-  // rosto
-  r(c, x + 6, y + 5, 3, 1, a.cabelo);
-  r(c, x + 13, y + 5, 3, 1, a.cabelo);
-  if (direcao === "frente") {
-    r(c, x + 6, y + 6, 3, 2, "#fbfbf7");
-    r(c, x + 13, y + 6, 3, 2, "#fbfbf7");
-    r(c, x + 7, y + 6, 1, 2, "#2b2f38");
-    r(c, x + 14, y + 6, 1, 2, "#2b2f38");
-  } else if (direcao === "direita") {
-    r(c, x + 7, y + 6, 3, 2, "#fbfbf7");
-    r(c, x + 13, y + 6, 3, 2, "#fbfbf7");
-    r(c, x + 9, y + 6, 1, 2, "#2b2f38");
-    r(c, x + 15, y + 6, 1, 2, "#2b2f38");
-  } else {
-    r(c, x + 6, y + 6, 3, 2, "#fbfbf7");
-    r(c, x + 12, y + 6, 3, 2, "#fbfbf7");
-    r(c, x + 6, y + 6, 1, 2, "#2b2f38");
-    r(c, x + 12, y + 6, 1, 2, "#2b2f38");
+  // cabeça
+  r(c, x + 5, y + 2, 12, 1, BLINK_CASCO);
+  r(c, x + 4, y + 3, 14, 1, BLINK_CASCO);
+  r(c, x + 3, y + 4, 16, 14, BLINK_CASCO);
+  r(c, x + 4, y + 18, 14, 1, BLINK_CASCO);
+  r(c, x + 5, y + 19, 12, 1, BLINK_CASCO);
+  r(c, x + 4, y + 4, 16, 1, "#24262b");
+
+  // protetores de ouvido
+  if (a.acessorio !== "headset") {
+    r(c, x + 1, y + 8, 2, 5, BLINK_AMARELO);
+    r(c, x + 1, y + 8, 2, 1, BLINK_AM_CLARO);
+    r(c, x + 19, y + 8, 2, 5, BLINK_AMARELO);
+    r(c, x + 19, y + 8, 2, 1, BLINK_AM_CLARO);
   }
-  r(c, x + 10, y + 8, 2, 2, peleS);
-  r(c, x + 10, y + 9, 1, 1, peleE);
+
+  // placa do rosto
+  r(c, x + 5, y + 5, 12, 12, BLINK_AMARELO);
+  r(c, x + 6, y + 6, 10, 10, BLINK_PLACA);
+
+  // olhos — mudam com o estado e olham para onde ele anda
+  const desvio = direcao === "direita" ? 1 : direcao === "esquerda" ? -1 : 0;
   if (humor === "falha") {
-    r(c, x + 9, y + 11, 4, 1, "#8a4038");
-    r(c, x + 9, y + 10, 1, 1, "#8a4038");
-    r(c, x + 12, y + 10, 1, 1, "#8a4038");
+    r(c, x + 7, y + 8, 3, 1, BLINK_AMARELO);
+    r(c, x + 12, y + 8, 3, 1, BLINK_AMARELO);
+    r(c, x + 7, y + 9, 1, 1, BLINK_AMARELO);
+    r(c, x + 14, y + 9, 1, 1, BLINK_AMARELO);
   } else if (humor === "ocioso") {
-    r(c, x + 9, y + 10, 4, 1, "#8a4a3c");
+    r(c, x + 7, y + 9, 3, 1, BLINK_AMARELO);
+    r(c, x + 12, y + 9, 3, 1, BLINK_AMARELO);
   } else {
-    r(c, x + 9, y + 10, 4, 1, "#8a4a3c");
-    r(c, x + 8, y + 10, 1, 1, "#8a4a3c");
-    r(c, x + 13, y + 10, 1, 1, "#8a4a3c");
-    r(c, x + 10, y + 11, 2, 1, "#f6e2d2");
-  }
-  r(c, x + 6, y + 12, 10, 1, peleS);
-  r(c, x + 9, y + 13, 4, 2, a.pele);
-  r(c, x + 9, y + 13, 4, 1, peleE);
-
-  // tronco
-  const roupa = a.formal ? a.terno : a.polo;
-  const roupaE = tom(roupa, 0.78);
-  r(c, x + 3, y + 15, 16, 1, roupa);
-  r(c, x + 2, y + 16, 18, 18, roupa);
-  r(c, x + 2, y + 16, 1, 18, roupaE);
-  r(c, x + 19, y + 16, 1, 18, roupaE);
-  if (a.formal) {
-    r(c, x + 8, y + 15, 6, 1, "#eef1f5");
-    r(c, x + 9, y + 16, 4, 2, "#eef1f5");
-    r(c, x + 7, y + 16, 2, 4, tom(roupa, 1.18));
-    r(c, x + 13, y + 16, 2, 4, tom(roupa, 1.18));
-    r(c, x + 9, y + 16, 4, 1, a.gravata);
-    r(c, x + 10, y + 17, 2, 9, a.gravata);
-    r(c, x + 10, y + 17, 1, 9, tom(a.gravata, 1.2));
-  } else {
-    r(c, x + 8, y + 15, 6, 1, tom(roupa, 1.3));
-    r(c, x + 9, y + 16, 4, 2, tom(roupa, 1.3));
-    r(c, x + 10, y + 18, 2, 5, roupaE);
+    r(c, x + 7 + desvio, y + 8, 3, 3, BLINK_AMARELO);
+    r(c, x + 12 + desvio, y + 8, 3, 3, BLINK_AMARELO);
+    r(c, x + 7 + desvio, y + 8, 1, 1, BLINK_AM_CLARO);
+    r(c, x + 12 + desvio, y + 8, 1, 1, BLINK_AM_CLARO);
   }
 
-  // braços e mãos
+  // boca
+  if (humor === "falha") {
+    r(c, x + 9, y + 13, 4, 1, BLINK_AMARELO);
+    r(c, x + 8, y + 14, 1, 1, BLINK_AMARELO);
+    r(c, x + 13, y + 14, 1, 1, BLINK_AMARELO);
+  } else {
+    r(c, x + 9, y + 14, 4, 1, BLINK_AMARELO);
+    r(c, x + 8, y + 13, 1, 1, BLINK_AMARELO);
+    r(c, x + 13, y + 13, 1, 1, BLINK_AMARELO);
+  }
+
+  // pescoço e tronco
+  r(c, x + 9, y + 20, 4, 1, "#24262b");
+  r(c, x + 4, y + 21, 14, 13, a.casco);
+  r(c, x + 4, y + 21, 14, 1, cascoC);
+  r(c, x + 4, y + 33, 14, 1, cascoE);
+  r(c, x + 4, y + 21, 1, 13, cascoE);
+  r(c, x + 17, y + 21, 1, 13, cascoE);
+  r(c, x + 8, y + 24, 6, 5, tom(a.casco, 0.85));
+  r(c, x + 9, y + 25, 4, 3, BLINK_AMARELO);
+
+  // braços
   const dy = opts.digitando ? 1 : 0;
-  r(c, x + 2, y + 18 - dy, 4, 12, roupa);
-  r(c, x + 16, y + 18 - dy, 4, 12, roupa);
-  r(c, x + 3, y + 28 - dy, 4, 3, a.pele);
-  r(c, x + 15, y + 28 - dy, 4, 3, a.pele);
-  r(c, x + 3, y + 28 - dy, 4, 1, peleS);
-  r(c, x + 15, y + 28 - dy, 4, 1, peleS);
+  r(c, x + 2, y + 22 - dy, 2, 10, a.casco);
+  r(c, x + 18, y + 22 - dy, 2, 10, a.casco);
+  r(c, x + 2, y + 30 - dy, 2, 3, BLINK_CASCO);
+  r(c, x + 18, y + 30 - dy, 2, 3, BLINK_CASCO);
 
-  // pernas: só aparecem quando ele está fora da mesa
-  const perna1 = passo === 1 ? 1 : 0;
-  const perna2 = passo === 2 ? 1 : 0;
-  r(c, x + 6, y + 34, 4, 9 - perna1, a.calca);
-  r(c, x + 12, y + 34, 4, 9 - perna2, a.calca);
-  r(c, x + 10, y + 34, 2, 9, tom(a.calca, 0.8));
-  r(c, x + 5, y + 43 - perna1, 5, 3, "#1c1f26");
-  r(c, x + 12, y + 43 - perna2, 5, 3, "#1c1f26");
+  // pernas
+  const p1 = passo === 1 ? 1 : 0;
+  const p2 = passo === 2 ? 1 : 0;
+  r(c, x + 6, y + 34, 4, 9 - p1, BLINK_CASCO);
+  r(c, x + 12, y + 34, 4, 9 - p2, BLINK_CASCO);
+  r(c, x + 5, y + 43 - p1, 6, 3, "#0d0e10");
+  r(c, x + 11, y + 43 - p2, 6, 3, "#0d0e10");
+
+  acessorio(c, x, y, a.acessorio);
 }
+
+/* ---------------------------------------------------------- acessórios --- */
+
+type Parte = [number, number, number, number];
+
+/**
+ * Desenha o contorno de TODAS as partes antes de pintar QUALQUER uma.
+ *
+ * Parte por parte, o contorno da peça seguinte risca a peça anterior e o
+ * objeto vira um borrão. É o contorno que faz o acessório se separar do casco
+ * e do chão — sem ele, a 2x, ninguém reconhece um crachá.
+ */
+function comContorno(c: Ctx, partes: Parte[], cor: string) {
+  for (const [px, py, pw, ph] of partes) r(c, px - 1, py - 1, pw + 2, ph + 2, TRACO);
+  for (const [px, py, pw, ph] of partes) r(c, px, py, pw, ph, cor);
+}
+
+function acessorio(c: Ctx, x: number, y: number, tipo: Acessorio) {
+  // mão direita: o objeto fica ao lado do corpo, onde nada o encobre
+  const bx = x + 20;
+  const by = y + 23;
+
+  switch (tipo) {
+    case "capacete": {
+      comContorno(c, [[x + 3, y - 3, 16, 6]], "#f0a52a");
+      r(c, x + 4, y - 3, 14, 2, "#ffc85e");
+      comContorno(c, [[x + 1, y + 2, 20, 3]], "#d98c1c");
+      r(c, x + 1, y + 2, 20, 1, "#f0a52a");
+      break;
+    }
+    case "headset": {
+      comContorno(c, [[x + 4, y - 1, 14, 3]], "#4a505c");
+      comContorno(c, [[x, y + 6, 4, 9], [x + 18, y + 6, 4, 9]], "#3a3f4b");
+      r(c, x + 1, y + 8, 2, 5, "#5c6470");
+      r(c, x + 19, y + 8, 2, 5, "#5c6470");
+      comContorno(c, [[x + 2, y + 15, 2, 3], [x + 4, y + 17, 5, 2]], "#3a3f4b");
+      comContorno(c, [[x + 9, y + 16, 3, 3]], "#c4463a");
+      break;
+    }
+    case "gravata": {
+      comContorno(c, [[x + 9, y + 20, 5, 4], [x + 10, y + 24, 3, 9]], "#c4463a");
+      r(c, x + 10, y + 21, 3, 2, "#d1594f");
+      r(c, x + 10, y + 25, 3, 5, "#d1594f");
+      break;
+    }
+    case "cracha": {
+      r(c, x + 7, y + 20, 1, 5, "#2b2f38");
+      r(c, x + 14, y + 20, 1, 5, "#2b2f38");
+      comContorno(c, [[x + 7, y + 25, 9, 11]], "#f4f1e8");
+      comContorno(c, [[x + 8, y + 26, 3, 4]], "#8fa6b8");
+      r(c, x + 12, y + 27, 3, 1, "#9aa1ab");
+      r(c, x + 12, y + 29, 2, 1, "#9aa1ab");
+      r(c, x + 8, y + 32, 7, 1, "#9aa1ab");
+      r(c, x + 8, y + 34, 5, 1, "#c8c4ba");
+      break;
+    }
+    case "prancheta": {
+      comContorno(c, [[bx, by, 11, 14]], "#b5834e");
+      comContorno(c, [[bx + 1, by + 3, 9, 10]], "#f4f1e8");
+      comContorno(c, [[bx + 3, by - 2, 5, 3]], "#c7ccd4");
+      for (let i = 0; i < 3; i++) r(c, bx + 3, by + 5 + i * 3, 6, 1, "#9aa1ab");
+      break;
+    }
+    case "caneca": {
+      comContorno(c, [[bx + 9, by + 6, 3, 5]], "#e2ded2");
+      comContorno(c, [[bx, by + 3, 9, 11]], "#f4f1e8");
+      r(c, bx, by + 7, 9, 2, "#c4463a");
+      r(c, bx + 1, by + 4, 3, 1, "#ffffff");
+      r(c, bx + 2, by, 1, 3, "#d8d4c8");
+      r(c, bx + 6, by - 1, 1, 3, "#d8d4c8");
+      break;
+    }
+    case "livro": {
+      comContorno(c, [[bx, by + 3, 12, 10]], "#8d4a3c");
+      r(c, bx + 5, by + 3, 2, 10, "#6f3a2e");
+      r(c, bx, by + 11, 12, 2, "#f4f1e8");
+      r(c, bx + 1, by + 5, 3, 1, "#e0c68a");
+      r(c, bx + 8, by + 5, 3, 1, "#e0c68a");
+      break;
+    }
+    case "chave": {
+      comContorno(c, [[bx, by + 2, 7, 7], [bx + 6, by + 4, 8, 3]], "#d9b23c");
+      r(c, bx + 2, by + 4, 3, 3, TRACO);
+      comContorno(c, [[bx + 11, by + 7, 2, 3], [bx + 8, by + 7, 2, 2]], "#d9b23c");
+      break;
+    }
+    case "megafone": {
+      // cone de verdade: abre da esquerda para a direita, senão vira um bloco vermelho
+      comContorno(
+        c,
+        [[bx + 1, by + 5, 4, 4], [bx + 5, by + 3, 3, 8], [bx + 8, by + 1, 3, 12]],
+        "#c4463a",
+      );
+      r(c, bx + 9, by + 1, 2, 12, "#e07a6e");
+      r(c, bx + 5, by + 4, 3, 2, "#d1594f");
+      comContorno(c, [[bx + 2, by + 9, 3, 4]], "#3a3f4b");
+      break;
+    }
+    case "maleta": {
+      comContorno(c, [[bx + 3, by + 1, 5, 3]], "#4a3524");
+      comContorno(c, [[bx, by + 4, 12, 9]], "#6b4a2f");
+      r(c, bx, by + 7, 12, 1, "#523720");
+      comContorno(c, [[bx + 5, by + 6, 3, 3]], "#d9b23c");
+      break;
+    }
+    case "rolo": {
+      // planta aberta, não tubo enrolado: enrolada não se distingue de um cartão
+      comContorno(c, [[bx, by + 1, 12, 13]], "#cfe3f0");
+      r(c, bx, by + 1, 2, 13, "#8fb6cf");
+      r(c, bx + 3, by + 3, 7, 6, "#4a7fa3");
+      r(c, bx + 4, by + 4, 5, 4, "#cfe3f0");
+      r(c, bx + 6, by + 3, 1, 6, "#4a7fa3");
+      r(c, bx + 3, by + 11, 8, 1, "#4a7fa3");
+      break;
+    }
+    case "predio": {
+      comContorno(c, [[bx, by - 1, 10, 15]], "#b8bec6");
+      r(c, bx + 1, by, 8, 1, "#d2d7dd");
+      for (let f = 0; f < 4; f++) {
+        r(c, bx + 2, by + 2 + f * 3, 2, 2, "#4a5560");
+        r(c, bx + 6, by + 2 + f * 3, 2, 2, "#4a5560");
+      }
+      break;
+    }
+    case "grafico": {
+      comContorno(c, [[bx, by, 12, 13]], "#f4f1e8");
+      r(c, bx + 2, by + 10, 8, 1, "#9aa1ab");
+      r(c, bx + 2, by + 6, 2, 4, "#3f6fc4");
+      r(c, bx + 5, by + 3, 2, 7, "#2f9e69");
+      r(c, bx + 8, by + 5, 2, 5, "#c4463a");
+      break;
+    }
+    case "lapis": {
+      comContorno(c, [[bx + 3, by, 4, 11]], "#f0c04a");
+      r(c, bx + 4, by, 1, 11, "#ffd978");
+      comContorno(c, [[bx + 3, by - 3, 4, 3]], "#d1594f");
+      comContorno(c, [[bx + 3, by + 11, 4, 3]], "#d9a06a");
+      r(c, bx + 4, by + 13, 2, 1, "#2b2f38");
+      break;
+    }
+    case "raio": {
+      comContorno(
+        c,
+        [[bx + 4, by, 4, 5], [bx + 2, by + 4, 5, 4], [bx + 4, by + 7, 4, 4], [bx + 2, by + 10, 4, 4]],
+        BLINK_AMARELO,
+      );
+      r(c, bx + 5, by + 1, 1, 3, BLINK_AM_CLARO);
+      break;
+    }
+    case "engrenagem": {
+      comContorno(
+        c,
+        [[bx + 1, by + 1, 9, 9], [bx + 4, by - 1, 3, 2], [bx + 4, by + 10, 3, 2], [bx - 1, by + 4, 2, 3], [bx + 10, by + 4, 2, 3]],
+        "#9aa4b0",
+      );
+      r(c, bx + 2, by + 2, 7, 1, "#b8c0c9");
+      r(c, bx + 4, by + 4, 3, 3, TRACO);
+      break;
+    }
+    case "postit": {
+      comContorno(c, [[bx, by + 2, 10, 10]], "#f0d84a");
+      r(c, bx + 2, by + 4, 6, 1, "#c9b23c");
+      r(c, bx + 2, by + 6, 6, 1, "#c9b23c");
+      r(c, bx + 2, by + 8, 4, 1, "#c9b23c");
+      r(c, bx + 7, by + 9, 3, 3, "#d9c23f");
+      break;
+    }
+    case "caixa": {
+      comContorno(c, [[bx, by + 3, 12, 10]], "#c69a63");
+      r(c, bx + 5, by + 3, 2, 10, "#a3773f");
+      r(c, bx, by + 6, 12, 2, "#a3773f");
+      r(c, bx, by + 3, 12, 1, "#dcb887");
+      break;
+    }
+    case "nenhum":
+      break;
+  }
+}
+
+/* ------------------------------------------------------- avisos e portas --- */
 
 /** Alerta vermelho sobre quem está em falha. */
 export function alerta(c: Ctx, x: number, y: number) {
-  r(c, x, y, 11, 10, CONTORNO);
+  r(c, x, y, 11, 10, TRACO);
   r(c, x + 1, y + 1, 9, 8, "#e04a3c");
   r(c, x + 5, y + 2, 1, 4, "#fff");
   r(c, x + 5, y + 7, 1, 1, "#fff");
-  r(c, x + 4, y + 10, 3, 3, CONTORNO);
+  r(c, x + 4, y + 10, 3, 3, TRACO);
 }
 
-/** Porta de conector externo na parede. */
+/** Porta de conector externo na parede: por onde entra quem é de fora. */
 export function porta(c: Ctx, x: number, y: number, ativa: boolean) {
-  r(c, x, y, 26, 24, CONTORNO);
+  r(c, x, y, 26, 24, TRACO);
   r(c, x + 2, y + 2, 22, 22, ativa ? "#8d6a3f" : "#6f6a5c");
   r(c, x + 2, y + 2, 22, 2, ativa ? "#a3814f" : "#807a6c");
   r(c, x + 5, y + 6, 16, 10, ativa ? "#a9cadb" : "#6f6a5c");

@@ -6,8 +6,8 @@ import type { DadosEscritorio } from "./dados";
 import {
   MESA_H,
   MESA_W,
-  PESSOA_H,
-  PESSOA_W,
+  PERSONAGEM_H,
+  PERSONAGEM_W,
   TILE,
   alerta,
   bebedouro,
@@ -23,7 +23,7 @@ import {
   pisoTile,
   planta,
   porta as desenhaPorta,
-  pessoa,
+  personagem,
   relogio,
 } from "./sprites";
 
@@ -40,6 +40,8 @@ export interface EscritorioCanvasProps {
   /** Escala pedida pela página; a câmera respeita, o clique sobrepõe. */
   escala: number;
   onEscala: (e: number) => void;
+  /** Ajusta o zoom para o andar inteiro caber — o padrão, para não ter de arrastar. */
+  ajustar: boolean;
 }
 
 interface Camera {
@@ -59,6 +61,7 @@ export function EscritorioCanvas({
   onSelecionar,
   escala,
   onEscala,
+  ajustar,
 }: EscritorioCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fundoRef = useRef<HTMLCanvasElement | null>(null);
@@ -66,10 +69,12 @@ export function EscritorioCanvas({
   const camRef = useRef<Camera>({ x: 0, y: 0, escala, alvoX: 0, alvoY: 0, alvoEscala: escala });
   const hoverRef = useRef<string | null>(null);
   const demoRef = useRef(demo);
+  const ajustarRef = useRef(ajustar);
   const selRef = useRef(selecionado);
   const arrastando = useRef<{ x: number; y: number; moveu: boolean } | null>(null);
 
   demoRef.current = demo;
+  ajustarRef.current = ajustar;
   selRef.current = selecionado;
 
   /* --------------------------------------------------- fundo estático --- */
@@ -185,10 +190,14 @@ export function EscritorioCanvas({
     const limitar = (cam: Camera, larguraTela: number, alturaTela: number) => {
       const vw = larguraTela / cam.escala;
       const vh = alturaTela / cam.escala;
-      const maxX = Math.max(0, andar.largura - vw);
-      const maxY = Math.max(0, andar.altura - vh);
-      cam.x = Math.min(maxX, Math.max(andar.largura <= vw ? (andar.largura - vw) / 2 : 0, cam.x));
-      cam.y = Math.min(maxY, Math.max(andar.altura <= vh ? (andar.altura - vh) / 2 : 0, cam.y));
+      // Quando o andar é menor que a área visível ele fica CENTRADO, não colado
+      // à esquerda — senão sobra um vazio escuro de um lado só.
+      cam.x = andar.largura <= vw
+        ? (andar.largura - vw) / 2
+        : Math.min(andar.largura - vw, Math.max(0, cam.x));
+      cam.y = andar.altura <= vh
+        ? (andar.altura - vh) / 2
+        : Math.min(andar.altura - vh, Math.max(0, cam.y));
     };
 
     const quadro = (agora: number) => {
@@ -201,6 +210,12 @@ export function EscritorioCanvas({
       const alturaTela = canvas.height / dpr;
 
       const cam = camRef.current;
+      if (ajustarRef.current && !selRef.current) {
+        cam.alvoEscala = Math.max(
+          0.75,
+          Math.min(4, Math.min(larguraTela / andar.largura, alturaTela / andar.altura)),
+        );
+      }
       const k = 1 - Math.exp(-6 * dt);
       cam.escala += (cam.alvoEscala - cam.escala) * k;
       if (Math.abs(cam.alvoEscala - cam.escala) < 0.01) cam.escala = cam.alvoEscala;
@@ -215,7 +230,7 @@ export function EscritorioCanvas({
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.imageSmoothingEnabled = false;
-      ctx.fillStyle = "#1d2420";
+      ctx.fillStyle = fundoDaPagina(canvas);
       ctx.fillRect(0, 0, larguraTela, alturaTela);
 
       const fundo = fundoRef.current;
@@ -239,8 +254,8 @@ export function EscritorioCanvas({
         const sentado = !p || p.fase === "mesa";
         cadeira(ctx, m.cadeiraX, m.cadeiraY);
         if (p && sentado) {
-          if (p.estado === "trabalhando") halo(ctx, m.pessoaX + PESSOA_W / 2, m.pessoaY + 9);
-          pessoa(ctx, Math.round(p.x), Math.round(p.y), p.id, {
+          if (p.estado === "trabalhando") halo(ctx, m.pessoaX + PERSONAGEM_W / 2, m.pessoaY + 9);
+          personagem(ctx, Math.round(p.x), Math.round(p.y), p.id, {
             humor: p.estado,
             direcao: p.direcao,
             digitando: digitando(p),
@@ -254,10 +269,11 @@ export function EscritorioCanvas({
       // quem está fora da mesa desenha por último, para passar na frente
       for (const p of personagens) {
         if (p.fase === "mesa" || p.fase === "oculto") continue;
-        pessoa(ctx, Math.round(p.x), Math.round(p.y), p.id, {
+        personagem(ctx, Math.round(p.x), Math.round(p.y), p.id, {
           humor: p.estado,
           direcao: p.direcao,
           passo: passoDe(p),
+          externo: p.tipo === "externo",
           destacado: hoverRef.current === p.id || selRef.current === p.id,
         });
       }
@@ -290,7 +306,7 @@ export function EscritorioCanvas({
 
       for (const p of personagens) {
         if (!p.viagem || p.fase === "mesa" || p.fase === "oculto") continue;
-        const t = paraTela(p.x + PESSOA_W / 2, p.y - 6);
+        const t = paraTela(p.x + PERSONAGEM_W / 2, p.y - 6);
         balao(ctx, t.x, t.y, p.nome, p.viagem.label, p.viagem.falha);
       }
 
@@ -337,7 +353,7 @@ export function EscritorioCanvas({
       }}
       onPointerMove={(ev) => {
         const a = arrastando.current;
-        if (a) {
+        if (a && !ajustar) {
           const dx = ev.clientX - a.x;
           const dy = ev.clientY - a.y;
           if (Math.abs(dx) > 3 || Math.abs(dy) > 3) a.moveu = true;
@@ -374,6 +390,16 @@ export function EscritorioCanvas({
       }}
     />
   );
+}
+
+/**
+ * Cor de fundo atrás da planta. Vem do token `--escritorio-fundo`, para não
+ * ficar um hex solto fora da paleta do sistema; o pixel art em si tem paleta
+ * própria porque canvas não lê variável CSS por pixel.
+ */
+function fundoDaPagina(canvas: HTMLCanvasElement): string {
+  const v = getComputedStyle(canvas).getPropertyValue("--escritorio-fundo").trim();
+  return v ? `hsl(${v})` : "#1d2420";
 }
 
 /* ---------------------------------------------------------------- HUD --- */
@@ -456,25 +482,35 @@ function balao(
   rotulo: string,
   falha: boolean,
 ) {
-  ctx.font = '600 10px ui-monospace, SFMono-Regular, Menlo, monospace';
-  const wNome = ctx.measureText(nome).width;
-  ctx.font = '600 12px ui-monospace, SFMono-Regular, Menlo, monospace';
-  const wRotulo = ctx.measureText(rotulo).width;
-  const w = Math.max(wNome, wRotulo) + 20;
-  const h = 36;
-  const x = Math.round(cx - w / 2);
+  // O HUB devolve rótulos longos ("Cronograma de produto (EAP, marcos) — somente
+  // leitura · Baseline financeiro…"). Sem teto, o balão atravessa a tela inteira
+  // e tapa três salas. O texto completo fica no painel lateral.
+  const LARGURA_MAX = 190;
+  ctx.font = '600 9px ui-monospace, SFMono-Regular, Menlo, monospace';
+  const nomeCurto = cortar(ctx, nome, LARGURA_MAX);
+  const wNome = ctx.measureText(nomeCurto).width;
+  ctx.font = '600 11px ui-monospace, SFMono-Regular, Menlo, monospace';
+  const rotuloCurto = cortar(ctx, rotulo.split(" · ")[0], LARGURA_MAX);
+  const wRotulo = ctx.measureText(rotuloCurto).width;
+  const w = Math.max(wNome, wRotulo) + 14;
+  const h = 28;
+  // Preso dentro da tela: perto da borda o balão saía pela lateral e o texto sumia.
+  const limite = ctx.canvas.width / (ctx.getTransform().a || 1);
+  const x = Math.round(Math.min(limite - w - 4, Math.max(4, cx - w / 2)));
   const y = Math.round(cy - h);
   ctx.fillStyle = "#15181d";
   ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
   ctx.fillStyle = falha ? "#fceceb" : "#ffffff";
   ctx.fillRect(x, y, w, h);
   ctx.fillStyle = "#15181d";
-  ctx.fillRect(Math.round(x + w / 2) - 5, y + h, 10, 5);
-  ctx.fillRect(Math.round(x + w / 2) - 5, y + h + 5, 5, 4);
-  ctx.font = '600 10px ui-monospace, SFMono-Regular, Menlo, monospace';
-  ctx.fillStyle = "#7b7568";
-  ctx.fillText(nome, x + 10, y + 14);
-  ctx.font = '600 12px ui-monospace, SFMono-Regular, Menlo, monospace';
+  // o rabinho aponta para o personagem, mesmo com o balão deslocado pela borda
+  const rabo = Math.round(Math.min(x + w - 10, Math.max(x + 4, cx - 4)));
+  ctx.fillRect(rabo, y + h, 8, 4);
+  ctx.fillRect(rabo, y + h + 4, 4, 3);
+  ctx.font = '600 9px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.fillStyle = "#8a8578";
+  ctx.fillText(nomeCurto, x + 7, y + 11);
+  ctx.font = '600 11px ui-monospace, SFMono-Regular, Menlo, monospace';
   ctx.fillStyle = falha ? "#a3271c" : "#15181d";
-  ctx.fillText(rotulo, x + 10, y + 29);
+  ctx.fillText(rotuloCurto, x + 7, y + 23);
 }

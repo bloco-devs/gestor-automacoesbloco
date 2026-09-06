@@ -1,35 +1,56 @@
 import { describe, expect, it } from "vitest";
-import { aparenciaDoSistema, hash, tom } from "../aparencia";
-import { SISTEMAS_SEED, CONECTORES_EXTERNOS_SEED } from "@/lib/ecossistemaSeed";
+import { ACESSORIO_POR_SISTEMA, aparenciaDeConector, aparenciaDoSistema, hash, tom } from "../aparencia";
+import { CONECTORES_EXTERNOS_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
 
-describe("aparência procedural", () => {
-  it("é estável: o mesmo id devolve sempre a mesma cara", () => {
-    const a = aparenciaDoSistema("financeiro");
-    const b = aparenciaDoSistema("financeiro");
-    expect(a).toEqual(b);
+/** Os 16 sistemas que o HUB devolve hoje. */
+const SISTEMAS_HUB = [
+  "gestao-comercial", "locacao", "crm-house", "processos", "rh", "fluxo-caixa",
+  "nakhon-contratos", "viabilidade", "incorporacao", "portfolio", "produtividade",
+  "sucesso-cliente", "atividades", "automacoes", "desenvolvimento-produto", "captacao",
+];
+
+describe("aparência do BLINK", () => {
+  it("é estável: o mesmo id devolve sempre o mesmo casco e acessório", () => {
+    expect(aparenciaDoSistema("fluxo-caixa")).toEqual(aparenciaDoSistema("fluxo-caixa"));
   });
 
-  it("sistemas diferentes não saem todos iguais", () => {
-    const caras = new Set(SISTEMAS_SEED.map((s) => JSON.stringify(aparenciaDoSistema(s.id))));
-    expect(caras.size).toBeGreaterThan(SISTEMAS_SEED.length / 2);
+  it("todo sistema do HUB tem acessório escolhido à mão, não sorteado", () => {
+    for (const id of SISTEMAS_HUB) {
+      expect(ACESSORIO_POR_SISTEMA[id], `${id} sem acessório definido`).toBeTruthy();
+    }
+  });
+
+  it("nenhum sistema do HUB repete o acessório de outro", () => {
+    const usados = SISTEMAS_HUB.map((id) => ACESSORIO_POR_SISTEMA[id]);
+    expect(new Set(usados).size).toBe(SISTEMAS_HUB.length);
+  });
+
+  it("sistema desconhecido ainda ganha um acessório, nunca vazio", () => {
+    for (let i = 0; i < 300; i++) {
+      const a = aparenciaDoSistema(`sistema-que-nao-existe-${i}`);
+      expect(a.acessorio).toBeTruthy();
+      expect(a.acessorio).not.toBe("nenhum");
+      expect(a.casco).toMatch(/^#[0-9a-f]{6}$/);
+    }
   });
 
   it("nunca devolve cor indefinida — o hash não pode virar índice negativo", () => {
     // `h >> 7` em vez de `h >>> 7` produz índice negativo e a paleta some.
     const ids = [
+      ...SISTEMAS_HUB,
       ...SISTEMAS_SEED.map((s) => s.id),
       ...CONECTORES_EXTERNOS_SEED.map((c) => c.id),
-      ...Array.from({ length: 500 }, (_, i) => `sistema-${i}`),
+      ...Array.from({ length: 500 }, (_, i) => `x-${i}`),
     ];
     for (const id of ids) {
-      const a = aparenciaDoSistema(id);
-      for (const [campo, valor] of Object.entries(a)) {
-        if (campo === "estilo" || campo === "formal") continue;
-        expect(valor, `${id}.${campo}`).toMatch(/^#[0-9a-f]{6}$/);
-      }
-      expect(a.estilo).toBeGreaterThanOrEqual(0);
-      expect(a.estilo).toBeLessThanOrEqual(2);
+      expect(aparenciaDoSistema(id).casco, id).toMatch(/^#[0-9a-f]{6}$/);
+      expect(aparenciaDeConector(id).casco, id).toMatch(/^#[0-9a-f]{6}$/);
     }
+  });
+
+  it("quem entrega pela porta carrega caixa, e só ele", () => {
+    expect(aparenciaDeConector("sienge").acessorio).toBe("caixa");
+    for (const id of SISTEMAS_HUB) expect(aparenciaDoSistema(id).acessorio).not.toBe("caixa");
   });
 
   it("hash é sempre positivo", () => {

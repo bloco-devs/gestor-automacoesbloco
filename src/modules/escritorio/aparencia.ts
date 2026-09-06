@@ -1,26 +1,63 @@
 /**
- * Aparência procedural dos personagens do Escritório do Ecossistema.
+ * Aparência dos personagens do Escritório do Ecossistema.
  *
- * A cara de cada sistema sai do `id` dele. Mesmo sistema, mesmo rosto, em
- * qualquer máquina e em qualquer dia — ninguém precisa decorar legenda.
+ * Todo mundo é o BLINK — o mascote da casa, não boneco genérico. O que
+ * distingue um sistema do outro é o ACESSÓRIO, que é fixo e escolhido pelo
+ * que aquele sistema faz, e a COR DO CASCO, que sai de um hash do id.
+ *
+ * Acessório por sistema e não por sala: a sala Operação tem quatro sistemas,
+ * e quatro capacetes iguais lado a lado não distinguem nada.
  */
 
-const PELE = ["#f2caa4", "#e2ad80", "#b3784a", "#8a5630"] as const;
-const CABELO = ["#241f1c", "#4a2f18", "#7a4d24", "#c9a227", "#6e3b2a", "#2f3a52"] as const;
-const TERNO = ["#2f3a52", "#3a3a44", "#4a3b2f", "#2c4a43", "#42304a", "#1f3a5c"] as const;
-const GRAVATA = ["#c4463a", "#3f6fc4", "#2f9e69", "#c9a227", "#7a4fc0", "#c95f8f"] as const;
-const POLO = ["#3f6fc4", "#c4463a", "#2f9e69", "#2f8ba8", "#d1594f", "#f0c04a", "#7a4fc0", "#e8e3d6"] as const;
-const CALCA = ["#343a47", "#454b57", "#2b3546"] as const;
+/** Cores de casco. O amarelo e o preto do BLINK nunca mudam — são a marca. */
+const CASCOS = [
+  "#3f6fc4", "#c4463a", "#2f9e69", "#7a4fc0", "#2f8ba8", "#d1594f",
+  "#e0e2e6", "#4a4f5a", "#c98a2f", "#2f6f5c", "#a8447e", "#5a6bd6",
+] as const;
+
+export type Acessorio =
+  | "capacete" | "headset" | "gravata" | "cracha" | "prancheta" | "caneca"
+  | "livro" | "chave" | "megafone" | "maleta" | "rolo" | "predio"
+  | "grafico" | "lapis" | "raio" | "engrenagem" | "postit" | "caixa" | "nenhum";
+
+/**
+ * Acessório fixo por sistema, amarrado ao ofício de cada um.
+ * Sistema novo que o HUB traga cai no sorteio determinístico de `SORTEIO`.
+ */
+export const ACESSORIO_POR_SISTEMA: Record<string, Acessorio> = {
+  "gestao-comercial": "megafone",
+  "crm-house": "chave",
+  "locacao": "prancheta",
+  "processos": "engrenagem",
+  "produtividade": "capacete",
+  "sucesso-cliente": "headset",
+  "atividades": "postit",
+  "rh": "caneca",
+  "fluxo-caixa": "gravata",
+  "captacao": "maleta",
+  "nakhon-contratos": "livro",
+  "viabilidade": "rolo",
+  "incorporacao": "predio",
+  "portfolio": "grafico",
+  "desenvolvimento-produto": "lapis",
+  "automacoes": "raio",
+  // nomes do seed, para quando o HUB não responde
+  "obra": "capacete",
+  "suprimentos": "prancheta",
+  "financeiro": "gravata",
+  "gestao-projetos": "lapis",
+  "hub-bloco-id": "cracha",
+  "nakhon": "livro",
+};
+
+const SORTEIO: Acessorio[] = [
+  "cracha", "prancheta", "caneca", "livro", "chave", "megafone",
+  "maleta", "rolo", "predio", "grafico", "lapis", "engrenagem", "postit",
+];
 
 export interface Aparencia {
-  pele: string;
-  cabelo: string;
-  terno: string;
-  gravata: string;
-  polo: string;
-  calca: string;
-  estilo: 0 | 1 | 2;
-  formal: boolean;
+  casco: string;
+  acessorio: Acessorio;
 }
 
 /** FNV-1a. Determinístico e estável entre navegadores. */
@@ -40,15 +77,14 @@ export function hash(texto: string): number {
 export function aparenciaDoSistema(id: string): Aparencia {
   const h = hash(id);
   return {
-    pele: PELE[h % PELE.length],
-    cabelo: CABELO[(h >>> 3) % CABELO.length],
-    terno: TERNO[(h >>> 7) % TERNO.length],
-    gravata: GRAVATA[(h >>> 11) % GRAVATA.length],
-    polo: POLO[(h >>> 15) % POLO.length],
-    calca: CALCA[(h >>> 21) % CALCA.length],
-    estilo: ((h >>> 19) % 3) as 0 | 1 | 2,
-    formal: ((h >>> 23) & 1) === 0,
+    casco: CASCOS[h % CASCOS.length],
+    acessorio: ACESSORIO_POR_SISTEMA[id] ?? SORTEIO[(h >>> 7) % SORTEIO.length],
   };
+}
+
+/** Quem entrega pela porta é um BLINK de fora: casco cinza e uma caixa na mão. */
+export function aparenciaDeConector(id: string): Aparencia {
+  return { casco: hash(id) % 2 === 0 ? "#7d7768" : "#6f6a5c", acessorio: "caixa" };
 }
 
 /** Multiplica o brilho de um hex, saturando em 255. */

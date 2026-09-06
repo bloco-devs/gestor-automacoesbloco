@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CORREDOR_Y, caminhoDaPorta, caminhoEntreMesas, montarAndar } from "../layout";
 import { CONECTORES_EXTERNOS_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
-import { MESA_H, MESA_W, PESSOA_H } from "../sprites";
+import { MESA_H, MESA_W, PERSONAGEM_H } from "../sprites";
 
 const sistemas = SISTEMAS_SEED.map((s) => ({ id: s.id, nome: s.nome, grupo: s.grupo as string }));
 const conectores = CONECTORES_EXTERNOS_SEED.map((c) => ({ id: c.id, nome: c.nome }));
@@ -74,7 +74,7 @@ describe("caminho entre mesas", () => {
   it("passa pelo corredor das duas salas", () => {
     const pontos = caminhoEntreMesas(andar, de, para);
     const dentroDe = (corredorY: number) =>
-      pontos.some((p) => Math.abs(p.y + PESSOA_H / 2 - corredorY) <= CORREDOR_Y / 2);
+      pontos.some((p) => Math.abs(p.y + PERSONAGEM_H / 2 - corredorY) <= CORREDOR_Y / 2);
     expect(dentroDe(andar.salas[de.salaIdx].corredorY)).toBe(true);
     expect(dentroDe(andar.salas[para.salaIdx].corredorY)).toBe(true);
   });
@@ -85,11 +85,11 @@ describe("caminho entre mesas", () => {
       for (const b of andar.mesas) {
         if (a === b) continue;
         for (const p of caminhoEntreMesas(andar, a, b)) {
-          const meio = p.y + PESSOA_H / 2;
+          const meio = p.y + PERSONAGEM_H / 2;
           for (const cy of corredores) {
             if (Math.abs(meio - cy) > 2) continue;
             expect(p.y).toBeGreaterThanOrEqual(cy - CORREDOR_Y / 2);
-            expect(p.y + PESSOA_H).toBeLessThanOrEqual(cy + CORREDOR_Y / 2);
+            expect(p.y + PERSONAGEM_H).toBeLessThanOrEqual(cy + CORREDOR_Y / 2);
           }
         }
       }
