@@ -199,7 +199,7 @@ export function HelpdeskChatLayout({
                           <Blink className="size-full" animado />
                         </div>
                       ) : (
-                        <AvatarFallback className="text-[10px] bg-muted">
+                        <AvatarFallback className="ds-micro bg-muted">
                           {chat.title.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       )}
@@ -208,7 +208,7 @@ export function HelpdeskChatLayout({
                       {chat.title}
                     </span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                  <span className="ds-micro text-muted-foreground shrink-0 tabular-nums">
                     {chat.time}
                   </span>
                 </div>

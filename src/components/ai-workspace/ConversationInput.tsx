@@ -124,7 +124,7 @@ export const ConversationInput = memo(function ConversationInput({
           {anexos.map((a) => (
             <li
               key={a.id}
-              className="flex max-w-[15rem] items-center gap-1.5 rounded-lg border border-border/70 bg-muted/40 py-1 pl-2 pr-1 text-[12px]"
+              className="flex max-w-[15rem] items-center gap-1.5 rounded-lg border border-border/70 bg-muted/40 py-1 pl-2 pr-1 ds-small"
             >
               <Paperclip className="size-3 shrink-0 text-muted-foreground" aria-hidden />
               <span className="truncate" title={a.nome}>

@@ -48,7 +48,7 @@ export const ConversationMessage = memo(function ConversationMessage({ message, 
       <div className={cn("flex max-w-[80%] flex-col gap-1", isUser ? "items-end" : "items-start")}>
         <div className="flex items-center gap-2 px-1 text-[11px] font-medium text-muted-foreground">
           <span>{isUser ? "Você" : "Blink (Atendente)"}</span>
-          <span className="text-[10px] opacity-70">{time}</span>
+          <span className="ds-micro opacity-70">{time}</span>
         </div>
 
         <div

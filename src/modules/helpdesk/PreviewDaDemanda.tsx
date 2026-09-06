@@ -57,8 +57,8 @@ interface Props {
 function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
     <div className="flex items-baseline gap-3 py-1.5">
-      <span className="w-24 shrink-0 text-[12px] text-muted-foreground">{rotulo}</span>
-      <span className="min-w-0 flex-1 text-[13px]">{children}</span>
+      <span className="w-24 shrink-0 ds-small text-muted-foreground">{rotulo}</span>
+      <span className="min-w-0 flex-1 ds-caption">{children}</span>
     </div>
   );
 }
@@ -129,7 +129,7 @@ function PreviewDaDemandaImpl({
           <details className="group mt-3 rounded-lg border border-border/60 bg-muted/30">
             <summary
               className={cn(
-                "flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-[12px] text-muted-foreground",
+                "flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 ds-small text-muted-foreground",
                 "transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
               )}
             >
@@ -161,7 +161,7 @@ function PreviewDaDemandaImpl({
         </div>
 
         <div className="mt-4">
-          <p className="text-[12px] text-muted-foreground">Vamos considerar resolvido quando</p>
+          <p className="ds-small text-muted-foreground">Vamos considerar resolvido quando</p>
           <ul className="mt-1.5 space-y-1">
             {nova.criteriosDeAceite.map((c) => (
               <li key={c} className="flex gap-2 text-[13px] leading-snug">
@@ -174,12 +174,12 @@ function PreviewDaDemandaImpl({
 
         {anexos.length > 0 && (
           <div className="mt-4">
-            <p className="text-[12px] text-muted-foreground">Vai junto</p>
+            <p className="ds-small text-muted-foreground">Vai junto</p>
             <ul className="mt-1.5 flex flex-wrap gap-1.5">
               {anexos.map((a) => (
                 <li
                   key={a.id}
-                  className="flex max-w-[15rem] items-center gap-1.5 rounded-lg border border-border/70 bg-muted/40 px-2 py-1 text-[12px]"
+                  className="flex max-w-[15rem] items-center gap-1.5 rounded-lg border border-border/70 bg-muted/40 px-2 py-1 ds-small"
                 >
                   <Paperclip className="size-3 shrink-0 text-muted-foreground" aria-hidden />
                   <span className="truncate" title={a.nome}>
@@ -192,7 +192,7 @@ function PreviewDaDemandaImpl({
         )}
 
         {insegura && (
-          <p className="mt-4 rounded-md bg-warning/10 px-3 py-2 text-[13px] text-warning-foreground">
+          <p className="mt-4 rounded-md bg-warning/10 px-3 py-2 ds-caption text-warning-foreground">
             Não tenho certeza de que entendi bem. Vale reler antes de confirmar.
           </p>
         )}
@@ -200,7 +200,7 @@ function PreviewDaDemandaImpl({
         {problemas.length > 0 && (
           <ul className="mt-4 space-y-1" role="alert">
             {problemas.map((p) => (
-              <li key={p} className="text-[13px] text-destructive">
+              <li key={p} className="ds-caption text-destructive">
                 {p}
               </li>
             ))}
@@ -210,7 +210,7 @@ function PreviewDaDemandaImpl({
         <Collapsible open={detalhes} onOpenChange={setDetalhes} className="mt-4">
           <CollapsibleTrigger
             className={cn(
-              "flex items-center gap-1 rounded text-[12px] text-muted-foreground",
+              "flex items-center gap-1 rounded ds-small text-muted-foreground",
               "transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
             )}
           >

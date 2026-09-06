@@ -24,7 +24,7 @@ const ARBITRARIOS = /text-\[[0-9.]+(px|rem)\]/g;
  * Então o número não é zerado aqui; ele é congelado, para a dívida só poder
  * encolher. Ao migrar um trecho, baixe o teto junto.
  */
-const TETO = 378;
+const TETO = 358;
 
 describe("escala tipográfica", () => {
   it("a escala cobre os degraus que a interface realmente usa", () => {
