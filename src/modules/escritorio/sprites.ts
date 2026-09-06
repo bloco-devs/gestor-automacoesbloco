@@ -213,8 +213,10 @@ export interface PersonagemOpts {
   /** Levanta os braços 1px, para a animação de digitar. */
   digitando?: boolean;
   destacado?: boolean;
-  /** Conector externo: casco cinza e caixa de entrega. */
+  /** Conector externo: casco cinza e o símbolo do serviço na mão. */
   externo?: boolean;
+  /** Cor de casco resolvida pela página, para dois sistemas nunca repetirem. */
+  casco?: string;
 }
 
 /** Halo quente atrás de quem está ativo. */
@@ -224,7 +226,8 @@ export function halo(c: Ctx, cx: number, cy: number) {
 }
 
 export function personagem(c: Ctx, x: number, y: number, id: string, opts: PersonagemOpts) {
-  desenhaBlink(c, x, y, opts.externo ? aparenciaDeConector(id) : aparenciaDoSistema(id), opts);
+  const base = opts.externo ? aparenciaDeConector(id) : aparenciaDoSistema(id);
+  desenhaBlink(c, x, y, opts.casco ? { ...base, casco: opts.casco } : base, opts);
 }
 
 export function desenhaBlink(c: Ctx, x: number, y: number, a: Aparencia, opts: PersonagemOpts) {
@@ -491,6 +494,114 @@ function acessorio(c: Ctx, x: number, y: number, tipo: Acessorio) {
       r(c, bx + 2, by + 6, 6, 1, "#c9b23c");
       r(c, bx + 2, by + 8, 4, 1, "#c9b23c");
       r(c, bx + 7, by + 9, 3, 3, "#d9c23f");
+      break;
+    }
+    case "zap": {
+      comContorno(c, [[bx, by + 2, 12, 10], [bx + 2, by + 11, 3, 3]], "#25D366");
+      r(c, bx + 3, by + 4, 6, 2, "#f2fbf5");
+      r(c, bx + 3, by + 7, 4, 2, "#f2fbf5");
+      break;
+    }
+    case "envelope": {
+      comContorno(c, [[bx, by + 3, 12, 9]], "#f4f1e8");
+      // aba em V, desenhada em degrau — sem ela era só um retângulo branco
+      for (let i = 0; i < 5; i++) {
+        r(c, bx + 1 + i, by + 4 + i, 1, 1, "#8f8a7d");
+        r(c, bx + 10 - i, by + 4 + i, 1, 1, "#8f8a7d");
+      }
+      r(c, bx + 1, by + 9, 4, 1, "#c8c4ba");
+      r(c, bx + 7, by + 9, 4, 1, "#c8c4ba");
+      break;
+    }
+    case "drive": {
+      // Triângulo do Google Drive, montado linha a linha: como três blocos
+      // soltos não lia como triângulo nenhum.
+      for (let linha = 0; linha < 6; linha++) {
+        const largura = 2 + linha * 2;
+        const x0 = bx + 6 - linha;
+        r(c, x0 - 1, by + 1 + linha, largura + 2, 1, TRACO);
+        r(c, x0, by + 1 + linha, largura, 1, linha < 4 ? "#4285F4" : "#34A853");
+      }
+      for (let linha = 0; linha < 4; linha++) {
+        r(c, bx + 7 + linha, by + 3 + linha, 12 - 8 - linha < 0 ? 1 : 4 - linha, 1, "#FBBC04");
+      }
+      r(c, bx - 1, by + 7, 14, 3, TRACO);
+      r(c, bx, by + 7, 12, 2, "#34A853");
+      break;
+    }
+    case "lupa": {
+      // Lente redonda com aro grosso e cabo na diagonal: o quadrado com
+      // rabinho não lia como lupa.
+      disco(c, bx + 5, by + 5, 5, TRACO);
+      disco(c, bx + 5, by + 5, 4, "#5c6470");
+      disco(c, bx + 5, by + 5, 3, "#d8ecf5");
+      r(c, bx + 3, by + 3, 2, 1, "#ffffff");
+      comContorno(c, [[bx + 8, by + 8, 2, 2], [bx + 9, by + 9, 2, 2], [bx + 10, by + 10, 3, 3]], "#4a505c");
+      break;
+    }
+    case "canetaAssina": {
+      comContorno(c, [[bx, by + 8, 12, 5]], "#f4f1e8");
+      r(c, bx + 2, by + 10, 8, 1, "#9aa1ab");
+      comContorno(c, [[bx + 6, by, 3, 8]], "#3f6fc4");
+      comContorno(c, [[bx + 6, by + 8, 3, 2]], "#2b2f38");
+      break;
+    }
+    case "ingresso": {
+      comContorno(c, [[bx, by + 3, 12, 8]], "#f0863a");
+      r(c, bx + 5, by + 3, 2, 8, "#c96a26");
+      r(c, bx + 1, by + 5, 3, 1, "#fbe3d2");
+      r(c, bx + 8, by + 5, 3, 1, "#fbe3d2");
+      r(c, bx + 1, by + 8, 3, 1, "#fbe3d2");
+      break;
+    }
+    case "nos": {
+      // nós ligados, na cor do n8n
+      comContorno(c, [[bx, by + 1, 4, 4], [bx + 8, by + 1, 4, 4], [bx + 4, by + 8, 4, 4]], "#EA4B71");
+      r(c, bx + 4, by + 2, 4, 1, "#f7a9bc");
+      r(c, bx + 2, by + 5, 1, 3, "#f7a9bc");
+      r(c, bx + 9, by + 5, 1, 3, "#f7a9bc");
+      break;
+    }
+    case "coracao": {
+      comContorno(c, [[bx + 1, by + 2, 4, 4], [bx + 7, by + 2, 4, 4], [bx + 1, by + 5, 10, 3], [bx + 3, by + 8, 6, 2], [bx + 5, by + 10, 2, 2]], "#e8548c");
+      r(c, bx + 2, by + 3, 2, 2, "#f8a3c2");
+      break;
+    }
+    case "documentoId": {
+      comContorno(c, [[bx, by + 2, 12, 10]], "#f4f1e8");
+      comContorno(c, [[bx + 1, by + 4, 4, 5]], "#8fa6b8");
+      r(c, bx + 7, by + 4, 4, 1, "#9aa1ab");
+      r(c, bx + 7, by + 6, 4, 1, "#9aa1ab");
+      r(c, bx + 1, by + 10, 10, 1, "#c8c4ba");
+      break;
+    }
+    case "placaVenda": {
+      comContorno(c, [[bx + 5, by + 6, 2, 7]], "#8d8576");
+      comContorno(c, [[bx, by, 12, 7]], "#f4f1e8");
+      r(c, bx + 1, by + 1, 10, 2, "#c4463a");
+      r(c, bx + 2, by + 4, 8, 1, "#9aa1ab");
+      break;
+    }
+    case "banco": {
+      comContorno(c, [[bx + 1, by + 1, 10, 11]], "#5c7fa8");
+      r(c, bx + 1, by + 1, 10, 2, "#8fb0d0");
+      r(c, bx + 1, by + 5, 10, 1, "#3f5f80");
+      r(c, bx + 1, by + 8, 10, 1, "#3f5f80");
+      break;
+    }
+    case "bancoLote": {
+      comContorno(c, [[bx, by + 1, 8, 11]], "#5c7fa8");
+      r(c, bx, by + 1, 8, 2, "#8fb0d0");
+      r(c, bx, by + 5, 8, 1, "#3f5f80");
+      r(c, bx, by + 8, 8, 1, "#3f5f80");
+      comContorno(c, [[bx + 9, by + 5, 4, 2], [bx + 11, by + 3, 2, 6]], "#f0c04a");
+      break;
+    }
+    case "cronograma": {
+      comContorno(c, [[bx, by + 1, 12, 11]], "#f4f1e8");
+      r(c, bx + 1, by + 3, 6, 2, "#3f6fc4");
+      r(c, bx + 3, by + 6, 7, 2, "#2f9e69");
+      r(c, bx + 2, by + 9, 5, 2, "#c46a2f");
       break;
     }
     case "caixa": {

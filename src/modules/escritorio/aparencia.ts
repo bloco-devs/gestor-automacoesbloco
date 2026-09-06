@@ -9,16 +9,29 @@
  * e quatro capacetes iguais lado a lado não distinguem nada.
  */
 
-/** Cores de casco. O amarelo e o preto do BLINK nunca mudam — são a marca. */
+/**
+ * Cores de casco. O amarelo e o preto do BLINK nunca mudam — são a marca.
+ *
+ * Eram doze para dezesseis sistemas: pela casa dos pombos, repetir era
+ * garantido, e ainda por cima o hash colidia antes disso. São vinte e a
+ * distribuição passou a ser feita sem repetição (ver `mapaDeCascos`).
+ */
 const CASCOS = [
   "#3f6fc4", "#c4463a", "#2f9e69", "#7a4fc0", "#2f8ba8", "#d1594f",
   "#e0e2e6", "#4a4f5a", "#c98a2f", "#2f6f5c", "#a8447e", "#5a6bd6",
+  "#8a9a2f", "#c46a2f", "#3f8fa8", "#9a3f5c", "#5c7a3f", "#7a5c3f",
+  "#b0455a", "#4a3f8a",
 ] as const;
 
 export type Acessorio =
   | "capacete" | "headset" | "gravata" | "cracha" | "prancheta" | "caneca"
   | "livro" | "chave" | "megafone" | "maleta" | "rolo" | "predio"
-  | "grafico" | "lapis" | "raio" | "engrenagem" | "postit" | "caixa" | "nenhum";
+  | "grafico" | "lapis" | "raio" | "engrenagem" | "postit"
+  // de fora do escritório
+  | "zap" | "envelope" | "drive" | "lupa" | "canetaAssina" | "ingresso"
+  | "nos" | "coracao" | "documentoId" | "placaVenda" | "banco" | "bancoLote"
+  | "cronograma" | "caixa"
+  | "nenhum";
 
 /**
  * Acessório fixo por sistema, amarrado ao ofício de cada um.
@@ -83,8 +96,58 @@ export function aparenciaDoSistema(id: string): Aparencia {
 }
 
 /** Quem entrega pela porta é um BLINK de fora: casco cinza e uma caixa na mão. */
+/**
+ * O que cada serviço de fora carrega na mão.
+ *
+ * Marca de verdade só onde eu conheço a marca: WhatsApp, Google Drive, n8n e
+ * Lovable. Para Sienge, Órulo, Prevision, Tavily e Autentique eu NÃO conheço o
+ * logotipo — inventar um daria ao desenho um ar de oficial estando errado, o
+ * que é pior que um símbolo genérico. Esses levam o símbolo do ofício.
+ */
+export const ACESSORIO_POR_CONECTOR: Record<string, Acessorio> = {
+  uazapi: "zap",             // marca: balão verde do WhatsApp
+  "google-drive": "drive",   // marca: triângulo tricolor do Drive
+  n8n: "nos",                // marca: nós ligados, rosa do n8n
+  "lovable-ai": "coracao",   // marca: coração
+  email: "envelope",         // ofício: envelope
+  busca: "lupa",             // ofício: lupa
+  autentique: "canetaAssina",// ofício: caneta de assinatura
+  sympla: "ingresso",        // ofício: ingresso
+  cnpj: "documentoId",       // ofício: documento de identificação
+  orulo: "placaVenda",       // ofício: placa de venda de imóvel
+  sienge: "banco",           // ofício: base de dados
+  "sienge-bulk": "bancoLote",// ofício: base de dados em lote
+  prevision: "cronograma",   // ofício: cronograma de obra
+};
+
 export function aparenciaDeConector(id: string): Aparencia {
-  return { casco: hash(id) % 2 === 0 ? "#7d7768" : "#6f6a5c", acessorio: "caixa" };
+  return {
+    casco: hash(id) % 2 === 0 ? "#7d7768" : "#6f6a5c",
+    acessorio: ACESSORIO_POR_CONECTOR[id] ?? "caixa",
+  };
+}
+
+/**
+ * Distribui as cores de casco SEM repetir.
+ *
+ * `aparenciaDoSistema` sozinha não consegue: ela só vê um id por vez e não
+ * sabe quem mais está no andar. Aqui a lista inteira é vista de uma vez —
+ * cada um tenta a cor que o hash prefere e, se já estiver tomada, leva a
+ * próxima livre. Ordenado por id, para a mesma lista dar sempre o mesmo mapa.
+ */
+export function mapaDeCascos(ids: string[]): Map<string, string> {
+  const mapa = new Map<string, string>();
+  const tomadas = new Set<string>();
+  for (const id of [...ids].sort()) {
+    const preferida = hash(id) % CASCOS.length;
+    let cor = CASCOS[preferida];
+    for (let passo = 1; tomadas.has(cor) && passo <= CASCOS.length; passo++) {
+      cor = CASCOS[(preferida + passo) % CASCOS.length];
+    }
+    tomadas.add(cor);
+    mapa.set(id, cor);
+  }
+  return mapa;
 }
 
 /** Multiplica o brilho de um hex, saturando em 255. */

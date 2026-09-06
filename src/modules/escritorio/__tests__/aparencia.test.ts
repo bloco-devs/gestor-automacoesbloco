@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { ACESSORIO_POR_SISTEMA, aparenciaDeConector, aparenciaDoSistema, hash, tom } from "../aparencia";
+import {
+  ACESSORIO_POR_CONECTOR,
+  ACESSORIO_POR_SISTEMA,
+  aparenciaDeConector,
+  aparenciaDoSistema,
+  hash,
+  mapaDeCascos,
+  tom,
+} from "../aparencia";
 import { CONECTORES_EXTERNOS_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
 
 /** Os 16 sistemas que o HUB devolve hoje. */
@@ -48,9 +56,10 @@ describe("aparência do BLINK", () => {
     }
   });
 
-  it("quem entrega pela porta carrega caixa, e só ele", () => {
-    expect(aparenciaDeConector("sienge").acessorio).toBe("caixa");
-    for (const id of SISTEMAS_HUB) expect(aparenciaDoSistema(id).acessorio).not.toBe("caixa");
+  it("nenhum símbolo de fora se confunde com acessório de sistema de dentro", () => {
+    const dentro = new Set(SISTEMAS_HUB.map((id) => aparenciaDoSistema(id).acessorio));
+    const fora = Object.values(ACESSORIO_POR_CONECTOR);
+    for (const s of fora) expect(dentro.has(s), `${s} usado dos dois lados`).toBe(false);
   });
 
   it("hash é sempre positivo", () => {
@@ -60,5 +69,42 @@ describe("aparência do BLINK", () => {
   it("tom satura em 255 em vez de estourar o hex", () => {
     expect(tom("#f0f0f0", 2)).toBe("#ffffff");
     expect(tom("#804020", 0.5)).toMatch(/^#[0-9a-f]{6}$/);
+  });
+});
+
+describe("roupa e símbolo de quem é de fora", () => {
+  const CONECTORES_HUB = [
+    "orulo", "sympla", "n8n", "uazapi", "sienge", "sienge-bulk", "email",
+    "lovable-ai", "cnpj", "busca", "google-drive", "prevision", "autentique",
+  ];
+
+  it("dois sistemas nunca vestem a mesma cor", () => {
+    const mapa = mapaDeCascos(SISTEMAS_HUB);
+    expect(mapa.size).toBe(SISTEMAS_HUB.length);
+    expect(new Set(mapa.values()).size).toBe(SISTEMAS_HUB.length);
+  });
+
+  it("a distribuição de cores é estável entre execuções", () => {
+    expect([...mapaDeCascos(SISTEMAS_HUB)]).toEqual([...mapaDeCascos([...SISTEMAS_HUB].reverse())]);
+  });
+
+  it("aguenta mais sistemas do que a paleta sem devolver cor vazia", () => {
+    const muitos = Array.from({ length: 40 }, (_, i) => `s${i}`);
+    const mapa = mapaDeCascos(muitos);
+    expect(mapa.size).toBe(40);
+    for (const cor of mapa.values()) expect(cor).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it("cada serviço de fora carrega um símbolo próprio, nenhum genérico", () => {
+    const simbolos = CONECTORES_HUB.map((id) => ACESSORIO_POR_CONECTOR[id]);
+    for (const [i, s] of simbolos.entries()) {
+      expect(s, `${CONECTORES_HUB[i]} sem símbolo`).toBeTruthy();
+      expect(s).not.toBe("caixa");
+    }
+    expect(new Set(simbolos).size).toBe(CONECTORES_HUB.length);
+  });
+
+  it("serviço desconhecido cai na caixa de entrega, não em nada", () => {
+    expect(aparenciaDeConector("servico-novo").acessorio).toBe("caixa");
   });
 });

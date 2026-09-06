@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type { Andar, Mesa } from "./layout";
 import { MARGEM } from "./layout";
 import { criarMotor, digitando, passoDe, type Motor, type Personagem } from "./motor";
+import { mapaDeCascos } from "./aparencia";
 import type { DadosEscritorio } from "./dados";
 import {
   MESA_H,
@@ -42,6 +43,8 @@ export interface EscritorioCanvasProps {
   onEscala: (e: number) => void;
   /** Ajusta o zoom para o andar inteiro caber — o padrão, para não ter de arrastar. */
   ajustar: boolean;
+  /** Avisa quem está sob o ponteiro, para a página abrir a prévia. */
+  onApontar?: (id: string | null, tela: { x: number; y: number } | null) => void;
 }
 
 interface Camera {
@@ -62,6 +65,7 @@ export function EscritorioCanvas({
   escala,
   onEscala,
   ajustar,
+  onApontar,
 }: EscritorioCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fundoRef = useRef<HTMLCanvasElement | null>(null);
@@ -164,6 +168,10 @@ export function EscritorioCanvas({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Cores de casco resolvidas de uma vez, para dois sistemas nunca vestirem
+    // a mesma roupa — o hash sozinho colide.
+    const cascos = mapaDeCascos(andar.mesas.map((m) => m.sistemaId));
+
     // Duas mesas na mesma fileira dividem o espaço; o nome tem de caber entre elas.
     const temVizinha = new Set<string>();
     for (const a of andar.mesas) {
@@ -259,6 +267,7 @@ export function EscritorioCanvas({
             humor: p.estado,
             direcao: p.direcao,
             digitando: digitando(p),
+            casco: cascos.get(p.id),
             destacado: hoverRef.current === p.id || selRef.current === p.id,
           });
         }
@@ -274,6 +283,7 @@ export function EscritorioCanvas({
           direcao: p.direcao,
           passo: passoDe(p),
           externo: p.tipo === "externo",
+          casco: p.tipo === "externo" ? undefined : cascos.get(p.id),
           destacado: hoverRef.current === p.id || selRef.current === p.id,
         });
       }
@@ -372,7 +382,15 @@ export function EscritorioCanvas({
           return;
         }
         const pt = internoDoEvento(ev);
-        hoverRef.current = pt ? (mesaEm(pt.x, pt.y)?.sistemaId ?? null) : null;
+        const m = pt ? mesaEm(pt.x, pt.y) : null;
+        const id = m?.sistemaId ?? null;
+        if (id !== hoverRef.current) {
+          hoverRef.current = id;
+          if (onApontar) {
+            const r = ev.currentTarget.getBoundingClientRect();
+            onApontar(id, id ? { x: ev.clientX - r.left, y: ev.clientY - r.top } : null);
+          }
+        }
       }}
       onPointerUp={(ev) => {
         const a = arrastando.current;
@@ -386,6 +404,7 @@ export function EscritorioCanvas({
       onPointerLeave={() => {
         arrastando.current = null;
         hoverRef.current = null;
+        onApontar?.(null, null);
       }}
       onWheel={(ev) => {
         if (!ev.ctrlKey && !ev.metaKey) return;

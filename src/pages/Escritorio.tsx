@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Building2, Loader2, Maximize2, Minus, Pause, Play, Plus } from "lucide-react";
 import { PageShell, PageHeader } from "@/design-system";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EscritorioCanvas } from "@/modules/escritorio/EscritorioCanvas";
 import { PainelLateral } from "@/modules/escritorio/PainelLateral";
+import { PreviaSistema } from "@/modules/escritorio/PreviaSistema";
 import { carregarEscritorio, DADOS_SEMENTE, type DadosEscritorio } from "@/modules/escritorio/dados";
 import { montarAndar } from "@/modules/escritorio/layout";
 import { estadoDoSistema } from "@/modules/escritorio/estado";
@@ -18,6 +19,8 @@ export default function EscritorioPage() {
   const [escala, setEscala] = useState(2);
   const [ajustar, setAjustar] = useState(true);
   const [selecionado, setSelecionado] = useState<string | null>(null);
+  const [previa, setPrevia] = useState<{ id: string; x: number; y: number } | null>(null);
+  const areaRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let ativo = true;
@@ -109,7 +112,10 @@ export default function EscritorioPage() {
       </div>
 
       <div className="grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="h-[74vh] min-h-[460px] overflow-hidden rounded-xl border border-border bg-[hsl(var(--escritorio-fundo))]">
+        <div
+          ref={areaRef}
+          className="relative h-[74vh] min-h-[460px] overflow-hidden rounded-xl border border-border bg-[hsl(var(--escritorio-fundo))]"
+        >
           <EscritorioCanvas
             andar={andar}
             dados={efetivos}
@@ -119,7 +125,18 @@ export default function EscritorioPage() {
             ajustar={ajustar}
             selecionado={selecionado}
             onSelecionar={setSelecionado}
+            onApontar={(id, tela) => setPrevia(id && tela ? { id, ...tela } : null)}
           />
+          {previa && (
+            <PreviaSistema
+              dados={efetivos}
+              id={previa.id}
+              x={previa.x}
+              y={previa.y}
+              largura={areaRef.current?.clientWidth ?? 0}
+              altura={areaRef.current?.clientHeight ?? 0}
+            />
+          )}
         </div>
         <div className="h-[74vh] min-h-[460px]">
           <PainelLateral dados={efetivos} selecionado={selecionado} onSelecionar={setSelecionado} />
@@ -128,7 +145,7 @@ export default function EscritorioPage() {
 
       <p className="ds-caption text-muted-foreground">
         {ajustar
-          ? "O andar inteiro cabe na tela. Clique num BLINK para aproximar e ver a ficha dele."
+          ? "O andar inteiro cabe na tela. Aponte para um BLINK para ver a prévia, clique para abrir a ficha."
           : "Arraste para andar pelo escritório. Toque em “Andar inteiro” para ver tudo de novo."}
         {demo && " O modo demonstração está ligado: o movimento agora é constante, não reflete o volume real."}
       </p>
