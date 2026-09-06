@@ -46,13 +46,15 @@ export default function EscritorioPage() {
     let trabalhando = 0;
     let ocioso = 0;
     let falha = 0;
+    let semDados = 0;
     for (const s of efetivos.sistemas) {
       const e = estadoDoSistema(efetivos.saude[s.id]);
       if (e === "trabalhando") trabalhando++;
       else if (e === "falha") falha++;
+      else if (e === "sem-dados") semDados++;
       else ocioso++;
     }
-    return { trabalhando, ocioso, falha };
+    return { trabalhando, ocioso, falha, semDados };
   }, [efetivos]);
 
   const aproximar = (delta: number) => {
@@ -104,6 +106,7 @@ export default function EscritorioPage() {
         <span>{contagem.trabalhando} trabalhando</span>
         <span>{contagem.ocioso} ocioso{contagem.ocioso === 1 ? "" : "s"}</span>
         <span>{contagem.falha} em falha</span>
+        <span>{contagem.semDados} sem dados no HUB</span>
         {!dados && (
           <span className="inline-flex items-center gap-1.5">
             <Loader2 className="size-3.5 animate-spin" aria-hidden /> carregando o HUB

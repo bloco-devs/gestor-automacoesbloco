@@ -15,13 +15,15 @@ interface Props {
 
 const PONTO: Record<Estado, string> = {
   trabalhando: "bg-success",
-  ocioso: "bg-muted-foreground/40",
+  ocioso: "bg-warning",
   falha: "bg-destructive",
+  "sem-dados": "bg-muted-foreground/30",
 };
 const ROTULO: Record<Estado, string> = {
   trabalhando: "trabalhando",
   ocioso: "ocioso",
   falha: "em falha",
+  "sem-dados": "sem dados",
 };
 
 function quando(iso: string | null): string {
@@ -77,7 +79,10 @@ export function PainelLateral({ dados, selecionado, onSelecionar }: Props) {
             </Button>
           </div>
 
-          <Badge variant={estado === "falha" ? "destructive" : estado === "ocioso" ? "secondary" : "default"} className="mt-2">
+          <Badge
+            variant={estado === "falha" ? "destructive" : estado === "trabalhando" ? "default" : "secondary"}
+            className="mt-2"
+          >
             {ROTULO[estado]}
           </Badge>
 
@@ -100,7 +105,9 @@ export function PainelLateral({ dados, selecionado, onSelecionar }: Props) {
             </dl>
           ) : (
             <p className="mt-3 ds-caption text-muted-foreground">
-              O HUB não devolveu histórico. Sem histórico, ele fica parado na mesa.
+              O HUB não reporta este sistema: nenhuma execução registrada em 30 dias.
+              Isso pode significar que ele não tem automação rodando, ou que roda e não
+              reporta ao HUB — a tela não sabe dizer qual dos dois.
             </p>
           )}
           {culpaDeTerceiro(saude) && (

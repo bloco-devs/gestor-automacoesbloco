@@ -31,6 +31,13 @@ import {
 const ESCALA_MIN = 1;
 const ESCALA_MAX = 4;
 const VAO_PORTA = 15;
+/** "sem-dados" não cabe numa etiqueta de mesa; vira "sem dado". */
+const ROTULO_CURTO: Record<string, string> = {
+  trabalhando: "trabalhando",
+  ocioso: "ocioso",
+  falha: "falha",
+  "sem-dados": "sem dado",
+};
 
 export interface EscritorioCanvasProps {
   andar: Andar;
@@ -312,7 +319,7 @@ export function EscritorioCanvas({
           const t = paraTela(m.x + MESA_W / 2, m.y + MESA_H + 26);
           // Mesa sozinha na fileira pode usar a sala inteira; com vizinha, só o passo entre mesas.
           const largura = (temVizinha.has(m.sistemaId) ? 58 : 130) * cam.escala;
-          etiqueta(ctx, t.x, t.y, m.nome, p.estado, largura, cam.escala < 1.8);
+          etiqueta(ctx, t.x, t.y, m.nome, ROTULO_CURTO[p.estado], largura, cam.escala < 1.8);
         }
       }
 
@@ -432,6 +439,7 @@ const CORES: Record<string, [string, string]> = {
   trabalhando: ["#e6f4ec", "#1d6b43"],
   ocioso: ["#f1efe9", "#6b6555"],
   falha: ["#fceceb", "#a3271c"],
+  "sem-dados": ["#eceae4", "#8a8578"],
 };
 
 function placa(

@@ -11,7 +11,15 @@ export interface SaudeSistema {
   ultima: string | null;
 }
 
-export type Estado = "trabalhando" | "ocioso" | "falha";
+/**
+ * `sem-dados` não é humor, é ausência de sinal.
+ *
+ * Antes ele caía em "ocioso" junto com quem tem histórico e só não rodou hoje.
+ * São coisas diferentes: treze dos dezesseis sistemas não têm UMA execução
+ * registrada em trinta dias, e a tela afirmava que estavam parados quando a
+ * verdade é que o HUB nunca ouviu falar deles.
+ */
+export type Estado = "trabalhando" | "ocioso" | "falha" | "sem-dados";
 
 /** Acima disso o personagem passa a exibir alerta. */
 export const LIMIAR_FALHA = 0.05;
@@ -19,12 +27,17 @@ export const LIMIAR_FALHA = 0.05;
 export const JANELA_OCIOSO_MS = 24 * 60 * 60 * 1000;
 
 export function estadoDoSistema(saude: SaudeSistema | null | undefined, agora = Date.now()): Estado {
-  if (!saude || !saude.execs) return "ocioso";
+  if (!saude || !saude.execs) return "sem-dados";
   if (saude.falhas / saude.execs >= LIMIAR_FALHA) return "falha";
   if (!saude.ultima) return "ocioso";
   const ultima = Date.parse(saude.ultima);
   if (Number.isNaN(ultima)) return "ocioso";
   return agora - ultima <= JANELA_OCIOSO_MS ? "trabalhando" : "ocioso";
+}
+
+/** Quem não anda pelo corredor: sem histórico, ou histórico velho. */
+export function estaParado(estado: Estado): boolean {
+  return estado === "ocioso" || estado === "sem-dados";
 }
 
 /** Quantas falhas vieram do outro lado da integração, não dele. */

@@ -201,8 +201,13 @@ const BLINK_AM_CLARO = "#ffe07a";
 const BLINK_CASCO = "#16171A";
 const BLINK_PLACA = "#0B0C0E";
 const TRACO = "#1b1c1f";
+/** Amarelo fosco do ocioso: acordado, sem o brilho de quem está trabalhando. */
+const BLINK_AM_FOSCO = "#8f7420";
+/** Sem sinal: a placa do rosto apaga. Não é humor, é ausência de dado. */
+const BLINK_APAGADO = "#6f6a5c";
+const BLINK_APAGADO_CLARO = "#8f8a7d";
 
-export type Humor = "trabalhando" | "ocioso" | "falha";
+export type Humor = "trabalhando" | "ocioso" | "falha" | "sem-dados";
 export type Direcao = "frente" | "esquerda" | "direita";
 
 export interface PersonagemOpts {
@@ -270,36 +275,42 @@ export function desenhaBlink(c: Ctx, x: number, y: number, a: Aparencia, opts: P
     r(c, x + 19, y + 8, 2, 1, BLINK_AM_CLARO);
   }
 
-  // placa do rosto
-  r(c, x + 5, y + 5, 12, 12, BLINK_AMARELO);
+  // placa do rosto — apagada quando o HUB não tem dado nenhum
+  r(c, x + 5, y + 5, 12, 12, humor === "sem-dados" ? BLINK_APAGADO : BLINK_AMARELO);
   r(c, x + 6, y + 6, 10, 10, BLINK_PLACA);
 
-  // olhos — mudam com o estado e olham para onde ele anda
+  // Olho sempre ABERTO, nos quatro estados. O olho reduzido a uma listra
+  // fazia o BLINK parecer desligado, e "sem dado" não é o mesmo que dormindo.
   const desvio = direcao === "direita" ? 1 : direcao === "esquerda" ? -1 : 0;
-  if (humor === "falha") {
-    r(c, x + 7, y + 8, 3, 1, BLINK_AMARELO);
-    r(c, x + 12, y + 8, 3, 1, BLINK_AMARELO);
-    r(c, x + 7, y + 9, 1, 1, BLINK_AMARELO);
-    r(c, x + 14, y + 9, 1, 1, BLINK_AMARELO);
-  } else if (humor === "ocioso") {
-    r(c, x + 7, y + 9, 3, 1, BLINK_AMARELO);
-    r(c, x + 12, y + 9, 3, 1, BLINK_AMARELO);
-  } else {
-    r(c, x + 7 + desvio, y + 8, 3, 3, BLINK_AMARELO);
-    r(c, x + 12 + desvio, y + 8, 3, 3, BLINK_AMARELO);
+  const olho =
+    humor === "ocioso" ? BLINK_AM_FOSCO : humor === "sem-dados" ? BLINK_APAGADO_CLARO : BLINK_AMARELO;
+  const alturaOlho = humor === "falha" ? 3 : 3;
+  const topoOlho = humor === "falha" ? y + 9 : y + 8;
+  r(c, x + 7 + desvio, topoOlho, 3, alturaOlho, olho);
+  r(c, x + 12 + desvio, topoOlho, 3, alturaOlho, olho);
+  if (humor === "trabalhando") {
     r(c, x + 7 + desvio, y + 8, 1, 1, BLINK_AM_CLARO);
     r(c, x + 12 + desvio, y + 8, 1, 1, BLINK_AM_CLARO);
+  }
+  // sobrancelha inclinada: é o que diz "tem coisa errada" sem fechar o olho
+  if (humor === "falha") {
+    r(c, x + 7, y + 7, 2, 1, olho);
+    r(c, x + 9, y + 8, 1, 1, olho);
+    r(c, x + 13, y + 8, 1, 1, olho);
+    r(c, x + 14, y + 7, 2, 1, olho);
   }
 
   // boca
   if (humor === "falha") {
-    r(c, x + 9, y + 13, 4, 1, BLINK_AMARELO);
-    r(c, x + 8, y + 14, 1, 1, BLINK_AMARELO);
-    r(c, x + 13, y + 14, 1, 1, BLINK_AMARELO);
+    r(c, x + 9, y + 13, 4, 1, olho);
+    r(c, x + 8, y + 14, 1, 1, olho);
+    r(c, x + 13, y + 14, 1, 1, olho);
+  } else if (humor === "sem-dados") {
+    r(c, x + 9, y + 14, 4, 1, olho);
   } else {
-    r(c, x + 9, y + 14, 4, 1, BLINK_AMARELO);
-    r(c, x + 8, y + 13, 1, 1, BLINK_AMARELO);
-    r(c, x + 13, y + 13, 1, 1, BLINK_AMARELO);
+    r(c, x + 9, y + 14, 4, 1, olho);
+    r(c, x + 8, y + 13, 1, 1, olho);
+    r(c, x + 13, y + 13, 1, 1, olho);
   }
 
   // pescoço e tronco

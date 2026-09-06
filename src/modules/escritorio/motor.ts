@@ -7,7 +7,7 @@
  */
 
 import { caminhoDaPorta, caminhoEntreMesas, type Andar, type Mesa, type Ponto, type PortaExterna } from "./layout";
-import { estadoDoSistema, intervaloEntreViagens, type Estado, type SaudeSistema } from "./estado";
+import { estaParado, estadoDoSistema, intervaloEntreViagens, type Estado, type SaudeSistema } from "./estado";
 import type { DadosEscritorio } from "./dados";
 import type { Direcao } from "./sprites";
 
@@ -115,7 +115,7 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
   const intervaloDe = (p: Personagem, demo: boolean): number => {
     if (demo) return INTERVALO_DEMO * (0.6 + Math.random() * 0.8);
     if (p.tipo === "externo") return 26 + Math.random() * 40;
-    if (p.estado === "ocioso") return Infinity;
+    if (estaParado(p.estado)) return Infinity;
     const execs = saudeDe(p.id)?.execs ?? 0;
     const base = execs > 0 ? intervaloEntreViagens(execs, maiorExecs) : 45;
     return base * (0.7 + Math.random() * 0.6);

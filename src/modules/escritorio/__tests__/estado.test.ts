@@ -1,13 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { culpaDeTerceiro, estadoDoSistema, intervaloEntreViagens } from "../estado";
+import { culpaDeTerceiro, estaParado, estadoDoSistema, intervaloEntreViagens } from "../estado";
 
 const AGORA = Date.parse("2026-09-05T20:00:00Z");
 const horasAtras = (h: number) => new Date(AGORA - h * 3_600_000).toISOString();
 
 describe("estado do sistema", () => {
-  it("sem histórico é ocioso", () => {
-    expect(estadoDoSistema(undefined, AGORA)).toBe("ocioso");
-    expect(estadoDoSistema({ execs: 0, ok: 0, falhas: 0, ultima: null }, AGORA)).toBe("ocioso");
+  it("sem histórico nenhum não é ocioso — é sem-dados", () => {
+    // Confundir os dois fazia a tela afirmar que treze sistemas estavam
+    // parados quando a verdade é que o HUB nunca ouviu falar deles.
+    expect(estadoDoSistema(undefined, AGORA)).toBe("sem-dados");
+    expect(estadoDoSistema({ execs: 0, ok: 0, falhas: 0, ultima: null }, AGORA)).toBe("sem-dados");
+  });
+
+  it("com histórico mas parado há mais de um dia é ocioso, não sem-dados", () => {
+    expect(estadoDoSistema({ execs: 7, ok: 7, falhas: 0, ultima: horasAtras(30) }, AGORA)).toBe("ocioso");
+  });
+
+  it("nem ocioso nem sem-dados saem da mesa", () => {
+    expect(estaParado("ocioso")).toBe(true);
+    expect(estaParado("sem-dados")).toBe(true);
+    expect(estaParado("trabalhando")).toBe(false);
+    expect(estaParado("falha")).toBe(false);
   });
 
   it("rodou há pouco e sem falhar é trabalhando", () => {

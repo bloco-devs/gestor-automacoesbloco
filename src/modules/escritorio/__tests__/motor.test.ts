@@ -64,6 +64,18 @@ describe("motor do escritório", () => {
     expect(p.viagem).toBeUndefined();
   });
 
+  it("sistema sem dado nenhum no HUB também nunca levanta", () => {
+    const semDado = {
+      ...dados,
+      saude: { ...dados.saude, comercial: { execs: 0, ok: 0, falhas: 0, ultima: null } },
+    } satisfies DadosEscritorio;
+    const m = criarMotor(andar, semDado, AGORA);
+    const p = m.porId.get("comercial")!;
+    expect(p.estado).toBe("sem-dados");
+    rodar(m, 600);
+    expect(p.fase).toBe("mesa");
+  });
+
   it("quem não tem integração de saída também não sai", () => {
     const m = criarMotor(andar, dados, AGORA);
     rodar(m, 600);
