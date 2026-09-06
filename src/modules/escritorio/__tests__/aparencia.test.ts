@@ -127,3 +127,21 @@ describe("porta de serviço sem integração", () => {
     expect(portaSemUso("email", [{ origem: "rh" }])).toBe(true);
   });
 });
+
+describe("marcas dos serviços de fora", () => {
+  it("só usa marca onde ela lê em pixel art", () => {
+    // Autentique e Prevision voltaram ao símbolo do ofício: o "a" virava
+    // gráfico de barras e as três setas viravam pontinhos.
+    expect(ACESSORIO_POR_CONECTOR.sienge).toBe("marcaSienge");
+    expect(ACESSORIO_POR_CONECTOR.orulo).toBe("marcaOrulo");
+    expect(ACESSORIO_POR_CONECTOR.sympla).toBe("marcaSympla");
+    expect(ACESSORIO_POR_CONECTOR.email).toBe("marcaResend");
+    expect(ACESSORIO_POR_CONECTOR.autentique).toBe("canetaAssina");
+    expect(ACESSORIO_POR_CONECTOR.prevision).toBe("cronograma");
+  });
+
+  it("continua sem nenhum símbolo repetido entre os serviços", () => {
+    const usados = Object.values(ACESSORIO_POR_CONECTOR);
+    expect(new Set(usados).size).toBe(usados.length);
+  });
+});

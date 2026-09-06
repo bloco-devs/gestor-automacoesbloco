@@ -31,6 +31,8 @@ export type Acessorio =
   | "zap" | "envelope" | "drive" | "lupa" | "canetaAssina" | "ingresso"
   | "nos" | "coracao" | "documentoId" | "placaVenda" | "banco" | "bancoLote"
   | "cronograma" | "caixa"
+  // marcas que o Bloco enviou e que leem em pixel art
+  | "marcaSienge" | "marcaOrulo" | "marcaSympla" | "marcaResend"
   | "nenhum";
 
 /**
@@ -105,19 +107,19 @@ export function aparenciaDoSistema(id: string): Aparencia {
  * que é pior que um símbolo genérico. Esses levam o símbolo do ofício.
  */
 export const ACESSORIO_POR_CONECTOR: Record<string, Acessorio> = {
-  uazapi: "zap",             // marca: balão verde do WhatsApp
-  "google-drive": "drive",   // marca: triângulo tricolor do Drive
-  n8n: "nos",                // marca: nós ligados, rosa do n8n
-  "lovable-ai": "coracao",   // marca: coração
-  email: "envelope",         // ofício: envelope
-  busca: "lupa",             // ofício: lupa
-  autentique: "canetaAssina",// ofício: caneta de assinatura
-  sympla: "ingresso",        // ofício: ingresso
-  cnpj: "documentoId",       // ofício: documento de identificação
-  orulo: "placaVenda",       // ofício: placa de venda de imóvel
-  sienge: "banco",           // ofício: base de dados
-  "sienge-bulk": "bancoLote",// ofício: base de dados em lote
-  prevision: "cronograma",   // ofício: cronograma de obra
+  uazapi: "zap",                    // marca: balão verde do WhatsApp
+  "google-drive": "drive",          // marca: triângulo tricolor do Drive
+  n8n: "nos",                       // marca: nós ligados, rosa do n8n
+  "lovable-ai": "coracao",          // marca: coração
+  sienge: "marcaSienge",            // marca enviada pelo Bloco: S vermelho
+  "sienge-bulk": "bancoLote",       // mesma casa, mas em lote: base de dados
+  orulo: "marcaOrulo",              // marca enviada: "ö" branco em azul
+  sympla: "marcaSympla",            // marca enviada: "s" com bolinhas
+  autentique: "canetaAssina",       // o "a" nao lia em pixel; simbolo do oficio le melhor
+  email: "marcaResend",             // marca enviada: "R" preto
+  prevision: "cronograma",          // as tres setas viravam pontinhos; cronograma le melhor
+  busca: "lupa",                    // ofício: lupa — sem logo recebido
+  cnpj: "documentoId",              // ofício: documento — não tem logo próprio
 };
 
 export function aparenciaDeConector(id: string): Aparencia {
