@@ -156,7 +156,7 @@ function Cartao({
               antes, e levar para onde dá para resolver. */}
           {item.fechamento !== "concluido" && (
             <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
-              <p className="text-[13px]">
+              <p className="ds-caption">
                 {item.fechamento === "rascunho"
                   ? "O relato técnico está salvo como rascunho. Falta marcar como registrado."
                   : "Esta entrega ainda não tem relato técnico."}{" "}
@@ -183,7 +183,7 @@ function Cartao({
           )}
 
           {/* O relato, para quem classifica ler antes de decidir. */}
-          <div className="flex flex-col gap-3 text-[13px]">
+          <div className="flex flex-col gap-3 ds-caption">
             {/* SÓ O QUE FOI ESCRITO.
                 Antes os cinco campos apareciam sempre, com "Não informado" nos
                 vazios. Fazia sentido quando quatro eram obrigatórios: o vazio
@@ -215,7 +215,7 @@ function Cartao({
               ))}
           </div>
 
-          <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg bg-muted/40 p-3 text-[13px] text-muted-foreground">
+          <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg bg-muted/40 p-3 ds-caption text-muted-foreground">
             {/* SÓ O QUE EXISTE.
                 "sem tempo lançado", "sem critérios" e "0 anexos" ocupavam a
                 linha anunciando ausências — e ausência aqui não é pendência:
@@ -242,7 +242,7 @@ function Cartao({
 
           {/* --------------------------------------------------------- */}
           {item.ja_classificada && item.justificativa && (
-            <div className="rounded-lg border-l-2 border-l-foreground/30 bg-muted/40 p-3 text-[13px]">
+            <div className="rounded-lg border-l-2 border-l-foreground/30 bg-muted/40 p-3 ds-caption">
               <span className="ds-label text-muted-foreground">
                 Por que {item.rotulo} ({item.pontos} pontos)
               </span>
@@ -255,7 +255,7 @@ function Cartao({
           )}
 
           {minha && (
-            <div className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3 text-[13px]">
+            <div className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3 ds-caption">
               <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
               <p className="text-muted-foreground">{AVISO_PROPRIA}</p>
             </div>
@@ -285,7 +285,7 @@ function Cartao({
                   type="button"
                   onClick={() => setEscolha(t.codigo)}
                   className={[
-                    "rounded-lg border px-4 py-2 text-[13px] transition-colors",
+                    "rounded-lg border px-4 py-2 ds-caption transition-colors",
                     escolha === t.codigo
                       ? "border-foreground bg-foreground text-background"
                       : "hover:bg-accent",
@@ -375,13 +375,13 @@ function Cartao({
               {historico.isLoading ? (
                 <Skeleton className="h-16 w-full" />
               ) : (historico.data ?? []).length === 0 ? (
-                <p className="p-3 text-[13px] text-muted-foreground">
+                <p className="p-3 ds-caption text-muted-foreground">
                   Nenhuma classificação registrada ainda.
                 </p>
               ) : (
                 <div className="divide-y">
                   {(historico.data ?? []).map((h) => (
-                    <div key={h.id} className="p-3 text-[13px]">
+                    <div key={h.id} className="p-3 ds-caption">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline" className="font-normal">
                           {h.origem === "definicao" ? "definida" : "alterada"}
@@ -503,7 +503,7 @@ function ClassificacaoImpl() {
             type="button"
             onClick={() => setAba(chave)}
             className={[
-              "-mb-px border-b-2 px-3 py-2 text-[13px] transition-colors",
+              "-mb-px border-b-2 px-3 py-2 ds-caption transition-colors",
               aba === chave
                 ? "border-foreground font-medium"
                 : "border-transparent text-muted-foreground hover:text-foreground",

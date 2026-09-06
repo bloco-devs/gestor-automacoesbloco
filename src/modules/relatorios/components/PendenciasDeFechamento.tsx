@@ -94,7 +94,7 @@ function PendenciasDeFechamentoImpl() {
             type="button"
             onClick={() => setAba(chave)}
             className={[
-              "-mb-px border-b-2 px-3 py-2 text-[13px] transition-colors",
+              "-mb-px border-b-2 px-3 py-2 ds-caption transition-colors",
               aba === chave
                 ? "border-foreground font-medium"
                 : "border-transparent text-muted-foreground hover:text-foreground",
@@ -133,7 +133,7 @@ function PendenciasDeFechamentoImpl() {
                 <TableBody>
                   {prontas.map((p) => (
                     <TableRow key={p.demanda_id}>
-                      <TableCell className="font-mono text-[12px]">
+                      <TableCell className="font-mono ds-small">
                         {formatarReferenciaComSigla(p.ticket_code, p.sistema_slug, p.demanda_id, p.titulo)}
                       </TableCell>
                       <TableCell className="max-w-[300px] truncate">{p.titulo}</TableCell>
@@ -142,17 +142,17 @@ function PendenciasDeFechamentoImpl() {
                           {nomeDoSistemaPeloSlug(p.sistema_slug) ?? p.sistema_slug ?? "não identificado"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="tabular-nums text-[13px]">
+                      <TableCell className="tabular-nums ds-caption">
                         {formatarData(p.concluida_em)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-[13px]">
+                      <TableCell className="text-right tabular-nums ds-caption">
                         {formatarDuracao(p.minutos_lancados)}
                       </TableCell>
                       <TableCell>
                         {p.ja_classificada ? (
                           <Badge className="font-normal">classificada</Badge>
                         ) : (
-                          <span className="text-[13px] text-muted-foreground">aguardando</span>
+                          <span className="ds-caption text-muted-foreground">aguardando</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -211,7 +211,7 @@ function PendenciasDeFechamentoImpl() {
                   const s = SITUACAO[p.situacao] ?? SITUACAO.sem_registro;
                   return (
                     <TableRow key={p.demanda_id}>
-                      <TableCell className="font-mono text-[12px]">
+                      <TableCell className="font-mono ds-small">
                         {formatarReferenciaComSigla(p.ticket_code, p.sistema_slug, p.demanda_id, p.titulo)}
                       </TableCell>
                       <TableCell className="max-w-[300px] truncate">{p.titulo}</TableCell>
@@ -220,18 +220,18 @@ function PendenciasDeFechamentoImpl() {
                           {nomeDoSistemaPeloSlug(p.sistema_slug) ?? p.sistema_slug ?? "não identificado"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="tabular-nums text-[13px]">
+                      <TableCell className="tabular-nums ds-caption">
                         {formatarData(p.concluida_em)}
                       </TableCell>
                       <TableCell
                         className={[
-                          "text-right tabular-nums text-[13px]",
+                          "text-right tabular-nums ds-caption",
                           p.dias_parada >= 7 ? "text-warning" : "",
                         ].join(" ")}
                       >
                         {p.dias_parada === 0 ? "hoje" : `${p.dias_parada}d`}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-[13px]">
+                      <TableCell className="text-right tabular-nums ds-caption">
                         {formatarDuracao(p.minutos_lancados)}
                       </TableCell>
                       <TableCell>

@@ -371,7 +371,7 @@ function RelatorioImplementacoesImpl() {
         </KpiRow>
 
         {r.resumo.porClassificacao.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
+          <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 ds-caption">
             {r.resumo.porClassificacao.map((c) => (
               <span key={c.codigo}>
                 <span className="text-muted-foreground">{c.rotulo}:</span> {c.quantidade} ×{" "}
@@ -460,7 +460,7 @@ function RelatorioImplementacoesImpl() {
                         setExpandida((atual) => (atual === l.demanda_id ? null : l.demanda_id))
                       }
                     >
-                      <TableCell className="font-mono text-[12px]">
+                      <TableCell className="font-mono ds-small">
                         {(() => {
                           const est = obterEstiloDoSistema(l.sistema_slug, l.ticket_code || l.titulo);
                           return (
@@ -476,14 +476,14 @@ function RelatorioImplementacoesImpl() {
                           {nomeDoSistemaPeloSlug(l.sistema_slug) ?? l.sistema_slug ?? "não identificado"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-[13px]" title={l.responsavel_nome ?? undefined}>
+                      <TableCell className="ds-caption" title={l.responsavel_nome ?? undefined}>
                         {l.responsavel_nome ? (
                           nomeCurto(l.responsavel_nome)
                         ) : (
                           <span className="text-muted-foreground">sem responsável</span>
                         )}
                       </TableCell>
-                      <TableCell className="tabular-nums text-[13px]">
+                      <TableCell className="tabular-nums ds-caption">
                         {formatarData(l.concluida_em)}
                         {l.procedencia !== "confirmada" && (
                           <span className="ml-1 text-muted-foreground" title="Data inferida">*</span>
@@ -495,21 +495,21 @@ function RelatorioImplementacoesImpl() {
                             {l.classificacao_rotulo}
                           </Badge>
                         ) : l.fechamento !== "concluido" ? (
-                          <span className="text-[12px] text-muted-foreground">
+                          <span className="ds-small text-muted-foreground">
                             sem fechamento
                           </span>
                         ) : (
-                          <span className="text-[12px] text-muted-foreground">
+                          <span className="ds-small text-muted-foreground">
                             aguardando
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-[13px]">
+                      <TableCell className="text-right tabular-nums ds-caption">
                         {/* Sem classificação NÃO vira 0. Zero é um valor; a
                             ausência de decisão é outra coisa. */}
                         {l.pontos ?? <span className="text-muted-foreground">—</span>}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-[13px]">
+                      <TableCell className="text-right tabular-nums ds-caption">
                         {l.anexos + l.comentarios > 0 ? (
                           `${l.anexos + l.comentarios}`
                         ) : (
@@ -520,7 +520,7 @@ function RelatorioImplementacoesImpl() {
 
                     {expandida === l.demanda_id && (
                       <TableRow key={`${l.demanda_id}-detalhe`} className="bg-muted/30">
-                        <TableCell colSpan={8} className="text-[13px]">
+                        <TableCell colSpan={8} className="ds-caption">
                           <div className="flex flex-col gap-2 py-1">
                             <div>
                               <span className="ds-label text-muted-foreground">

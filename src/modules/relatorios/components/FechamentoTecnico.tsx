@@ -351,12 +351,12 @@ function FechamentoTecnicoImpl() {
                           vira campo do fechamento, e o fechamento o RH lê. Sem
                           o aviso, alguém publica sem perceber que publicou. */}
                       {f.interna && (
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="ds-micro">
                           nota interna — não visível ao solicitante
                         </Badge>
                       )}
                     </div>
-                    <p className="whitespace-pre-wrap text-[13px]">{f.texto}</p>
+                    <p className="whitespace-pre-wrap ds-caption">{f.texto}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-1">
                       <span className="ds-caption mr-1 text-muted-foreground">Usar em:</span>
                       {DESTINOS.map((d) => (
@@ -415,7 +415,7 @@ function FechamentoTecnicoImpl() {
               <button
                 type="button"
                 onClick={() => setOpcionaisAbertos(true)}
-                className="flex w-full items-center gap-2 rounded-lg border border-dashed px-3 py-2.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="flex w-full items-center gap-2 rounded-lg border border-dashed px-3 py-2.5 text-left ds-caption text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <ChevronDown className="size-4 shrink-0" aria-hidden />
                 <span>
@@ -426,7 +426,7 @@ function FechamentoTecnicoImpl() {
                     </span>
                   )}
                 </span>
-                <span className="ml-auto text-[12px]">opcional</span>
+                <span className="ml-auto ds-small">opcional</span>
               </button>
             ) : (
               <div className="flex flex-col gap-4">
@@ -449,7 +449,7 @@ function FechamentoTecnicoImpl() {
                 <button
                   type="button"
                   onClick={() => setOpcionaisAbertos(false)}
-                  className="self-start text-[13px] text-muted-foreground hover:text-foreground"
+                  className="self-start ds-caption text-muted-foreground hover:text-foreground"
                 >
                   Recolher
                 </button>
@@ -494,7 +494,7 @@ function FechamentoTecnicoImpl() {
                 economizava espaço. */}
             <div className="mb-3 flex flex-wrap gap-4">
               <div>
-                <Label className="text-[12px]">Data de início do trabalho</Label>
+                <Label className="ds-small">Data de início do trabalho</Label>
                 <Input
                   type="date"
                   className="mt-1"
@@ -503,7 +503,7 @@ function FechamentoTecnicoImpl() {
                 />
               </div>
               <div>
-                <Label className="text-[12px]">Data de conclusão</Label>
+                <Label className="ds-small">Data de conclusão</Label>
                 <Input
                   type="date"
                   className="mt-1"
@@ -520,11 +520,11 @@ function FechamentoTecnicoImpl() {
               <button
                 type="button"
                 onClick={() => setTempoAberto(true)}
-                className="flex w-full items-center gap-2 rounded-lg border border-dashed px-3 py-2.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="flex w-full items-center gap-2 rounded-lg border border-dashed px-3 py-2.5 text-left ds-caption text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <ChevronDown className="size-4 shrink-0" aria-hidden />
                 <span>Lançar horas trabalhadas</span>
-                <span className="ml-auto text-[12px]">opcional</span>
+                <span className="ml-auto ds-small">opcional</span>
               </button>
             ) : (
             <div className="flex flex-col gap-3">
@@ -534,7 +534,7 @@ function FechamentoTecnicoImpl() {
               </p>
               <div className="flex flex-wrap items-end gap-2">
                 <div>
-                  <Label className="text-[12px]">Início</Label>
+                  <Label className="ds-small">Início</Label>
                   <Input
                     type="datetime-local"
                     className="mt-1"
@@ -543,7 +543,7 @@ function FechamentoTecnicoImpl() {
                   />
                 </div>
                 <div>
-                  <Label className="text-[12px]">Fim</Label>
+                  <Label className="ds-small">Fim</Label>
                   <Input
                     type="datetime-local"
                     className="mt-1"
@@ -552,7 +552,7 @@ function FechamentoTecnicoImpl() {
                   />
                 </div>
                 <div className="min-w-[180px] flex-1">
-                  <Label className="text-[12px]">O que fez (opcional)</Label>
+                  <Label className="ds-small">O que fez (opcional)</Label>
                   <Input
                     className="mt-1"
                     value={novaObs}
@@ -572,7 +572,7 @@ function FechamentoTecnicoImpl() {
               {(intervalos.data ?? []).length > 0 && (
                 <div className="flex flex-col divide-y rounded-lg border">
                   {(intervalos.data ?? []).map((i) => (
-                    <div key={i.id} className="flex items-center gap-3 px-3 py-2 text-[13px]">
+                    <div key={i.id} className="flex items-center gap-3 px-3 py-2 ds-caption">
                       <span className="tabular-nums">{formatarData(i.inicio, true)}</span>
                       <span className="text-muted-foreground">→</span>
                       <span className="tabular-nums">{formatarData(i.fim, true)}</span>
@@ -605,7 +605,7 @@ function FechamentoTecnicoImpl() {
               <button
                 type="button"
                 onClick={() => setTempoAberto(false)}
-                className="self-start text-[13px] text-muted-foreground hover:text-foreground"
+                className="self-start ds-caption text-muted-foreground hover:text-foreground"
               >
                 Recolher
               </button>
@@ -619,7 +619,7 @@ function FechamentoTecnicoImpl() {
                 vê a confirmação, e escolhe para onde ir — em vez de ser
                 despejada numa lista de onde o item acabou de sair. */}
             {acabouDeRegistrar && (
-              <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-success/40 bg-success/10 p-3 text-[13px]">
+              <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-success/40 bg-success/10 p-3 ds-caption">
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
                 <div className="flex-1">
                   <p className="font-medium">Registrado</p>
@@ -649,7 +649,7 @@ function FechamentoTecnicoImpl() {
             )}
 
             {faltando.length > 0 && (
-              <div className="mb-3 flex items-start gap-2 rounded-lg border bg-muted/40 p-3 text-[13px]">
+              <div className="mb-3 flex items-start gap-2 rounded-lg border bg-muted/40 p-3 ds-caption">
                 <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
                 <div>
                   <p className="font-medium">Falta preencher para registrar</p>

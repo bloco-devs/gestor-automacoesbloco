@@ -319,7 +319,7 @@ function Apurar() {
           {/* A composição só aparece quando existe ponto — três linhas de
               "0 × 50 = 0" ocupam a tela sem informar. */}
           {r.pontos > 0 && (
-            <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px]">
+            <div className="flex flex-wrap gap-x-6 gap-y-1 ds-caption">
               {[
                 ["Fácil", r.facil, 50],
                 ["Médio", r.media, 100],
@@ -360,7 +360,7 @@ function Apurar() {
               ) : (
                 <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
               )}
-              <div className="flex-1 text-[13px]">
+              <div className="flex-1 ds-caption">
                 <p className="font-medium">
                   {p.elegiveis === 0
                     ? `${p.concluidas_no_ciclo} entregas concluídas, nenhuma apurada ainda`
@@ -486,7 +486,7 @@ function Apurar() {
                     <TableCell className="text-right font-medium tabular-nums">
                       {x.pontos}
                     </TableCell>
-                    <TableCell className="text-[12px] text-muted-foreground">
+                    <TableCell className="ds-small text-muted-foreground">
                       {x.sem_fechamento > 0 && `${x.sem_fechamento} s/ fechamento`}
                       {x.sem_fechamento > 0 && x.sem_classificacao > 0 && " · "}
                       {x.sem_classificacao > 0 && `${x.sem_classificacao} s/ classe`}
@@ -589,7 +589,7 @@ function Apurar() {
               <TableBody>
                 {linhas.map((l) => (
                   <TableRow key={l.demanda_id}>
-                    <TableCell className="font-mono text-[12px]">
+                    <TableCell className="font-mono ds-small">
                       {(() => {
                         const est = obterEstiloDoSistema(l.sistema_slug, l.ticket_code || l.titulo);
                         return (
@@ -605,10 +605,10 @@ function Apurar() {
                         {l.sistema_slug ?? "não identificado"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-[13px]" title={l.responsavel_nome ?? undefined}>
+                    <TableCell className="ds-caption" title={l.responsavel_nome ?? undefined}>
                       {nomeCurto(l.responsavel_nome)}
                     </TableCell>
-                    <TableCell className="tabular-nums text-[13px]">
+                    <TableCell className="tabular-nums ds-caption">
                       {formatarData(l.concluida_em)}
                     </TableCell>
                     <TableCell>
@@ -617,15 +617,15 @@ function Apurar() {
                           {l.classificacao_rotulo}
                         </Badge>
                       ) : (
-                        <span className="text-[12px] text-muted-foreground">
+                        <span className="ds-small text-muted-foreground">
                           {l.fechamento === "concluido" ? "aguardando" : "s/ fechamento"}
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums text-[13px]">
+                    <TableCell className="text-right tabular-nums ds-caption">
                       {l.pontos ?? <span className="text-muted-foreground">—</span>}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums text-[13px]">
+                    <TableCell className="text-right tabular-nums ds-caption">
                       {l.minutos_lancados > 0
                         ? formatarDuracao(l.minutos_lancados)
                         : <span className="text-muted-foreground">—</span>}
@@ -645,13 +645,13 @@ function Apurar() {
         <Section title="Fechamento do ciclo">
           {!r.congelado ? (
             <div className="flex flex-col gap-3">
-              <p className="text-[13px] text-muted-foreground">
+              <p className="ds-caption text-muted-foreground">
                 Fechar congela o resultado deste ciclo. Depois disso, reclassificar uma demanda
                 não altera mais o que já foi apurado — cada entrega fica gravada com o título, o
                 responsável e os pontos que tinha no momento do fechamento.
               </p>
               {p && p.sem_classificacao > 0 && (
-                <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-[13px]">
+                <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 ds-caption">
                   <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
                   <p>
                     Ainda há <strong>{p.sem_classificacao}</strong> entrega
@@ -671,7 +671,7 @@ function Apurar() {
               </Button>
             </div>
           ) : r.situacao === "aprovado" ? (
-            <div className="flex items-start gap-2 rounded-lg border p-3 text-[13px]">
+            <div className="flex items-start gap-2 rounded-lg border p-3 ds-caption">
               <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
               <p className="text-muted-foreground">
                 Ciclo aprovado. O resultado é definitivo e não pode ser reaberto — uma correção
@@ -680,7 +680,7 @@ function Apurar() {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              <p className="text-[13px] text-muted-foreground">
+              <p className="ds-caption text-muted-foreground">
                 Ciclo fechado. Reabrir apaga o congelamento e volta a calcular ao vivo — o motivo
                 fica registrado no ciclo.
               </p>
