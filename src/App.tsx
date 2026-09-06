@@ -130,14 +130,11 @@ const FeatureFlagsPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pa
 const SettingsCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SettingsCenter"));
 const SecretsCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SecretsCenter"));
 const SessionsCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/SessionsCenter"));
-const AuditCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/AuditCenter"));
-const BackupCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/BackupCenter"));
 const PerformanceCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/PerformanceCenter"));
 const ReleaseCenterPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/ReleaseCenter"));
 
 // FEATURE 024 — Enterprise Security Center
 const SecurityCenterPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityCenter"));
-const SecurityThreatsPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityThreats"));
 const SecurityCompliancePage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityCompliance"));
 const SecurityPermissionsPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityPermissions"));
 const SecurityPoliciesPage = lazy(() => import(/* webpackChunkName: "security" */ "./pages/admin/SecurityPolicies"));
@@ -364,13 +361,10 @@ const AppRoutes = () => {
           <Route path="/admin/settings" element={<ProtectedRoute role="developer"><SettingsCenterPage /></ProtectedRoute>} />
           <Route path="/admin/secrets" element={<ProtectedRoute role="developer"><SecretsCenterPage /></ProtectedRoute>} />
           <Route path="/admin/sessions" element={<ProtectedRoute role="developer"><SessionsCenterPage /></ProtectedRoute>} />
-          <Route path="/admin/audit" element={<ProtectedRoute role="developer"><AuditCenterPage /></ProtectedRoute>} />
-          <Route path="/admin/backup" element={<ProtectedRoute role="developer"><BackupCenterPage /></ProtectedRoute>} />
           <Route path="/admin/performance" element={<ProtectedRoute role="developer"><PerformanceCenterPage /></ProtectedRoute>} />
           <Route path="/admin/release" element={<ProtectedRoute role="developer"><ReleaseCenterPage /></ProtectedRoute>} />
           {/* FEATURE 024 — Enterprise Security */}
           <Route path="/admin/security" element={<ProtectedRoute role="developer"><SecurityCenterPage /></ProtectedRoute>} />
-          <Route path="/admin/security/threats" element={<ProtectedRoute role="developer"><SecurityThreatsPage /></ProtectedRoute>} />
           <Route path="/admin/security/compliance" element={<ProtectedRoute role="developer"><SecurityCompliancePage /></ProtectedRoute>} />
           <Route path="/admin/security/permissions" element={<ProtectedRoute role="developer"><SecurityPermissionsPage /></ProtectedRoute>} />
           <Route path="/admin/security/policies" element={<ProtectedRoute role="developer"><SecurityPoliciesPage /></ProtectedRoute>} />

@@ -5,7 +5,8 @@ export type AdminGroupId =
   | "ia"
   | "operacional"
   | "seguranca"
-  | "desenvolvimento";
+  | "desenvolvimento"
+  | "governanca";
 
 export interface AdminNavItem {
   id: string;
