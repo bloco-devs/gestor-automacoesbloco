@@ -11,34 +11,13 @@ import {
   PERSONAGEM_W,
   TILE,
   alerta,
-  arquivo,
-  banco,
-  bebedouro,
-  cadeira,
-  calendario,
-  copa,
-  divisoria,
-  estante,
   halo,
-  impressora,
-  janela,
-  maquina,
-  mesa as desenhaMesa,
-  paredeExterna,
-  pisoTile,
-  planta,
-  porta as desenhaPorta,
   personagem,
-  quadro,
-  quadroBranco,
-  relogio,
-  sofa,
-  vasoAlto,
 } from "./sprites";
+import { obterSprite } from "./mobiliario";
 
 const ESCALA_MIN = 1;
 const ESCALA_MAX = 4;
-const VAO_PORTA = 15;
 /** "sem-dados" não cabe numa etiqueta de mesa; vira "sem dado". */
 const ROTULO_CURTO: Record<string, string> = {
   trabalhando: "trabalhando",
@@ -97,73 +76,30 @@ export function EscritorioCanvas({
   selRef.current = selecionado;
 
   /* --------------------------------------------------- fundo estático --- */
+  /*
+   * O andar inteiro é rasterizado UMA vez. A planta já disse qual peça vai em
+   * qual pixel, na ordem de desenho; aqui só se resolve o id em canvas.
+   */
   useEffect(() => {
     const f = document.createElement("canvas");
     f.width = andar.largura;
     f.height = andar.altura;
     const c = f.getContext("2d");
     if (!c) return;
+    c.imageSmoothingEnabled = false;
 
-    for (let y = 0; y < andar.altura; y += TILE) {
-      for (let x = 0; x < andar.largura; x += TILE) pisoTile(c, x, y);
+    for (const item of andar.camadas) {
+      const sprite = obterSprite(item.sprite);
+      if (sprite) c.drawImage(sprite, item.x, item.y);
     }
 
-    paredeExterna(c, 0, 0, andar.largura, MARGEM);
-    paredeExterna(c, 0, andar.altura - MARGEM, andar.largura, MARGEM);
-    paredeExterna(c, 0, 0, MARGEM, andar.altura);
-    paredeExterna(c, andar.largura - MARGEM, 0, MARGEM, andar.altura);
-
-    // adornos da parede de cima, como na planta de referência
-    relogio(c, MARGEM + 40, MARGEM / 2 + 1);
-    janela(c, MARGEM + 70, 4);
-    calendario(c, MARGEM + 110, 3);
-    janela(c, Math.floor(andar.largura / 2), 4);
-    janela(c, andar.largura - MARGEM - 60, 4);
-
-    andar.salas.forEach((s, i) => {
-      divisoria(c, s.x, s.y, s.w, 20);
-      divisoria(c, s.x, s.y + 20, 4, s.h - 20);
-      divisoria(c, s.x + s.w - 4, s.y + 20, 4, s.h - 20);
-      const vaoEsq = s.portaX - VAO_PORTA;
-      const vaoDir = s.portaX + VAO_PORTA;
-      divisoria(c, s.x, s.y + s.h - 4, vaoEsq - s.x, 4);
-      divisoria(c, vaoDir, s.y + s.h - 4, s.x + s.w - vaoDir, 4);
-
-      // A sala tinha uma planta e nada mais; sobrava chão liso em toda ela.
-      quadroBranco(c, s.x + 10, s.y + 5);
-      quadro(c, s.x + s.w - 26, s.y + 5, ["#c4463a", "#3f6fc4", "#2f9e69"][i % 3]);
-      planta(c, s.x + s.w - 22, s.y + 26);
-      const rodape = s.y + s.h - 30;
-      if (i % 3 === 0) arquivo(c, s.x + 10, rodape - 4);
-      else if (i % 3 === 1) impressora(c, s.x + 10, rodape);
-      else estante(c, s.x + 10, rodape - 10);
-      vasoAlto(c, s.x + s.w - 26, rodape - 8);
-    });
-
-    // copa e máquinas ocupam a faixa livre do último corredor
-    const ultimo = andar.corredores[andar.corredores.length - 1];
-    copa(c, andar.largura - MARGEM - 70, ultimo - 6);
-    maquina(c, andar.largura - MARGEM - 110, ultimo - 14);
-    bebedouro(c, MARGEM + 6, ultimo - 10);
-    sofa(c, MARGEM + 30, ultimo - 8);
-    estante(c, MARGEM + 86, ultimo - 12);
-
-    // Corredor comprido e liso é o que mais fazia o andar parecer vazio.
-    // Alterna banco, vaso e planta entre as salas, sem tapar as portas.
-    const portas = new Set(andar.salas.map((s) => s.portaX));
-    const longe = (x: number) => [...portas].every((p) => Math.abs(p - x) > 40);
-    andar.corredores.slice(0, -1).forEach((cy, linha) => {
-      let k = linha;
-      for (let x = MARGEM + 40; x < andar.largura - MARGEM - 60; x += 104) {
-        if (!longe(x)) continue;
-        if (k % 3 === 0) banco(c, x, cy - 6);
-        else if (k % 3 === 1) vasoAlto(c, x, cy - 14);
-        else planta(c, x, cy - 10);
-        k++;
-      }
-    });
-
-    andar.portas.forEach((p) => desenhaPorta(c, p.x, p.y, !portaSemUso(p.conectorId, dados.integracoes)));
+    // A porta de um serviço de que não sai integração nenhuma fica apagada.
+    // Só o componente sabe disso: a planta não conhece as integrações.
+    for (const porta of andar.portas) {
+      const semUso = portaSemUso(porta.conectorId, dados.integracoes);
+      const sprite = obterSprite(semUso ? "porta_apagada" : "porta_fechada");
+      if (sprite) c.drawImage(sprite, porta.x, porta.y);
+    }
 
     fundoRef.current = f;
   }, [andar, dados.integracoes]);
@@ -218,7 +154,7 @@ export function EscritorioCanvas({
     for (const a of andar.mesas) {
       for (const b of andar.mesas) {
         if (a === b) continue;
-        if (a.y === b.y && Math.abs(a.x - b.x) < 130) temVizinha.add(a.sistemaId);
+        if (a.y === b.y && Math.abs(a.x - b.x) < 100) temVizinha.add(a.sistemaId);
       }
     }
 
@@ -298,31 +234,39 @@ export function EscritorioCanvas({
       const naMesa = new Map<string, Personagem>();
       for (const p of personagens) if (p.mesa) naMesa.set(p.mesa.sistemaId, p);
 
+      /*
+       * O monitor não está na camada estática: a cor da tela é o estado de
+       * saúde do sistema naquele instante, e isso muda a cada recarga do HUB.
+       */
       for (const m of andar.mesas) {
         const p = naMesa.get(m.sistemaId);
-        const sentado = !p || p.fase === "mesa";
-        cadeira(ctx, m.cadeiraX, m.cadeiraY);
-        if (p && sentado) {
-          if (p.estado === "trabalhando") halo(ctx, m.pessoaX + PERSONAGEM_W / 2, m.pessoaY + 9);
-          personagem(ctx, Math.round(p.x), Math.round(p.y), p.id, {
-            humor: p.estado,
-            direcao: p.direcao,
-            digitando: digitando(p),
-            casco: cascos.get(p.id),
-            destacado: hoverRef.current === p.id || selRef.current === p.id,
-          });
-        }
-        desenhaMesa(ctx, m.x, m.y);
-        if (p && sentado && p.estado === "falha") alerta(ctx, m.x + MESA_W - 6, m.y - 24);
+        const tela =
+          p?.estado === "trabalhando"
+            ? "computador_ativo"
+            : p?.estado === "falha"
+              ? "computador_falha"
+              : p?.estado === "sem-dados"
+                ? "computador_apagado"
+                : "computador_idle";
+        const sprite = obterSprite(tela);
+        if (sprite) ctx.drawImage(sprite, m.monitorX, m.monitorY);
+        if (p?.estado === "falha") alerta(ctx, m.x + MESA_W - 6, m.y - 18);
       }
 
-      // quem está fora da mesa desenha por último, para passar na frente
-      for (const p of personagens) {
-        if (p.fase === "mesa" || p.fase === "oculto") continue;
+      // profundidade por Y: quem está mais abaixo desenha por último
+      const ordenados = [...personagens]
+        .filter((p) => p.fase !== "oculto")
+        .sort((a, b) => a.y - b.y);
+      for (const p of ordenados) {
+        const parado = p.fase === "mesa";
+        if (parado && p.estado === "trabalhando") {
+          halo(ctx, p.x + PERSONAGEM_W / 2, p.y + 9);
+        }
         personagem(ctx, Math.round(p.x), Math.round(p.y), p.id, {
           humor: p.estado,
           direcao: p.direcao,
           passo: passoDe(p),
+          digitando: digitando(p),
           externo: p.tipo === "externo",
           casco: p.tipo === "externo" ? undefined : cascos.get(p.id),
           destacado: hoverRef.current === p.id || selRef.current === p.id,
@@ -336,23 +280,30 @@ export function EscritorioCanvas({
         y: (iy - cam.y) * cam.escala,
       });
 
-      if (cam.escala >= 1.15) {
+      /*
+       * O limiar era 1.15, calibrado para a planta antiga. O andar de tiles é
+       * maior, então cabe inteiro por volta de 1.0 — e nessa escala sumiam
+       * TODOS os nomes, inclusive os das salas. Com 0.85 o andar inteiro
+       * continua etiquetado; abaixo disso a letra não vale a tinta.
+       */
+      if (cam.escala >= 0.85) {
         for (const s of andar.salas) {
           const t = paraTela(s.x + s.w / 2, s.y + 14);
           placa(ctx, t.x, t.y, s.grupo);
         }
         for (const p of andar.portas) {
           const t = paraTela(p.x + 13, p.y + 34);
-          // As portas ficam a 44px uma da outra; sem teto as placas se fundem
-          // numa barra escura ilegível.
-          placa(ctx, t.x, t.y, p.nome, true, 58 * cam.escala);
+          // As portas ficam a 80 px uma da outra na grade de tiles; sem teto
+          // as placas se fundem numa barra escura ilegível.
+          placa(ctx, t.x, t.y, p.nome, true, 76 * cam.escala);
         }
         for (const m of andar.mesas) {
           const p = naMesa.get(m.sistemaId);
           if (!p || p.fase !== "mesa") continue;
-          const t = paraTela(m.x + MESA_W / 2, m.y + MESA_H + 26);
-          // Mesa sozinha na fileira pode usar a sala inteira; com vizinha, só o passo entre mesas.
-          const largura = (temVizinha.has(m.sistemaId) ? 58 : 130) * cam.escala;
+          const t = paraTela(m.x + MESA_W / 2, m.pessoaY + PERSONAGEM_H + 8);
+          // Mesa sozinha na fileira pode usar a sala inteira; com vizinha, só
+          // o passo entre postos, que na grade de tiles é de 80 px.
+          const largura = (temVizinha.has(m.sistemaId) ? 76 : 150) * cam.escala;
           etiqueta(ctx, t.x, t.y, m.nome, ROTULO_CURTO[p.estado], largura, cam.escala < 1.8);
         }
       }
@@ -361,9 +312,13 @@ export function EscritorioCanvas({
       // e nenhum ficava legível. Cada novo balão sobe até achar espaço livre.
       const ocupados: { x: number; y: number; w: number; h: number }[] = [];
       for (const p of personagens) {
-        if (!p.viagem || p.fase === "mesa" || p.fase === "oculto") continue;
+        if (p.fase === "oculto") continue;
+        // conversa entre sistemas fala a linha do roteirista; serviço de fora
+        // continua dizendo o rótulo real da integração que ele entrega
+        const texto = p.fala ?? (p.tipo === "externo" ? p.viagem?.label : undefined);
+        if (!texto) continue;
         const t = paraTela(p.x + PERSONAGEM_W / 2, p.y - 6);
-        balao(ctx, t.x, t.y, p.nome, p.viagem.label, p.viagem.falha, ocupados);
+        balao(ctx, t.x, t.y, p.nome, texto, p.estado === "falha", ocupados);
       }
 
       requestAnimationFrame(quadro);
@@ -391,7 +346,9 @@ export function EscritorioCanvas({
   const mesaEm = useCallback(
     (ix: number, iy: number): Mesa | null => {
       for (const m of andar.mesas) {
-        if (ix >= m.x - 4 && ix <= m.x + MESA_W + 4 && iy >= m.pessoaY - 4 && iy <= m.y + MESA_H + 4) return m;
+        const topo = Math.min(m.y, m.pessoaY) - 4;
+        const base = Math.max(m.y + MESA_H, m.pessoaY + PERSONAGEM_H) + 4;
+        if (ix >= m.x - 4 && ix <= m.x + MESA_W + 4 && iy >= topo && iy <= base) return m;
       }
       return null;
     },

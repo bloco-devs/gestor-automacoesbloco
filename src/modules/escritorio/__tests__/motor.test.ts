@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { montarAndar } from "../layout";
 import { criarMotor } from "../motor";
 import type { DadosEscritorio } from "../dados";
+import { FECHOS, REGRAS, dialogoDoRotulo } from "../conversas";
 
 const AGORA = Date.parse("2026-09-05T20:00:00Z");
 const recente = new Date(AGORA - 3_600_000).toISOString();
@@ -76,23 +77,45 @@ describe("motor do escritório", () => {
     expect(p.fase).toBe("mesa");
   });
 
-  it("quem não tem integração de saída também não sai", () => {
+  it("quem não tem integração de saída nunca puxa conversa", () => {
     const m = criarMotor(andar, dados, AGORA);
-    rodar(m, 600);
+    const puxaram = new Set<string>();
+    for (let i = 0; i < 30 * 600; i++) {
+      m.atualizar(1 / 30, false);
+      for (const c of m.conversas) puxaram.add(c.a.id);
+    }
+    // "financeiro" só recebe integração; pode ser convidado, nunca convidar
+    expect(puxaram.has("financeiro")).toBe(false);
+    // ninguém convida o "crm": quem aponta para ele é o "parado", que não anda
     expect(m.porId.get("crm")!.fase).toBe("mesa");
-    expect(m.porId.get("financeiro")!.fase).toBe("mesa");
   });
 
-  it("quem tem integração real sai da mesa e volta para ela", () => {
+  it("um sistema parado nunca é arrastado para uma conversa", () => {
+    const m = criarMotor(andar, dados, AGORA);
+    for (let i = 0; i < 30 * 600; i++) {
+      m.atualizar(1 / 30, false);
+      for (const c of m.conversas) {
+        expect(c.a.estado).not.toBe("ocioso");
+        expect(c.b.estado).not.toBe("ocioso");
+        expect(c.a.estado).not.toBe("sem-dados");
+        expect(c.b.estado).not.toBe("sem-dados");
+      }
+    }
+  });
+
+  it("quem tem integração real sai da mesa, conversa e volta para ela", () => {
     const m = criarMotor(andar, dados, AGORA);
     const p = m.porId.get("comercial")!;
     const fases = new Set<string>();
+    let falou = false;
     for (let i = 0; i < 30 * 600; i++) {
       m.atualizar(1 / 30, false);
       fases.add(p.fase);
+      if (p.fala) falou = true;
     }
     expect(fases.has("indo")).toBe(true);
-    expect(fases.has("falando")).toBe(true);
+    expect(fases.has("encarando")).toBe(true);
+    expect(falou).toBe(true);
     expect(fases.has("voltando")).toBe(true);
 
     // termina a viagem em curso antes de conferir onde ele parou
@@ -103,15 +126,41 @@ describe("motor do escritório", () => {
     expect(Math.round(p.y)).toBe(p.mesa!.pessoaY);
   });
 
-  it("o balão só diz o rótulo real da integração", () => {
+  it("o serviço de fora só diz o rótulo real da integração", () => {
     const m = criarMotor(andar, dados, AGORA);
-    const p = m.porId.get("comercial")!;
+    const p = m.porId.get("sienge")!;
     const ditos = new Set<string>();
     for (let i = 0; i < 30 * 600; i++) {
       m.atualizar(1 / 30, false);
-      if (p.viagem) ditos.add(p.viagem.label);
+      if (p.viagem && p.viagem.label) ditos.add(p.viagem.label);
     }
-    expect([...ditos]).toEqual(["vendas"]);
+    expect([...ditos]).toEqual(["títulos"]);
+  });
+
+  it("nenhuma fala inventa dado: tudo sai das regras ou do rótulo real", () => {
+    const permitidas = new Set<string>(FECHOS);
+    for (const r of REGRAS) {
+      for (const t of r.trocas) {
+        permitidas.add(t.abre);
+        permitidas.add(t.responde);
+      }
+    }
+    for (const it of dados.integracoes) {
+      const d = dialogoDoRotulo(it.label);
+      permitidas.add(d.abre);
+      permitidas.add(d.responde);
+    }
+    const m = criarMotor(andar, dados, AGORA);
+    const ditas = new Set<string>();
+    for (let i = 0; i < 30 * 900; i++) {
+      m.atualizar(1 / 30, false);
+      for (const q of m.personagens) if (q.fala) ditas.add(q.fala);
+    }
+    expect(ditas.size).toBeGreaterThan(0);
+    for (const t of ditas) {
+      expect(permitidas.has(t), t).toBe(true);
+      expect(/\d/.test(t), `fala com número: ${t}`).toBe(false);
+    }
   });
 
   it("o serviço de fora entrega e some de novo pela porta", () => {
