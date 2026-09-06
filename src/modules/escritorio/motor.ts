@@ -176,11 +176,16 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     });
   }
   for (const porta of andar.portas) {
+    /*
+     * O serviço externo tinha "trabalhando" chumbado: a porta acendia sempre,
+     * independentemente de o conector ter executado ou não. O HUB manda saúde
+     * por conector — `saude[slug]` — e é a mesma regra dos sistemas.
+     */
     personagens.push({
       id: porta.conectorId,
       nome: porta.nome,
       tipo: "externo",
-      estado: "trabalhando",
+      estado: estadoDoSistema(saudeDe(porta.conectorId), agora),
       porta,
       x: porta.frenteX,
       y: porta.frenteY,
@@ -224,8 +229,13 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
 
   const intervaloDe = (p: Personagem, demo: boolean): number => {
     if (demo) return INTERVALO_DEMO * (0.6 + Math.random() * 0.8);
-    if (p.tipo === "externo") return 26 + Math.random() * 40;
+    /*
+     * A checagem de parado vem ANTES do ramo do externo. Estava depois, e por
+     * isso um conector sem execução recente continuava saindo pela porta para
+     * entregar — animação que o dado não sustenta.
+     */
     if (estaParado(p.estado)) return Infinity;
+    if (p.tipo === "externo") return 26 + Math.random() * 40;
     const execs = saudeDe(p.id)?.execs ?? 0;
     const base = execs > 0 ? intervaloEntreViagens(execs, maiorExecs) : 45;
     /*
@@ -553,10 +563,8 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     atualizarDados(novos: DadosEscritorio, quando = Date.now()) {
       dadosAtual = novos;
       recalcular();
-      for (const p of personagens) {
-        if (p.tipo !== "sistema") continue;
-        p.estado = estadoDoSistema(saudeDe(p.id), quando);
-      }
+      // sistemas E serviços: cada entidade reflete a própria saúde
+      for (const p of personagens) p.estado = estadoDoSistema(saudeDe(p.id), quando);
       const eventos = fonte.observar(novos.saude, quando);
       fila.registrar(eventos, relogio);
       return eventos;

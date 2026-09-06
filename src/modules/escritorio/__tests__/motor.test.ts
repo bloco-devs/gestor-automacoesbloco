@@ -30,6 +30,9 @@ const dados: DadosEscritorio = {
     crm: { execs: 300, ok: 300, falhas: 0, ultima: recente },
     financeiro: { execs: 800, ok: 800, falhas: 0, ultima: recente },
     parado: { execs: 40, ok: 40, falhas: 0, ultima: antigo },
+    // o serviço externo também precisa de saúde própria: sem execução
+    // registrada ele não sai da porta, e é justamente essa a regra
+    sienge: { execs: 600, ok: 600, falhas: 0, ultima: recente },
   },
 };
 
@@ -353,5 +356,77 @@ describe("o motor sobrevive ao refresh do HUB", () => {
     expect(m.porId.get("obra")!.estado).toBe("trabalhando");
     m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, obra: emFalha } }, AGORA);
     expect(m.porId.get("obra")!.estado).toBe("falha");
+  });
+});
+
+/* ------------------------------------- 2A: estado real dos serviços --- */
+
+describe("serviço externo reflete a própria saúde", () => {
+  const comConector: DadosEscritorio = {
+    ...dadosEco,
+    conectores: [{ id: "n8n", nome: "n8n" }, { id: "resend", nome: "Resend" }],
+    integracoes: [...dadosEco.integracoes, { origem: "n8n", destino: "automacoes", label: "execuções" }],
+    saude: { ...dadosEco.saude },
+  };
+  const andarComServico = montarAndar(comConector.sistemas, comConector.conectores);
+
+  const comSaude = (saude: DadosEscritorio["saude"]) => ({ ...comConector, saude });
+
+  it("conector que executou dentro da janela aparece trabalhando", () => {
+    const m = criarMotor(andarComServico, comSaude({ ...comConector.saude, n8n: saudavel }), AGORA);
+    expect(m.porId.get("n8n")!.estado).toBe("trabalhando");
+  });
+
+  it("conector sem execução recente fica ocioso, não 'trabalhando' por padrão", () => {
+    const parado = { execs: 500, ok: 500, falhas: 0, ultima: antigo };
+    const m = criarMotor(andarComServico, comSaude({ ...comConector.saude, n8n: parado }), AGORA);
+    expect(m.porId.get("n8n")!.estado).toBe("ocioso");
+  });
+
+  it("conector sem dado nenhum não é dado como trabalhando", () => {
+    const m = criarMotor(andarComServico, comSaude({ ...comConector.saude }), AGORA);
+    expect(m.porId.get("resend")!.estado).toBe("sem-dados");
+  });
+
+  it("conector com falha acima do limiar aparece em falha", () => {
+    const m = criarMotor(andarComServico, comSaude({ ...comConector.saude, n8n: emFalha }), AGORA);
+    expect(m.porId.get("n8n")!.estado).toBe("falha");
+  });
+
+  it("serviço parado nunca sai pela porta para entregar", () => {
+    const parado = { execs: 500, ok: 500, falhas: 0, ultima: antigo };
+    const m = criarMotor(andarComServico, comSaude({ ...comConector.saude, n8n: parado }), AGORA);
+    const p = m.porId.get("n8n")!;
+    for (let i = 0; i < 30 * 900; i++) m.atualizar(1 / 30, false);
+    expect(p.fase).toBe("oculto");
+    expect(p.viagem).toBeUndefined();
+  });
+
+  it("serviço que executou de verdade entrega", () => {
+    const m = criarMotor(andarComServico, comSaude({ ...comConector.saude, n8n: saudavel }), AGORA);
+    const p = m.porId.get("n8n")!;
+    const fases = new Set<string>();
+    for (let i = 0; i < 30 * 900; i++) {
+      m.atualizar(1 / 30, false);
+      fases.add(p.fase);
+    }
+    expect(fases.has("indo")).toBe(true);
+  });
+
+  it("o refresh do HUB atualiza o estado do serviço, não só o do sistema", () => {
+    const m = criarMotor(andarComServico, comSaude({ ...comConector.saude, n8n: saudavel }), AGORA);
+    expect(m.porId.get("n8n")!.estado).toBe("trabalhando");
+    m.atualizarDados(comSaude({ ...comConector.saude, n8n: emFalha }), AGORA);
+    expect(m.porId.get("n8n")!.estado).toBe("falha");
+  });
+
+  it("sistema e serviço têm estados independentes", () => {
+    const m = criarMotor(
+      andarComServico,
+      comSaude({ ...comConector.saude, rh: emFalha, n8n: saudavel }),
+      AGORA,
+    );
+    expect(m.porId.get("rh")!.estado).toBe("falha");
+    expect(m.porId.get("n8n")!.estado).toBe("trabalhando");
   });
 });

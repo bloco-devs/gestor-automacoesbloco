@@ -269,6 +269,35 @@ export function EscritorioCanvas({
         if (p?.estado === "falha") alerta(ctx, m.x + MESA_W - 6, m.y - 18);
       }
 
+      /*
+       * Estado de cada SERVIÇO externo, na própria porta.
+       *
+       * A lâmpada só acende com dado que sustente: verde pulsando quando o
+       * conector executou dentro da janela, vermelha quando a taxa de falha
+       * passou do limiar, apagada quando não houve execução recente. Serviço
+       * sem dado nenhum não ganha lâmpada — a porta já está apagada.
+       */
+      const porConector = new Map<string, Personagem>();
+      for (const p of personagens) if (p.porta) porConector.set(p.porta.conectorId, p);
+
+      for (const porta of andar.portas) {
+        const servico = porConector.get(porta.conectorId);
+        if (!servico || servico.estado === "sem-dados") continue;
+        const lx = porta.x + 21;
+        const ly = porta.y + 3;
+        const pulso = servico.estado === "trabalhando" && Math.floor(agora / 700) % 2 === 0;
+        const cor =
+          servico.estado === "falha" ? "#e04a3c" : servico.estado === "trabalhando" ? "#3ecf8e" : "#5c5346";
+        ctx.fillStyle = "#14201a";
+        ctx.fillRect(lx - 1, ly - 1, 8, 6);
+        ctx.fillStyle = cor;
+        ctx.fillRect(lx, ly, 6, 4);
+        if (pulso) {
+          ctx.fillStyle = "#d8f7e8";
+          ctx.fillRect(lx + 1, ly + 1, 2, 1);
+        }
+      }
+
       // profundidade por Y: quem está mais abaixo desenha por último
       const ordenados = [...personagens]
         .filter((p) => p.fase !== "oculto")
