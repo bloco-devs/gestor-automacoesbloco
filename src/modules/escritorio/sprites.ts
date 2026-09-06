@@ -633,43 +633,49 @@ function acessorio(c: Ctx, x: number, y: number, tipo: Acessorio) {
      * A 12 a letra virava mancha; a 16 o selo ficava quase do tamanho do
      * BLINK. 14 é onde a marca ainda lê sem roubar a cena.
      */
+    /*
+     * Marca em 10x10.
+     *
+     * Passou por 12 (letra virava mancha), 16 (selo do tamanho do BLINK) e 14
+     * (ainda dominava). Em 10 ela fica do porte dos outros acessórios — que é
+     * o que sempre coube ao lado do corpo sem roubar a cena.
+     */
     case "marcaSienge": {
-      comContorno(c, [[bx, by + 1, 13, 13]], "#ffffff");
+      comContorno(c, [[bx, by + 3, 9, 9]], "#ffffff");
       const vermelho = "#E30613";
-      r(c, bx + 1, by + 2, 11, 3, vermelho);
-      r(c, bx + 1, by + 5, 4, 2, vermelho);
-      r(c, bx + 1, by + 7, 11, 3, vermelho);
-      r(c, bx + 8, by + 10, 4, 2, vermelho);
-      r(c, bx + 1, by + 11, 11, 3, vermelho);
-      r(c, bx + 1, by + 2, 11, 1, "#f4373f");
-      r(c, bx + 6, by + 4, 3, 3, "#ffffff");
+      r(c, bx + 1, by + 4, 7, 2, vermelho);
+      r(c, bx + 1, by + 6, 3, 1, vermelho);
+      r(c, bx + 1, by + 7, 7, 2, vermelho);
+      r(c, bx + 5, by + 9, 3, 1, vermelho);
+      r(c, bx + 1, by + 10, 7, 1, vermelho);
+      r(c, bx + 4, by + 5, 2, 2, "#ffffff");
       break;
     }
     case "marcaOrulo": {
-      comContorno(c, [[bx, by + 1, 13, 13]], "#0037FF");
-      r(c, bx + 1, by + 6, 7, 7, "#ffffff");
-      r(c, bx + 3, by + 8, 3, 3, "#0037FF");
-      r(c, bx + 9, by + 2, 3, 3, "#ffffff");
+      comContorno(c, [[bx, by + 3, 9, 9]], "#0037FF");
+      r(c, bx + 1, by + 6, 5, 5, "#ffffff");
+      r(c, bx + 3, by + 8, 2, 2, "#0037FF");
+      r(c, bx + 6, by + 4, 2, 2, "#ffffff");
       break;
     }
     case "marcaSympla": {
-      comContorno(c, [[bx, by + 1, 13, 13]], "#00A2FF");
-      r(c, bx + 3, by + 7, 6, 2, "#ffffff");
-      r(c, bx + 2, by + 9, 3, 2, "#ffffff");
-      r(c, bx + 5, by + 11, 5, 1, "#ffffff");
-      r(c, bx + 2, by + 12, 6, 1, "#ffffff");
-      r(c, bx + 7, by + 2, 4, 4, "#ffffff");
-      r(c, bx + 3, by + 4, 3, 3, "#ffffff");
+      comContorno(c, [[bx, by + 3, 9, 9]], "#00A2FF");
+      r(c, bx + 2, by + 7, 5, 1, "#ffffff");
+      r(c, bx + 1, by + 8, 2, 1, "#ffffff");
+      r(c, bx + 4, by + 9, 4, 1, "#ffffff");
+      r(c, bx + 1, by + 10, 5, 1, "#ffffff");
+      r(c, bx + 5, by + 4, 3, 3, "#ffffff");
+      r(c, bx + 2, by + 5, 2, 2, "#ffffff");
       break;
     }
     case "marcaResend": {
-      comContorno(c, [[bx, by + 1, 13, 13]], "#ffffff");
-      r(c, bx + 2, by + 2, 7, 3, "#000000");
-      r(c, bx + 2, by + 2, 3, 11, "#000000");
-      r(c, bx + 7, by + 4, 2, 3, "#000000");
-      r(c, bx + 2, by + 7, 7, 2, "#000000");
-      r(c, bx + 6, by + 9, 2, 2, "#000000");
-      r(c, bx + 8, by + 11, 3, 3, "#000000");
+      comContorno(c, [[bx, by + 3, 9, 9]], "#ffffff");
+      r(c, bx + 1, by + 4, 5, 2, "#000000");
+      r(c, bx + 1, by + 4, 2, 8, "#000000");
+      r(c, bx + 5, by + 5, 2, 2, "#000000");
+      r(c, bx + 1, by + 7, 5, 2, "#000000");
+      r(c, bx + 4, by + 9, 2, 1, "#000000");
+      r(c, bx + 5, by + 10, 2, 2, "#000000");
       break;
     }
     case "caixa": {
