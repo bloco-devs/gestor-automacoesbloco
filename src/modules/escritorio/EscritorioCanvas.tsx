@@ -13,18 +13,58 @@ import {
   alerta,
   halo,
   personagem,
+  type Humor,
 } from "./sprites";
-import { obterSprite } from "./mobiliario";
+import type { Estado } from "./estado";
+import { obterSprite, type SpriteId } from "./mobiliario";
 import type { EventoEcossistema } from "./eventos";
 
 const ESCALA_MIN = 1;
 const ESCALA_MAX = 4;
-/** "sem-dados" não cabe numa etiqueta de mesa; vira "sem dado". */
+/** Os nomes longos não cabem numa etiqueta de mesa; aqui eles encurtam. */
 const ROTULO_CURTO: Record<string, string> = {
   trabalhando: "trabalhando",
   ocioso: "ocioso",
   falha: "falha",
+  "sem-execucao": "sem execução",
   "sem-dados": "sem dado",
+};
+
+/*
+ * Quatro estados, dois elementos, nenhuma pergunta ambígua.
+ *
+ * `sprites.ts` tem quatro humores e não muda. Em vez de espremer cinco estados
+ * em quatro desenhos, o BLINK e o monitor passam a responder perguntas
+ * DIFERENTES — e é o par que identifica o estado, não cada um sozinho:
+ *
+ *   BLINK    o HUB tem registro deste sistema?   aceso = sim · apagado = não
+ *   monitor  houve execução na janela de 30 d?   com tela = sim · preto = não
+ *
+ *                     BLINK      monitor              lê-se como
+ *   trabalhando       aceso      verde (+ halo)       rodou nas últimas 24 h
+ *   ocioso            aceso      em espera            já rodou, agora não
+ *   falha             alerta     vermelho             taxa de erro alta
+ *   sem-execucao      aceso      DESLIGADO            conhecido, nunca rodou
+ *   sem-dados         apagado    desligado            o HUB não o conhece
+ *
+ * Assim "ocioso" e "sem-execucao" nunca se confundem: os dois BLINKs estão
+ * acesos, mas só um tem a tela viva. E "sem-execucao" não vira sinal de
+ * problema: quem está com defeito é o vermelho, e ninguém mais.
+ */
+export const HUMOR: Record<Estado, Humor> = {
+  trabalhando: "trabalhando",
+  ocioso: "ocioso",
+  falha: "falha",
+  "sem-execucao": "ocioso",
+  "sem-dados": "sem-dados",
+};
+
+export const MONITOR: Record<Estado, SpriteId> = {
+  trabalhando: "computador_ativo",
+  ocioso: "computador_idle",
+  falha: "computador_falha",
+  "sem-execucao": "computador_apagado",
+  "sem-dados": "computador_apagado",
 };
 
 export interface EscritorioCanvasProps {
@@ -285,15 +325,7 @@ export function EscritorioCanvas({
        */
       for (const m of andar.mesas) {
         const p = naMesa.get(m.sistemaId);
-        const tela =
-          p?.estado === "trabalhando"
-            ? "computador_ativo"
-            : p?.estado === "falha"
-              ? "computador_falha"
-              : p?.estado === "sem-dados"
-                ? "computador_apagado"
-                : "computador_idle";
-        const sprite = obterSprite(tela);
+        const sprite = obterSprite(p ? MONITOR[p.estado] : "computador_idle");
         if (sprite) ctx.drawImage(sprite, m.monitorX, m.monitorY);
         if (p?.estado === "falha") alerta(ctx, m.x + MESA_W - 6, m.y - 18);
       }
@@ -316,14 +348,21 @@ export function EscritorioCanvas({
 
       for (const porta of andar.portas) {
         const servico = porConector.get(porta.conectorId);
+        /*
+         * A porta segue a mesma gramática das mesas, com a lâmpada no papel
+         * do monitor: sem soquete = o HUB não conhece o serviço; soquete vazio
+         * = conhecido e sem nenhuma execução em 30 dias; luz fosca = já
+         * executou, não agora; verde = processando; vermelha = falhando.
+         */
         if (!servico || servico.estado === "sem-dados") continue;
         const lx = porta.x + 21;
         const ly = porta.y + 3;
         const pulso = !!servico.executando && Math.floor(agora / 700) % 2 === 0;
-        const cor =
-          servico.estado === "falha" ? "#e04a3c" : servico.executando ? "#3ecf8e" : "#5c5346";
         ctx.fillStyle = "#14201a";
         ctx.fillRect(lx - 1, ly - 1, 8, 6);
+        if (servico.estado === "sem-execucao") continue; // soquete sem luz
+        const cor =
+          servico.estado === "falha" ? "#e04a3c" : servico.executando ? "#3ecf8e" : "#5c5346";
         ctx.fillStyle = cor;
         ctx.fillRect(lx, ly, 6, 4);
         if (pulso) {
@@ -344,7 +383,7 @@ export function EscritorioCanvas({
         // 1 px de balanço: é o que separa "conversando" de "congelado"
         const balanco = balancoDaConversa(p);
         personagem(ctx, Math.round(p.x), Math.round(p.y) + balanco, p.id, {
-          humor: p.estado,
+          humor: HUMOR[p.estado],
           direcao: p.direcao,
           passo: passoDe(p),
           digitando: digitando(p),
@@ -373,7 +412,16 @@ export function EscritorioCanvas({
        * (escala ~0,77) e o limiar único de 0,85 apagava tudo.
        */
       for (const s of andar.salas) {
-        const t = paraTela(s.x + s.w / 2, s.y + 14);
+        /*
+         * A placa fica ACIMA da parede, não dentro da sala.
+         *
+         * Dentro, ela caía exatamente sobre a fileira de monitores — e o
+         * monitor é o que separa "ocioso" de "sem execução". A placa estava
+         * escondendo o estado que ela deveria ajudar a ler. Acima da parede
+         * sobra corredor de três tiles ou mais, e ela passa a se comportar
+         * como letreiro de porta.
+         */
+        const t = paraTela(s.x + s.w / 2, s.y - 3);
         placa(ctx, t.x, t.y, s.grupo);
       }
       /*
@@ -533,6 +581,7 @@ const CORES: Record<string, [string, string]> = {
   trabalhando: ["#e6f4ec", "#1d6b43"],
   ocioso: ["#f1efe9", "#6b6555"],
   falha: ["#fceceb", "#a3271c"],
+  "sem-execucao": ["#f1efe9", "#6b6555"],
   "sem-dados": ["#eceae4", "#8a8578"],
 };
 

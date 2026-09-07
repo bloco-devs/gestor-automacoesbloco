@@ -75,12 +75,23 @@ describe("motor do escritório", () => {
     expect(p.viagem).toBeUndefined();
   });
 
-  it("sistema sem dado nenhum no HUB também nunca levanta", () => {
+  it("sistema com registro zerado no HUB também nunca levanta", () => {
     const semDado = {
       ...dados,
       saude: { ...dados.saude, comercial: { execs: 0, ok: 0, falhas: 0, ultima: null } },
     } satisfies DadosEscritorio;
     const m = criarMotor(andar, semDado, AGORA);
+    const p = m.porId.get("comercial")!;
+    // linha existe e diz zero: é "sem-execucao", e continua sem sair da mesa
+    expect(p.estado).toBe("sem-execucao");
+    rodar(m, 600);
+    expect(p.fase).toBe("mesa");
+  });
+
+  it("sistema que o HUB não conhece continua na mesa do mesmo jeito", () => {
+    const semLinha = { ...dados, saude: { ...dados.saude } } satisfies DadosEscritorio;
+    delete (semLinha.saude as Record<string, unknown>).comercial;
+    const m = criarMotor(andar, semLinha, AGORA);
     const p = m.porId.get("comercial")!;
     expect(p.estado).toBe("sem-dados");
     rodar(m, 600);

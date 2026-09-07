@@ -17,13 +17,15 @@ const CHIP: Record<Estado, string> = {
   trabalhando: "bg-success/15 text-success",
   ocioso: "bg-warning/15 text-warning",
   falha: "bg-destructive/15 text-destructive",
+  "sem-execucao": "bg-muted text-foreground/70",
   "sem-dados": "bg-muted text-muted-foreground",
 };
 const ROTULO: Record<Estado, string> = {
   trabalhando: "trabalhando",
   ocioso: "ocioso",
   falha: "em falha",
-  "sem-dados": "sem dados",
+  "sem-execucao": "sem execução em 30 d",
+  "sem-dados": "sem dados no HUB",
 };
 
 const LARGURA = 260;
@@ -82,7 +84,16 @@ export function PreviaSistema({ dados, id, x, y, largura, altura }: Props) {
       </dl>
 
       {estado === "sem-dados" && (
-        <p className="mt-2 ds-caption text-muted-foreground">O HUB não reporta este sistema.</p>
+        <p className="mt-2 ds-caption text-muted-foreground">
+          O HUB não tem registro de saúde deste sistema. Não dá para dizer se ele executou
+          ou não.
+        </p>
+      )}
+      {estado === "sem-execucao" && (
+        <p className="mt-2 ds-caption text-muted-foreground">
+          O HUB acompanha este sistema e não registrou execução nos últimos 30 dias.
+          Não é falha: é ausência de uso na janela.
+        </p>
       )}
       <p className="mt-2 ds-caption text-muted-foreground">
         Leva para {saidas.length} · recebe de {entradas.length}

@@ -17,13 +17,15 @@ const PONTO: Record<Estado, string> = {
   trabalhando: "bg-success",
   ocioso: "bg-warning",
   falha: "bg-destructive",
+  "sem-execucao": "bg-muted-foreground/50",
   "sem-dados": "bg-muted-foreground/30",
 };
 const ROTULO: Record<Estado, string> = {
   trabalhando: "trabalhando",
   ocioso: "ocioso",
   falha: "em falha",
-  "sem-dados": "sem dados",
+  "sem-execucao": "sem execução em 30 d",
+  "sem-dados": "sem dados no HUB",
 };
 
 function quando(iso: string | null): string {

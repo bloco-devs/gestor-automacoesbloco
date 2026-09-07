@@ -10,7 +10,7 @@ import { carregarEscritorio, DADOS_SEMENTE, type DadosEscritorio } from "@/modul
 import { PROPORCAO_PADRAO, montarAndar } from "@/modules/escritorio/layout";
 import { fonteDeDemandas, type EventoEcossistema } from "@/modules/escritorio/eventos";
 import { useDemands } from "@/modules/demands/hooks";
-import { estadoDoSistema } from "@/modules/escritorio/estado";
+import { resumoDeEstados } from "@/modules/escritorio/estado";
 
 /** Recarrega o retrato do HUB de tempos em tempos; não é evento a evento. */
 const INTERVALO_RECARGA_MS = 60_000;
@@ -122,20 +122,10 @@ export default function EscritorioPage() {
     setTrabalhoPorSistema({ [SISTEMA_DO_KANBAN]: fonteDemandasRef.current.emTrabalho() });
   }, [demandas]);
 
-  const contagem = useMemo(() => {
-    let trabalhando = 0;
-    let ocioso = 0;
-    let falha = 0;
-    let semDados = 0;
-    for (const s of efetivos.sistemas) {
-      const e = estadoDoSistema(efetivos.saude[s.id]);
-      if (e === "trabalhando") trabalhando++;
-      else if (e === "falha") falha++;
-      else if (e === "sem-dados") semDados++;
-      else ocioso++;
-    }
-    return { trabalhando, ocioso, falha, semDados };
-  }, [efetivos]);
+  const contagem = useMemo(
+    () => resumoDeEstados(efetivos.sistemas, efetivos.saude),
+    [efetivos],
+  );
 
   const aproximar = (delta: number) => {
     setAjustar(false);
@@ -186,7 +176,10 @@ export default function EscritorioPage() {
         <span>{contagem.trabalhando} trabalhando</span>
         <span>{contagem.ocioso} ocioso{contagem.ocioso === 1 ? "" : "s"}</span>
         <span>{contagem.falha} em falha</span>
-        <span>{contagem.semDados} sem dados no HUB</span>
+        {contagem.semExecucao > 0 && (
+          <span>{contagem.semExecucao} sem execução em 30 dias</span>
+        )}
+        {contagem.semDados > 0 && <span>{contagem.semDados} sem dados no HUB</span>}
         {!dados && (
           <span className="inline-flex items-center gap-1.5">
             <Loader2 className="size-3.5 animate-spin" aria-hidden /> carregando o HUB

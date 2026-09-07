@@ -10,6 +10,8 @@ import {
   tom,
 } from "../aparencia";
 import { CONECTORES_EXTERNOS_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
+import { HUMOR, MONITOR } from "../EscritorioCanvas";
+import type { Estado } from "../estado";
 
 /** Os 16 sistemas que o HUB devolve hoje. */
 const SISTEMAS_HUB = [
@@ -143,5 +145,38 @@ describe("marcas dos serviços de fora", () => {
   it("continua sem nenhum símbolo repetido entre os serviços", () => {
     const usados = Object.values(ACESSORIO_POR_CONECTOR);
     expect(new Set(usados).size).toBe(usados.length);
+  });
+});
+
+/*
+ * A queixa que originou esta regra: "a tela não pode transformar quatro
+ * situações diferentes em praticamente a mesma coisa". Aqui isso vira teste.
+ */
+describe("cada estado tem uma aparência própria", () => {
+  const ESTADOS: Estado[] = ["trabalhando", "ocioso", "falha", "sem-execucao", "sem-dados"];
+
+  it("nenhum par de estados desenha o mesmo BLINK com o mesmo monitor", () => {
+    const vistos = new Map<string, Estado>();
+    for (const e of ESTADOS) {
+      const assinatura = `${HUMOR[e]}+${MONITOR[e]}`;
+      expect(vistos.has(assinatura), `${e} desenha igual a ${vistos.get(assinatura)}`).toBe(false);
+      vistos.set(assinatura, e);
+    }
+    expect(vistos.size).toBe(ESTADOS.length);
+  });
+
+  it("ocioso e sem-execucao têm o mesmo BLINK, e é o monitor que os separa", () => {
+    expect(HUMOR["sem-execucao"]).toBe(HUMOR.ocioso);
+    expect(MONITOR["sem-execucao"]).not.toBe(MONITOR.ocioso);
+    // o BLINK responde "o HUB conhece?", e para os dois a resposta é sim
+    expect(HUMOR["sem-execucao"]).not.toBe(HUMOR["sem-dados"]);
+  });
+
+  it("sem-execucao não usa nenhum sinal reservado a problema", () => {
+    expect(HUMOR["sem-execucao"]).not.toBe("falha");
+    expect(MONITOR["sem-execucao"]).not.toBe(MONITOR.falha);
+    // nem é confundido com atividade
+    expect(HUMOR["sem-execucao"]).not.toBe("trabalhando");
+    expect(MONITOR["sem-execucao"]).not.toBe(MONITOR.trabalhando);
   });
 });
