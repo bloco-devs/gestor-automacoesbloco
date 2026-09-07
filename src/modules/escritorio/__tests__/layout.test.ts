@@ -267,3 +267,79 @@ describe("ponto de encontro", () => {
     expect(pe).not.toBeNull();
   });
 });
+
+describe("o andar acompanha a proporção da tela", () => {
+  const AREAS: [string, number][] = [
+    ["Pessoas", 1], ["Operação", 4], ["Comercial", 2], ["Financeiro", 2],
+    ["Suprimentos", 1], ["Incorporação", 2], ["Engenharia", 2],
+    ["Jurídico", 1], ["Tecnologia", 1],
+  ];
+  const sistemas = AREAS.flatMap(([g, n]) =>
+    Array.from({ length: n }, (_, i) => ({ id: `${g}-${i}`, nome: `${g} ${i}`, grupo: g })));
+
+  /** Quanto da área de desenho o andar inteiro ocupa, no zoom "cabe tudo". */
+  const ocupacao = (largura: number, altura: number) => {
+    const alvo = Math.round((largura / altura) * 4) / 4;
+    const a = montarAndar(sistemas, [], alvo);
+    const escala = Math.min(largura / a.largura, altura / a.altura);
+    return (a.largura * escala * a.altura * escala) / (largura * altura);
+  };
+
+  it("preenche a tela em vez de deixar tarja preta dos lados", () => {
+    // era o defeito: andar de proporção 1,17 numa área de 1,89
+    for (const [l, a] of [[1490, 790], [1179, 820], [900, 900], [1800, 700]] as const) {
+      expect(ocupacao(l, a), `${l}x${a}`).toBeGreaterThan(0.9);
+    }
+  });
+
+  it("comparar proporção por diferença absoluta escolhia o andar errado", () => {
+    const dims = AREAS.map(([, n]) => tamanhoDaSala(n));
+    // com 9 salas as opções são ~8,05 / 2,66 / 1,24 / 0,94; para uma tela
+    // larga a de 2,66 é a certa, e a métrica antiga preferia a de 1,24
+    expect(melhorDivisao(dims, 1.9)).toBe(2);
+  });
+
+  it("a folga vira corredor, nunca deixa o andar menor que o mínimo", () => {
+    const dims = AREAS.map(([, n]) => tamanhoDaSala(n));
+    const apertado = montarAndar(sistemas, [], 4);
+    const largo = montarAndar(sistemas, [], 0.6);
+    for (const a of [apertado, largo]) {
+      // toda sala continua dentro do andar, com corredor em volta
+      for (const s of a.salas) {
+        expect(s.x).toBeGreaterThan(0);
+        expect(s.x + s.w).toBeLessThan(a.largura);
+        expect(s.y + s.h).toBeLessThan(a.altura);
+      }
+      expect(a.mesas).toHaveLength(sistemas.length);
+    }
+    void dims;
+  });
+
+  it("sobra espaço dentro do andar para a placa de cada serviço", () => {
+    /*
+     * A placa é desenhada acima da porta, em `porta.y - 10`. Antes ela ficava
+     * ABAIXO, apoiada no vazio que sobrava fora do mapa — e sumiu quando o
+     * andar passou a ocupar a área toda. Aqui se garante que existe andar
+     * acima de toda porta de serviço para ela caber.
+     */
+    for (const alvo of [0.75, 1.5, 2.5]) {
+      const a = montarAndar(sistemas, CONECTORES_EXTERNOS_SEED, alvo);
+      expect(a.portas.length).toBeGreaterThan(0);
+      for (const porta of a.portas) {
+        expect(porta.y, `alvo ${alvo}: ${porta.nome}`).toBeGreaterThanOrEqual(TILE * 2);
+        expect(porta.y - 10, `alvo ${alvo}: ${porta.nome}`).toBeLessThan(a.altura);
+      }
+    }
+  });
+
+  it("mesmo esticado, nenhum posto fica inalcançável", () => {
+    for (const alvo of [0.75, 1.5, 2.5]) {
+      const a = montarAndar(sistemas, [], alvo);
+      const primeiro = a.mesas[0];
+      for (const m of a.mesas.slice(1)) {
+        const rota = rotaEmTiles(a, { x: primeiro.tileX, y: primeiro.tileY }, { x: m.tileX, y: m.tileY });
+        expect(rota, `alvo ${alvo}: ${m.nome}`).not.toBeNull();
+      }
+    }
+  });
+});

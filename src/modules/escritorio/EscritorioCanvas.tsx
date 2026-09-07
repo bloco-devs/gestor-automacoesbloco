@@ -339,7 +339,12 @@ export function EscritorioCanvas({
           placa(ctx, t.x, t.y, s.grupo);
         }
         for (const p of andar.portas) {
-          const t = paraTela(p.x + 13, p.y + 34);
+          /*
+           * A placa fica ACIMA da porta, dentro do andar. Ficava abaixo,
+           * apoiada no vazio que sobrava fora do mapa; agora que o andar
+           * ocupa a área toda, ali ela seria cortada pela borda.
+           */
+          const t = paraTela(p.x + 13, p.y - 10);
           // As portas ficam a 80 px uma da outra na grade de tiles; sem teto
           // as placas se fundem numa barra escura ilegível.
           placa(ctx, t.x, t.y, p.nome, true, 76 * cam.escala);

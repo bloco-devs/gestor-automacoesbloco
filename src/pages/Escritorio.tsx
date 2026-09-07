@@ -7,7 +7,7 @@ import { EscritorioCanvas } from "@/modules/escritorio/EscritorioCanvas";
 import { PainelLateral } from "@/modules/escritorio/PainelLateral";
 import { PreviaSistema } from "@/modules/escritorio/PreviaSistema";
 import { carregarEscritorio, DADOS_SEMENTE, type DadosEscritorio } from "@/modules/escritorio/dados";
-import { montarAndar } from "@/modules/escritorio/layout";
+import { PROPORCAO_PADRAO, montarAndar } from "@/modules/escritorio/layout";
 import { estadoDoSistema } from "@/modules/escritorio/estado";
 
 /** Recarrega o retrato do HUB de tempos em tempos; não é evento a evento. */
@@ -49,9 +49,39 @@ export default function EscritorioPage() {
       efetivos.conectores.map((c) => c.id).join("|"),
     [efetivos.sistemas, efetivos.conectores],
   );
+  /*
+   * A planta também acompanha a PROPORÇÃO da área de desenho.
+   *
+   * O andar tem uma proporção própria e o zoom "andar inteiro" cabe pelo lado
+   * mais apertado: numa tela larga com um andar estreito sobravam centenas de
+   * pixels pretos dos dois lados. Informando a proporção real, a planta
+   * escolhe a divisão de salas certa e transforma a sobra em corredor.
+   *
+   * O valor é arredondado em degraus de 0,25 para arrastar a janela não ficar
+   * remontando o andar — e com ele o motor — a cada pixel.
+   */
+  const [proporcao, setProporcao] = useState(PROPORCAO_PADRAO);
+  useEffect(() => {
+    const alvo = areaRef.current;
+    if (!alvo || typeof ResizeObserver === "undefined") return;
+    const medir = () => {
+      const { clientWidth: l, clientHeight: a } = alvo;
+      if (l < 80 || a < 80) return;
+      setProporcao(Math.max(0.5, Math.min(4, Math.round((l / a) * 4) / 4)));
+    };
+    medir();
+    const obs = new ResizeObserver(medir);
+    obs.observe(alvo);
+    return () => obs.disconnect();
+  }, []);
+
   const plantaRef = useRef<{ chave: string; andar: ReturnType<typeof montarAndar> } | null>(null);
-  if (!plantaRef.current || plantaRef.current.chave !== estrutura) {
-    plantaRef.current = { chave: estrutura, andar: montarAndar(efetivos.sistemas, efetivos.conectores) };
+  const chavePlanta = `${estrutura}@@${proporcao}`;
+  if (!plantaRef.current || plantaRef.current.chave !== chavePlanta) {
+    plantaRef.current = {
+      chave: chavePlanta,
+      andar: montarAndar(efetivos.sistemas, efetivos.conectores, proporcao),
+    };
   }
   const andar = plantaRef.current.andar;
 

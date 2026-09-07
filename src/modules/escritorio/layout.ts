@@ -288,14 +288,22 @@ function reparte<T>(itens: T[], linhas: number): T[][] {
   return out;
 }
 
+/** Proporção que o andar tenta ter quando ninguém informa a da tela. */
+export const PROPORCAO_PADRAO = 1.9;
+
 /**
  * Quantas fileiras de sala o andar tem.
  *
- * Não é fixo: com fileiras de tamanho desigual sobra um terço do andar vazio,
- * como acontecia com 5+5+2. Aqui as fileiras são sempre equilibradas e ganha
- * a divisão cuja proporção final fica mais perto de um andar largo e baixo.
+ * Não é fixo: com fileiras desiguais sobra um terço do andar vazio. Aqui elas
+ * são sempre equilibradas e ganha a divisão de proporção mais próxima da tela.
+ *
+ * A comparação é FEITA EM LOG, e isso importa. Comparando por diferença
+ * absoluta, um andar de proporção 1,24 parecia mais perto de 1,9 do que um de
+ * 2,66 — quando na verdade 2,66 é bem melhor. O viés escolhia sempre o andar
+ * mais estreito, que na tela larga encaixava pela altura e deixava centenas de
+ * pixels vazios dos dois lados.
  */
-export function melhorDivisao(dims: { w: number; h: number }[]): number {
+export function melhorDivisao(dims: { w: number; h: number }[], alvo = PROPORCAO_PADRAO): number {
   let melhor = 1;
   let menor = Infinity;
   for (let n = 1; n <= Math.min(4, dims.length); n++) {
@@ -304,7 +312,7 @@ export function melhorDivisao(dims: { w: number; h: number }[]): number {
       ...grupos.map((g) => g.reduce((s, x) => s + x.w, 0) + (g.length - 1) * VAO_ENTRE_SALAS),
     );
     const alt = grupos.reduce((s, g) => s + Math.max(...g.map((x) => x.h)), 0) + CORREDOR_MEIO * (n - 1);
-    const erro = Math.abs((larg + 6) / (alt + 8) - 1.9);
+    const erro = Math.abs(Math.log(((larg + 6) / (alt + 8)) / alvo));
     if (erro < menor) {
       menor = erro;
       melhor = n;
@@ -399,7 +407,11 @@ function ordenaGrupos(grupos: string[]): string[] {
 
 /* --------------------------------------------------------- montagem --- */
 
-export function montarAndar(sistemas: SistemaEco[], conectores: ConectorEco[]): Andar {
+export function montarAndar(
+  sistemas: SistemaEco[],
+  conectores: ConectorEco[],
+  proporcaoAlvo = PROPORCAO_PADRAO,
+): Andar {
   const porGrupo = new Map<string, SistemaEco[]>();
   for (const s of sistemas) {
     const g = s.grupo || "Outros";
@@ -413,15 +425,45 @@ export function montarAndar(sistemas: SistemaEco[], conectores: ConectorEco[]): 
     sistemas: porGrupo.get(g) ?? [],
     ...tamanhoDaSala((porGrupo.get(g) ?? []).length),
   }));
-  const fileiras = reparte(dims, melhorDivisao(dims));
+  const fileiras = reparte(dims, melhorDivisao(dims, proporcaoAlvo));
 
   const largMiolo = Math.max(
     ...fileiras.map((f) => f.reduce((s, x) => s + x.w, 0) + (f.length - 1) * VAO_ENTRE_SALAS),
   );
   const altMiolo =
     fileiras.reduce((s, f) => s + Math.max(...f.map((x) => x.h)), 0) + CORREDOR_MEIO * (fileiras.length - 1);
-  const colunas = largMiolo + CORREDOR_LATERAL * 2 + 2;
-  const linhasGrade = altMiolo + CORREDOR_TOPO + CORREDOR_RODAPE + 2;
+  const minimoColunas = largMiolo + CORREDOR_LATERAL * 2 + 2;
+  const minimoLinhas = altMiolo + CORREDOR_TOPO + CORREDOR_RODAPE + 2;
+
+  /*
+   * Sobra de tela vira CORREDOR, não faixa morta.
+   *
+   * O número de fileiras é um degrau grosso: com nove salas as proporções
+   * possíveis são 8,05 / 2,66 / 1,24 / 0,94, e nenhuma cai em cima da
+   * proporção da tela. O que sobra depois da melhor escolha é distribuído
+   * como circulação — que o mobiliário de corredor já sabe ocupar — em vez de
+   * virar tarja preta nas bordas.
+   *
+   * O teto de 45% existe para não transformar o andar num deserto quando a
+   * tela é muito mais alta que larga.
+   */
+  const TETO_FOLGA = 1.45;
+  // andar largo demais para a tela: a sobra desce como circulação
+  const linhasGrade = Math.max(
+    minimoLinhas,
+    Math.min(Math.round(minimoLinhas * TETO_FOLGA), Math.round(minimoColunas / proporcaoAlvo)),
+  );
+  const folgaLinhas = linhasGrade - minimoLinhas;
+  const extraTopo = Math.floor(folgaLinhas / 2);
+  const extraRodape = folgaLinhas - extraTopo;
+
+  // andar alto demais para a tela: a sobra abre corredor dos dois lados
+  const colunas = Math.max(
+    minimoColunas,
+    Math.min(Math.round(minimoColunas * TETO_FOLGA), Math.round(linhasGrade * proporcaoAlvo)),
+  );
+  const folgaColunas = colunas - minimoColunas;
+  const extraEsq = Math.floor(folgaColunas / 2);
 
   const o = novaObra(colunas, linhasGrade);
   pisoEm(o, 1, 1, colunas - 2, linhasGrade - 2, true);
@@ -446,13 +488,13 @@ export function montarAndar(sistemas: SistemaEco[], conectores: ConectorEco[]): 
   const mesas: Mesa[] = [];
   const corredores: number[] = [];
 
-  let ty = CORREDOR_TOPO + 1;
+  let ty = CORREDOR_TOPO + 1 + extraTopo;
   for (const fileira of fileiras) {
     const somaW = fileira.reduce((s, x) => s + x.w, 0);
     const vaos = Math.max(1, fileira.length - 1);
     const folga = largMiolo - somaW - vaos * VAO_ENTRE_SALAS;
     const extra = fileira.length > 1 ? Math.floor(folga / vaos) : 0;
-    let tx = CORREDOR_LATERAL + 1 + (fileira.length > 1 ? 0 : Math.floor(folga / 2));
+    let tx = CORREDOR_LATERAL + 1 + extraEsq + (fileira.length > 1 ? 0 : Math.floor(folga / 2));
     const alturaFileira = Math.max(...fileira.map((d) => d.h));
     const linhaIdx = corredores.length;
     corredores.push((ty + alturaFileira + Math.floor(CORREDOR_MEIO / 2)) * TILE);
@@ -465,7 +507,7 @@ export function montarAndar(sistemas: SistemaEco[], conectores: ConectorEco[]): 
   }
 
   const portas = montarPortasDeServico(o, conectores, colunas, linhasGrade);
-  mobiliarCorredores(o, salas, colunas, linhasGrade);
+  mobiliarCorredores(o, salas, colunas, linhasGrade, CORREDOR_RODAPE + extraRodape);
 
   return {
     largura: colunas * TILE,
@@ -666,7 +708,7 @@ function montarPortasDeServico(
  * anda; a decoração só encosta na parede das salas, com o guarda recusando
  * qualquer peça que toque numa soleira.
  */
-function mobiliarCorredores(o: Obra, salas: Sala[], colunas: number, linhas: number) {
+function mobiliarCorredores(o: Obra, salas: Sala[], colunas: number, linhas: number, rodape = CORREDOR_RODAPE) {
   const passa = (tx: number, ty: number, peca: SpriteId = "trilha") => {
     if (ler(o, tx, ty) === CELULA.LIVRE) por(o, peca, tx, ty);
   };
@@ -725,7 +767,7 @@ function mobiliarCorredores(o: Obra, salas: Sala[], colunas: number, linhas: num
    * Faixa inferior = ÁREA DE SERVIÇO do andar, não sobra de mapa.
    * Recepção à esquerda, entrega à direita, espera no miolo.
    */
-  const yr = linhas - CORREDOR_RODAPE;
+  const yr = linhas - rodape;
   for (let x = 1; x < colunas - 1; x++) passa(x, yr + 1);
   por(o, "tapete", 4, yr + 2);
   blocoSeLivre(o, "balcao", 3, yr, 4, 2);
