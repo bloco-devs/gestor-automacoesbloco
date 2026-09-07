@@ -177,7 +177,9 @@ export default function EscritorioPage() {
         <span>{contagem.ocioso} ocioso{contagem.ocioso === 1 ? "" : "s"}</span>
         <span>{contagem.falha} em falha</span>
         {contagem.semExecucao > 0 && (
-          <span>{contagem.semExecucao} sem execução em 30 dias</span>
+          <span title="O HUB registra execução de integração, não uso da tela.">
+            {contagem.semExecucao} sem execução registrada
+          </span>
         )}
         {contagem.semDados > 0 && <span>{contagem.semDados} sem dados no HUB</span>}
         {!dados && (

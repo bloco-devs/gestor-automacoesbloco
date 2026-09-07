@@ -24,7 +24,9 @@ const ROTULO: Record<Estado, string> = {
   trabalhando: "trabalhando",
   ocioso: "ocioso",
   falha: "em falha",
-  "sem-execucao": "sem execução em 30 d",
+  // Curto de propósito: o chip fica ao lado do nome e o empurrava para
+  // duas linhas. Quem explica é a frase no corpo da prévia.
+  "sem-execucao": "sem execução",
   "sem-dados": "sem dados no HUB",
 };
 
@@ -91,8 +93,9 @@ export function PreviaSistema({ dados, id, x, y, largura, altura }: Props) {
       )}
       {estado === "sem-execucao" && (
         <p className="mt-2 ds-caption text-muted-foreground">
-          O HUB acompanha este sistema e não registrou execução nos últimos 30 dias.
-          Não é falha: é ausência de uso na janela.
+          O HUB acompanha este sistema e não registrou execução de integração nos
+          últimos 30 dias. Isto não mede uso da tela: um sistema em uso diário pode
+          aparecer aqui em zero.
         </p>
       )}
       <p className="mt-2 ds-caption text-muted-foreground">

@@ -20,11 +20,23 @@ const PONTO: Record<Estado, string> = {
   "sem-execucao": "bg-muted-foreground/50",
   "sem-dados": "bg-muted-foreground/30",
 };
+/*
+ * "sem execução em 30 d" prometia mais do que o número entrega.
+ *
+ * O André leu o rótulo do Gestor de Automações e estranhou, com razão: ele
+ * estava usando o sistema naquele instante — o Gestor de Automações É este
+ * aplicativo. `execs` não conta gente usando a tela; conta execução de
+ * integração que o HUB registra pelos conectores. Por isso os conectores
+ * somam 18.565 execuções em trinta dias e os sistemas somam 45: quem não tem
+ * integração rodando fica em zero, por mais que seja usado todo dia.
+ *
+ * O rótulo agora diz de onde vem o número, em vez de sugerir abandono.
+ */
 const ROTULO: Record<Estado, string> = {
   trabalhando: "trabalhando",
   ocioso: "ocioso",
   falha: "em falha",
-  "sem-execucao": "sem execução em 30 d",
+  "sem-execucao": "sem execução registrada no HUB",
   "sem-dados": "sem dados no HUB",
 };
 
