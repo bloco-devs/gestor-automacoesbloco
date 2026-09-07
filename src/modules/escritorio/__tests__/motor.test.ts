@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { montarAndar } from "../layout";
 import { criarMotor } from "../motor";
 import type { DadosEscritorio } from "../dados";
+import { PERSONAGEM_W, TILE } from "../sprites";
+import { INTEGRACOES_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
 import { FECHOS, REGRAS, dialogoDoRotulo } from "../conversas";
 
 const AGORA = Date.parse("2026-09-05T20:00:00Z");
@@ -428,5 +430,513 @@ describe("serviço externo reflete a própria saúde", () => {
     );
     expect(m.porId.get("rh")!.estado).toBe("falha");
     expect(m.porId.get("n8n")!.estado).toBe("trabalhando");
+  });
+});
+
+/* ------------------------------------ 2B: coreografia da conversa --- */
+
+describe("coreografia da conversa", () => {
+  /** Roda até a condição, devolvendo se chegou lá. */
+  const ate = (m: ReturnType<typeof criarMotor>, cond: () => boolean, seg = 240) => {
+    for (let i = 0; i < seg * 30 && !cond(); i++) m.atualizar(1 / 30, false);
+    return cond();
+  };
+  const comFalha = () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA);
+    return m;
+  };
+
+  it("os dois nunca ocupam o mesmo ponto, nem se atravessam na aproximação", () => {
+    const m = comFalha();
+    expect(ate(m, () => m.conversas.length > 0)).toBe(true);
+    const c = m.conversas[0];
+    let sobrepos = 0;
+    for (let i = 0; i < 30 * 200; i++) {
+      m.atualizar(1 / 30, false);
+      if (!m.conversas.includes(c)) break;
+      const dx = Math.abs(c.a.x - c.b.x);
+      const dy = Math.abs(c.a.y - c.b.y);
+      if (dx < PERSONAGEM_W && dy < 30) sobrepos++;
+    }
+    expect(sobrepos).toBe(0);
+  });
+
+  it("a distância de conversa continua sendo de dois tiles", () => {
+    const m = comFalha();
+    expect(ate(m, () => m.conversas[0]?.fase === "encarando")).toBe(true);
+    const c = m.conversas[0];
+    const dist = Math.hypot(c.a.x - c.b.x, c.a.y - c.b.y);
+    expect(dist).toBe(2 * TILE);
+    expect(dist).toBeGreaterThan(PERSONAGEM_W);
+  });
+
+  it("quem chega primeiro fica aguardando, não congelado sem papel", () => {
+    const m = comFalha();
+    let viuAguardando = false;
+    for (let i = 0; i < 30 * 200; i++) {
+      m.atualizar(1 / 30, false);
+      const c = m.conversas[0];
+      if (c && (c.a.papel === "aguardando" || c.b.papel === "aguardando")) viuAguardando = true;
+      if (c?.fase === "falando") break;
+    }
+    expect(viuAguardando).toBe(true);
+  });
+
+  it("o balão não aparece antes dos dois chegarem", () => {
+    const m = comFalha();
+    for (let i = 0; i < 30 * 200; i++) {
+      m.atualizar(1 / 30, false);
+      const c = m.conversas[0];
+      if (!c) continue;
+      if (c.fase === "indo" || c.fase === "encarando") {
+        expect(c.a.fala, "balão cedo demais").toBeUndefined();
+        expect(c.b.fala, "balão cedo demais").toBeUndefined();
+      }
+      if (c.fase === "falando") break;
+    }
+  });
+
+  it("existe encaramento antes da primeira fala", () => {
+    const m = comFalha();
+    const ordem: string[] = [];
+    for (let i = 0; i < 30 * 200; i++) {
+      m.atualizar(1 / 30, false);
+      const c = m.conversas[0];
+      if (c && ordem[ordem.length - 1] !== c.fase) ordem.push(c.fase);
+      if (c?.fase === "falando") break;
+    }
+    expect(ordem.indexOf("encarando")).toBeGreaterThan(-1);
+    expect(ordem.indexOf("encarando")).toBeLessThan(ordem.indexOf("falando"));
+  });
+
+  it("só um fala por vez, e o outro escuta", () => {
+    const m = comFalha();
+    ate(m, () => m.conversas[0]?.fase === "falando");
+    const c = m.conversas[0];
+    const papeis = new Set<string>();
+    for (let i = 0; i < 30 * 40; i++) {
+      m.atualizar(1 / 30, false);
+      if (c.fase !== "falando") break;
+      const dois = [c.a.papel, c.b.papel].sort().join("+");
+      papeis.add(dois);
+      // nunca os dois falando, nunca os dois escutando
+      expect(dois).not.toBe("falando+falando");
+      expect(dois).not.toBe("escutando+escutando");
+      // um balão por vez
+      expect(!!c.a.fala && !!c.b.fala).toBe(false);
+    }
+    expect(papeis.has("escutando+falando")).toBe(true);
+  });
+
+  it("os papéis se alternam entre abertura e resposta", () => {
+    const m = comFalha();
+    ate(m, () => m.conversas[0]?.fase === "falando");
+    const c = m.conversas[0];
+    const vistos = new Set<string>();
+    for (let i = 0; i < 30 * 60; i++) {
+      m.atualizar(1 / 30, false);
+      if (c.fase !== "falando") break;
+      vistos.add(`${c.a.papel}/${c.b.papel}`);
+    }
+    expect(vistos.has("falando/escutando")).toBe(true);
+    expect(vistos.has("escutando/falando")).toBe(true);
+  });
+
+  it("há despedida entre a última fala e a saída", () => {
+    const m = comFalha();
+    ate(m, () => m.conversas[0]?.fase === "falando");
+    const c = m.conversas[0];
+    let viuDespedida = false;
+    let andouAntesDaDespedida = false;
+    for (let i = 0; i < 30 * 60; i++) {
+      m.atualizar(1 / 30, false);
+      if (!m.conversas.includes(c)) break;
+      if (c.fase === "despedida") {
+        viuDespedida = true;
+        expect(c.a.papel).toBe("despedindo");
+        expect(c.b.papel).toBe("despedindo");
+        expect(c.a.fala).toBeUndefined();
+        if (c.a.fase === "voltando" || c.b.fase === "voltando") andouAntesDaDespedida = true;
+      }
+    }
+    expect(viuDespedida).toBe(true);
+    expect(andouAntesDaDespedida).toBe(false);
+  });
+
+  it("ao voltar para o posto o papel é limpo", () => {
+    const m = comFalha();
+    ate(m, () => m.conversas.length > 0);
+    ate(m, () => m.conversas.length === 0, 300);
+    ate(m, () => m.porId.get("rh")!.fase === "mesa", 300);
+    expect(m.porId.get("rh")!.papel).toBeUndefined();
+    expect(m.porId.get("automacoes")!.papel).toBeUndefined();
+  });
+
+  it("o refresh não apaga o papel de quem está conversando", () => {
+    const m = comFalha();
+    ate(m, () => m.conversas[0]?.fase === "falando");
+    const c = m.conversas[0];
+    const antes = { a: c.a.papel, b: c.b.papel, x: c.a.x, y: c.a.y };
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA + 60_000);
+    expect(c.a.papel).toBe(antes.a);
+    expect(c.b.papel).toBe(antes.b);
+    expect(c.a.x).toBe(antes.x);
+    expect(c.a.y).toBe(antes.y);
+    expect(m.conversas).toContain(c);
+  });
+
+  it("quem conversa lado a lado olha um para o outro", () => {
+    const m = comFalha();
+    expect(ate(m, () => m.conversas[0]?.fase === "encarando")).toBe(true);
+    const c = m.conversas[0];
+    if (Math.abs(c.a.x - c.b.x) > Math.abs(c.a.y - c.b.y)) {
+      expect(c.a.direcao).toBe(c.a.x < c.b.x ? "direita" : "esquerda");
+      expect(c.b.direcao).toBe(c.b.x < c.a.x ? "direita" : "esquerda");
+    }
+  });
+});
+
+describe("varredura: todo par que os dados produzem", () => {
+  const sisSeed = SISTEMAS_SEED.map((s) => ({ id: s.id, nome: s.nome, grupo: s.grupo }));
+  const baseSeed = Object.fromEntries(sisSeed.map((s) => [s.id, saudavel]));
+  const dSeed: DadosEscritorio = {
+    fonte: "hub", geradoEm: null, sistemas: sisSeed, conectores: [],
+    integracoes: INTEGRACOES_SEED, saude: baseSeed,
+  };
+  const andarSeed = montarAndar(dSeed.sistemas, dSeed.conectores);
+
+  it("nenhum par chega a menos de dois tiles um do outro, em nenhum instante", () => {
+    const problemas: string[] = [];
+    for (const alvo of sisSeed) {
+      const m = criarMotor(andarSeed, dSeed, AGORA);
+      m.atualizarDados({ ...dSeed, saude: { ...baseSeed, [alvo.id]: emFalha } }, AGORA);
+      let minD = Infinity;
+      let par = "";
+      for (let i = 0; i < 30 * 400; i++) {
+        m.atualizar(1 / 30, false);
+        const c = m.conversas[0];
+        if (!c) continue;
+        par = `${c.a.id}→${c.b.id}`;
+        minD = Math.min(minD, Math.hypot(c.a.x - c.b.x, c.a.y - c.b.y));
+      }
+      if (par && minD < 2 * TILE) problemas.push(`${par}: ${Math.round(minD)}px`);
+    }
+    expect(problemas).toEqual([]);
+  });
+
+  it("todo encontro acontece lado a lado, com os dois se olhando", () => {
+    const problemas: string[] = [];
+    for (const alvo of sisSeed) {
+      const m = criarMotor(andarSeed, dSeed, AGORA);
+      m.atualizarDados({ ...dSeed, saude: { ...baseSeed, [alvo.id]: emFalha } }, AGORA);
+      for (let i = 0; i < 30 * 400; i++) {
+        m.atualizar(1 / 30, false);
+        const c = m.conversas[0];
+        if (c?.fase !== "encarando") continue;
+        const olhando = c.a.direcao !== "frente" && c.b.direcao !== "frente" && c.a.direcao !== c.b.direcao;
+        if (!olhando) problemas.push(`${c.a.id}→${c.b.id}: ${c.a.direcao}/${c.b.direcao}`);
+        break;
+      }
+    }
+    expect(problemas).toEqual([]);
+  });
+});
+
+/* -------------------------- 2B: validação final da coreografia --- */
+
+describe("evento real vence conversa ambiental", () => {
+  it("com incidente pendente, nenhuma conversa ambiental começa", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA);
+
+    let primeira: { temEvento: boolean } | null = null;
+    const ambientaisComPendencia: string[] = [];
+    const vistas = new Set<object>();
+
+    // roda muito além do piso ambiental (180 s) para dar chance real de errar
+    for (let i = 0; i < 30 * 600; i++) {
+      m.atualizar(1 / 30, false);
+      for (const c of m.conversas) {
+        if (vistas.has(c)) continue;
+        vistas.add(c);
+        if (!primeira) primeira = { temEvento: !!c.evento };
+        if (!c.evento && m.pendentes().length > 0) {
+          ambientaisComPendencia.push(`${c.a.id}→${c.b.id}`);
+        }
+      }
+    }
+
+    expect(primeira, "nenhuma conversa aconteceu").not.toBeNull();
+    expect(primeira!.temEvento, "a primeira conversa foi ambiental").toBe(true);
+    expect(ambientaisComPendencia).toEqual([]);
+  });
+
+  it("sem nada pendente, a ambiental volta a ser possível", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados(dadosEco, AGORA); // retrato igual: nenhum evento
+    expect(m.pendentes()).toEqual([]);
+    let ambiental = false;
+    for (let i = 0; i < 30 * 900; i++) {
+      m.atualizar(1 / 30, false);
+      if (m.conversas.some((c) => !c.evento)) ambiental = true;
+    }
+    expect(ambiental).toBe(true);
+  });
+});
+
+/**
+ * FIXTURE DE TESTE — dois pares independentes.
+ *
+ * Existe só para provar que duas conversas coexistem sem se misturar. Não é
+ * importada por nada da aplicação: os eventos de produção continuam saindo do
+ * diff do retorno do HUB.
+ */
+describe("duas conversas ao mesmo tempo (fixture de teste)", () => {
+  const quatro = [
+    { id: "t-um", nome: "Sistema Um", grupo: "Pessoas" },
+    { id: "t-dois", nome: "Sistema Dois", grupo: "Comercial" },
+    { id: "t-tres", nome: "Sistema Três", grupo: "Financeiro" },
+    { id: "t-quatro", nome: "Sistema Quatro", grupo: "Obra" },
+  ];
+  const saudeOk = Object.fromEntries(quatro.map((s) => [s.id, saudavel]));
+  const dadosQuatro: DadosEscritorio = {
+    fonte: "hub",
+    geradoEm: null,
+    sistemas: quatro,
+    conectores: [],
+    // dois pares SEM aresta cruzada: cada evento só tem um destino possível
+    integracoes: [
+      { origem: "t-um", destino: "t-dois", label: "par a" },
+      { origem: "t-tres", destino: "t-quatro", label: "par b" },
+    ],
+    saude: saudeOk,
+  };
+  const andarQuatro = montarAndar(dadosQuatro.sistemas, dadosQuatro.conectores);
+
+  const dois = () => {
+    const m = criarMotor(andarQuatro, dadosQuatro, AGORA);
+    m.atualizarDados(
+      { ...dadosQuatro, saude: { ...saudeOk, "t-um": emFalha, "t-tres": emFalha } },
+      AGORA,
+    );
+    return m;
+  };
+
+  it("os dois pares conversam ao mesmo tempo, cada um com o seu interlocutor", () => {
+    const m = dois();
+    let chegouADois = false;
+    const pares = new Set<string>();
+    for (let i = 0; i < 30 * 400; i++) {
+      m.atualizar(1 / 30, false);
+      if (m.conversas.length === 2) chegouADois = true;
+      for (const c of m.conversas) pares.add(`${c.a.id}→${c.b.id}`);
+    }
+    expect(chegouADois, "nunca houve duas conversas ao mesmo tempo").toBe(true);
+    expect([...pares].sort()).toEqual(["t-tres→t-quatro", "t-um→t-dois"]);
+  });
+
+  it("nunca passa de duas conversas nem de seis em circulação", () => {
+    const m = dois();
+    let picoConversas = 0;
+    let picoCirculando = 0;
+    for (let i = 0; i < 30 * 400; i++) {
+      m.atualizar(1 / 30, false);
+      picoConversas = Math.max(picoConversas, m.conversas.length);
+      picoCirculando = Math.max(picoCirculando, m.viagensAtivas());
+    }
+    expect(picoConversas).toBeLessThanOrEqual(2);
+    expect(picoCirculando).toBeLessThanOrEqual(6);
+  });
+
+  it("ninguém troca de par nem invade o par vizinho", () => {
+    const m = dois();
+    const parceiro = new Map<string, string>();
+    for (let i = 0; i < 30 * 400; i++) {
+      m.atualizar(1 / 30, false);
+      for (const c of m.conversas) {
+        for (const [x, y] of [[c.a, c.b], [c.b, c.a]] as const) {
+          const anterior = parceiro.get(x.id);
+          if (anterior && anterior !== y.id) {
+            throw new Error(`${x.id} trocou de interlocutor: ${anterior} → ${y.id}`);
+          }
+          parceiro.set(x.id, y.id);
+        }
+      }
+    }
+    expect(parceiro.get("t-um")).toBe("t-dois");
+    expect(parceiro.get("t-tres")).toBe("t-quatro");
+  });
+
+  it("nenhum personagem chega perto demais de qualquer outro que esteja fora da mesa", () => {
+    const m = dois();
+    let pior = Infinity;
+    for (let i = 0; i < 30 * 400; i++) {
+      m.atualizar(1 / 30, false);
+      const fora = m.personagens.filter((p) => p.fase !== "mesa" && p.fase !== "oculto");
+      for (let a = 0; a < fora.length; a++) {
+        for (let b = a + 1; b < fora.length; b++) {
+          pior = Math.min(pior, Math.hypot(fora[a].x - fora[b].x, fora[a].y - fora[b].y));
+        }
+      }
+    }
+    expect(pior).toBeGreaterThanOrEqual(2 * TILE);
+  });
+
+  it("o balão de um par nunca aparece no outro", () => {
+    const m = dois();
+    for (let i = 0; i < 30 * 400; i++) {
+      m.atualizar(1 / 30, false);
+      for (const c of m.conversas) {
+        const textos = c.linhas.map((l) => l.texto);
+        for (const p of [c.a, c.b]) {
+          if (p.fala) expect(textos, `${p.id} falou fora do roteiro`).toContain(p.fala);
+        }
+      }
+      // no máximo um balão por conversa
+      for (const c of m.conversas) expect(!!c.a.fala && !!c.b.fala).toBe(false);
+    }
+  });
+
+  it("os quatro voltam para os próprios postos", () => {
+    const m = dois();
+    for (let i = 0; i < 30 * 600; i++) m.atualizar(1 / 30, false);
+    for (const s of quatro) {
+      const p = m.porId.get(s.id)!;
+      expect(p.fase, s.id).toBe("mesa");
+      expect(Math.round(p.x), s.id).toBe(p.mesa!.pessoaX);
+      expect(Math.round(p.y), s.id).toBe(p.mesa!.pessoaY);
+      expect(p.papel, s.id).toBeUndefined();
+    }
+  });
+});
+
+/**
+ * CICLO COMPLETO COM OS DADOS REAIS DO ESCRITÓRIO.
+ *
+ * Sem fixture inventada: sistemas, grupos e integrações saem do seed, que é
+ * a mesma forma que o HUB entrega. O objetivo é provar que a coreografia não
+ * depende da fixture de demonstração.
+ */
+describe("ciclo completo sobre o ecossistema real", () => {
+  const sisReal = SISTEMAS_SEED.map((s) => ({ id: s.id, nome: s.nome, grupo: s.grupo }));
+  const saudeReal = Object.fromEntries(sisReal.map((s) => [s.id, saudavel]));
+  const dadosReal: DadosEscritorio = {
+    fonte: "hub",
+    geradoEm: null,
+    sistemas: sisReal,
+    conectores: [],
+    integracoes: INTEGRACOES_SEED,
+    saude: saudeReal,
+  };
+  const andarReal = montarAndar(dadosReal.sistemas, dadosReal.conectores);
+  const comRetrato = (saude: DadosEscritorio["saude"]) => ({ ...dadosReal, saude });
+
+  it("o Gestor de Automações recebe o aviso quando é vizinho real do afetado", () => {
+    // no grafo do seed, `hub-bloco-id` troca dados com `automacoes`
+    const m = criarMotor(andarReal, dadosReal, AGORA);
+    m.atualizarDados(comRetrato({ ...saudeReal, "hub-bloco-id": emFalha }), AGORA);
+    for (let i = 0; i < 30 * 400 && m.conversas.length === 0; i++) m.atualizar(1 / 30, false);
+    expect(m.conversas).toHaveLength(1);
+    expect(m.conversas[0].a.id).toBe("hub-bloco-id");
+    expect(m.conversas[0].b.id).toBe("automacoes");
+  });
+
+  it("problema → conversa → pendente → recuperação → conversa → postos", () => {
+    const m = criarMotor(andarReal, dadosReal, AGORA);
+    const rodar = (seg: number) => {
+      for (let i = 0; i < seg * 30; i++) m.atualizar(1 / 30, false);
+    };
+    const iniciadas = () => m.registros.filter((r) => r.resultado === "iniciada").length;
+
+    // 1. o retrato acusa a queda
+    const eventos = m.atualizarDados(comRetrato({ ...saudeReal, "hub-bloco-id": emFalha }), AGORA);
+    expect(eventos.map((e) => e.tipo)).toContain("entrou_em_falha");
+    expect(m.pendentes()).toContain("hub-bloco-id");
+
+    // 2. a conversa nasce do evento, não de sorteio
+    for (let i = 0; i < 30 * 400 && m.conversas.length === 0; i++) m.atualizar(1 / 30, false);
+    expect(m.conversas[0].evento?.tipo).toBe("entrou_em_falha");
+    const apos1 = iniciadas();
+
+    // 3. a conversa termina e os dois voltam
+    rodar(400);
+    expect(m.conversas).toHaveLength(0);
+    for (const id of ["hub-bloco-id", "automacoes"]) {
+      const p = m.porId.get(id)!;
+      expect(p.fase, id).toBe("mesa");
+      expect(Math.round(p.x), id).toBe(p.mesa!.pessoaX);
+      expect(p.papel, id).toBeUndefined();
+    }
+
+    // 4. conversar NÃO resolve: o incidente segue pendente e não se repete
+    for (let ciclo = 1; ciclo <= 4; ciclo++) {
+      m.atualizarDados(
+        comRetrato({ ...saudeReal, "hub-bloco-id": { ...emFalha, falhas: 300 + ciclo * 40 } }),
+        AGORA + ciclo * 60_000,
+      );
+      rodar(120);
+      expect(m.pendentes(), `ciclo ${ciclo}`).toContain("hub-bloco-id");
+    }
+    expect(iniciadas(), "o mesmo problema virou conversa de novo").toBe(apos1);
+    // o estado real do sistema não foi mexido pela conversa
+    expect(m.porId.get("hub-bloco-id")!.estado).toBe("falha");
+
+    // 5. só a recuperação REAL encerra o incidente
+    const recup = m.atualizarDados(comRetrato(saudeReal), AGORA + 600_000);
+    expect(recup.map((e) => e.tipo)).toContain("recuperado");
+    expect(m.pendentes()).not.toContain("hub-bloco-id");
+
+    // 6. e ela gera a conversa de encerramento
+    for (let i = 0; i < 30 * 400 && !m.conversas.some((c) => c.evento?.tipo === "recuperado"); i++) {
+      m.atualizar(1 / 30, false);
+    }
+    expect(m.conversas.some((c) => c.evento?.tipo === "recuperado")).toBe(true);
+
+    /*
+     * 7. os dois voltam ao posto.
+     *
+     * A janela é curta de propósito: sem pendência a conversa ambiental volta
+     * a ser permitida, e depois do piso de 180 s alguém pode legitimamente
+     * levantar de novo. Sessenta segundos dão tempo de caminhar de volta sem
+     * confundir vida normal com falha de retorno.
+     */
+    for (let i = 0; i < 30 * 400 && m.conversas.length > 0; i++) m.atualizar(1 / 30, false);
+    rodar(60);
+    for (const id of ["hub-bloco-id", "automacoes"]) {
+      const p = m.porId.get(id)!;
+      expect(p.fase, id).toBe("mesa");
+      expect(Math.round(p.x), id).toBe(p.mesa!.pessoaX);
+      expect(p.papel, id).toBeUndefined();
+    }
+  });
+
+  it("a coreografia inteira acontece com dados reais, na ordem certa", () => {
+    const m = criarMotor(andarReal, dadosReal, AGORA);
+    m.atualizarDados(comRetrato({ ...saudeReal, "hub-bloco-id": emFalha }), AGORA);
+    const etapas: string[] = [];
+    for (let i = 0; i < 30 * 400; i++) {
+      m.atualizar(1 / 30, false);
+      const c = m.conversas[0];
+      if (!c) {
+        if (etapas.length) break;
+        continue;
+      }
+      const marca = `${c.fase}:${c.a.papel ?? "-"}/${c.b.papel ?? "-"}`;
+      if (etapas[etapas.length - 1] !== marca) etapas.push(marca);
+    }
+    const texto = etapas.join(" | ");
+    expect(texto).toContain("indo:-/-");
+    expect(texto).toContain("aguardando");
+    expect(texto).toContain("falando:falando/escutando");
+    expect(texto).toContain("falando:escutando/falando");
+    expect(texto).toContain("despedida:despedindo/despedindo");
+    // ordem: encarar antes de falar, despedir depois de falar
+    const iEncarar = etapas.findIndex((e) => e.startsWith("encarando"));
+    const iFalar = etapas.findIndex((e) => e.startsWith("falando"));
+    const iDespedir = etapas.findIndex((e) => e.startsWith("despedida"));
+    expect(iEncarar).toBeGreaterThan(-1);
+    expect(iEncarar).toBeLessThan(iFalar);
+    expect(iFalar).toBeLessThan(iDespedir);
   });
 });

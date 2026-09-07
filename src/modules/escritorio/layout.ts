@@ -748,13 +748,21 @@ function mobiliarCorredores(o: Obra, salas: Sala[], colunas: number, linhas: num
 
 /* ----------------------------------------------------------- rotas --- */
 
-/** Busca em largura na MESMA grade que desenhou o mapa. */
+/**
+ * Busca em largura na MESMA grade que desenhou o mapa.
+ *
+ * `evitar` são células que o caminho não pode cruzar mesmo sendo andáveis —
+ * é como um personagem parado vira obstáculo para o outro. Sem o argumento,
+ * o resultado é exatamente o de antes.
+ */
 export function rotaEmTiles(
   andar: Andar,
   de: { x: number; y: number },
   para: { x: number; y: number },
+  evitar?: ReadonlySet<number>,
 ): [number, number][] | null {
   const chave = (x: number, y: number) => y * andar.colunas + x;
+  const livre = (x: number, y: number) => andavel(andar, x, y) && !evitar?.has(chave(x, y));
   const veio = new Map<number, number>();
   const inicio = chave(de.x, de.y);
   veio.set(inicio, -1);
@@ -772,7 +780,7 @@ export function rotaEmTiles(
     ];
     for (const [nx, ny] of vizinhos) {
       const k = chave(nx, ny);
-      if (veio.has(k) || !andavel(andar, nx, ny)) continue;
+      if (veio.has(k) || !livre(nx, ny)) continue;
       veio.set(k, chave(x, y));
       if (k === alvo) {
         achou = true;
@@ -814,9 +822,15 @@ export function caminhoEntreTiles(
   andar: Andar,
   de: { x: number; y: number },
   para: { x: number; y: number },
+  evitar?: ReadonlySet<number>,
 ): Ponto[] | null {
-  const rota = rotaEmTiles(andar, de, para);
+  const rota = rotaEmTiles(andar, de, para, evitar);
   return rota ? dobras(rota) : null;
+}
+
+/** Índice de uma célula na grade — a chave usada por `evitar`. */
+export function chaveDaCelula(andar: Andar, tx: number, ty: number): number {
+  return ty * andar.colunas + tx;
 }
 
 /** Caminho de uma mesa até outra, pela grade de colisão. */
@@ -866,21 +880,59 @@ export function pontoDeEncontro(
     andavel(andar, x, y) && (mesmaSala || !dentroDeSala(x, y));
 
   const meio = Math.floor(rota.length / 2);
-  for (let d = 0; d < rota.length; d++) {
-    for (const k of [meio + d, meio - d]) {
-      if (k < 1 || k >= rota.length - 1) continue;
-      const [x, y] = rota[k];
-      if (!serve(x, y)) continue;
-      const dirs: [number, number][] = [
-        [1, 0],
-        [-1, 0],
-        [0, 1],
-        [0, -1],
-      ];
-      const dir = dirs.find(
-        ([dx, dy]) => serve(x + dx, y + dy) && serve(x + dx * 2, y + dy * 2),
-      );
-      if (dir) return { um: { x, y }, outro: { x: x + dir[0] * 2, y: y + dir[1] * 2 } };
+
+  /*
+   * O ponto de parada de cada um sai DO PRÓPRIO CAMINHO, e é isso que impede
+   * os dois de se atravessarem.
+   *
+   * `um` fica na célula do meio da rota e `outro` duas casas adiante, no
+   * sentido em que a rota segue para B. Assim A para antes e B para depois:
+   * cada um chega pelo seu lado e ninguém precisa passar por cima do outro.
+   * Escolher a orientação sem olhar de que lado cada um vinha era o que
+   * punha os dois no mesmo pixel.
+   *
+   * Só vale se o trecho for HORIZONTAL: o BLINK tem `frente|esquerda|direita`
+   * e o olhar é um desvio de 1 px nos olhos, então de lado eles se encaram e
+   * de cima para baixo, não.
+   */
+  for (const exigirHorizontal of [true, false]) {
+    for (let d = 0; d < rota.length; d++) {
+      for (const k of [meio + d, meio - d]) {
+        if (k < 1 || k + 2 >= rota.length) continue;
+        const [x, y] = rota[k];
+        const dx = rota[k + 1][0] - x;
+        const dy = rota[k + 1][1] - y;
+        if (exigirHorizontal && dy !== 0) continue;
+        const ax = x + dx * 2;
+        const ay = y + dy * 2;
+        if (!serve(x, y) || !serve(x + dx, y + dy) || !serve(ax, ay)) continue;
+        return { um: { x, y }, outro: { x: ax, y: ay } };
+      }
+    }
+  }
+
+  /*
+   * Sem trecho reto de três casas no caminho: cai para a busca por vizinho,
+   * ainda preferindo lado a lado. Aqui os dois podem se cruzar de raspão na
+   * aproximação, porque não há como garantir a ordem de chegada.
+   */
+  const HORIZONTAL: [number, number][] = [
+    [1, 0],
+    [-1, 0],
+  ];
+  const VERTICAL: [number, number][] = [
+    [0, 1],
+    [0, -1],
+  ];
+  for (const dirs of [HORIZONTAL, [...HORIZONTAL, ...VERTICAL]]) {
+    for (let d = 0; d < rota.length; d++) {
+      for (const k of [meio + d, meio - d]) {
+        if (k < 1 || k >= rota.length - 1) continue;
+        const [x, y] = rota[k];
+        if (!serve(x, y)) continue;
+        const dir = dirs.find(([ dx, dy ]) => serve(x + dx, y + dy) && serve(x + dx * 2, y + dy * 2));
+        if (dir) return { um: { x, y }, outro: { x: x + dir[0] * 2, y: y + dir[1] * 2 } };
+      }
     }
   }
   return null;

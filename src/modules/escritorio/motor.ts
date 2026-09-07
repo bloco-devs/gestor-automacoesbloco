@@ -28,6 +28,7 @@ import {
   caminhoDaPorta,
   caminhoEntreMesas,
   caminhoEntreTiles,
+  chaveDaCelula,
   pontoDeEncontro,
   type Andar,
   type Mesa,
@@ -51,7 +52,8 @@ const VELOCIDADE = 38;          // pixels internos por segundo
 const SEG_FALANDO = 1.8;
 const SEG_FALA = 2.6;           // cada linha da conversa
 const SEG_ENCARAR = 1.0;        // param, se viram, e só então falam
-const SEG_PAUSA = 1.6;          // ficam juntos um instante antes de voltar
+const SEG_PAUSA = 0.5;          // respiro entre a despedida e a saída
+const SEG_DESPEDIDA = 0.6;      // encerramento, ainda frente a frente
 const MAX_VIAGENS = 6;
 const MAX_CONVERSAS = 2;        // dois grupos, nunca o andar inteiro falando
 const LIMITE_ENCONTRO = 40;     // segundos até desistir de um encontro travado
@@ -73,13 +75,22 @@ const SISTEMA_HUB_OPERACIONAL = "automacoes";
 
 export type Fase = "mesa" | "indo" | "encarando" | "falando" | "voltando" | "oculto";
 
+/**
+ * Comportamento social durante a conversa.
+ *
+ * É um campo SEPARADO de `fase` de propósito: `fase` governa o ciclo de
+ * movimento, e o nome "falando" já é usado ali pela entrega do serviço
+ * externo. Misturar os dois quebraria a viagem do conector.
+ */
+export type Papel = "aguardando" | "falando" | "escutando" | "despedindo";
+
 export interface Conversa {
   a: Personagem;
   b: Personagem;
   linhas: Fala[];
   i: number;
   t: number;
-  fase: "indo" | "encarando" | "falando" | "pausa";
+  fase: "indo" | "encarando" | "falando" | "despedida" | "pausa";
   /** Evento que provocou a conversa; ausente na conversa ambiental. */
   evento?: EventoEcossistema;
 }
@@ -122,6 +133,19 @@ export interface Personagem {
   conversa?: Conversa;
   /** Texto do balão neste instante. Um balão por vez em cada conversa. */
   fala?: string;
+  /** O que ele está fazendo socialmente; some quando volta ao posto. */
+  papel?: Papel;
+  /** Segundos dentro do papel atual — base das microanimações. */
+  papelT: number;
+  /**
+   * O primeiro intervalo já foi calculado por `intervaloDe`?
+   *
+   * O construtor sorteava `proxima` entre 2 e 10 s, o que passava por cima do
+   * piso da conversa ambiental: logo depois de abrir a tela alguém levantava
+   * para bater papo, mesmo com evento pendente. Agora o primeiro agendamento
+   * também passa pela regra — e continua respeitando o modo demonstração.
+   */
+  agendado?: boolean;
 }
 
 export interface Motor {
@@ -171,6 +195,7 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
       direcao: "frente",
       fase: "mesa",
       passoT: 0,
+      papelT: 0,
       digitaT: Math.random() * 2,
       proxima: 2 + Math.random() * 8,
     });
@@ -192,6 +217,7 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
       direcao: "frente",
       fase: "oculto",
       passoT: 0,
+      papelT: 0,
       digitaT: 0,
       proxima: 6 + Math.random() * 18,
     });
@@ -290,13 +316,17 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
   });
 
   /** Rota de um personagem até uma célula da grade. */
-  const rotaAte = (p: Personagem, alvo: { x: number; y: number }): Ponto[] | null => {
+  const rotaAte = (
+    p: Personagem,
+    alvo: { x: number; y: number },
+    evitar?: ReadonlySet<number>,
+  ): Ponto[] | null => {
     const origem = p.mesa
       ? { x: p.mesa.tileX, y: p.mesa.tileY }
       : p.porta
         ? { x: p.porta.tileX, y: p.porta.tileY }
         : null;
-    return origem ? caminhoEntreTiles(andar, origem, alvo) : null;
+    return origem ? caminhoEntreTiles(andar, origem, alvo, evitar) : null;
   };
 
   const porRota = (p: Personagem, pontos: Ponto[], destinoId: string, label: string) => {
@@ -330,8 +360,15 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
       a.mesa.grupo === b.mesa.grupo,
     );
     if (!pe) return false;
-    const rotaA = rotaAte(a, pe.um);
-    const rotaB = rotaAte(b, pe.outro);
+    /*
+     * Cada um evita a célula onde o OUTRO vai parar. Sem isso o segundo a
+     * chegar atravessa por cima do primeiro — eram 8 dos 14 pares, com até
+     * 36 quadros de sprite sobre sprite.
+     */
+    const celulaA = chaveDaCelula(andar, pe.um.x, pe.um.y);
+    const celulaB = chaveDaCelula(andar, pe.outro.x, pe.outro.y);
+    const rotaA = rotaAte(a, pe.um, new Set([celulaB]));
+    const rotaB = rotaAte(b, pe.outro, new Set([celulaA]));
     if (!rotaA || !rotaB) return false;
 
     const conversa: Conversa = {
@@ -353,6 +390,12 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     return true;
   };
 
+  const vestir = (p: Personagem, papel: Papel | undefined) => {
+    if (p.papel === papel) return;
+    p.papel = papel;
+    p.papelT = 0;
+  };
+
   const encarar = (p: Personagem, alvo: Personagem) => {
     p.direcao =
       Math.abs(alvo.x - p.x) > Math.abs(alvo.y - p.y)
@@ -365,6 +408,7 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
   const voltarParaMesa = (p: Personagem) => {
     p.conversa = undefined;
     p.fala = undefined;
+    vestir(p, undefined);
     if (!p.mesa) {
       p.fase = "mesa";
       return;
@@ -419,16 +463,20 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
   };
 
   const avancarConversa = (c: Conversa, dt: number, demo: boolean) => {
+    c.a.papelT += dt;
+    c.b.papelT += dt;
+
     switch (c.fase) {
       case "indo":
         c.t += dt;
+        // quem chega primeiro NÃO fica congelado: entra em espera e respira
+        for (const p of [c.a, c.b]) if (p.fase === "encarando") vestir(p, "aguardando");
         if (c.a.fase === "encarando" && c.b.fase === "encarando") {
           c.fase = "encarando";
           c.t = 0;
           encarar(c.a, c.b);
           encarar(c.b, c.a);
         } else if (c.t > LIMITE_ENCONTRO) {
-          // um dos dois não chegou: desfaz em vez de travar os dois de pé
           for (const p of [c.a, c.b]) {
             voltarParaMesa(p);
             p.proxima = intervaloDe(p, demo);
@@ -437,7 +485,10 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
           if (i >= 0) conversas.splice(i, 1);
         }
         break;
+
       case "encarando":
+        // pararam e se olharam; a pausa antes da primeira fala é o que dá
+        // sensação de presença física
         c.t += dt;
         if (c.t >= SEG_ENCARAR) {
           c.fase = "falando";
@@ -445,6 +496,7 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
           c.t = 0;
         }
         break;
+
       case "falando": {
         c.t += dt;
         const linha = c.linhas[c.i];
@@ -452,19 +504,33 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
           const quem = linha.quem === "a" ? c.a : c.b;
           const outro = linha.quem === "a" ? c.b : c.a;
           quem.fala = linha.texto;
-          outro.fala = undefined; // um balão por vez: dois nunca se sobrepõem
+          outro.fala = undefined; // um balão por vez
+          vestir(quem, "falando");
+          vestir(outro, "escutando");
         }
         if (c.t >= SEG_FALA) {
           c.t = 0;
           c.i++;
           if (c.i >= c.linhas.length) {
-            c.fase = "pausa";
+            c.fase = "despedida";
             c.a.fala = undefined;
             c.b.fala = undefined;
+            vestir(c.a, "despedindo");
+            vestir(c.b, "despedindo");
           }
         }
         break;
       }
+
+      case "despedida":
+        // último balão já saiu; ainda frente a frente, encerrando
+        c.t += dt;
+        if (c.t >= SEG_DESPEDIDA) {
+          c.fase = "pausa";
+          c.t = 0;
+        }
+        break;
+
       case "pausa":
         c.t += dt;
         if (c.t >= SEG_PAUSA) {
@@ -583,6 +649,10 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
         switch (p.fase) {
           case "mesa":
           case "oculto": {
+            if (!p.agendado) {
+              p.agendado = true;
+              p.proxima = intervaloDe(p, demo);
+            }
             p.proxima -= dt;
             if (p.proxima <= 0) {
               /*
@@ -665,7 +735,41 @@ export function passoDe(p: Personagem): 0 | 1 | 2 {
   return (Math.floor(p.passoT * 6) % 2 === 0 ? 1 : 2) as 1 | 2;
 }
 
-/** Digitação: mãos sobem e descem 3 vezes por segundo. */
+/**
+ * Braços levantados: digitação na mesa, gesto ao falar.
+ *
+ * São os mesmos 1 px do sprite de produção, em ritmos diferentes. Na mesa é
+ * uma batida regular de 3 Hz, que lê como teclado. Falando é mais lento e com
+ * o braço em cima menos tempo — lê como quem gesticula explicando, não como
+ * quem digita.
+ */
 export function digitando(p: Personagem): boolean {
+  if (p.papel === "falando") return p.papelT * 2.4 - Math.floor(p.papelT * 2.4) < 0.4;
   return p.fase === "mesa" && p.estado === "trabalhando" && Math.floor(p.digitaT * 3) % 2 === 0;
+}
+
+/**
+ * Deslocamento vertical de 1 px durante a conversa.
+ *
+ * É o único jeito de dar corpo à cena sem frame novo: quem fala balança no
+ * ritmo do gesto, quem escuta acena de vez em quando, quem espera respira. A
+ * amplitude é 1 px de propósito — 2 já parece tremor.
+ */
+export function balancoDaConversa(p: Personagem): number {
+  switch (p.papel) {
+    case "falando":
+      return Math.floor(p.papelT * 4.8) % 2 === 0 ? -1 : 0;
+    case "escutando": {
+      // aceno curto a cada ~1,3 s
+      const ciclo = p.papelT % 1.3;
+      return ciclo < 0.16 ? 1 : 0;
+    }
+    case "aguardando":
+      // respiração lenta enquanto o outro não chega
+      return Math.floor(p.papelT * 0.9) % 2 === 0 ? 0 : -1;
+    case "despedindo":
+      return Math.floor(p.papelT * 6) % 2 === 0 ? -1 : 0;
+    default:
+      return 0;
+  }
 }

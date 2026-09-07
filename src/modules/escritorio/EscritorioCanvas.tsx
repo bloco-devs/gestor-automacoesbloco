@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { Andar, Mesa } from "./layout";
 import { MARGEM } from "./layout";
-import { criarMotor, digitando, passoDe, type Motor, type Personagem } from "./motor";
+import { balancoDaConversa, criarMotor, digitando, passoDe, type Motor, type Personagem } from "./motor";
 import { mapaDeCascos, portaSemUso } from "./aparencia";
 import type { DadosEscritorio } from "./dados";
 import {
@@ -307,7 +307,9 @@ export function EscritorioCanvas({
         if (parado && p.estado === "trabalhando") {
           halo(ctx, p.x + PERSONAGEM_W / 2, p.y + 9);
         }
-        personagem(ctx, Math.round(p.x), Math.round(p.y), p.id, {
+        // 1 px de balanço: é o que separa "conversando" de "congelado"
+        const balanco = balancoDaConversa(p);
+        personagem(ctx, Math.round(p.x), Math.round(p.y) + balanco, p.id, {
           humor: p.estado,
           direcao: p.direcao,
           passo: passoDe(p),
