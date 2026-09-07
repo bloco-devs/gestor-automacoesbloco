@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { DadosEscritorio } from "./dados";
-import { culpaDeTerceiro, estadoDoSistema, type Estado } from "./estado";
+import { culpaDeTerceiro, estadoDoSistema, resumoDeEstados, type Estado } from "./estado";
 
 interface Props {
   dados: DadosEscritorio;
@@ -49,6 +49,33 @@ export function PainelLateral({ dados, selecionado, onSelecionar }: Props) {
     }
     return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], "pt-BR"));
   }, [dados.sistemas]);
+
+  /*
+   * Os serviços de fora são a ÚLTIMA seção de uma lista longa — nove salas e
+   * dezesseis sistemas antes deles. Quem abre o painel não os vê sem rolar, e
+   * antes eles nem carregavam estado: todos com a mesma bolinha cinza. O
+   * resumo no cabeçalho existe para o estado dos treze chegar antes da rolagem.
+   *
+   * Mesma função de estado das mesas e das portas — `estadoDoSistema` sobre
+   * `saude[slug]`. Nenhum cálculo próprio aqui, senão o painel e o mapa
+   * poderiam divergir.
+   */
+  const servicos = useMemo(
+    () => dados.conectores.map((c) => ({ ...c, estado: estadoDoSistema(dados.saude[c.id]) })),
+    [dados.conectores, dados.saude],
+  );
+  const resumoDosServicos = useMemo(() => {
+    // A MESMA contagem do rodapé da página. Duas contas para o mesmo fato é
+    // como um dos dois números fica errado sem ninguém perceber.
+    const r = resumoDeEstados(dados.conectores, dados.saude);
+    return [
+      { n: r.falha, texto: "em falha" },
+      { n: r.trabalhando, texto: "trabalhando" },
+      { n: r.ocioso, texto: "ocioso" },
+      { n: r.semExecucao, texto: "sem execução" },
+      { n: r.semDados, texto: "sem dados" },
+    ].filter((x) => x.n > 0);
+  }, [dados.conectores, dados.saude]);
 
   const sistema = dados.sistemas.find((s) => s.id === selecionado);
   const conector = dados.conectores.find((c) => c.id === selecionado);
@@ -171,23 +198,36 @@ export function PainelLateral({ dados, selecionado, onSelecionar }: Props) {
           ))}
 
           <section className="mb-1">
-            <h3 className="ds-label flex items-center gap-1.5 px-2 py-1 text-muted-foreground">
-              <DoorOpen className="size-3.5" aria-hidden /> Serviços de fora
+            <h3 className="ds-label flex flex-wrap items-center gap-x-1.5 px-2 py-1 text-muted-foreground">
+              <DoorOpen className="size-3.5 shrink-0" aria-hidden />
+              <span>Serviços de fora</span>
+              {resumoDosServicos.map((x) => (
+                <span key={x.texto} className="whitespace-nowrap">
+                  · {x.n} {x.texto}
+                </span>
+              ))}
             </h3>
             <ul>
-              {dados.conectores.map((c) => (
+              {servicos.map((c) => (
                 <li key={c.id}>
                   <button
                     type="button"
                     onClick={() => onSelecionar(c.id === selecionado ? null : c.id)}
                     aria-pressed={c.id === selecionado}
+                    title={`${c.nome} — ${ROTULO[c.estado]}`}
                     className={cn(
                       "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
                       c.id === selecionado ? "bg-accent" : "hover:bg-muted/60",
                     )}
                   >
-                    <span className="size-2 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden />
+                    <span
+                      className={cn("size-2 shrink-0 rounded-full", PONTO[c.estado])}
+                      aria-hidden
+                    />
                     <span className="ds-caption min-w-0 flex-1 truncate">{c.nome}</span>
+                    <span className="ds-label shrink-0 text-muted-foreground">
+                      {(dados.saude[c.id]?.execs ?? 0).toLocaleString("pt-BR")}
+                    </span>
                   </button>
                 </li>
               ))}

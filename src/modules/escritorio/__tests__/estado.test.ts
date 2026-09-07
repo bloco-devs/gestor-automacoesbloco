@@ -220,3 +220,71 @@ describe("7 · o resumo da página separa os dois zeros", () => {
     expect(porEstado.get("captacao")).toBe("sem-dados");
   });
 });
+
+/*
+ * Os treze serviços de fora, como o `ecossistema-mapa` devolveu em 07/09/2026.
+ *
+ * O painel lateral mostrava todos eles com a mesma bolinha cinza fixa: depois
+ * de toda a separação de estados, a lista nao dizia que o autentique esta
+ * falhando com 1.483 erros. Agora ela usa `estadoDoSistema` e este resumo —
+ * os mesmos do mapa e do rodapé.
+ */
+const CONECTORES_HUB: Record<string, { execs: number; ok: number; falhas: number; falhas_upstream?: number; ultima: string | null }> = {
+  autentique: { execs: 17974, ok: 9685, falhas: 1483, falhas_upstream: 6806, ultima: "2026-09-05T00:22:33.806009+00:00" },
+  sienge: { execs: 387, ok: 357, falhas: 0, falhas_upstream: 30, ultima: "2026-09-06T09:00:44.271207+00:00" },
+  "sienge-bulk": { execs: 154, ok: 125, falhas: 0, falhas_upstream: 29, ultima: "2026-09-06T09:00:45.483311+00:00" },
+  email: { execs: 46, ok: 46, falhas: 0, ultima: "2026-09-06T11:00:11.453265+00:00" },
+  "lovable-ai": { execs: 4, ok: 0, falhas: 0, falhas_upstream: 4, ultima: "2026-08-29T14:31:30.050624+00:00" },
+  orulo: { execs: 0, ok: 0, falhas: 0, ultima: null },
+  sympla: { execs: 0, ok: 0, falhas: 0, ultima: null },
+  n8n: { execs: 0, ok: 0, falhas: 0, ultima: null },
+  uazapi: { execs: 0, ok: 0, falhas: 0, ultima: null },
+  cnpj: { execs: 0, ok: 0, falhas: 0, ultima: null },
+  busca: { execs: 0, ok: 0, falhas: 0, ultima: null },
+  "google-drive": { execs: 0, ok: 0, falhas: 0, ultima: null },
+  prevision: { execs: 0, ok: 0, falhas: 0, ultima: null },
+};
+const TREZE = Object.keys(CONECTORES_HUB).map((id) => ({ id }));
+
+describe("os serviços de fora carregam o mesmo estado das mesas", () => {
+  // 06/09 12:00Z: sienge, sienge-bulk e email executaram nas ultimas 24 h.
+  const NAQUELE_DIA = Date.parse("2026-09-06T12:00:00Z");
+
+  it("autentique aparece em falha, não como um cinza qualquer", () => {
+    const e = estadoDoSistema(CONECTORES_HUB.autentique, NAQUELE_DIA);
+    expect(e).toBe("falha");
+    // e a culpa é majoritariamente de terceiro: 6.806 de 1.483+ upstream
+    expect(culpaDeTerceiro(CONECTORES_HUB.autentique)).toBe(true);
+  });
+
+  it("conector com execução recebe o estado da execução dele", () => {
+    expect(estadoDoSistema(CONECTORES_HUB.sienge, NAQUELE_DIA)).toBe("trabalhando");
+    expect(estadoDoSistema(CONECTORES_HUB["sienge-bulk"], NAQUELE_DIA)).toBe("trabalhando");
+    expect(estadoDoSistema(CONECTORES_HUB.email, NAQUELE_DIA)).toBe("trabalhando");
+    // executou em 29/08: tem histórico, mas não nas últimas 24 h
+    expect(estadoDoSistema(CONECTORES_HUB["lovable-ai"], NAQUELE_DIA)).toBe("ocioso");
+  });
+
+  it("os oito sem execução em 30 dias são sem-execucao, não sem-dados", () => {
+    const semExec = ["orulo", "sympla", "n8n", "uazapi", "cnpj", "busca", "google-drive", "prevision"];
+    for (const id of semExec) {
+      expect(estadoDoSistema(CONECTORES_HUB[id], NAQUELE_DIA), id).toBe("sem-execucao");
+    }
+    expect(semExec).toHaveLength(8);
+  });
+
+  it("nenhum dos treze conectores está sem registro no HUB", () => {
+    // Diferente dos sistemas, onde sucesso-cliente e captacao não têm linha.
+    const semLinha = TREZE.filter(({ id }) => CONECTORES_HUB[id] === undefined);
+    expect(semLinha).toEqual([]);
+    expect(TREZE.every(({ id }) => !semRegistroNoHub(estadoDoSistema(CONECTORES_HUB[id], NAQUELE_DIA))))
+      .toBe(true);
+  });
+
+  it("o resumo do cabeçalho sai da mesma função do rodapé", () => {
+    const r = resumoDeEstados(TREZE, CONECTORES_HUB, NAQUELE_DIA);
+    expect(r).toEqual({ trabalhando: 3, ocioso: 1, falha: 1, semExecucao: 8, semDados: 0 });
+    // "Serviços de fora · 1 em falha · 3 trabalhando · 1 ocioso · 8 sem execução"
+    expect(r.trabalhando + r.ocioso + r.falha + r.semExecucao + r.semDados).toBe(13);
+  });
+});
