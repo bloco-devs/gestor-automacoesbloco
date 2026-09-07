@@ -15,6 +15,7 @@ import {
   personagem,
 } from "./sprites";
 import { obterSprite } from "./mobiliario";
+import type { EventoEcossistema } from "./eventos";
 
 const ESCALA_MIN = 1;
 const ESCALA_MAX = 4;
@@ -39,6 +40,13 @@ export interface EscritorioCanvasProps {
   ajustar: boolean;
   /** Avisa quem está sob o ponteiro, para a página abrir a prévia. */
   onApontar?: (id: string | null, tela: { x: number; y: number } | null) => void;
+  /**
+   * Eventos que não vêm do retrato do HUB — hoje, das demandas. Quem os
+   * produz é a página; aqui eles só são repassados ao motor.
+   */
+  eventosExternos?: EventoEcossistema[];
+  /** Demandas em trabalho por BLINK responsável visual. */
+  trabalhoPorSistema?: Record<string, number>;
 }
 
 interface Camera {
@@ -60,6 +68,8 @@ export function EscritorioCanvas({
   onEscala,
   ajustar,
   onApontar,
+  eventosExternos,
+  trabalhoPorSistema,
 }: EscritorioCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fundoRef = useRef<HTMLCanvasElement | null>(null);
@@ -124,6 +134,17 @@ export function EscritorioCanvas({
   useEffect(() => {
     motorRef.current?.atualizarDados(dados);
   }, [dados]);
+
+  useEffect(() => {
+    if (eventosExternos?.length) motorRef.current?.registrarEventos(eventosExternos);
+  }, [eventosExternos]);
+
+  useEffect(() => {
+    if (!trabalhoPorSistema) return;
+    for (const [id, n] of Object.entries(trabalhoPorSistema)) {
+      motorRef.current?.definirTrabalhoDeDemanda(id, n);
+    }
+  }, [trabalhoPorSistema]);
 
   /* ----------------------------------------------------------- câmera --- */
   const centralizar = useCallback(
@@ -272,10 +293,15 @@ export function EscritorioCanvas({
       /*
        * Estado de cada SERVIÇO externo, na própria porta.
        *
-       * A lâmpada só acende com dado que sustente: verde pulsando quando o
-       * conector executou dentro da janela, vermelha quando a taxa de falha
-       * passou do limiar, apagada quando não houve execução recente. Serviço
-       * sem dado nenhum não ganha lâmpada — a porta já está apagada.
+       * A lâmpada acende por ATIVIDADE, não por saúde. Verde pulsando só
+       * quando o conector executou dentro da janela de minutos; vermelha
+       * quando a taxa de falha passou do limiar; apagada quando está
+       * operacional mas não rodou nada agora. Serviço sem dado nenhum não
+       * ganha lâmpada — a porta já está apagada.
+       *
+       * A diferença importa: a saúde chama de "trabalhando" quem rodou nas
+       * últimas 24 h, e uma lâmpada verde por isso diria ao usuário que o
+       * serviço está processando agora, o que seria mentira.
        */
       const porConector = new Map<string, Personagem>();
       for (const p of personagens) if (p.porta) porConector.set(p.porta.conectorId, p);
@@ -285,9 +311,9 @@ export function EscritorioCanvas({
         if (!servico || servico.estado === "sem-dados") continue;
         const lx = porta.x + 21;
         const ly = porta.y + 3;
-        const pulso = servico.estado === "trabalhando" && Math.floor(agora / 700) % 2 === 0;
+        const pulso = !!servico.executando && Math.floor(agora / 700) % 2 === 0;
         const cor =
-          servico.estado === "falha" ? "#e04a3c" : servico.estado === "trabalhando" ? "#3ecf8e" : "#5c5346";
+          servico.estado === "falha" ? "#e04a3c" : servico.executando ? "#3ecf8e" : "#5c5346";
         ctx.fillStyle = "#14201a";
         ctx.fillRect(lx - 1, ly - 1, 8, 6);
         ctx.fillStyle = cor;

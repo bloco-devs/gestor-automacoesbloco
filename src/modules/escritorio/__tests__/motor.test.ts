@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { montarAndar } from "../layout";
-import { criarMotor } from "../motor";
+import { criarMotor, digitando } from "../motor";
 import { DADOS_SEMENTE, type DadosEscritorio } from "../dados";
 import { PERSONAGEM_W, TILE } from "../sprites";
 import { INTEGRACOES_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
@@ -8,6 +8,11 @@ import { FECHOS, REGRAS, dialogoDoRotulo } from "../conversas";
 
 const AGORA = Date.parse("2026-09-05T20:00:00Z");
 const recente = new Date(AGORA - 3_600_000).toISOString();
+/*
+ * Saúde recente NÃO é o mesmo que atividade agora: `recente` (1 h atrás) diz
+ * que o serviço está operacional; só `agorinha` justifica ele sair pela porta.
+ */
+const agorinha = new Date(AGORA - 30_000).toISOString();
 const antigo = new Date(AGORA - 10 * 86_400_000).toISOString();
 
 const sistemas = [
@@ -34,7 +39,7 @@ const dados: DadosEscritorio = {
     parado: { execs: 40, ok: 40, falhas: 0, ultima: antigo },
     // o serviço externo também precisa de saúde própria: sem execução
     // registrada ele não sai da porta, e é justamente essa a regra
-    sienge: { execs: 600, ok: 600, falhas: 0, ultima: recente },
+    sienge: { execs: 600, ok: 600, falhas: 0, ultima: agorinha },
   },
 };
 
@@ -405,7 +410,8 @@ describe("serviço externo reflete a própria saúde", () => {
   });
 
   it("serviço que executou de verdade entrega", () => {
-    const m = criarMotor(andarComServico, comSaude({ ...comConector.saude, n8n: saudavel }), AGORA);
+    const executando = { execs: 1000, ok: 1000, falhas: 0, ultima: agorinha };
+    const m = criarMotor(andarComServico, comSaude({ ...comConector.saude, n8n: executando }), AGORA);
     const p = m.porId.get("n8n")!;
     const fases = new Set<string>();
     for (let i = 0; i < 30 * 900; i++) {
@@ -1049,5 +1055,113 @@ describe("modo demonstração", () => {
     expect(m.fila.tamanho()).toBe(0);
     expect(m.registros.filter((r) => r.resultado === "iniciada")).toEqual([]);
     for (const c of m.conversas) expect(c.evento).toBeUndefined();
+  });
+});
+
+describe("trabalho de demanda aparece sem falsificar saúde", () => {
+  const semAtividade = { execs: 1000, ok: 1000, falhas: 0, ultima: antigo };
+  const dadosParados: DadosEscritorio = {
+    ...dadosEco,
+    saude: Object.fromEntries(dadosEco.sistemas.map((s) => [s.id, semAtividade])),
+  };
+
+  it("demanda em trabalho põe o BLINK a digitar, sem mexer no estado", () => {
+    const m = criarMotor(andarEco, dadosParados, AGORA);
+    const p = m.porId.get("automacoes")!;
+    expect(p.estado).toBe("ocioso");
+    expect(digitando(p)).toBe(false);
+
+    m.definirTrabalhoDeDemanda("automacoes", 2);
+    m.atualizar(1 / 30, false);
+    let digitou = false;
+    for (let i = 0; i < 60; i++) {
+      m.atualizar(1 / 30, false);
+      if (digitando(p)) digitou = true;
+    }
+    expect(digitou, "não apareceu trabalho").toBe(true);
+    // a saúde continua sendo o que o retrato diz
+    expect(p.estado).toBe("ocioso");
+  });
+
+  it("demanda concluída encerra o trabalho visual", () => {
+    const m = criarMotor(andarEco, dadosParados, AGORA);
+    const p = m.porId.get("automacoes")!;
+    m.definirTrabalhoDeDemanda("automacoes", 1);
+    m.atualizar(1 / 30, false);
+    m.definirTrabalhoDeDemanda("automacoes", 0);
+    for (let i = 0; i < 120; i++) {
+      m.atualizar(1 / 30, false);
+      expect(digitando(p)).toBe(false);
+    }
+  });
+
+  it("demanda parada no backlog não faz ninguém fingir execução", () => {
+    const m = criarMotor(andarEco, dadosParados, AGORA);
+    // backlog e a_fazer não entram na contagem de trabalho
+    m.definirTrabalhoDeDemanda("automacoes", 0);
+    const p = m.porId.get("automacoes")!;
+    for (let i = 0; i < 120; i++) {
+      m.atualizar(1 / 30, false);
+      expect(digitando(p)).toBe(false);
+    }
+  });
+
+  it("evento de demanda entra pela mesma fila dos eventos do HUB", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    expect(m.fila.tamanho()).toBe(0);
+    m.registrarEventos([
+      { id: "d1", tipo: "demanda_avancou", sistema: "automacoes", timestamp: AGORA, prioridade: 4 },
+    ]);
+    expect(m.fila.tamanho()).toBe(1);
+  });
+
+  it("evento de falha continua passando na frente de evento de demanda", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.registrarEventos([
+      { id: "d1", tipo: "demanda_nova", sistema: "automacoes", timestamp: AGORA, prioridade: 5 },
+    ]);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA);
+    for (let i = 0; i < 30 * 400 && m.conversas.length === 0; i++) m.atualizar(1 / 30, false);
+    expect(m.conversas[0].evento?.tipo).toBe("entrou_em_falha");
+  });
+});
+
+describe("serviço só entrega quando executou de verdade", () => {
+  const conectores = [{ id: "n8n", nome: "n8n" }];
+  const base = {
+    ...dadosEco,
+    conectores,
+    integracoes: [...dadosEco.integracoes, { origem: "n8n", destino: "automacoes", label: "execuções" }],
+  };
+  const andarServ = montarAndar(base.sistemas, conectores);
+  const rodar = (ultima: string | null) => {
+    const saude = { ...dadosEco.saude, n8n: { execs: 900, ok: 900, falhas: 0, ultima } };
+    const m = criarMotor(andarServ, { ...base, saude }, AGORA);
+    const p = m.porId.get("n8n")!;
+    let saiu = false;
+    for (let i = 0; i < 30 * 600; i++) {
+      m.atualizar(1 / 30, false);
+      if (p.fase === "indo") saiu = true;
+    }
+    return { p, saiu };
+  };
+
+  it("saúde de 24 h NÃO basta para o serviço sair pela porta", () => {
+    const { p, saiu } = rodar(new Date(AGORA - 20 * 3_600_000).toISOString());
+    expect(p.estado, "a saúde continua trabalhando").toBe("trabalhando");
+    expect(p.executando, "mas não executou agora").toBe(false);
+    expect(saiu).toBe(false);
+  });
+
+  it("execução dentro da janela faz o serviço entregar", () => {
+    const { p, saiu } = rodar(new Date(AGORA - 30_000).toISOString());
+    expect(p.executando).toBe(true);
+    expect(saiu).toBe(true);
+  });
+
+  it("sem carimbo de execução, nem estado nem saída", () => {
+    const { p, saiu } = rodar(null);
+    expect(p.executando).toBe(false);
+    expect(saiu).toBe(false);
   });
 });

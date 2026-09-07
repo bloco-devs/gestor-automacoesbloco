@@ -8,10 +8,19 @@ import { PainelLateral } from "@/modules/escritorio/PainelLateral";
 import { PreviaSistema } from "@/modules/escritorio/PreviaSistema";
 import { carregarEscritorio, DADOS_SEMENTE, type DadosEscritorio } from "@/modules/escritorio/dados";
 import { PROPORCAO_PADRAO, montarAndar } from "@/modules/escritorio/layout";
+import { fonteDeDemandas, type EventoEcossistema } from "@/modules/escritorio/eventos";
+import { useDemands } from "@/modules/demands/hooks";
 import { estadoDoSistema } from "@/modules/escritorio/estado";
 
 /** Recarrega o retrato do HUB de tempos em tempos; não é evento a evento. */
 const INTERVALO_RECARGA_MS = 60_000;
+/**
+ * Quem representa o Kanban na planta.
+ *
+ * Roteamento VISUAL provisório: a demanda não pertence a este sistema, ela só
+ * é mostrada por ele enquanto não houver vínculo real demanda → sistema.
+ */
+const SISTEMA_DO_KANBAN = "automacoes";
 
 export default function EscritorioPage() {
   const [dados, setDados] = useState<DadosEscritorio | null>(null);
@@ -84,6 +93,31 @@ export default function EscritorioPage() {
     };
   }
   const andar = plantaRef.current.andar;
+
+  /*
+   * DEMANDAS REAIS — trabalho que não vem do HUB.
+   *
+   * `useDemands` já existe e já escuta `demands` por Supabase Realtime, então
+   * aqui não há assinatura nova nem polling: o escritório pega carona no que
+   * o Kanban já mantém atualizado.
+   *
+   * O evento é endereçado ao BLINK do Gestor de Automações como RESPONSÁVEL
+   * VISUAL do trabalho. Isso não é posse: hoje não existe chave confiável
+   * entre uma demanda e o sistema do ecossistema, e inventar uma seria pior
+   * que não ter. Quando existir, muda-se o destinatário em `fonteDeDemandas`.
+   */
+  const { data: demandas } = useDemands();
+  const fonteDemandasRef = useRef(fonteDeDemandas(SISTEMA_DO_KANBAN));
+  const [eventosDeDemanda, setEventosDeDemanda] = useState<EventoEcossistema[]>([]);
+  const [trabalhoPorSistema, setTrabalhoPorSistema] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!demandas) return;
+    const resumo = demandas.map((d) => ({ id: d.id, status: d.status as string }));
+    const novos = fonteDemandasRef.current.observar(resumo, Date.now());
+    if (novos.length) setEventosDeDemanda(novos);
+    setTrabalhoPorSistema({ [SISTEMA_DO_KANBAN]: fonteDemandasRef.current.emTrabalho() });
+  }, [demandas]);
 
   const contagem = useMemo(() => {
     let trabalhando = 0;
@@ -166,6 +200,8 @@ export default function EscritorioPage() {
             andar={andar}
             dados={efetivos}
             demo={demo}
+            eventosExternos={eventosDeDemanda}
+            trabalhoPorSistema={trabalhoPorSistema}
             escala={escala}
             onEscala={(e) => { setAjustar(false); setEscala(e); }}
             ajustar={ajustar}

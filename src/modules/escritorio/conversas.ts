@@ -245,6 +245,24 @@ export const FALAS_DE_EVENTO: Record<TipoEvento, { abre: string[]; responde: str
     abre: ["O {sistema} começou a executar.", "O {sistema} entrou em operação."],
     responde: ["Ótimo, vou acompanhar.", "Perfeito."],
   },
+  /*
+   * Falas de demanda. O texto NÃO diz de qual sistema a demanda é, porque
+   * esse vínculo não existe no dado — e {sistema} aqui é o BLINK que
+   * representa o Kanban, não o dono da demanda. Nada do conteúdo da demanda
+   * entra no balão: nem título, nem código, nem responsável.
+   */
+  demanda_nova: {
+    abre: ["Entrou uma demanda nova por aqui.", "Chegou demanda nova na fila."],
+    responde: ["Certo, vou acompanhar.", "Beleza, fico de olho."],
+  },
+  demanda_avancou: {
+    abre: ["Uma demanda avançou de etapa.", "Já estão trabalhando naquela demanda."],
+    responde: ["Ótimo, vou acompanhar.", "Boa, obrigado pelo aviso."],
+  },
+  demanda_concluida: {
+    abre: ["Uma demanda foi concluída.", "Fechamos mais uma demanda."],
+    responde: ["Perfeito.", "Ótima notícia."],
+  },
 };
 
 /**

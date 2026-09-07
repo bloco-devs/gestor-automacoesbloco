@@ -39,6 +39,7 @@ import { estaParado, estadoDoSistema, intervaloEntreViagens, type Estado, type S
 import { criarRoteirista, dialogoDeEvento, type Fala } from "./conversas";
 import {
   criarFilaDeEventos,
+  executouAgora,
   fonteDeRetratos,
   type EventoEcossistema,
   type FilaDeEventos,
@@ -138,6 +139,19 @@ export interface Personagem {
   /** Segundos dentro do papel atual — base das microanimações. */
   papelT: number;
   /**
+   * EXECUTOU desde o retrato anterior. Não confundir com `estado`.
+   *
+   * `estado` responde "está operacional?" — e chama de trabalhando quem rodou
+   * nas últimas 24 h. `executando` responde "rodou agora?", que é o que
+   * justifica o serviço sair pela porta e a lâmpada acender.
+   */
+  executando?: boolean;
+  /**
+   * Quantas demandas reais estão em trabalho sob a responsabilidade visual
+   * deste BLINK. Alimentado de fora; zero significa nenhuma.
+   */
+  demandasEmTrabalho?: number;
+  /**
    * O primeiro intervalo já foi calculado por `intervaloDe`?
    *
    * O construtor sorteava `proxima` entre 2 e 10 s, o que passava por cima do
@@ -161,6 +175,16 @@ export interface Motor {
   atualizarDados(novos: DadosEscritorio, agora?: number): EventoEcossistema[];
   /** Sistemas com problema em aberto, ainda pendentes. */
   pendentes(): string[];
+  /**
+   * Eventos vindos de fora do retrato do HUB — hoje, das demandas. O motor
+   * não sabe de onde vieram; só os enfileira com as mesmas regras.
+   */
+  registrarEventos(eventos: EventoEcossistema[]): void;
+  /**
+   * Quantas demandas reais estão em trabalho sob a responsabilidade VISUAL de
+   * um BLINK. Não é posse: é só quem representa aquele trabalho na tela.
+   */
+  definirTrabalhoDeDemanda(sistemaId: string, quantidade: number): void;
   fila: FilaDeEventos;
   registros: RegistroConversa[];
 }
@@ -189,6 +213,7 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
       nome: mesa.nome,
       tipo: "sistema",
       estado,
+      executando: executouAgora(saudeDe(mesa.sistemaId), agora),
       mesa,
       x: mesa.pessoaX,
       y: mesa.pessoaY,
@@ -211,6 +236,7 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
       nome: porta.nome,
       tipo: "externo",
       estado: estadoDoSistema(saudeDe(porta.conectorId), agora),
+      executando: executouAgora(saudeDe(porta.conectorId), agora),
       porta,
       x: porta.frenteX,
       y: porta.frenteY,
@@ -261,7 +287,12 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
      * entregar — animação que o dado não sustenta.
      */
     if (estaParado(p.estado)) return Infinity;
-    if (p.tipo === "externo") return 26 + Math.random() * 40;
+    /*
+     * O serviço externo só atravessa a porta quando EXECUTOU de verdade desde
+     * a última leitura. Antes bastava a saúde dizer "trabalhando", que aceita
+     * uma execução de 24 h atrás — e a entrega virava animação sem fato.
+     */
+    if (p.tipo === "externo") return p.executando ? 26 + Math.random() * 40 : Infinity;
     const execs = saudeDe(p.id)?.execs ?? 0;
     const base = execs > 0 ? intervaloEntreViagens(execs, maiorExecs) : 45;
     /*
@@ -631,6 +662,15 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     registros,
     pendentes: () => fonte.pendentes(),
 
+    registrarEventos(eventos) {
+      fila.registrar(eventos, relogio);
+    },
+
+    definirTrabalhoDeDemanda(sistemaId, quantidade) {
+      const p = porId.get(sistemaId);
+      if (p) p.demandasEmTrabalho = Math.max(0, quantidade);
+    },
+
     /**
      * Retrato novo do HUB.
      *
@@ -643,6 +683,9 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
       // sistemas E serviços: cada entidade reflete a própria saúde
       for (const p of personagens) p.estado = estadoDoSistema(saudeDe(p.id), quando);
       const eventos = fonte.observar(novos.saude, quando);
+      // atividade é outra coisa: só quem executou desde a leitura anterior
+      const ativos = fonte.ativos();
+      for (const p of personagens) p.executando = ativos.has(p.id);
       fila.registrar(eventos, relogio);
       return eventos;
     },
@@ -756,7 +799,14 @@ export function passoDe(p: Personagem): 0 | 1 | 2 {
  */
 export function digitando(p: Personagem): boolean {
   if (p.papel === "falando") return p.papelT * 2.4 - Math.floor(p.papelT * 2.4) < 0.4;
-  return p.fase === "mesa" && p.estado === "trabalhando" && Math.floor(p.digitaT * 3) % 2 === 0;
+  if (p.fase !== "mesa") return false;
+  /*
+   * Duas razões independentes para estar digitando, e nenhuma delas mexe no
+   * `estado`: o sistema executou recentemente, ou existe demanda real em
+   * trabalho sob a responsabilidade visual dele.
+   */
+  const temMotivo = p.estado === "trabalhando" || (p.demandasEmTrabalho ?? 0) > 0;
+  return temMotivo && Math.floor(p.digitaT * 3) % 2 === 0;
 }
 
 /**

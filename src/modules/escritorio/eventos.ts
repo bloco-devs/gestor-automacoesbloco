@@ -26,7 +26,10 @@ export type TipoEvento =
   | "falha_nova"
   | "recuperado"
   | "voltou_a_reportar"
-  | "comecou_a_executar";
+  | "comecou_a_executar"
+  | "demanda_nova"
+  | "demanda_avancou"
+  | "demanda_concluida";
 
 /** Único contexto que o retrato sustenta: a falha veio de fora. */
 export type ContextoEvento = "upstream";
@@ -58,8 +61,11 @@ export const PRIORIDADE: Record<TipoEvento, number> = {
   entrou_em_falha: 1,
   falha_nova: 2,
   recuperado: 3,
-  voltou_a_reportar: 4,
-  comecou_a_executar: 5,
+  demanda_avancou: 4,
+  demanda_concluida: 4,
+  demanda_nova: 5,
+  voltou_a_reportar: 6,
+  comecou_a_executar: 7,
 };
 export const PRIORIDADE_AMBIENTE = 9;
 
@@ -69,6 +75,22 @@ export type Retrato = Record<string, SaudeSistema>;
 const positivo = (n: number | undefined) => (typeof n === "number" && n > 0 ? n : 0);
 
 /**
+ * Quanto tempo uma execução continua contando como "agora".
+ *
+ * Duas vezes o refresh de 60 s. É o que permite a primeira leitura já saber
+ * quem está ativo — sem retrato anterior não existe "avançou" —, e continua
+ * sendo uma janela de minutos, não as 24 h da regra de saúde.
+ */
+export const JANELA_ATIVIDADE_MS = 120_000;
+
+/** Executou dentro da janela de atividade? É o "agora" que o retrato sustenta. */
+export const executouAgora = (saude: SaudeSistema | undefined, agora: number): boolean => {
+  if (!saude?.ultima) return false;
+  const t = Date.parse(saude.ultima);
+  return !Number.isNaN(t) && agora - t <= JANELA_ATIVIDADE_MS;
+};
+
+/**
  * Fonte de eventos. Hoje só existe a de retratos; a interface é o que permite
  * plugar o stream do HUB depois sem tocar no motor.
  */
@@ -76,6 +98,17 @@ export interface FonteDeEventos {
   observar(retrato: Retrato, agora: number): EventoEcossistema[];
   /** Sistemas com problema em aberto — o que ainda está PENDENTE. */
   pendentes(): string[];
+  /**
+   * Quem EXECUTOU desde o retrato anterior.
+   *
+   * Isto é ATIVIDADE, não saúde. `estadoDoSistema` chama de "trabalhando"
+   * quem executou nas últimas 24 h — o que responde "está operacional?", não
+   * "está trabalhando agora?". Um conector que rodou ontem às 22 h aparecia
+   * como trabalhando hoje de manhã e saía pela porta entregar, sem nada ter
+   * acontecido. O único sinal de agora que o retrato tem é o `ultima` ter
+   * avançado entre duas leituras.
+   */
+  ativos(): ReadonlySet<string>;
 }
 
 /**
@@ -90,13 +123,16 @@ export function fonteDeRetratos(inicial: Retrato = {}): FonteDeEventos {
   let anterior: Retrato = inicial;
   let ciclo = 0;
   const abertos = new Set<string>();
+  let executaram: Set<string> = new Set();
 
   return {
     pendentes: () => [...abertos],
+    ativos: () => executaram,
 
     observar(retrato, agora) {
       ciclo += 1;
       const eventos: EventoEcossistema[] = [];
+      const agoraAtivos = new Set<string>();
       const push = (tipo: TipoEvento, sistema: string, contexto?: ContextoEvento) => {
         eventos.push({
           id: `${tipo}:${sistema}:${ciclo}`,
@@ -112,11 +148,22 @@ export function fonteDeRetratos(inicial: Retrato = {}): FonteDeEventos {
         const antes = anterior[sistema];
         const depois = retrato[sistema];
         if (!depois) continue;
+
+        /*
+         * Atividade: ou o carimbo da última execução andou desde a leitura
+         * anterior, ou ele é recente o bastante para valer sozinho. O segundo
+         * caso é o que faz a primeira abertura da tela já mostrar quem roda.
+         */
+        if (executouAgora(depois, agora) || (antes && depois.ultima && depois.ultima !== antes.ultima)) {
+          agoraAtivos.add(sistema);
+        }
+
         /*
          * Sistema que ainda não estava no retrato anterior não gera evento:
          * não dá para saber se ele mudou ou se acabou de entrar no catálogo.
          */
         if (!antes) continue;
+
 
         const estadoAntes: Estado = estadoDoSistema(antes, agora);
         const estadoDepois: Estado = estadoDoSistema(depois, agora);
@@ -147,6 +194,7 @@ export function fonteDeRetratos(inicial: Retrato = {}): FonteDeEventos {
       }
 
       anterior = retrato;
+      executaram = agoraAtivos;
       return eventos;
     },
   };
@@ -244,5 +292,100 @@ export function criarFilaDeEventos(cooldowns: Cooldowns = COOLDOWN_PADRAO): Fila
 
     tamanho: () => fila.length,
     pendentes: () => [...fila],
+  };
+}
+
+
+/* --------------------------------------------------------- demandas --- */
+
+/**
+ * Estados reais da tabela `demands`. Não existe "resolvido" nem "em análise";
+ * o terminal é `concluido`. Nada aqui é inventado.
+ */
+export const STATUS_DEMANDA = [
+  "backlog",
+  "a_fazer",
+  "em_desenvolvimento",
+  "em_testes",
+  "homologacao",
+  "concluido",
+] as const;
+export type StatusDemanda = (typeof STATUS_DEMANDA)[number];
+
+/** Etapas em que alguém está efetivamente trabalhando na demanda. */
+export const STATUS_EM_TRABALHO: readonly StatusDemanda[] = [
+  "em_desenvolvimento",
+  "em_testes",
+  "homologacao",
+];
+
+export const emTrabalho = (status: string): boolean =>
+  (STATUS_EM_TRABALHO as readonly string[]).includes(status);
+
+/** O mínimo que o escritório precisa saber de uma demanda. */
+export interface DemandaResumo {
+  id: string;
+  status: string;
+}
+
+/**
+ * Diff entre duas fotos do Kanban.
+ *
+ * ATENÇÃO AO ROTEAMENTO. A demanda NÃO pertence ao sistema para o qual o
+ * evento é endereçado. Hoje não existe chave confiável entre `demands` e o
+ * sistema do ecossistema — `system_id` aponta para `solucoes`, que está
+ * vazia, e `sistema_slug` não é escrita por ninguém. Então o evento é
+ * endereçado ao BLINK que representa o Kanban, como RESPONSÁVEL VISUAL pelo
+ * trabalho. É roteamento provisório, não propriedade da demanda; no dia em
+ * que existir a chave, muda-se só o `sistema` daqui.
+ */
+export function fonteDeDemandas(
+  sistemaResponsavel: string,
+  inicial: DemandaResumo[] = [],
+): {
+  observar(demandas: DemandaResumo[], agora: number): EventoEcossistema[];
+  /** Quantas demandas estão em etapa de trabalho agora. */
+  emTrabalho(): number;
+} {
+  let anterior = new Map(inicial.map((d) => [d.id, d.status]));
+  let trabalhando = inicial.filter((d) => emTrabalho(d.status)).length;
+  let ciclo = 0;
+
+  return {
+    emTrabalho: () => trabalhando,
+
+    observar(demandas, agora) {
+      ciclo += 1;
+      const eventos: EventoEcossistema[] = [];
+      const atual = new Map(demandas.map((d) => [d.id, d.status]));
+      const push = (tipo: TipoEvento, chave: string) => {
+        eventos.push({
+          id: `${tipo}:${chave}:${ciclo}`,
+          tipo,
+          sistema: sistemaResponsavel,
+          timestamp: agora,
+          prioridade: PRIORIDADE[tipo],
+        });
+      };
+
+      /*
+       * A primeira leitura não gera evento: sem foto anterior não dá para
+       * saber o que mudou, e o Kanban inteiro viraria uma enxurrada de avisos
+       * na abertura da tela.
+       */
+      if (anterior.size > 0) {
+        for (const [id, status] of atual) {
+          const antes = anterior.get(id);
+          if (antes === undefined) push("demanda_nova", id);
+          else if (antes !== status) {
+            push(status === "concluido" ? "demanda_concluida" : "demanda_avancou", id);
+          }
+        }
+      }
+
+      anterior = atual;
+      trabalhando = demandas.filter((d) => emTrabalho(d.status)).length;
+      return eventos;
+    },
   };
 }

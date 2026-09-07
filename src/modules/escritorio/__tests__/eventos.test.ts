@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { criarFilaDeEventos, fonteDeRetratos, PRIORIDADE, type Retrato } from "../eventos";
+import { criarFilaDeEventos, fonteDeDemandas, fonteDeRetratos, PRIORIDADE, type Retrato } from "../eventos";
+import { estadoDoSistema } from "../estado";
 
 const AGORA = Date.parse("2026-09-06T20:00:00Z");
 const recente = new Date(AGORA - 3_600_000).toISOString();
@@ -116,5 +117,99 @@ describe("fila de eventos", () => {
     fila.registrar([{ id: "1", tipo: "entrou_em_falha", sistema: "rh", timestamp: 0, prioridade: 1 }], 0);
     fila.registrar([], 60 * 60);
     expect(fila.tamanho()).toBe(0);
+  });
+});
+
+describe("atividade não é a mesma coisa que saúde", () => {
+  const agora = AGORA;
+  const ontem = new Date(agora - 20 * 3_600_000).toISOString();
+  const agorinha = new Date(agora - 30_000).toISOString();
+
+  it("executar nas últimas 24 h não conta como executar agora", () => {
+    const f = fonteDeRetratos({ n8n: { execs: 100, ok: 100, falhas: 0, ultima: ontem } });
+    f.observar({ n8n: { execs: 100, ok: 100, falhas: 0, ultima: ontem } }, agora);
+    // a saúde diz "trabalhando"; a atividade diz que não rodou nada agora
+    expect(estadoDoSistema({ execs: 100, ok: 100, falhas: 0, ultima: ontem }, agora)).toBe("trabalhando");
+    expect([...f.ativos()]).toEqual([]);
+  });
+
+  it("execução dentro da janela conta como atividade", () => {
+    const f = fonteDeRetratos({ n8n: { execs: 100, ok: 100, falhas: 0, ultima: ontem } });
+    f.observar({ n8n: { execs: 101, ok: 101, falhas: 0, ultima: agorinha } }, agora);
+    expect([...f.ativos()]).toEqual(["n8n"]);
+  });
+
+  it("o carimbo avançar entre duas leituras também conta", () => {
+    const meiaHora = new Date(agora - 1_800_000).toISOString();
+    const f = fonteDeRetratos({ n8n: { execs: 100, ok: 100, falhas: 0, ultima: ontem } });
+    f.observar({ n8n: { execs: 101, ok: 101, falhas: 0, ultima: meiaHora } }, agora);
+    expect([...f.ativos()]).toEqual(["n8n"]);
+  });
+
+  it("sem carimbo nenhum, não há atividade", () => {
+    const f = fonteDeRetratos({ n8n: { execs: 0, ok: 0, falhas: 0, ultima: null } });
+    f.observar({ n8n: { execs: 0, ok: 0, falhas: 0, ultima: null } }, agora);
+    expect([...f.ativos()]).toEqual([]);
+  });
+});
+
+describe("demandas viram evento sem inventar dono", () => {
+  const KANBAN = "automacoes";
+
+  it("a primeira leitura não dispara o Kanban inteiro", () => {
+    const f = fonteDeDemandas(KANBAN);
+    expect(f.observar([{ id: "1", status: "a_fazer" }, { id: "2", status: "backlog" }], AGORA)).toEqual([]);
+  });
+
+  it("demanda nova gera evento", () => {
+    const f = fonteDeDemandas(KANBAN, [{ id: "1", status: "a_fazer" }]);
+    const ev = f.observar([{ id: "1", status: "a_fazer" }, { id: "2", status: "backlog" }], AGORA);
+    expect(ev.map((e) => e.tipo)).toEqual(["demanda_nova"]);
+  });
+
+  it("mudança de etapa gera avanço, e conclusão gera conclusão", () => {
+    const f = fonteDeDemandas(KANBAN, [{ id: "1", status: "a_fazer" }]);
+    expect(f.observar([{ id: "1", status: "em_desenvolvimento" }], AGORA).map((e) => e.tipo))
+      .toEqual(["demanda_avancou"]);
+    expect(f.observar([{ id: "1", status: "concluido" }], AGORA).map((e) => e.tipo))
+      .toEqual(["demanda_concluida"]);
+  });
+
+  it("Kanban parado não gera evento nenhum", () => {
+    const lista = [{ id: "1", status: "em_testes" }];
+    const f = fonteDeDemandas(KANBAN, lista);
+    expect(f.observar(lista, AGORA)).toEqual([]);
+    expect(f.observar(lista, AGORA + 60_000)).toEqual([]);
+  });
+
+  it("o evento é endereçado ao responsável VISUAL, não a um dono inventado", () => {
+    const f = fonteDeDemandas(KANBAN, [{ id: "1", status: "a_fazer" }]);
+    const ev = f.observar([{ id: "1", status: "em_desenvolvimento" }], AGORA);
+    expect(ev[0].sistema).toBe(KANBAN);
+    // nada da demanda vaza para o evento além do id na chave de deduplicação
+    expect(Object.keys(ev[0]).sort()).toEqual(["id", "prioridade", "sistema", "timestamp", "tipo"]);
+  });
+
+  it("só as etapas de trabalho contam como trabalho", () => {
+    const f = fonteDeDemandas(KANBAN);
+    f.observar(
+      [
+        { id: "1", status: "backlog" },
+        { id: "2", status: "a_fazer" },
+        { id: "3", status: "em_desenvolvimento" },
+        { id: "4", status: "em_testes" },
+        { id: "5", status: "homologacao" },
+        { id: "6", status: "concluido" },
+      ],
+      AGORA,
+    );
+    expect(f.emTrabalho()).toBe(3);
+  });
+
+  it("demanda concluída encerra o trabalho", () => {
+    const f = fonteDeDemandas(KANBAN, [{ id: "1", status: "em_desenvolvimento" }]);
+    expect(f.emTrabalho()).toBe(1);
+    f.observar([{ id: "1", status: "concluido" }], AGORA);
+    expect(f.emTrabalho()).toBe(0);
   });
 });
