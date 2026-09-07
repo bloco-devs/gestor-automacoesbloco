@@ -343,3 +343,62 @@ describe("o andar acompanha a proporção da tela", () => {
     }
   });
 });
+
+describe("C · o andar nunca força zoom abaixo de 1:1", () => {
+  const AREAS: [string, number][] = [
+    ["Pessoas", 1], ["Operação", 4], ["Comercial", 2], ["Financeiro", 2],
+    ["Suprimentos", 1], ["Incorporação", 2], ["Engenharia", 2],
+    ["Jurídico", 1], ["Tecnologia", 1],
+  ];
+  const sistemas = AREAS.flatMap(([g, n]) =>
+    Array.from({ length: n }, (_, i) => ({ id: `${g}-${i}`, nome: `${g} ${i}`, grupo: g })));
+  const conectores = Array.from({ length: 13 }, (_, i) => ({ id: `c${i}`, nome: `c${i}` }));
+
+  /** Tamanho mínimo possível do andar: sem preenchimento nenhum. */
+  const minimo = (alvo: number) => montarAndar(sistemas, conectores, alvo);
+
+  it("o preenchimento nunca cresce além da área de desenho", () => {
+    for (const [l, a] of [[1320, 785], [1180, 820], [1600, 900], [900, 900]] as const) {
+      const alvo = Math.round((l / a) * 4) / 4;
+      const area = { largura: l, altura: a };
+      const cheio = montarAndar(sistemas, conectores, alvo, area);
+      const cru = minimo(alvo);
+      // ou o andar cabe na área, ou ele já era maior que ela sem preenchimento
+      expect(cheio.largura <= l || cru.largura > l, `largura ${l}x${a}`).toBe(true);
+      expect(cheio.altura <= a || cru.altura > a, `altura ${l}x${a}`).toBe(true);
+      // e o preenchimento jamais deixa o andar MAIOR que o mínimo + a área
+      expect(cheio.largura).toBeLessThanOrEqual(Math.max(cru.largura, l));
+      expect(cheio.altura).toBeLessThanOrEqual(Math.max(cru.altura, a));
+    }
+  });
+
+  it("encher a sobra não pode encolher o BLINK", () => {
+    for (const [l, a] of [[1320, 785], [1600, 900]] as const) {
+      const alvo = Math.round((l / a) * 4) / 4;
+      const cru = minimo(alvo);
+      const cheio = montarAndar(sistemas, conectores, alvo, { largura: l, altura: a });
+      const escalaCrua = Math.min(l / cru.largura, a / cru.altura);
+      const escalaCheia = Math.min(l / cheio.largura, a / cheio.altura);
+      // o preenchimento pode empatar, nunca piorar
+      expect(escalaCheia, `${l}x${a}`).toBeGreaterThanOrEqual(Math.min(escalaCrua, 1) - 0.001);
+    }
+  });
+
+  it("sem área informada, o comportamento é o de antes", () => {
+    const comAlvo = montarAndar(sistemas, conectores, 1.9);
+    expect(comAlvo.mesas).toHaveLength(sistemas.length);
+    expect(comAlvo.largura).toBeGreaterThan(comAlvo.altura);
+  });
+
+  it("mesmo com a área apertando, tudo continua alcançável", () => {
+    const a = montarAndar(sistemas, conectores, 1.68, { largura: 1300, altura: 800 });
+    const primeiro = a.mesas[0];
+    for (const m of a.mesas.slice(1)) {
+      expect(
+        rotaEmTiles(a, { x: primeiro.tileX, y: primeiro.tileY }, { x: m.tileX, y: m.tileY }),
+        m.nome,
+      ).not.toBeNull();
+    }
+    for (const p of a.portas) expect(p.y).toBeGreaterThanOrEqual(TILE * 2);
+  });
+});

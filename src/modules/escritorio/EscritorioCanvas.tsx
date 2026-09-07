@@ -233,8 +233,14 @@ export function EscritorioCanvas({
 
       const cam = camRef.current;
       if (ajustarRef.current && !selRef.current) {
+        /*
+         * Piso de 1: pixel art abaixo de 1:1 não só encolhe como borra, porque
+         * cada tile passa a cair entre pixels da tela. Quando o andar não cabe
+         * inteiro a 1:1, é melhor mostrar quase tudo nítido do que tudo
+         * ilegível — e o arrasto continua disponível.
+         */
         cam.alvoEscala = Math.max(
-          0.75,
+          1,
           Math.min(4, Math.min(larguraTela / andar.largura, alturaTela / andar.altura)),
         );
       }
@@ -444,7 +450,13 @@ export function EscritorioCanvas({
       }}
       onPointerMove={(ev) => {
         const a = arrastando.current;
-        if (a && !ajustar) {
+        /*
+         * O modo "ajustar" manda no zoom, não no arrasto. Quando o andar não
+         * cabe inteiro a 1:1 é justamente aí que arrastar precisa funcionar —
+         * senão uma fileira de salas fica inalcançável. Quando cabe, `limitar`
+         * centraliza de volta e o arrasto é inócuo.
+         */
+        if (a) {
           const dx = ev.clientX - a.x;
           const dy = ev.clientY - a.y;
           if (Math.abs(dx) > 3 || Math.abs(dy) > 3) a.moveu = true;

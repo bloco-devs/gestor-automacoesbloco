@@ -411,6 +411,13 @@ export function montarAndar(
   sistemas: SistemaEco[],
   conectores: ConectorEco[],
   proporcaoAlvo = PROPORCAO_PADRAO,
+  /**
+   * Área de desenho em pixels. Quando informada, o preenchimento de sobra
+   * NUNCA cresce além dela — porque cada tile a mais empurra o zoom de "andar
+   * inteiro" para baixo, e pixel art abaixo de 1:1 fica pequeno e borrado.
+   * Legibilidade vale mais que tapar a tarja.
+   */
+  areaPx?: { largura: number; altura: number },
 ): Andar {
   const porGrupo = new Map<string, SistemaEco[]>();
   for (const s of sistemas) {
@@ -448,10 +455,21 @@ export function montarAndar(
    * tela é muito mais alta que larga.
    */
   const TETO_FOLGA = 1.45;
+  /*
+   * Teto em tiles vindo da área de desenho: encher a sobra com corredor além
+   * disso reduz o zoom. Sem área informada, só vale o teto proporcional.
+   */
+  const tetoColunasPx = areaPx ? Math.floor(areaPx.largura / TILE) : Infinity;
+  const tetoLinhasPx = areaPx ? Math.floor(areaPx.altura / TILE) : Infinity;
+
   // andar largo demais para a tela: a sobra desce como circulação
   const linhasGrade = Math.max(
     minimoLinhas,
-    Math.min(Math.round(minimoLinhas * TETO_FOLGA), Math.round(minimoColunas / proporcaoAlvo)),
+    Math.min(
+      Math.round(minimoLinhas * TETO_FOLGA),
+      Math.round(minimoColunas / proporcaoAlvo),
+      tetoLinhasPx,
+    ),
   );
   const folgaLinhas = linhasGrade - minimoLinhas;
   const extraTopo = Math.floor(folgaLinhas / 2);
@@ -460,7 +478,11 @@ export function montarAndar(
   // andar alto demais para a tela: a sobra abre corredor dos dois lados
   const colunas = Math.max(
     minimoColunas,
-    Math.min(Math.round(minimoColunas * TETO_FOLGA), Math.round(linhasGrade * proporcaoAlvo)),
+    Math.min(
+      Math.round(minimoColunas * TETO_FOLGA),
+      Math.round(linhasGrade * proporcaoAlvo),
+      tetoColunasPx,
+    ),
   );
   const folgaColunas = colunas - minimoColunas;
   const extraEsq = Math.floor(folgaColunas / 2);

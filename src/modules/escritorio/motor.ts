@@ -36,7 +36,7 @@ import {
   type PortaExterna,
 } from "./layout";
 import { estaParado, estadoDoSistema, intervaloEntreViagens, type Estado, type SaudeSistema } from "./estado";
-import { criarRoteirista, dialogoDeEvento, type Fala } from "./conversas";
+import { criarRoteirista, type Fala } from "./conversas";
 import {
   criarFilaDeEventos,
   executouAgora,
@@ -58,7 +58,26 @@ const SEG_DESPEDIDA = 0.6;      // encerramento, ainda frente a frente
 const MAX_VIAGENS = 6;
 const MAX_CONVERSAS = 2;        // dois grupos, nunca o andar inteiro falando
 const LIMITE_ENCONTRO = 40;     // segundos até desistir de um encontro travado
-const INTERVALO_DEMO = 7;
+/*
+ * Descanso na mesa entre uma conversa e outra, no modo demonstração.
+ *
+ * Eram 7 s, calibrados quando a viagem era solo e durava poucos segundos.
+ * Hoje um ciclo completo — sair, caminhar, encontrar, conversar, despedir,
+ * voltar — leva perto de 25 s, e com 7 s de descanso o escritório virava um
+ * vaivém sem pausa: dava para ver a saída, não dava para ver a volta. Com 40
+ * o ciclo inteiro cabe na vista antes do próximo começar.
+ */
+const INTERVALO_DEMO = 40;
+/*
+ * Descanso do ANDAR entre uma conversa e a próxima, na demonstração.
+ *
+ * Subir o intervalo de cada um para 40 s não bastou: são quinze
+ * temporizadores independentes, então as conversas se encavalavam e o
+ * intervalo entre elas caía para segundos. Este é um respiro global — depois
+ * que uma conversa termina, o andar fica quieto antes de começar outra, que é
+ * o que dá tempo de ver o ciclo inteiro.
+ */
+const DESCANSO_DEMO = 14;
 /**
  * Conversa ambiental é secundária: só respira quando a fila está vazia e
  * nenhum sistema está com problema em aberto. O intervalo é longo de
@@ -338,6 +357,7 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
 
   const roteirista = criarRoteirista();
   const conversas: Conversa[] = [];
+  let fimDaUltimaConversa = -Infinity;
   let relogio = 0; // segundos de simulação, base dos cooldowns das regras
 
   const interlocutor = (p: Personagem) => ({
@@ -394,6 +414,8 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     if (conversas.length >= MAX_CONVERSAS) return false;
     // uma conversa põe DUAS pessoas de pé: o teto tem de contar as duas
     if (viagensAtivas() + 2 > MAX_VIAGENS) return false;
+    // na demonstração, o andar respira entre um ciclo e o seguinte
+    if (demo && !evento && relogio - fimDaUltimaConversa < DESCANSO_DEMO) return false;
 
     const pe = pontoDeEncontro(
       andar,
@@ -419,7 +441,7 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
       evento,
       // fala de evento tem duas linhas; a ambiental tem três
       linhas: evento
-        ? dialogoDeEvento(evento, a.nome)
+        ? roteirista.dialogoDeEvento(evento, a.nome)
         : roteirista.dialogoPara(interlocutor(a), interlocutor(b), label, relogio),
       i: 0,
       t: 0,
@@ -582,6 +604,7 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
           }
           const i = conversas.indexOf(c);
           if (i >= 0) conversas.splice(i, 1);
+          fimDaUltimaConversa = relogio;
         }
         break;
     }

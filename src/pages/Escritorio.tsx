@@ -70,6 +70,7 @@ export default function EscritorioPage() {
    * remontando o andar — e com ele o motor — a cada pixel.
    */
   const [proporcao, setProporcao] = useState(PROPORCAO_PADRAO);
+  const [areaPx, setAreaPx] = useState<{ largura: number; altura: number } | undefined>(undefined);
   useEffect(() => {
     const alvo = areaRef.current;
     if (!alvo || typeof ResizeObserver === "undefined") return;
@@ -77,6 +78,8 @@ export default function EscritorioPage() {
       const { clientWidth: l, clientHeight: a } = alvo;
       if (l < 80 || a < 80) return;
       setProporcao(Math.max(0.5, Math.min(4, Math.round((l / a) * 4) / 4)));
+      // arredondado em 100 px: redimensionar não remonta o andar a cada pixel
+      setAreaPx({ largura: Math.round(l / 100) * 100, altura: Math.round(a / 100) * 100 });
     };
     medir();
     const obs = new ResizeObserver(medir);
@@ -85,11 +88,11 @@ export default function EscritorioPage() {
   }, []);
 
   const plantaRef = useRef<{ chave: string; andar: ReturnType<typeof montarAndar> } | null>(null);
-  const chavePlanta = `${estrutura}@@${proporcao}`;
+  const chavePlanta = `${estrutura}@@${proporcao}@@${areaPx?.largura ?? 0}x${areaPx?.altura ?? 0}`;
   if (!plantaRef.current || plantaRef.current.chave !== chavePlanta) {
     plantaRef.current = {
       chave: chavePlanta,
-      andar: montarAndar(efetivos.sistemas, efetivos.conectores, proporcao),
+      andar: montarAndar(efetivos.sistemas, efetivos.conectores, proporcao, areaPx),
     };
   }
   const andar = plantaRef.current.andar;

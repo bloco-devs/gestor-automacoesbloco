@@ -4,7 +4,7 @@ import { criarMotor, digitando } from "../motor";
 import { DADOS_SEMENTE, type DadosEscritorio } from "../dados";
 import { PERSONAGEM_W, TILE } from "../sprites";
 import { INTEGRACOES_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
-import { FECHOS, REGRAS, dialogoDoRotulo } from "../conversas";
+import { FALAS_DE_EVENTO, FECHOS, REGRAS, criarRoteirista, dialogoDoRotulo } from "../conversas";
 
 const AGORA = Date.parse("2026-09-05T20:00:00Z");
 const recente = new Date(AGORA - 3_600_000).toISOString();
@@ -1163,5 +1163,112 @@ describe("serviço só entrega quando executou de verdade", () => {
     const { p, saiu } = rodar(null);
     expect(p.executando).toBe(false);
     expect(saiu).toBe(false);
+  });
+});
+
+describe("A · as falas não se repetem", () => {
+  it("o roteirista de evento nunca repete a fala anterior do mesmo tipo", () => {
+    const r = criarRoteirista();
+    const anteriores: string[] = [];
+    for (let i = 0; i < 40; i++) {
+      const linhas = r.dialogoDeEvento({ tipo: "entrou_em_falha" }, "Gestão de RH");
+      const abre = linhas[0].texto;
+      expect(abre, `repetiu na rodada ${i}`).not.toBe(anteriores[anteriores.length - 1]);
+      anteriores.push(abre);
+    }
+    // e o repertório inteiro é usado, não só duas frases alternando
+    expect(new Set(anteriores).size).toBeGreaterThanOrEqual(4);
+  });
+
+  it("a resposta também não repete a anterior", () => {
+    const r = criarRoteirista();
+    let ultima = "";
+    for (let i = 0; i < 40; i++) {
+      const responde = r.dialogoDeEvento({ tipo: "recuperado" }, "Gestão de Obra")[1].texto;
+      expect(responde).not.toBe(ultima);
+      ultima = responde;
+    }
+  });
+
+  it("cada tipo de evento guarda a própria memória e mantém o contexto", () => {
+    const r = criarRoteirista();
+    for (let i = 0; i < 20; i++) {
+      const falha = r.dialogoDeEvento({ tipo: "entrou_em_falha" }, "X")[0].texto;
+      const rec = r.dialogoDeEvento({ tipo: "recuperado" }, "X")[0].texto;
+      // uma falha nunca fala de recuperação, e vice-versa
+      expect(FALAS_DE_EVENTO.entrou_em_falha.abre.some((f) => f.replace("{sistema}", "X") === falha)).toBe(true);
+      expect(FALAS_DE_EVENTO.recuperado.abre.some((f) => f.replace("{sistema}", "X") === rec)).toBe(true);
+    }
+  });
+
+  it("lista de uma opção só recicla sem quebrar", () => {
+    const r = criarRoteirista(() => 0);
+    for (let i = 0; i < 5; i++) {
+      expect(() => r.dialogoDeEvento({ tipo: "demanda_concluida" }, "X")).not.toThrow();
+    }
+  });
+
+  it("no andar rodando, nenhuma fala aparece duas vezes seguidas", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA);
+    const ditas: string[] = [];
+    for (let i = 0; i < 30 * 900; i++) {
+      m.atualizar(1 / 30, true);
+      for (const p of m.personagens) {
+        if (p.fala && ditas[ditas.length - 1] !== p.fala) ditas.push(p.fala);
+      }
+    }
+    let seguidas = 0;
+    for (let i = 1; i < ditas.length; i++) if (ditas[i] === ditas[i - 1]) seguidas++;
+    expect(ditas.length).toBeGreaterThan(10);
+    expect(seguidas).toBe(0);
+  });
+});
+
+describe("B · a demonstração dá tempo de ver o ciclo", () => {
+  const andarSemente = montarAndar(DADOS_SEMENTE.sistemas, DADOS_SEMENTE.conectores);
+
+  it("o andar descansa entre uma conversa e a próxima", () => {
+    const m = criarMotor(andarSemente, DADOS_SEMENTE, AGORA);
+    let t = 0;
+    let fimAnterior: number | null = null;
+    const esperas: number[] = [];
+    let ativas = 0;
+    for (let i = 0; i < 30 * 1200; i++) {
+      m.atualizar(1 / 30, true);
+      t += 1 / 30;
+      if (ativas > 0 && m.conversas.length === 0) fimAnterior = t;
+      if (ativas === 0 && m.conversas.length > 0 && fimAnterior !== null) {
+        esperas.push(t - fimAnterior);
+        fimAnterior = null;
+      }
+      ativas = m.conversas.length;
+    }
+    expect(esperas.length, "não houve ciclos suficientes").toBeGreaterThan(3);
+    // nenhuma conversa nasce logo depois que a anterior acabou
+    expect(Math.min(...esperas)).toBeGreaterThanOrEqual(10);
+  });
+
+  it("a maior parte do tempo os BLINKs estão nos postos, não no corredor", () => {
+    const m = criarMotor(andarSemente, DADOS_SEMENTE, AGORA);
+    let naMesa = 0;
+    const passos = 30 * 900;
+    for (let i = 0; i < passos; i++) {
+      m.atualizar(1 / 30, true);
+      const gente = m.personagens.filter((p) => p.tipo === "sistema");
+      naMesa += gente.filter((p) => p.fase === "mesa").length / gente.length;
+    }
+    expect(naMesa / passos).toBeGreaterThan(0.6);
+  });
+
+  it("evento real não espera o descanso da demonstração", () => {
+    const m = criarMotor(andarEco, dadosEco, AGORA);
+    m.atualizarDados({ ...dadosEco, saude: { ...dadosEco.saude, rh: emFalha } }, AGORA);
+    let achou = false;
+    for (let i = 0; i < 30 * 120 && !achou; i++) {
+      m.atualizar(1 / 30, true);
+      achou = m.conversas.some((c) => c.evento?.tipo === "entrou_em_falha");
+    }
+    expect(achou).toBe(true);
   });
 });

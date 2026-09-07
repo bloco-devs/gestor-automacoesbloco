@@ -71,6 +71,8 @@ export const REGRAS: RegraConversa[] = [
       { abre: "Você conseguiu verificar aquela captação?", responde: "Sim, estou conferindo os dados antes de avançar." },
       { abre: "A captação daquele empreendimento já entrou?", responde: "Entrou. Só falta eu validar aqui." },
       { abre: "Consegue olhar a captação que subiu hoje?", responde: "Vou abrir agora e te retorno." },
+      { abre: "Aquela captação já foi conferida?", responde: "Estou terminando de validar." },
+      { abre: "Preciso do retorno daquela captação.", responde: "Te aviso assim que fechar." },
     ],
   },
   {
@@ -84,6 +86,8 @@ export const REGRAS: RegraConversa[] = [
       { abre: "Essa proposta já foi encaminhada para o financeiro?", responde: "Recebi. Vou conferir antes de liberar." },
       { abre: "Aquela proposta já chegou para vocês?", responde: "Chegou. Vou validar os dados." },
       { abre: "Conseguiu olhar aquela solicitação?", responde: "Estou verificando agora." },
+      { abre: "O financeiro já liberou aquilo?", responde: "Ainda estou conferindo." },
+      { abre: "Falta alguma coisa da minha parte?", responde: "Não, está tudo aqui." },
     ],
   },
   {
@@ -97,6 +101,8 @@ export const REGRAS: RegraConversa[] = [
       { abre: "O contrato dessa venda já pode ser gerado?", responde: "Já estou com a minuta em revisão." },
       { abre: "Precisamos do contrato ainda hoje, dá?", responde: "Dá sim, termino a revisão e te devolvo." },
       { abre: "A minuta daquela proposta já saiu?", responde: "Saiu, está aguardando assinatura." },
+      { abre: "Consegue revisar isso hoje?", responde: "Consigo, entro nele agora." },
+      { abre: "O cliente está esperando o contrato.", responde: "Já é o próximo da fila." },
     ],
   },
   {
@@ -110,6 +116,8 @@ export const REGRAS: RegraConversa[] = [
       { abre: "O exame daquele colaborador já foi enviado?", responde: "Ainda não. Vou verificar a documentação." },
       { abre: "A equipe nova já está liberada para o canteiro?", responde: "Falta um documento. Assim que chegar eu libero." },
       { abre: "Conseguiu conferir a lista de quem está alocado?", responde: "Confiro hoje e te devolvo atualizada." },
+      { abre: "Falta alguém para liberar no canteiro?", responde: "Só um, estou atrás do documento." },
+      { abre: "A equipe da semana já está definida?", responde: "Fecho hoje e te mando." },
     ],
   },
   {
@@ -123,6 +131,8 @@ export const REGRAS: RegraConversa[] = [
       { abre: "Os líderes já foram atualizados no processo?", responde: "Já sincronizou aqui, está tudo certo." },
       { abre: "Conseguiu conferir os setores que mudaram?", responde: "Vou revisar e te aviso." },
       { abre: "As atividades foram redistribuídas depois da mudança?", responde: "Estou redistribuindo agora." },
+      { abre: "Precisamos revisar os responsáveis.", responde: "Pode deixar, ajusto aqui." },
+      { abre: "Mudou gente de setor esta semana?", responde: "Mudou, já estou atualizando." },
     ],
   },
   {
@@ -136,6 +146,8 @@ export const REGRAS: RegraConversa[] = [
       { abre: "Aquele material já foi solicitado?", responde: "O pedido já foi enviado, estou aguardando o fornecedor." },
       { abre: "Consegue adiantar a entrega do que falta no canteiro?", responde: "Vou cobrar a cotação hoje mesmo." },
       { abre: "A requisição da obra chegou aí?", responde: "Chegou. Falta só a última cotação." },
+      { abre: "Falta material para começar amanhã.", responde: "Vou ver o que consigo antecipar." },
+      { abre: "Aquela entrega tem previsão?", responde: "Estou confirmando com o fornecedor." },
     ],
   },
   {
@@ -149,6 +161,8 @@ export const REGRAS: RegraConversa[] = [
       { abre: "Aquele pedido já foi aprovado para pagamento?", responde: "Estou conferindo antes de liberar." },
       { abre: "Consegue olhar a aprovação daquela compra?", responde: "Vou verificar e te retorno ainda hoje." },
       { abre: "A cotação já pode seguir para o financeiro?", responde: "Pode. Assim que chegar eu confiro." },
+      { abre: "Precisa de mais alguma coisa para aprovar?", responde: "Só a última conferência." },
+      { abre: "Dá para adiantar essa aprovação?", responde: "Vejo ainda hoje." },
     ],
   },
   {
@@ -162,6 +176,8 @@ export const REGRAS: RegraConversa[] = [
       { abre: "A viabilidade daquele estudo já saiu?", responde: "Saiu. Vou lançar no portfólio." },
       { abre: "Terminei a análise do produto, consegue conferir?", responde: "Consigo, abro aqui e comparo com o estudo." },
       { abre: "Esse empreendimento já entrou no portfólio?", responde: "Entrou hoje, só falta revisar as etapas." },
+      { abre: "Os números do estudo batem com os seus?", responde: "Batem, já confirmei aqui." },
+      { abre: "Precisa de mais alguma informação minha?", responde: "Por enquanto não, obrigado." },
     ],
   },
   {
@@ -174,6 +190,7 @@ export const REGRAS: RegraConversa[] = [
     trocas: [
       { abre: "O contrato desse empreendimento já pode ser montado?", responde: "Pode, a incorporação já está aprovada." },
       { abre: "Preciso conferir as condições antes de gerar a minuta.", responde: "Te passo as condições atualizadas hoje." },
+      { abre: "Falta algum documento do empreendimento?", responde: "Falta um, já pedi." },
     ],
   },
   {
@@ -187,6 +204,8 @@ export const REGRAS: RegraConversa[] = [
       { abre: "A automação de vocês voltou a rodar?", responde: "Voltou sim, obrigado por olhar." },
       { abre: "Vou verificar a integração daqui, notou lentidão?", responde: "Notei mais cedo, agora parece normal." },
       { abre: "Preciso rodar um processamento, atrapalha aí?", responde: "Pode rodar, aqui está tranquilo." },
+      { abre: "Está tudo respondendo bem por aí?", responde: "Está, sem reclamação hoje." },
+      { abre: "Vou subir um ajuste, tudo bem?", responde: "Tudo bem, pode subir." },
     ],
   },
   {
@@ -201,6 +220,8 @@ export const REGRAS: RegraConversa[] = [
       { abre: "Você já terminou essa demanda?", responde: "Quase. Estou só conferindo antes de fechar." },
       { abre: "Consegue assumir essa parte comigo?", responde: "Consigo, me passa que eu sigo daqui." },
       { abre: "Isso aqui já foi revisado?", responde: "Já revisei, pode seguir." },
+      { abre: "Precisa de ajuda com isso?", responde: "Se puder olhar depois, ajuda." },
+      { abre: "Isso aqui é prioridade?", responde: "É, deixei no topo." },
     ],
   },
 ];
@@ -218,32 +239,82 @@ export const FALAS_DE_EVENTO: Record<TipoEvento, { abre: string[]; responde: str
       "O {sistema} entrou em falha.",
       "O {sistema} parou de responder.",
       "O {sistema} caiu agora há pouco.",
+      "Perdemos o {sistema} agora.",
+      "O {sistema} travou aqui.",
+      "Deu problema no {sistema}.",
     ],
-    responde: ["Vou verificar a integração.", "Vou olhar o processamento.", "Já estou verificando."],
+    responde: [
+      "Vou verificar a integração.",
+      "Vou olhar o processamento.",
+      "Já estou verificando.",
+      "Deixa que eu olho isso.",
+      "Vou conferir o que derrubou.",
+      "Já abri para investigar.",
+    ],
   },
   falha_nova: {
     abre: [
       "O {sistema} apresentou novas falhas.",
       "Detectei falhas novas no {sistema}.",
       "Começaram a aparecer falhas no {sistema}.",
+      "O {sistema} está falhando de novo.",
+      "Voltaram a aparecer erros no {sistema}.",
+      "O {sistema} acumulou falhas agora.",
     ],
-    responde: ["Vou conferir o que aconteceu.", "Vou verificar a integração.", "Vou acompanhar isso agora."],
+    responde: [
+      "Vou conferir o que aconteceu.",
+      "Vou verificar a integração.",
+      "Vou acompanhar isso agora.",
+      "Já estou olhando os erros.",
+      "Deixa que eu investigo.",
+      "Vou ver de onde vem.",
+    ],
   },
   recuperado: {
     abre: [
       "O {sistema} voltou a funcionar.",
       "O {sistema} normalizou.",
       "O {sistema} está respondendo de novo.",
+      "O {sistema} voltou ao normal.",
+      "Recuperamos o {sistema}.",
+      "O {sistema} estabilizou.",
     ],
-    responde: ["Boa. Vou acompanhar.", "Perfeito.", "Ótimo, fico de olho."],
+    responde: [
+      "Boa. Vou acompanhar.",
+      "Perfeito.",
+      "Ótimo, fico de olho.",
+      "Que bom. Encerro aqui então.",
+      "Ótima notícia.",
+      "Beleza, continuo monitorando.",
+    ],
   },
   voltou_a_reportar: {
-    abre: ["O {sistema} voltou a reportar.", "Voltamos a receber dados do {sistema}."],
-    responde: ["Boa. Vou acompanhar.", "Perfeito, obrigado."],
+    abre: [
+      "O {sistema} voltou a reportar.",
+      "Voltamos a receber dados do {sistema}.",
+      "O {sistema} apareceu de novo no painel.",
+      "Chegou informação do {sistema} outra vez.",
+    ],
+    responde: [
+      "Boa. Vou acompanhar.",
+      "Perfeito, obrigado.",
+      "Ótimo, já estava estranho o silêncio.",
+      "Beleza, vou olhar o histórico.",
+    ],
   },
   comecou_a_executar: {
-    abre: ["O {sistema} começou a executar.", "O {sistema} entrou em operação."],
-    responde: ["Ótimo, vou acompanhar.", "Perfeito."],
+    abre: [
+      "O {sistema} começou a executar.",
+      "O {sistema} entrou em operação.",
+      "O {sistema} rodou pela primeira vez.",
+      "O {sistema} está processando agora.",
+    ],
+    responde: [
+      "Ótimo, vou acompanhar.",
+      "Perfeito.",
+      "Boa, vou olhar os números.",
+      "Beleza, fico de olho.",
+    ],
   },
   /*
    * Falas de demanda. O texto NÃO diz de qual sistema a demanda é, porque
@@ -252,16 +323,46 @@ export const FALAS_DE_EVENTO: Record<TipoEvento, { abre: string[]; responde: str
    * entra no balão: nem título, nem código, nem responsável.
    */
   demanda_nova: {
-    abre: ["Entrou uma demanda nova por aqui.", "Chegou demanda nova na fila."],
-    responde: ["Certo, vou acompanhar.", "Beleza, fico de olho."],
+    abre: [
+      "Entrou uma demanda nova por aqui.",
+      "Chegou demanda nova na fila.",
+      "Abriram mais uma demanda.",
+      "Tem demanda nova esperando.",
+    ],
+    responde: [
+      "Certo, vou acompanhar.",
+      "Beleza, fico de olho.",
+      "Já vi, vou priorizar.",
+      "Anotado.",
+    ],
   },
   demanda_avancou: {
-    abre: ["Uma demanda avançou de etapa.", "Já estão trabalhando naquela demanda."],
-    responde: ["Ótimo, vou acompanhar.", "Boa, obrigado pelo aviso."],
+    abre: [
+      "Uma demanda avançou de etapa.",
+      "Já estão trabalhando naquela demanda.",
+      "Aquela demanda mudou de fase.",
+      "A demanda saiu da fila.",
+    ],
+    responde: [
+      "Ótimo, vou acompanhar.",
+      "Boa, obrigado pelo aviso.",
+      "Perfeito, vou seguir de perto.",
+      "Beleza, fico esperando.",
+    ],
   },
   demanda_concluida: {
-    abre: ["Uma demanda foi concluída.", "Fechamos mais uma demanda."],
-    responde: ["Perfeito.", "Ótima notícia."],
+    abre: [
+      "Uma demanda foi concluída.",
+      "Fechamos mais uma demanda.",
+      "Aquela demanda saiu.",
+      "Terminamos uma demanda agora.",
+    ],
+    responde: [
+      "Perfeito.",
+      "Ótima notícia.",
+      "Boa, isso libera espaço na fila.",
+      "Muito bom.",
+    ],
   },
 };
 
@@ -273,9 +374,38 @@ export const FALAS_UPSTREAM = {
   abre: [
     "A falha do {sistema} parece vir de outro serviço.",
     "O {sistema} falhou por causa de outro serviço.",
+    "O problema do {sistema} vem de fora.",
+    "O {sistema} caiu por causa de uma dependência.",
   ],
-  responde: ["Vou verificar a integração.", "Vou olhar a origem disso."],
+  responde: [
+    "Vou verificar a integração.",
+    "Vou olhar a origem disso.",
+    "Vou rastrear de onde vem.",
+    "Deixa que eu vejo a ponta.",
+  ],
 };
+
+/**
+ * Sorteia sem repetir a escolha anterior daquela lista.
+ *
+ * Só recicla quando não há alternativa — lista de um item repete, e tudo bem.
+ * Sem isso, com repertório pequeno a mesma frase saía duas vezes seguidas e a
+ * conversa parecia um disco riscado.
+ */
+function sorteiaSemRepetir<T>(
+  lista: readonly T[],
+  memoria: Map<string, number>,
+  chave: string,
+  sorteio: () => number,
+): T {
+  if (lista.length === 0) throw new Error(`lista vazia para ${chave}`);
+  if (lista.length === 1) return lista[0];
+  const anterior = memoria.get(chave);
+  const opcoes = lista.map((_, i) => i).filter((i) => i !== anterior);
+  const escolhido = opcoes[Math.floor(sorteio() * opcoes.length)] ?? opcoes[0];
+  memoria.set(chave, escolhido);
+  return lista[escolhido];
+}
 
 /** Único ponto de interpolação. Recebe o nome, nunca o evento inteiro. */
 function preencher(modelo: string, nomeDoSistema: string): string {
@@ -292,13 +422,17 @@ export function dialogoDeEvento(
   evento: Pick<EventoEcossistema, "tipo" | "contexto">,
   nomeDaOrigem: string,
   sorteio: () => number = Math.random,
+  memoria: Map<string, number> = new Map(),
 ): Fala[] {
   const upstream =
     evento.contexto === "upstream" &&
     (evento.tipo === "falha_nova" || evento.tipo === "entrou_em_falha");
   const banco = upstream ? FALAS_UPSTREAM : FALAS_DE_EVENTO[evento.tipo];
-  const abre = banco.abre[Math.floor(sorteio() * banco.abre.length)] ?? banco.abre[0];
-  const responde = banco.responde[Math.floor(sorteio() * banco.responde.length)] ?? banco.responde[0];
+  const chave = upstream ? "upstream" : evento.tipo;
+  // abertura e resposta guardam índices separados: repetir o par inteiro é
+  // tão ruim quanto repetir uma frase
+  const abre = sorteiaSemRepetir(banco.abre, memoria, `${chave}:abre`, sorteio);
+  const responde = sorteiaSemRepetir(banco.responde, memoria, `${chave}:responde`, sorteio);
   return [
     { quem: "a", texto: preencher(abre, nomeDaOrigem) },
     { quem: "b", texto: responde },
@@ -338,6 +472,12 @@ export function dialogoDoRotulo(rotulo: string): { abre: string; responde: strin
 export interface Roteirista {
   /** Falas para um par que o HUB já disse que troca dados. */
   dialogoPara(a: Interlocutor, b: Interlocutor, rotulo: string, agora: number): Fala[];
+  /**
+   * Falas para um evento real, com a MESMA memória anti-repetição que o
+   * diálogo ambiental já tinha. A versão solta em `dialogoDeEvento` não
+   * guardava nada, e por isso a mesma frase saía em conversas seguidas.
+   */
+  dialogoDeEvento(evento: Pick<EventoEcossistema, "tipo" | "contexto">, nomeDaOrigem: string): Fala[];
   /** Regra escolhida para o par, ou null quando cai no rótulo da integração. */
   regraDe(a: Interlocutor, b: Interlocutor, agora: number): RegraConversa | null;
 }
@@ -345,6 +485,8 @@ export interface Roteirista {
 export function criarRoteirista(sorteio: () => number = Math.random): Roteirista {
   const ultimaRegra = new Map<string, number>();
   const ultimaTroca = new Map<string, number>();
+  /** Último índice usado por tipo de evento, para não repetir a frase. */
+  const memoriaDeEvento = new Map<string, number>();
 
   function regraDe(a: Interlocutor, b: Interlocutor, agora: number): RegraConversa | null {
     const servem = regrasPara(a, b).filter(
@@ -377,7 +519,7 @@ export function criarRoteirista(sorteio: () => number = Math.random): Roteirista
       troca = dialogoDoRotulo(rotulo);
     }
 
-    const fecho = FECHOS[Math.floor(sorteio() * FECHOS.length)] ?? FECHOS[0];
+    const fecho = sorteiaSemRepetir(FECHOS, memoriaDeEvento, "fecho", sorteio);
     return [
       { quem: "a", texto: troca.abre },
       { quem: "b", texto: troca.responde },
@@ -385,5 +527,9 @@ export function criarRoteirista(sorteio: () => number = Math.random): Roteirista
     ];
   }
 
-  return { dialogoPara, regraDe };
+  return {
+    dialogoPara,
+    regraDe,
+    dialogoDeEvento: (evento, nome) => dialogoDeEvento(evento, nome, sorteio, memoriaDeEvento),
+  };
 }
