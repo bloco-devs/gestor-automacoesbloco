@@ -412,10 +412,9 @@ export function montarAndar(
   conectores: ConectorEco[],
   proporcaoAlvo = PROPORCAO_PADRAO,
   /**
-   * Área de desenho em pixels. Quando informada, o preenchimento de sobra
-   * NUNCA cresce além dela — porque cada tile a mais empurra o zoom de "andar
-   * inteiro" para baixo, e pixel art abaixo de 1:1 fica pequeno e borrado.
-   * Legibilidade vale mais que tapar a tarja.
+   * Área de desenho em pixels. Quando informada, o preenchimento de sobra vai
+   * até a borda da área na escala em que o andar cabe — nem um tile além,
+   * porque aí ele passaria a empurrar o zoom para baixo.
    */
   areaPx?: { largura: number; altura: number },
 ): Andar {
@@ -456,11 +455,25 @@ export function montarAndar(
    */
   const TETO_FOLGA = 1.45;
   /*
-   * Teto em tiles vindo da área de desenho: encher a sobra com corredor além
-   * disso reduz o zoom. Sem área informada, só vale o teto proporcional.
+   * Teto em tiles vindo da área de desenho.
+   *
+   * O teto não é a área a 1:1 — é a área NA ESCALA EM QUE O ANDAR VAI CABER.
+   * A câmera em "auto" mostra o andar inteiro, então a escala já está decidida
+   * pelo lado mais apertado do mínimo. Encher a folga do OUTRO lado até a
+   * borda é de graça: não muda o lado que manda, não encolhe ninguém, e é o
+   * que faz a tarja preta sumir. Medir o teto a 1:1, como antes, enchia de
+   * menos justamente nas telas em que o andar não cabe — deixando barra preta
+   * e ainda assim exigindo arrasto.
    */
-  const tetoColunasPx = areaPx ? Math.floor(areaPx.largura / TILE) : Infinity;
-  const tetoLinhasPx = areaPx ? Math.floor(areaPx.altura / TILE) : Infinity;
+  const escalaQueCabe = areaPx
+    ? Math.min(
+        4,
+        areaPx.largura / (minimoColunas * TILE),
+        areaPx.altura / (minimoLinhas * TILE),
+      )
+    : 1;
+  const tetoColunasPx = areaPx ? Math.floor(areaPx.largura / (TILE * escalaQueCabe)) : Infinity;
+  const tetoLinhasPx = areaPx ? Math.floor(areaPx.altura / (TILE * escalaQueCabe)) : Infinity;
 
   // andar largo demais para a tela: a sobra desce como circulação
   const linhasGrade = Math.max(

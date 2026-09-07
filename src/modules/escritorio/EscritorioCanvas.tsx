@@ -234,14 +234,16 @@ export function EscritorioCanvas({
       const cam = camRef.current;
       if (ajustarRef.current && !selRef.current) {
         /*
-         * Piso de 1: pixel art abaixo de 1:1 não só encolhe como borra, porque
-         * cada tile passa a cair entre pixels da tela. Quando o andar não cabe
-         * inteiro a 1:1, é melhor mostrar quase tudo nítido do que tudo
-         * ilegível — e o arrasto continua disponível.
+         * "auto" quer dizer uma coisa só: o andar INTEIRO na tela, sem
+         * arrastar. Não existe piso de 1:1 aqui — um piso faria o andar sair
+         * da moldura em tela de notebook, que é exatamente o que "auto" existe
+         * para evitar. Quem quiser o BLINK grande usa o zoom ao lado: aí o
+         * arrasto entra, e é ele que leva a tela até a sala escolhida.
          */
-        cam.alvoEscala = Math.max(
-          1,
-          Math.min(4, Math.min(larguraTela / andar.largura, alturaTela / andar.altura)),
+        cam.alvoEscala = Math.min(
+          ESCALA_MAX,
+          larguraTela / andar.largura,
+          alturaTela / andar.altura,
         );
       }
       const k = 1 - Math.exp(-6 * dt);
@@ -360,16 +362,27 @@ export function EscritorioCanvas({
       });
 
       /*
-       * O limiar era 1.15, calibrado para a planta antiga. O andar de tiles é
-       * maior, então cabe inteiro por volta de 1.0 — e nessa escala sumiam
-       * TODOS os nomes, inclusive os das salas. Com 0.85 o andar inteiro
-       * continua etiquetado; abaixo disso a letra não vale a tinta.
+       * O nome da ÁREA nunca some.
+       *
+       * As placas são desenhadas em pixel de tela, não no mundo: encolher o
+       * zoom não encolhe a letra, só aproxima uma placa da outra. Então o
+       * limiar aqui nunca foi sobre legibilidade — era sobre amontoado. E as
+       * doze placas de área são as que menos se amontoam e as que mais fazem
+       * falta: sem elas o andar vira um tabuleiro de salas anônimas, que é o
+       * que acontecia em notebook desde que "auto" passou a caber inteiro
+       * (escala ~0,77) e o limiar único de 0,85 apagava tudo.
+       */
+      for (const s of andar.salas) {
+        const t = paraTela(s.x + s.w / 2, s.y + 14);
+        placa(ctx, t.x, t.y, s.grupo);
+      }
+      /*
+       * Já as placas de porta e as etiquetas de mesa ficam a 80 px de
+       * distância umas das outras no mundo; abaixo de 0,85 elas se encostam e
+       * viram uma barra escura ilegível. Essas continuam com limiar — quem
+       * precisa do nome de um sistema aponta para ele ou usa o zoom.
        */
       if (cam.escala >= 0.85) {
-        for (const s of andar.salas) {
-          const t = paraTela(s.x + s.w / 2, s.y + 14);
-          placa(ctx, t.x, t.y, s.grupo);
-        }
         for (const p of andar.portas) {
           /*
            * A placa fica ACIMA da porta, dentro do andar. Ficava abaixo,

@@ -344,7 +344,7 @@ describe("o andar acompanha a proporção da tela", () => {
   });
 });
 
-describe("C · o andar nunca força zoom abaixo de 1:1", () => {
+describe("C · o andar inteiro cabe na área, sem arrastar", () => {
   const AREAS: [string, number][] = [
     ["Pessoas", 1], ["Operação", 4], ["Comercial", 2], ["Financeiro", 2],
     ["Suprimentos", 1], ["Incorporação", 2], ["Engenharia", 2],
@@ -373,14 +373,41 @@ describe("C · o andar nunca força zoom abaixo de 1:1", () => {
   });
 
   it("encher a sobra não pode encolher o BLINK", () => {
-    for (const [l, a] of [[1320, 785], [1600, 900]] as const) {
+    for (const [l, a] of [[1320, 785], [1600, 900], [919, 549], [1060, 666]] as const) {
       const alvo = Math.round((l / a) * 4) / 4;
       const cru = minimo(alvo);
       const cheio = montarAndar(sistemas, conectores, alvo, { largura: l, altura: a });
       const escalaCrua = Math.min(l / cru.largura, a / cru.altura);
       const escalaCheia = Math.min(l / cheio.largura, a / cheio.altura);
-      // o preenchimento pode empatar, nunca piorar
-      expect(escalaCheia, `${l}x${a}`).toBeGreaterThanOrEqual(Math.min(escalaCrua, 1) - 0.001);
+      // o preenchimento pode empatar, nunca piorar — nem quando a escala é < 1
+      expect(escalaCheia, `${l}x${a}`).toBeGreaterThanOrEqual(escalaCrua - 0.001);
+    }
+  });
+
+  /*
+   * A queixa que originou esta regra: "estou usando cem por cento da página e
+   * tenho de arrastar para ver os BLINKs". Em "auto" isso não pode acontecer
+   * em tela nenhuma — nem na mais apertada.
+   */
+  it("em qualquer tela, o andar inteiro cabe na moldura", () => {
+    for (const [l, a] of [[919, 549], [1060, 666], [1320, 785], [1540, 799], [800, 460]] as const) {
+      const alvo = Math.round((l / a) * 4) / 4;
+      const andar = montarAndar(sistemas, conectores, alvo, { largura: l, altura: a });
+      const escala = Math.min(4, l / andar.largura, a / andar.altura);
+      expect(andar.largura * escala, `largura ${l}x${a}`).toBeLessThanOrEqual(l + 0.5);
+      expect(andar.altura * escala, `altura ${l}x${a}`).toBeLessThanOrEqual(a + 0.5);
+    }
+  });
+
+  it("a sobra vira corredor até a borda: sem tarja preta de um dos lados", () => {
+    for (const [l, a] of [[919, 549], [1320, 785], [1540, 799]] as const) {
+      const alvo = Math.round((l / a) * 4) / 4;
+      const andar = montarAndar(sistemas, conectores, alvo, { largura: l, altura: a });
+      const escala = Math.min(4, l / andar.largura, a / andar.altura);
+      // o lado que manda encosta na borda; o outro fica a menos de um tile dela
+      const sobraL = l - andar.largura * escala;
+      const sobraA = a - andar.altura * escala;
+      expect(Math.min(sobraL, sobraA), `${l}x${a}`).toBeLessThan(TILE);
     }
   });
 
