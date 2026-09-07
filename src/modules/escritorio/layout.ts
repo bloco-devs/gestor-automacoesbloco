@@ -407,6 +407,9 @@ function ordenaGrupos(grupos: string[]): string[] {
 
 /* --------------------------------------------------------- montagem --- */
 
+/** Quantos tiles sobraram depois do mínimo — nunca negativo. */
+const folgaLinhasBruta = (grade: number, minimo: number) => Math.max(0, grade - minimo);
+
 export function montarAndar(
   sistemas: SistemaEco[],
   conectores: ConectorEco[],
@@ -484,9 +487,19 @@ export function montarAndar(
       tetoLinhasPx,
     ),
   );
-  const folgaLinhas = linhasGrade - minimoLinhas;
-  const extraTopo = Math.floor(folgaLinhas / 2);
-  const extraRodape = folgaLinhas - extraTopo;
+  /*
+   * A sobra vertical se reparte igual à horizontal: entre o topo, CADA
+   * corredor entre fileiras e o rodapé. Ia metade para cima e metade para
+   * baixo, o que deixava as fileiras coladas umas nas outras no meio do andar
+   * com duas faixas mortas nas pontas.
+   */
+  const vaosEntreFileiras = Math.max(0, fileiras.length - 1);
+  const quinhoes = vaosEntreFileiras + 2; // topo + vãos + rodapé
+  const extraPorVao = Math.floor(folgaLinhasBruta(linhasGrade, minimoLinhas) / quinhoes);
+  const extraTopo = extraPorVao;
+  const extraEntreFileiras = extraPorVao;
+  const extraRodape =
+    folgaLinhasBruta(linhasGrade, minimoLinhas) - extraTopo - extraEntreFileiras * vaosEntreFileiras;
 
   // andar alto demais para a tela: a sobra abre corredor dos dois lados
   const colunas = Math.max(
@@ -497,8 +510,17 @@ export function montarAndar(
       tetoColunasPx,
     ),
   );
-  const folgaColunas = colunas - minimoColunas;
-  const extraEsq = Math.floor(folgaColunas / 2);
+  /*
+   * A sobra horizontal NÃO fica nas bordas.
+   *
+   * Ela ficava: metade de corredor à esquerda, metade à direita. Numa tela em
+   * que o andar mal cabe, isso empurrava as doze salas para o meio e deixava
+   * duas faixas mortas de vinte tiles nos lados — "os blocos no meio". A
+   * sobra agora entra na conta de cada fileira, alargando os vãos ENTRE as
+   * salas, que é onde o mobiliário de corredor já sabe morar. O andar fica
+   * ocupado de ponta a ponta em vez de ter um miolo apertado com margem.
+   */
+  const mioloDisponivel = colunas - (CORREDOR_LATERAL + 1) * 2;
 
   const o = novaObra(colunas, linhasGrade);
   pisoEm(o, 1, 1, colunas - 2, linhasGrade - 2, true);
@@ -527,18 +549,19 @@ export function montarAndar(
   for (const fileira of fileiras) {
     const somaW = fileira.reduce((s, x) => s + x.w, 0);
     const vaos = Math.max(1, fileira.length - 1);
-    const folga = largMiolo - somaW - vaos * VAO_ENTRE_SALAS;
+    const folga = mioloDisponivel - somaW - vaos * VAO_ENTRE_SALAS;
     const extra = fileira.length > 1 ? Math.floor(folga / vaos) : 0;
-    let tx = CORREDOR_LATERAL + 1 + extraEsq + (fileira.length > 1 ? 0 : Math.floor(folga / 2));
+    let tx = CORREDOR_LATERAL + 1 + (fileira.length > 1 ? 0 : Math.floor(folga / 2));
     const alturaFileira = Math.max(...fileira.map((d) => d.h));
     const linhaIdx = corredores.length;
-    corredores.push((ty + alturaFileira + Math.floor(CORREDOR_MEIO / 2)) * TILE);
+    const vaoAbaixo = CORREDOR_MEIO + extraEntreFileiras;
+    corredores.push((ty + alturaFileira + Math.floor(vaoAbaixo / 2)) * TILE);
 
     for (const d of fileira) {
       montarSala(o, tx, ty, d, alturaFileira, linhaIdx, salas, mesas, corredores[linhaIdx]);
       tx += d.w + VAO_ENTRE_SALAS + extra;
     }
-    ty += alturaFileira + CORREDOR_MEIO;
+    ty += alturaFileira + vaoAbaixo;
   }
 
   const portas = montarPortasDeServico(o, conectores, colunas, linhasGrade);
