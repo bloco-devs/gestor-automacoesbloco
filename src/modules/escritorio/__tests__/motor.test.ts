@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { montarAndar } from "../layout";
 import { criarMotor } from "../motor";
-import type { DadosEscritorio } from "../dados";
+import { DADOS_SEMENTE, type DadosEscritorio } from "../dados";
 import { PERSONAGEM_W, TILE } from "../sprites";
 import { INTEGRACOES_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
 import { FECHOS, REGRAS, dialogoDoRotulo } from "../conversas";
@@ -938,5 +938,116 @@ describe("ciclo completo sobre o ecossistema real", () => {
     expect(iEncarar).toBeGreaterThan(-1);
     expect(iEncarar).toBeLessThan(iFalar);
     expect(iFalar).toBeLessThan(iDespedir);
+  });
+});
+
+/**
+ * MODO DEMONSTRAÇÃO — camada visual, nunca simulação de dado.
+ *
+ * O seed é a pior situação possível: `saude` é `{}`, então todo mundo é
+ * `sem-dados` e nenhum par seria elegível. É exatamente por isso que ele
+ * serve de fixture aqui.
+ */
+describe("modo demonstração", () => {
+  const andarSemente = montarAndar(DADOS_SEMENTE.sistemas, DADOS_SEMENTE.conectores);
+  const rodar = (demo: boolean, seg = 300) => {
+    const m = criarMotor(andarSemente, DADOS_SEMENTE, AGORA);
+    const visto = {
+      andou: false,
+      picoConversas: 0,
+      picoCirculando: 0,
+      papeis: new Set<string>(),
+      fases: new Set<string>(),
+      falou: false,
+      distMin: Infinity,
+    };
+    for (let i = 0; i < seg * 30; i++) {
+      m.atualizar(1 / 30, demo);
+      if (m.personagens.some((p) => p.fase === "indo")) visto.andou = true;
+      if (m.personagens.some((p) => p.fala)) visto.falou = true;
+      visto.picoConversas = Math.max(visto.picoConversas, m.conversas.length);
+      visto.picoCirculando = Math.max(visto.picoCirculando, m.viagensAtivas());
+      for (const c of m.conversas) {
+        visto.fases.add(c.fase);
+        visto.papeis.add(`${c.a.papel}/${c.b.papel}`);
+        visto.distMin = Math.min(visto.distMin, Math.hypot(c.a.x - c.b.x, c.a.y - c.b.y));
+      }
+    }
+    return { m, visto };
+  };
+
+  it("sem demonstração, o seed vazio continua parado: sem dado ninguém conversa", () => {
+    const { visto } = rodar(false);
+    expect(visto.andou).toBe(false);
+    expect(visto.picoConversas).toBe(0);
+    expect(visto.falou).toBe(false);
+  });
+
+  it("um sistema ocioso continua impedido de conversar fora da demonstração", () => {
+    // "parado" é ocioso no fixture principal e tem integração de saída
+    const m = criarMotor(andar, dados, AGORA);
+    for (let i = 0; i < 30 * 600; i++) m.atualizar(1 / 30, false);
+    for (const c of m.conversas) {
+      expect(c.a.estado).not.toBe("ocioso");
+      expect(c.b.estado).not.toBe("ocioso");
+    }
+    expect(m.porId.get("parado")!.fase).toBe("mesa");
+  });
+
+  it("na demonstração o escritório ganha vida mesmo com o retrato vazio", () => {
+    const { visto } = rodar(true);
+    expect(visto.andou).toBe(true);
+    expect(visto.picoConversas).toBeGreaterThan(0);
+    expect(visto.falou).toBe(true);
+  });
+
+  it("a coreografia completa acontece na demonstração", () => {
+    const { visto } = rodar(true);
+    expect(visto.fases.has("encarando")).toBe(true);
+    expect(visto.fases.has("falando")).toBe(true);
+    expect(visto.fases.has("despedida")).toBe(true);
+    expect(visto.papeis.has("falando/escutando")).toBe(true);
+    expect(visto.papeis.has("escutando/falando")).toBe(true);
+    expect(visto.papeis.has("despedindo/despedindo")).toBe(true);
+  });
+
+  it("na demonstração eles também param a dois tiles, sem se atravessar", () => {
+    const { visto } = rodar(true);
+    expect(visto.distMin).toBeGreaterThanOrEqual(2 * TILE);
+  });
+
+  it("os limites de circulação valem igual na demonstração", () => {
+    const { visto } = rodar(true);
+    expect(visto.picoConversas).toBeLessThanOrEqual(2);
+    expect(visto.picoCirculando).toBeLessThanOrEqual(6);
+  });
+
+  it("todos voltam aos postos na demonstração", () => {
+    const m = criarMotor(andarSemente, DADOS_SEMENTE, AGORA);
+    for (let i = 0; i < 30 * 200; i++) m.atualizar(1 / 30, true);
+    // deixa terminar o que estiver em curso
+    for (let i = 0; i < 30 * 400 && m.conversas.length > 0; i++) m.atualizar(1 / 30, false);
+    for (let i = 0; i < 30 * 60; i++) m.atualizar(1 / 30, false);
+    for (const p of m.personagens) {
+      if (p.tipo !== "sistema") continue;
+      expect(p.fase, p.id).toBe("mesa");
+      expect(p.papel, p.id).toBeUndefined();
+      expect(Math.round(p.x), p.id).toBe(p.mesa!.pessoaX);
+    }
+  });
+
+  it("a demonstração NÃO mexe na saúde: quem está sem dado continua sem dado", () => {
+    const { m } = rodar(true);
+    for (const p of m.personagens) expect(p.estado, p.id).toBe("sem-dados");
+    // e o retrato em si não foi tocado
+    expect(DADOS_SEMENTE.saude).toEqual({});
+  });
+
+  it("a demonstração não inventa evento nem pendência", () => {
+    const { m } = rodar(true);
+    expect(m.pendentes()).toEqual([]);
+    expect(m.fila.tamanho()).toBe(0);
+    expect(m.registros.filter((r) => r.resultado === "iniciada")).toEqual([]);
+    for (const c of m.conversas) expect(c.evento).toBeUndefined();
   });
 });

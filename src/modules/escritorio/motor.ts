@@ -294,7 +294,7 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     // dois sistemas se encontram e conversam; um conector externo só entrega
     if (p.tipo === "sistema" && p.mesa) {
       const outro = porId.get(escolha.destino.sistemaId);
-      if (outro && iniciarConversa(p, outro, escolha.label)) return;
+      if (outro && iniciarConversa(p, outro, escolha.label, undefined, demo)) return;
       // destino ocupado ou sem rota: tenta de novo daqui a pouco
       p.proxima = 4 + Math.random() * 6;
       return;
@@ -345,10 +345,21 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     b: Personagem,
     label: string,
     evento?: EventoEcossistema,
+    demo = false,
   ): boolean => {
     if (!a.mesa || !b.mesa) return false;
     if (b.fase !== "mesa" || b.conversa) return false;
-    if (estaParado(b.estado)) return false;
+    /*
+     * Fora da demonstração, quem está ocioso ou sem dado não conversa — a
+     * regra de sempre.
+     *
+     * No modo demonstração a ELEGIBILIDADE é liberada, e só ela: o `estado`
+     * de cada um continua exatamente o que a saúde diz, o monitor continua
+     * apagado e a etiqueta continua dizendo "sem dado". Sem isso o botão de
+     * demonstração fica inerte quando o retrato vem vazio — que é o caso do
+     * seed, onde `saude` é `{}` e ninguém teria par elegível.
+     */
+    if (!demo && estaParado(b.estado)) return false;
     if (conversas.length >= MAX_CONVERSAS) return false;
     // uma conversa põe DUAS pessoas de pé: o teto tem de contar as duas
     if (viagensAtivas() + 2 > MAX_VIAGENS) return false;
