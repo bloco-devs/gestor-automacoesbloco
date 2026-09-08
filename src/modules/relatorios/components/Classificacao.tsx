@@ -26,6 +26,12 @@ import {
   type ParaClassificar,
 } from "../services/fechamento-data";
 import { buscarTiposDeClassificacao } from "../services/relatorios-data";
+import {
+  buscarProjetosParaClassificar,
+  classificarProjeto,
+} from "../services/projetos-data";
+import { CartaoDeProjeto } from "./CartaoDeProjeto";
+import { resumoDaFila } from "../services/projeto-rateio";
 import { formatarData } from "../services/relatorios-service";
 import { formatarReferenciaComSigla, obterEstiloDoSistema } from "@/domain/demand";
 import { cn } from "@/lib/utils";
@@ -441,6 +447,35 @@ function ClassificacaoImpl() {
     staleTime: 30_000,
   });
 
+  /*
+   * Projeto vem em consulta e função PRÓPRIAS, não misturado com demanda.
+   *
+   * `relatorio_pendencias_de_classificacao` devolve 27 colunas de demanda e
+   * alimenta esta tela desde agosto; trocar a assinatura dela para caber
+   * projeto quebraria o caminho que funciona por nenhum ganho. As duas listas
+   * se juntam aqui, na tela, que é onde a junção interessa.
+   */
+  const projetos = useQuery({
+    queryKey: ["relatorio", "projetos-para-classificar"],
+    queryFn: buscarProjetosParaClassificar,
+    staleTime: 30_000,
+  });
+
+  const acaoProjeto = useMutation({
+    mutationFn: (v: {
+      projeto: string;
+      codigo: string;
+      justificativa: string;
+      motivo?: string;
+    }) => classificarProjeto(v.projeto, v.codigo, v.justificativa, v.motivo),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["relatorio"] });
+      toast.success("Projeto classificado");
+    },
+    onError: (e: Error) =>
+      toast.error("Não foi possível classificar o projeto", { description: e.message }),
+  });
+
   const acao = useMutation({
     mutationFn: (v: {
       demanda: string;
@@ -462,6 +497,27 @@ function ClassificacaoImpl() {
   const visiveis = aba === "aguardando" ? aguardando : classificadas;
   const autoclassificadas = classificadas.filter((i) => i.autoclassificada).length;
 
+  const todosProjetos = useMemo(() => projetos.data ?? [], [projetos.data]);
+  const projAguardando = useMemo(
+    () => todosProjetos.filter((p) => !p.ja_classificado),
+    [todosProjetos],
+  );
+  const projClassificados = useMemo(
+    () => todosProjetos.filter((p) => p.ja_classificado),
+    [todosProjetos],
+  );
+  const projVisiveis = aba === "aguardando" ? projAguardando : projClassificados;
+
+  /*
+   * Os contadores somam os dois: para quem apura, uma entrega é uma entrega.
+   * A soma vem de `resumoDaFila`, que é testado — contar aqui, à mão, é como
+   * o rodapé e o cabeçalho de uma tela passam a discordar.
+   */
+  const resumo = useMemo(() => resumoDaFila(todas, todosProjetos), [todas, todosProjetos]);
+  const totalAguardando = resumo.aguardando;
+  const totalClassificadas = resumo.classificadas;
+  const pontosAtribuidos = resumo.pontos;
+
   return (
     <PageShell maxWidth="xl">
       <PageHeader
@@ -473,16 +529,25 @@ function ClassificacaoImpl() {
 
       <Section title="Situação">
         <KpiRow>
-          <StatCard label="Aguardando classificação" value={aguardando.length} icon={Scale} />
+          <StatCard
+            label="Aguardando classificação"
+            value={totalAguardando}
+            icon={Scale}
+            hint={
+              projAguardando.length > 0
+                ? `${projAguardando.length} ${projAguardando.length === 1 ? "é projeto" : "são projetos"}`
+                : undefined
+            }
+          />
           <StatCard
             label="Já classificadas"
-            value={classificadas.length}
+            value={totalClassificadas}
             icon={CheckCircle2}
-            tone={classificadas.length > 0 ? "success" : "neutral"}
+            tone={totalClassificadas > 0 ? "success" : "neutral"}
           />
           <StatCard
             label="Pontos atribuídos"
-            value={classificadas.reduce((s, i) => s + (i.pontos ?? 0), 0)}
+            value={pontosAtribuidos}
             icon={Scale}
             hint={
               autoclassificadas > 0
@@ -495,8 +560,8 @@ function ClassificacaoImpl() {
 
       <div className="flex gap-1 border-b">
         {([
-          ["aguardando", `Aguardando (${aguardando.length})`],
-          ["classificadas", `Classificadas (${classificadas.length})`],
+          ["aguardando", `Aguardando (${totalAguardando})`],
+          ["classificadas", `Classificadas (${totalClassificadas})`],
         ] as const).map(([chave, rotulo]) => (
           <button
             key={chave}
@@ -527,7 +592,7 @@ function ClassificacaoImpl() {
               <Skeleton key={i} className="h-20 w-full" />
             ))}
           </div>
-        ) : visiveis.length === 0 ? (
+        ) : visiveis.length === 0 && projVisiveis.length === 0 ? (
           <EmptyPanel
             icon={Scale}
             title={
@@ -537,12 +602,26 @@ function ClassificacaoImpl() {
             }
             description={
               aba === "aguardando"
-                ? "Aparecem aqui as entregas concluídas com data de conclusão confirmada. Se está vazio, ou não há nenhuma no período, ou todas já foram classificadas."
+                ? "Aparecem aqui as demandas concluídas com data confirmada e os projetos marcados como concluídos. Se está vazio, ou não há nenhuma entrega no período, ou todas já foram classificadas."
                 : undefined
             }
           />
         ) : (
           <div className="flex flex-col gap-3">
+            {/* Projetos vêm primeiro porque são poucos e porque cada um vale
+                por vários: se ficassem no fim de uma lista de quarenta
+                demandas, ninguém os veria. */}
+            {projVisiveis.map((p) => (
+              <CartaoDeProjeto
+                key={p.projeto_id}
+                item={p}
+                tipos={tipos.data ?? []}
+                salvando={acaoProjeto.isPending}
+                aoClassificar={(codigo, justificativa, motivo) =>
+                  acaoProjeto.mutate({ projeto: p.projeto_id, codigo, justificativa, motivo })
+                }
+              />
+            ))}
             {visiveis.map((item) => (
               <Cartao
                 key={item.demanda_id}

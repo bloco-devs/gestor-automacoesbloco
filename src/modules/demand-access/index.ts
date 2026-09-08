@@ -11,6 +11,12 @@ export { useAssumirDemanda, type AssumirDemanda } from "./useAssumirDemanda";
 export { useMoverDemanda, type MoverDemanda } from "./useMoverDemanda";
 export { resolverFonte, projetoDoEscopo } from "./resolverFonte";
 export { useProjetos } from "./useProjetos";
+export {
+  useConcluirProjeto,
+  useConclusoesDeProjeto,
+  usePessoasDoProjeto,
+  type PessoaDoProjeto,
+} from "./useConcluirProjeto";
 export { useCriarDemanda } from "./useCriarDemanda";
 export { useCriarProjeto, type IdentidadeDoProjeto } from "./useCriarProjeto";
 export { useExcluirProjeto } from "./useExcluirProjeto";

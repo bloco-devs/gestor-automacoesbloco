@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCoverDisplayUrl, listBoardsResumo, setBoardArquivado } from "@/lib/atividadesBoards";
+import { useConclusoesDeProjeto } from "./useConcluirProjeto";
 
 /**
  * A lista de projetos.
@@ -31,6 +32,12 @@ export interface ProjetoNaLista {
   favorito: boolean;
   atualizadoEm: string;
   arquivado: boolean;
+  /**
+   * Carimbo de conclusão, ou nulo. NÃO é `arquivado`: um projeto pode estar
+   * concluído e arquivado (o AVD), e outro pode estar arquivado sem nunca ter
+   * começado. É esta data que decide a qual ciclo de apuração ele pertence.
+   */
+  concluidoEm: string | null;
 }
 
 /**
@@ -64,6 +71,13 @@ export function useProjetos(
     queryFn: listBoardsResumo,
     staleTime: 60_000,
   });
+
+  /*
+   * Os carimbos de conclusão vêm em consulta própria: a view de resumo é
+   * anterior a esta funcionalidade e não expõe `concluido_em`. Ver
+   * `useConclusoesDeProjeto`.
+   */
+  const conclusoes = useConclusoesDeProjeto();
 
   const ativos = useMemo(
     () => (q.data ?? []).filter((b) => incluirArquivados || !b.arquivado),
@@ -105,6 +119,7 @@ export function useProjetos(
           favorito: b.favorito,
           atualizadoEm: b.updatedAt,
           arquivado: b.arquivado,
+          concluidoEm: conclusoes.get(b.id) ?? null,
         }))
         // Favoritos primeiro, depois o que se mexeu mais recentemente. Ordem
         // alfabética seria estável e inútil: ninguém procura projeto por letra.
@@ -117,7 +132,7 @@ export function useProjetos(
             Number(b.favorito) - Number(a.favorito) ||
             new Date(b.atualizadoEm).getTime() - new Date(a.atualizadoEm).getTime(),
         ),
-    [ativos, capasQ.data],
+    [ativos, capasQ.data, conclusoes],
   );
 
   const mutacao = useMutation({

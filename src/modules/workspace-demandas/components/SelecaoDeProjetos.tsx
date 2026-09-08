@@ -4,7 +4,9 @@ import { useNavigate } from "react-router-dom";
 import {
   Archive,
   ArchiveRestore,
+  CheckCircle2,
   Inbox,
+  RotateCcw,
   Loader2,
   Plus,
   Search,
@@ -30,8 +32,10 @@ import { cn } from "@/lib/utils";
 import { usePreferencia } from "@/hooks/usePreferencia";
 import { useToast } from "@/hooks/use-toast";
 import { useContextoDeHeader } from "@/components/shell/HeaderContexto";
+import { ConcluirProjetoDialog } from "./ConcluirProjetoDialog";
 import {
   INBOX_ID,
+  useConcluirProjeto,
   useCriarProjeto,
   useDemandas,
   useExcluirProjeto,
@@ -80,12 +84,21 @@ function Linha({
   onArquivar,
   onRestaurar,
   onExcluir,
+  onConcluir,
+  onReabrir,
 
 }: {
   projeto: ProjetoNaLista;
   onAbrir: (id: string) => void;
   onArquivar: (p: ProjetoNaLista) => void;
   onRestaurar: (p: ProjetoNaLista) => void;
+  /**
+   * Concluir é o oposto de arquivar, e por isso os dois botões convivem:
+   * arquivar tira da vista, concluir diz que o trabalho acabou e manda o
+   * projeto para a apuração do ciclo.
+   */
+  onConcluir: (p: ProjetoNaLista) => void;
+  onReabrir: (p: ProjetoNaLista) => void;
   /**
    * Excluir de vez. Só chega aqui nas linhas arquivadas: arquivar é o caminho
    * normal, e excluir é o que se faz com o que já foi tirado da frente e não
@@ -173,6 +186,27 @@ function Linha({
           que se lê. Continua alcançável por teclado — some da vista, não da
           navegação. */}
       <span className="flex shrink-0 items-center pr-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "size-7",
+            p.concluidoEm ? "text-success" : "text-muted-foreground",
+          )}
+          onClick={() => (p.concluidoEm ? onReabrir(p) : onConcluir(p))}
+          aria-label={p.concluidoEm ? `Reabrir ${p.nome}` : `Concluir ${p.nome}`}
+          title={
+            p.concluidoEm
+              ? "Concluído — clique para reabrir"
+              : "Concluir e enviar para a apuração"
+          }
+        >
+          {p.concluidoEm ? (
+            <RotateCcw className="size-3.5" />
+          ) : (
+            <CheckCircle2 className="size-3.5" />
+          )}
+        </Button>
         <Button
           variant="ghost"
           size="icon"
@@ -266,6 +300,8 @@ export function SelecaoDeProjetos() {
     (v): v is boolean => typeof v === "boolean",
   );
   const [aExcluir, setAExcluir] = useState<ProjetoNaLista | null>(null);
+  const [aConcluir, setAConcluir] = useState<ProjetoNaLista | null>(null);
+  const conclusao = useConcluirProjeto();
   const { projetos, carregando, erro, arquivar, restaurar } = useProjetos({
     incluirArquivados: mostrarArquivados,
   });
@@ -323,6 +359,46 @@ export function SelecaoDeProjetos() {
     } catch (e) {
       toast({
         title: "Não foi possível restaurar",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const aoConcluir = async (responsaveis: string[]) => {
+    const p = aConcluir;
+    if (!p) return;
+    try {
+      await conclusao.concluir(p.id, responsaveis);
+      setAConcluir(null);
+      toast({
+        title: `${p.nome} foi concluído`,
+        description:
+          responsaveis.length === 1
+            ? "Já pode ser classificado na apuração do ciclo."
+            : `Os pontos serão divididos entre ${responsaveis.length} pessoas.`,
+      });
+    } catch (e) {
+      // A mensagem vem do banco e já é escrita para quem lê.
+      toast({
+        title: "Não foi possível concluir",
+        description: e instanceof Error ? e.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const aoReabrir = async (p: ProjetoNaLista) => {
+    try {
+      await conclusao.reabrir(p.id);
+      toast({
+        title: `${p.nome} voltou a ficar em aberto`,
+        description: "A classificação, se houver, continua gravada.",
+      });
+    } catch (e) {
+      // O banco recusa reabrir projeto já apurado num ciclo, e diz qual.
+      toast({
+        title: "Não foi possível reabrir",
         description: e instanceof Error ? e.message : "Tente novamente.",
         variant: "destructive",
       });
@@ -397,7 +473,17 @@ export function SelecaoDeProjetos() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="surface-glass sticky top-0 z-20 border-b">
+      /*
+       * `top-11`, nao `top-0`.
+       *
+       * O header do app e `sticky top-0 z-30 h-11` (AppLayout). Com esta
+       * barra tambem em `top-0`, as duas colam no MESMO ponto e a de z
+       * menor passa por baixo: as abas ("Todas", "Minhas", ...) somem atras
+       * do titulo do projeto, cortadas no meio da letra. Colar em 11 (a
+       * altura do header) empilha as duas em vez de sobrepor. No mobile o
+       * header nao e sticky, entao lá `top-0` continua certo.
+       */
+      <div className="surface-glass sticky top-0 z-20 border-b md:top-11">
         <div className="flex h-10 w-full items-center gap-3 px-4 md:px-6">
           <div className="relative w-56">
             <Search
@@ -484,6 +570,8 @@ export function SelecaoDeProjetos() {
                 onArquivar={(x) => void aoArquivar(x)}
                 onRestaurar={(x) => void aoRestaurar(x)}
                 onExcluir={(x) => setAExcluir(x)}
+                onConcluir={(x) => setAConcluir(x)}
+                onReabrir={(x) => void aoReabrir(x)}
               />
             ))}
           </div>
@@ -495,6 +583,13 @@ export function SelecaoDeProjetos() {
         onOpenChange={setCriando}
         salvando={salvando}
         onCriar={(nome, identidade) => void aoCriar(nome, identidade)}
+      />
+
+      <ConcluirProjetoDialog
+        projeto={aConcluir}
+        onOpenChange={(o) => !o && setAConcluir(null)}
+        salvando={conclusao.salvando}
+        onConfirmar={(responsaveis) => void aoConcluir(responsaveis)}
       />
 
       <AlertDialog open={!!aExcluir} onOpenChange={(o) => !o && setAExcluir(null)}>
