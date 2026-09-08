@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { estadoDoSistema, type Estado } from "./estado";
+import { fraseDeUso } from "./uso";
 import type { DadosEscritorio } from "./dados";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +67,15 @@ export function PreviaSistema({ dados, id, x, y, largura, altura }: Props) {
         <span className={cn("ds-label shrink-0 rounded px-1.5 py-0.5", CHIP[estado])}>{ROTULO[estado]}</span>
       </div>
       <p className="ds-caption text-muted-foreground">Sala {sistema.grupo}</p>
+
+      {/*
+        Antes dos números de integração, de propósito: para quem aponta a sala,
+        "tem gente aí" é a pergunta mais imediata — e é a única que os números
+        abaixo nunca responderam.
+      */}
+      {fraseDeUso(dados.uso[id]) && (
+        <p className="mt-2 ds-caption text-foreground/80">{fraseDeUso(dados.uso[id])}</p>
+      )}
 
       <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
         <div>

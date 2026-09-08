@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Building2, Loader2, Maximize2, Minus, Pause, Play, Plus } from "lucide-react";
+import { Building2, Loader2, Maximize2, Minus, Pause, Play, Plus, User } from "lucide-react";
 import { PageShell, PageHeader } from "@/design-system";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { PROPORCAO_PADRAO, montarAndar } from "@/modules/escritorio/layout";
 import { fonteDeDemandas, type EventoEcossistema } from "@/modules/escritorio/eventos";
 import { useDemands } from "@/modules/demands/hooks";
 import { resumoDeEstados } from "@/modules/escritorio/estado";
+import { resumoDeUso } from "@/modules/escritorio/uso";
 
 /** Recarrega o retrato do HUB de tempos em tempos; não é evento a evento. */
 const INTERVALO_RECARGA_MS = 60_000;
@@ -126,6 +127,11 @@ export default function EscritorioPage() {
     () => resumoDeEstados(efetivos.sistemas, efetivos.saude),
     [efetivos],
   );
+  /*
+   * Contado sobre SISTEMAS, não conectores: quem acessa um sistema é pessoa, e
+   * serviço de fora não tem quem entre nele.
+   */
+  const uso = useMemo(() => resumoDeUso(efetivos.sistemas, efetivos.uso), [efetivos]);
 
   const aproximar = (delta: number) => {
     setAjustar(false);
@@ -182,6 +188,15 @@ export default function EscritorioPage() {
           </span>
         )}
         {contagem.semDados > 0 && <span>{contagem.semDados} sem dados no HUB</span>}
+        {uso.salasComGente > 0 && (
+          <span
+            className="inline-flex items-center gap-1.5"
+            title="Pessoas que acessaram por SSO nas últimas 24 h. É acesso, não trabalho — e é sinal diferente da execução de integração."
+          >
+            <User className="size-4" aria-hidden />
+            {uso.salasComGente} {uso.salasComGente === 1 ? "sala" : "salas"} com gente
+          </span>
+        )}
         {!dados && (
           <span className="inline-flex items-center gap-1.5">
             <Loader2 className="size-3.5 animate-spin" aria-hidden /> carregando o HUB

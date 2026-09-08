@@ -25,6 +25,7 @@ const sistemas = [
 const dados: DadosEscritorio = {
   fonte: "hub",
   geradoEm: null,
+  uso: {},
   sistemas,
   conectores: [{ id: "sienge", nome: "Sienge" }],
   integracoes: [
@@ -253,6 +254,7 @@ const emFalha = { execs: 1000, ok: 700, falhas: 300, ultima: recente };
 const dadosEco: DadosEscritorio = {
   fonte: "hub",
   geradoEm: null,
+  uso: {},
   sistemas: ecossistema,
   conectores: [],
   integracoes: [
@@ -618,7 +620,7 @@ describe("varredura: todo par que os dados produzem", () => {
   const sisSeed = SISTEMAS_SEED.map((s) => ({ id: s.id, nome: s.nome, grupo: s.grupo }));
   const baseSeed = Object.fromEntries(sisSeed.map((s) => [s.id, saudavel]));
   const dSeed: DadosEscritorio = {
-    fonte: "hub", geradoEm: null, sistemas: sisSeed, conectores: [],
+    fonte: "hub", geradoEm: null, uso: {}, sistemas: sisSeed, conectores: [],
     integracoes: INTEGRACOES_SEED, saude: baseSeed,
   };
   const andarSeed = montarAndar(dSeed.sistemas, dSeed.conectores);
@@ -720,6 +722,7 @@ describe("duas conversas ao mesmo tempo (fixture de teste)", () => {
   const dadosQuatro: DadosEscritorio = {
     fonte: "hub",
     geradoEm: null,
+    uso: {},
     sistemas: quatro,
     conectores: [],
     // dois pares SEM aresta cruzada: cada evento só tem um destino possível
@@ -841,6 +844,7 @@ describe("ciclo completo sobre o ecossistema real", () => {
   const dadosReal: DadosEscritorio = {
     fonte: "hub",
     geradoEm: null,
+    uso: {},
     sistemas: sisReal,
     conectores: [],
     integracoes: INTEGRACOES_SEED,

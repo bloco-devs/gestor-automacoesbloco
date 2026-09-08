@@ -16,6 +16,7 @@ import {
   type Humor,
 } from "./sprites";
 import type { Estado } from "./estado";
+import { pessoasAgora } from "./uso";
 import { obterSprite, type SpriteId } from "./mobiliario";
 import type { EventoEcossistema } from "./eventos";
 
@@ -422,7 +423,17 @@ export function EscritorioCanvas({
          * como letreiro de porta.
          */
         const t = paraTela(s.x + s.w / 2, s.y - 3);
-        placa(ctx, t.x, t.y, s.grupo);
+        const largura = placa(ctx, t.x, t.y, s.grupo);
+        /*
+         * Somado por SALA, e nao por mesa: uma sala com tres sistemas teria
+         * tres selos disputando o mesmo espaco da placa. A prévia e o painel
+         * mostram o detalhe por sistema.
+         */
+        const gente = andar.mesas.reduce(
+          (soma, m) => (m.grupo === s.grupo ? soma + pessoasAgora(dados.uso[m.sistemaId]) : soma),
+          0,
+        );
+        if (gente > 0) seloDeGente(ctx, t.x + largura / 2 + 3, t.y, gente);
       }
       /*
        * Já as placas de porta e as etiquetas de mesa ficam a 80 px de
@@ -575,6 +586,36 @@ function fundoDaPagina(canvas: HTMLCanvasElement): string {
   return v ? `hsl(${v})` : "#1d2420";
 }
 
+/**
+ * O selo de gente na sala.
+ *
+ * TERCEIRO eixo, e por isso um elemento proprio: o BLINK diz se o HUB conhece
+ * o sistema, o monitor diz se houve execucao, e este diz se tem PESSOA dentro.
+ * Sem ele, o Gestao de Processos aparecia com nove pessoas na sala e monitor
+ * apagado, porque nao executa integracao nenhuma.
+ *
+ * Desenhado com retangulos no HUD, nao com sprite: `sprites.ts` esta congelado
+ * e nao existe arte de pessoa sentada. Aqui e um pictograma de 5x7 px em
+ * espaco de TELA — legivel em qualquer zoom, como as placas.
+ */
+function seloDeGente(ctx: CanvasRenderingContext2D, x: number, cy: number, n: number) {
+  ctx.font = '700 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+  const txt = String(n);
+  const w = ctx.measureText(txt).width + 20;
+  const y = Math.round(cy - 10);
+  ctx.fillStyle = "#1d2b22";
+  ctx.fillRect(Math.round(x), y, w, 19);
+  ctx.fillStyle = "#3ecf8e";
+  ctx.fillRect(Math.round(x), y, w, 2);
+  // pictograma: cabeca + tronco
+  const px = Math.round(x) + 6;
+  ctx.fillStyle = "#8ff0c4";
+  ctx.fillRect(px + 1, y + 6, 3, 3);
+  ctx.fillRect(px, y + 10, 5, 4);
+  ctx.fillStyle = "#f2efe6";
+  ctx.fillText(txt, Math.round(x) + 13, y + 14);
+}
+
 /* ---------------------------------------------------------------- HUD --- */
 
 const CORES: Record<string, [string, string]> = {
@@ -592,7 +633,7 @@ function placa(
   texto: string,
   externa = false,
   larguraMax = Infinity,
-) {
+): number {
   ctx.font = '700 11px ui-monospace, SFMono-Regular, Menlo, monospace';
   const t = cortar(ctx, texto.toUpperCase(), larguraMax === Infinity ? Infinity : larguraMax - 16);
   const w = ctx.measureText(t).width + 22;
@@ -604,6 +645,7 @@ function placa(
   ctx.fillRect(x, y, w, 2);
   ctx.fillStyle = "#f2efe6";
   ctx.fillText(t, x + 11, y + 14);
+  return w;
 }
 
 /**

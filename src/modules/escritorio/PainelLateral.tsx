@@ -1,11 +1,12 @@
 import { useMemo } from "react";
-import { ArrowDownLeft, ArrowUpRight, DoorOpen, ExternalLink, X } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, DoorOpen, ExternalLink, User, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { DadosEscritorio } from "./dados";
 import { culpaDeTerceiro, estadoDoSistema, resumoDeEstados, type Estado } from "./estado";
+import { fraseDeUso, pessoasAgora, resumoDeUso } from "./uso";
 
 interface Props {
   dados: DadosEscritorio;
@@ -127,6 +128,18 @@ export function PainelLateral({ dados, selecionado, onSelecionar }: Props) {
             {ROTULO[estado]}
           </Badge>
 
+          {/*
+            O uso vem em SEGUIDA do estado, não dentro dele: o selo acima
+            responde "como está a integração" e esta linha responde "tem gente
+            aí". Um sistema pode estar sem execução e cheio de pessoas.
+          */}
+          {sistema && fraseDeUso(dados.uso[sistema.id]) && (
+            <p className="mt-2 flex items-start gap-1.5 ds-caption text-muted-foreground">
+              <User className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+              {fraseDeUso(dados.uso[sistema.id])}
+            </p>
+          )}
+
           {saude ? (
             <dl className="mt-3 grid grid-cols-2 gap-2">
               <div className="rounded-md bg-muted/50 p-2">
@@ -185,6 +198,14 @@ export function PainelLateral({ dados, selecionado, onSelecionar }: Props) {
                 {sistemas.map((s) => {
                   const e = estadoDoSistema(dados.saude[s.id]);
                   const execs = dados.saude[s.id]?.execs ?? 0;
+                  /*
+                   * Gente e execução ficam em colunas SEPARADAS, e não somadas
+                   * num número só. São perguntas diferentes: o Gestão de
+                   * Processos tem nove pessoas e zero execução, o Portfólio o
+                   * contrário. Juntar os dois esconderia justamente o que este
+                   * painel passou a mostrar.
+                   */
+                  const gente = pessoasAgora(dados.uso[s.id]);
                   return (
                     <li key={s.id}>
                       <button
@@ -198,7 +219,19 @@ export function PainelLateral({ dados, selecionado, onSelecionar }: Props) {
                       >
                         <span className={cn("size-2 shrink-0 rounded-full", PONTO[e])} aria-hidden />
                         <span className="ds-caption min-w-0 flex-1 truncate">{s.nome}</span>
-                        <span className="ds-label shrink-0 text-muted-foreground">
+                        {gente > 0 && (
+                          <span
+                            className="inline-flex shrink-0 items-center gap-0.5 ds-label text-foreground/80"
+                            title={`${gente} ${gente === 1 ? "pessoa acessou" : "pessoas acessaram"} nas últimas 24 h`}
+                          >
+                            <User className="size-3" aria-hidden />
+                            {gente}
+                          </span>
+                        )}
+                        <span
+                          className="ds-label shrink-0 tabular-nums text-muted-foreground"
+                          title={`${execs.toLocaleString("pt-BR")} execuções de integração em 30 dias`}
+                        >
                           {execs.toLocaleString("pt-BR")}
                         </span>
                       </button>

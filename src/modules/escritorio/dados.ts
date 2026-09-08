@@ -32,6 +32,23 @@ export interface IntegracaoEco {
   label: string;
 }
 
+/**
+ * Uso HUMANO de um sistema — pergunta diferente da que `saude` responde.
+ *
+ * `saude` mede máquina: execução de integração. Um sistema pode ter zero
+ * execução e nove pessoas dentro, e é literalmente o caso do Gestão de
+ * Processos. Enquanto isso o Portfólio tem execução e ninguém dentro desde
+ * ontem. Os dois sinais são quase opostos, e por isso não se misturam aqui.
+ *
+ * `pessoas_24h` conta LOGIN por SSO na janela, não trabalho efetivo — o rótulo
+ * na tela diz "acessaram", nunca "trabalhando".
+ */
+export interface UsoSistema {
+  ultimo_login: string | null;
+  pessoas_24h: number;
+  pessoas_30d: number;
+}
+
 export interface DadosEscritorio {
   fonte: "hub" | "semente";
   geradoEm: string | null;
@@ -39,6 +56,8 @@ export interface DadosEscritorio {
   conectores: ConectorEco[];
   integracoes: IntegracaoEco[];
   saude: Record<string, SaudeSistema>;
+  /** Vazio quando o HUB não manda — a tela não pode depender disto. */
+  uso: Record<string, UsoSistema>;
 }
 
 export const DADOS_SEMENTE: DadosEscritorio = {
@@ -48,6 +67,7 @@ export const DADOS_SEMENTE: DadosEscritorio = {
   conectores: CONECTORES_EXTERNOS_SEED.map((c) => ({ id: c.id, nome: c.nome })),
   integracoes: [...INTEGRACOES_SEED, ...INTEGRACOES_HUB_SEED],
   saude: {},
+  uso: {},
 };
 
 export async function carregarEscritorio(): Promise<DadosEscritorio> {
@@ -75,6 +95,7 @@ export async function carregarEscritorio(): Promise<DadosEscritorio> {
       })),
       integracoes: data.integracoes ?? [],
       saude: (data.saude ?? {}) as Record<string, SaudeSistema>,
+      uso: (data.uso ?? {}) as Record<string, UsoSistema>,
     };
   } catch (e) {
     console.warn("ecossistema-mapa indisponível; escritório usando o seed.", e);

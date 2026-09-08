@@ -98,6 +98,11 @@ export interface EcossistemaHubData {
   conectoresExternos?: { id: string; nome: string; status?: string | null }[];
   integracoes?: { origem: string; destino: string; label: string }[];
   saude?: Record<string, { execs: number; ok: number; falhas: number; ultima: string | null }>;
+  /**
+   * Uso HUMANO por sistema. Opcional porque é aditivo: a resposta do HUB
+   * continua válida sem ele, e a tela precisa funcionar nos dois casos.
+   */
+  uso?: Record<string, { ultimo_login: string | null; pessoas_24h: number; pessoas_30d: number }>;
 }
 
 export const MAPA_PROVIDERS: Record<CamadaMapa, MapaProvider> = {
