@@ -220,10 +220,21 @@ export interface Motor {
   registros: RegistroConversa[];
 }
 
-function direcaoEntre(dx: number, dy: number, atual: Direcao): Direcao {
+/**
+ * Para onde o corpo aponta, dado o vetor do passo.
+ *
+ * O limiar de 0,4 px existe para o BLINK não girar no lugar quando o resto do
+ * deslocamento do quadro é ruído numérico.
+ *
+ * Subir a tela é ir para o FUNDO da sala, e quem vai para o fundo mostra as
+ * costas. Antes as duas verticais devolviam "frente", e o BLINK atravessava a
+ * sala de ré, encarando a câmera — de longe ficava parecido, e é justamente
+ * por isso que ninguém tinha notado.
+ */
+export function direcaoEntre(dx: number, dy: number, atual: Direcao): Direcao {
   if (Math.abs(dx) < 0.4 && Math.abs(dy) < 0.4) return atual;
   if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? "direita" : "esquerda";
-  return "frente";
+  return dy < 0 ? "costas" : "frente";
 }
 
 export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.now()): Motor {

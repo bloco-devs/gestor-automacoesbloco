@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { montarAndar } from "../layout";
 import { agruparExecucoes } from "../eventos";
 import { dialogoDeEvento } from "../conversas";
-import { criarMotor, digitando } from "../motor";
+import { criarMotor, digitando, direcaoEntre } from "../motor";
 import { DADOS_SEMENTE, type DadosEscritorio } from "../dados";
 import { PERSONAGEM_W, TILE } from "../sprites";
 import { INTEGRACOES_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
@@ -1506,5 +1506,34 @@ describe("a fala da execução diz a hora, não 'agora'", () => {
     expect(falas[0].texto).toContain("há pouco");
     expect(falas[0].texto).not.toContain("NaN");
     expect(falas[0].texto).not.toContain("Invalid");
+  });
+});
+
+/*
+ * "acho legal eles andando" — e andar tem lado. Enquanto as duas verticais
+ * devolviam "frente", quem cruzava a sala em direção ao fundo ia de ré,
+ * encarando a câmera. Passa despercebido porque o sprite de frente e o de
+ * costas têm a mesma silhueta; o que denuncia é o rosto olhando para trás.
+ */
+describe("o corpo aponta para onde o passo vai", () => {
+  it("subir a tela é ir para o fundo da sala: mostra as costas", () => {
+    expect(direcaoEntre(0, -3, "frente")).toBe("costas");
+  });
+
+  it("descer continua sendo de frente", () => {
+    expect(direcaoEntre(0, 3, "costas")).toBe("frente");
+  });
+
+  it("na diagonal manda o eixo maior, e o empate vai para o lado", () => {
+    expect(direcaoEntre(1, -5, "frente")).toBe("costas");
+    expect(direcaoEntre(-5, -1, "frente")).toBe("esquerda");
+    // |dx| >= |dy| resolve o empate na horizontal
+    expect(direcaoEntre(3, -3, "frente")).toBe("direita");
+  });
+
+  it("passo de ruído não gira o corpo", () => {
+    // Sem o limiar, o resto numérico do quadro faz o BLINK piruetar parado.
+    expect(direcaoEntre(0.1, -0.2, "direita")).toBe("direita");
+    expect(direcaoEntre(0, 0, "costas")).toBe("costas");
   });
 });

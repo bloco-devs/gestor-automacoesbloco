@@ -11,6 +11,7 @@ import {
 } from "../aparencia";
 import { CONECTORES_EXTERNOS_SEED, SISTEMAS_SEED } from "@/lib/ecossistemaSeed";
 import { HUMOR, MONITOR } from "../EscritorioCanvas";
+import { corDaPlaca, corDoTraco } from "../sprites";
 import type { Estado } from "../estado";
 
 /** Os 16 sistemas que o HUB devolve hoje. */
@@ -178,5 +179,51 @@ describe("cada estado tem uma aparência própria", () => {
     // nem é confundido com atividade
     expect(HUMOR["sem-execucao"]).not.toBe("trabalhando");
     expect(MONITOR["sem-execucao"]).not.toBe(MONITOR.trabalhando);
+  });
+});
+
+/*
+ * O BLINK SENTADO ESTÁ DE COSTAS — e o rosto era onde o estado morava.
+ *
+ * Sentar, na perspectiva do andar, obriga a virar de costas: o monitor está
+ * acima do personagem, e quem trabalha olhando para a câmera não está olhando
+ * para o monitor. Só que a maioria do andar está sentada a maior parte do
+ * tempo, e o rosto é o que responde "o HUB conhece este sistema?".
+ *
+ * O risco concreto, medido: `sem-execucao` e `sem-dados` usam o MESMO monitor
+ * apagado — está travado no teste acima. Se o rosto sai de cena e nada o
+ * substitui, os dois estados viram o mesmo boneco preto e a distinção some
+ * exatamente em quem está sentado.
+ *
+ * A faixa da nuca existe por isso, e estes testes são a razão dela.
+ */
+describe("de costas, o estado continua legível", () => {
+  const ESTADOS: Estado[] = ["trabalhando", "ocioso", "falha", "sem-execucao", "sem-dados"];
+  /** A cor que a nuca mostra para um estado do andar. */
+  const faixa = (e: Estado) => corDoTraco(HUMOR[e]);
+
+  it("sem-execucao e sem-dados NÃO podem mostrar a mesma faixa", () => {
+    // É o par que compartilha o monitor: sem a faixa, nada os separaria.
+    expect(MONITOR["sem-execucao"]).toBe(MONITOR["sem-dados"]);
+    expect(faixa("sem-execucao")).not.toBe(faixa("sem-dados"));
+  });
+
+  it("a faixa distingue pelo menos três situações do andar", () => {
+    expect(new Set(ESTADOS.map(faixa)).size).toBeGreaterThanOrEqual(3);
+  });
+
+  it("quem não tem dado é o único que não mostra amarelo", () => {
+    // O amarelo é a marca do BLINK aceso. "Sem dado" é ausência, não humor.
+    for (const e of ESTADOS) {
+      if (e === "sem-dados") expect(faixa(e)).not.toBe(corDaPlaca("trabalhando"));
+      else expect(faixa(e)).not.toBe(corDoTraco("sem-dados"));
+    }
+  });
+
+  it("a placa do rosto só apaga em sem-dados, e é por isso que a nuca usa o traço", () => {
+    // Se a nuca usasse a cor da PLACA, ocioso e trabalhando ficariam iguais de
+    // costas — a placa não muda entre eles. O traço muda.
+    expect(corDaPlaca("ocioso")).toBe(corDaPlaca("trabalhando"));
+    expect(corDoTraco("ocioso")).not.toBe(corDoTraco("trabalhando"));
   });
 });

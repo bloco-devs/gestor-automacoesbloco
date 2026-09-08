@@ -13,14 +13,6 @@ export const TILE = 16;
 /** Altura total do personagem, da antena à sola do pé. */
 export const PERSONAGEM_H = 46;
 export const PERSONAGEM_W = 22;
-/**
- * Distância do topo do personagem até o tampo da mesa.
- *
- * Com 28 o monitor cobria o tronco e sobrava só a cabeça flutuando; 42 deixa
- * cabeça, ombros e peito acima do monitor, como na planta de referência.
- */
-export const OFFSET_MESA = 42;
-
 export const MESA_W = 48;
 export const MESA_H = 32;
 
@@ -208,7 +200,45 @@ const BLINK_APAGADO = "#6f6a5c";
 const BLINK_APAGADO_CLARO = "#8f8a7d";
 
 export type Humor = "trabalhando" | "ocioso" | "falha" | "sem-dados";
-export type Direcao = "frente" | "esquerda" | "direita";
+
+/**
+ * Para onde o BLINK está virado.
+ *
+ * `costas` existe porque o andar é visto de cima e de frente ao mesmo tempo:
+ * quem anda para o fundo da sala (Y diminuindo) estava andando de frente,
+ * deslizando de ré. As outras três direções são o mesmo sprite com o olho
+ * deslocado 1 px; `costas` é o único que troca de verdade o que se desenha.
+ */
+export type Direcao = "frente" | "esquerda" | "direita" | "costas";
+
+/**
+ * A COR DA PLACA, e por que ela não pode viver só no rosto.
+ *
+ * `sem-execucao` e `sem-dados` usam o MESMO monitor apagado — está travado em
+ * teste. O que separa um do outro na tela é só a placa: acesa em quem não
+ * executou, apagada em quem o HUB não conhece. Se o BLINK virar de costas e
+ * essa cor ficar para trás, os dois estados viram o mesmo boneco preto e a
+ * distinção do commit que os separou desaparece justamente em quem está
+ * sentado — que é a maioria do andar.
+ *
+ * Por isso a cor é função do humor, num lugar só. O rosto usa as duas: a placa
+ * como moldura e o traço como elemento aceso. A nuca só tem uma superfície, e
+ * usa `corDoTraco` — é a que separa TRÊS estados em vez de dois, porque a
+ * placa muda apenas em `sem-dados`. Não é enfeite: é o mesmo dado, na única
+ * superfície que sobra quando o rosto vira para o outro lado.
+ */
+export function corDaPlaca(humor: Humor): string {
+  return humor === "sem-dados" ? BLINK_APAGADO : BLINK_AMARELO;
+}
+
+/** A cor do traço do rosto — olho, boca, sobrancelha. */
+export function corDoTraco(humor: Humor): string {
+  return humor === "ocioso"
+    ? BLINK_AM_FOSCO
+    : humor === "sem-dados"
+      ? BLINK_APAGADO_CLARO
+      : BLINK_AMARELO;
+}
 
 export interface PersonagemOpts {
   humor: Humor;
@@ -217,6 +247,13 @@ export interface PersonagemOpts {
   passo?: 0 | 1 | 2;
   /** Levanta os braços 1px, para a animação de digitar. */
   digitando?: boolean;
+  /**
+   * Sentado: troca as pernas pela cadeira.
+   *
+   * Não é uma pose "a mais" — é a única forma honesta de sentar nesta
+   * perspectiva. Ver `cadeiraAtras`.
+   */
+  sentado?: boolean;
   destacado?: boolean;
   /** Conector externo: casco cinza e o símbolo do serviço na mão. */
   externo?: boolean;
@@ -235,6 +272,142 @@ export function personagem(c: Ctx, x: number, y: number, id: string, opts: Perso
   desenhaBlink(c, x, y, opts.casco ? { ...base, casco: opts.casco } : base, opts);
 }
 
+/* Cores da cadeira, copiadas de `mobiliario`. Copiadas de propósito: importar
+ * `mobiliario` aqui fecharia um ciclo, porque é ele que importa `TILE` daqui. */
+const CADEIRA = "#3d4756";
+const CADEIRA_LUZ = "#4d596b";
+const CADEIRA_SOMBRA = "#2b333e";
+
+/**
+ * A CADEIRA QUE FAZ O BLINK SENTAR — e por que ela vive dentro do sprite.
+ *
+ * Sentar, nesta perspectiva, é um problema de ordem de desenho, e as duas
+ * saídas óbvias falham por medida, não por gosto:
+ *
+ *   - desenhar a mesa DEPOIS do personagem (a ideia de "as pernas vão para
+ *     debaixo da mesa") corta o BLINK na cintura: a mesa ocupa 20 px de altura
+ *     e o corpo tem 46, então o tronco desaparece e as pernas reaparecem
+ *     embaixo. E a mesa por cima tapa o monitor, que é sinal de estado.
+ *   - subir o personagem 42 px, para trás do monitor, esconde as pernas — mas
+ *     deixa cabeça e peito flutuando acima do monitor, sem nada que leia como
+ *     assento. Era o que a constante `OFFSET_MESA` media, e ela nunca chegou a
+ *     ser usada por ninguém: saiu daqui junto com a ideia.
+ *
+ * A saída que sobra é não ter pernas para esconder. Quem está sentado é
+ * desenhado com a cadeira ATRÁS do tronco e o assento no lugar das pernas —
+ * tudo numa peça, na ordem certa por construção. Nenhuma camada de fora
+ * precisa saber que aquele BLINK está sentado.
+ *
+ * O encosto é 2 px mais largo que o tronco de cada lado: é essa borda que
+ * aparece e diz "tem uma cadeira aqui". Igualado ao tronco, ele desaparece
+ * atrás do corpo e o BLINK volta a parecer um busto flutuando.
+ *
+ * É EXPORTADA, e não desenhada de dentro do personagem, por um motivo de
+ * movimento: quem trabalha respira 1 px, e a cadeira não. Junto no mesmo
+ * sprite, o encosto e a base subiam e desciam com o peito — uma poltrona
+ * vibrando. Quem chama desenha a cadeira na posição parada e o corpo na
+ * posição que respira. Chame ANTES do personagem: ela fica atrás dele.
+ */
+export function cadeiraDeTrabalho(c: Ctx, x: number, y: number) {
+  r(c, x + 1, y + 42, 20, 2, "rgba(0,0,0,.22)");
+
+  // encosto
+  r(c, x + 1, y + 20, 20, 19, TRACO);
+  r(c, x + 2, y + 21, 18, 17, CADEIRA);
+  r(c, x + 3, y + 22, 16, 3, CADEIRA_LUZ);
+  r(c, x + 2, y + 36, 18, 2, CADEIRA_SOMBRA);
+
+  // braços da cadeira
+  r(c, x - 1, y + 28, 3, 7, TRACO);
+  r(c, x, y + 29, 2, 5, CADEIRA);
+  r(c, x + 20, y + 28, 3, 7, TRACO);
+  r(c, x + 21, y + 29, 2, 5, CADEIRA);
+
+  // coluna e base em cruz
+  r(c, x + 9, y + 39, 4, 3, CADEIRA_SOMBRA);
+  r(c, x + 5, y + 41, 12, 2, CADEIRA_SOMBRA);
+  r(c, x + 4, y + 42, 3, 1, TRACO);
+  r(c, x + 15, y + 42, 3, 1, TRACO);
+}
+
+/**
+ * O rosto: placa, olhos, sobrancelha e boca.
+ *
+ * Saiu de dentro de `desenhaBlink` para ter um irmão — `nuca` — e para as duas
+ * versões da cabeça ficarem lado a lado, onde é impossível mexer numa e
+ * esquecer a outra.
+ */
+function rosto(c: Ctx, x: number, y: number, humor: Humor, direcao: Direcao) {
+  r(c, x + 5, y + 5, 12, 12, corDaPlaca(humor));
+  r(c, x + 6, y + 6, 10, 10, BLINK_PLACA);
+
+  // Olho sempre ABERTO, nos quatro estados. O olho reduzido a uma listra
+  // fazia o BLINK parecer desligado, e "sem dado" não é o mesmo que dormindo.
+  const desvio = direcao === "direita" ? 1 : direcao === "esquerda" ? -1 : 0;
+  const olho = corDoTraco(humor);
+  const topoOlho = humor === "falha" ? y + 9 : y + 8;
+  r(c, x + 7 + desvio, topoOlho, 3, 3, olho);
+  r(c, x + 12 + desvio, topoOlho, 3, 3, olho);
+  if (humor === "trabalhando") {
+    r(c, x + 7 + desvio, y + 8, 1, 1, BLINK_AM_CLARO);
+    r(c, x + 12 + desvio, y + 8, 1, 1, BLINK_AM_CLARO);
+  }
+  // sobrancelha inclinada: é o que diz "tem coisa errada" sem fechar o olho
+  if (humor === "falha") {
+    r(c, x + 7, y + 7, 2, 1, olho);
+    r(c, x + 9, y + 8, 1, 1, olho);
+    r(c, x + 13, y + 8, 1, 1, olho);
+    r(c, x + 14, y + 7, 2, 1, olho);
+  }
+
+  // boca
+  if (humor === "falha") {
+    r(c, x + 9, y + 13, 4, 1, olho);
+    r(c, x + 8, y + 14, 1, 1, olho);
+    r(c, x + 13, y + 14, 1, 1, olho);
+  } else if (humor === "sem-dados") {
+    r(c, x + 9, y + 14, 4, 1, olho);
+  } else {
+    r(c, x + 9, y + 14, 4, 1, olho);
+    r(c, x + 8, y + 13, 1, 1, olho);
+    r(c, x + 13, y + 13, 1, 1, olho);
+  }
+}
+
+/**
+ * A nuca: a cabeça vista por trás.
+ *
+ * Nada de rosto — a placa amarela é a FRENTE do casco, e desenhá-la nos dois
+ * lados faria uma cabeça com dois rostos. O que se vê aqui é o casco fechado,
+ * a emenda vertical do capacete e a faixa de refrigeração.
+ *
+ * A faixa é o único ponto colorido, e não por estética: ela carrega a MESMA
+ * cor da placa (ver `corDaPlaca`). É o que mantém `sem-execucao` distinguível
+ * de `sem-dados` em quem está sentado de costas, já que o monitor dos dois é
+ * igual. Apagar a faixa junto com o rosto seria perder o dado, não a vista.
+ */
+function nuca(c: Ctx, x: number, y: number, humor: Humor) {
+  // casco fechado, um tom acima do contorno para a cabeça não virar um borrão
+  r(c, x + 5, y + 5, 12, 12, "#1f2126");
+  r(c, x + 5, y + 5, 12, 1, "#2b2e34");
+
+  /*
+   * A emenda vai só até a metade, e a faixa atravessa INTEIRA.
+   *
+   * A primeira versão tinha duas faixas curtas, uma de cada lado da emenda, na
+   * altura dos olhos — e o resultado era uma cabeça com dois rostos: de longe
+   * lia como olhos fechados, e o BLINK parecia dormindo justamente quando
+   * estava trabalhando. Uma faixa única e contínua, embaixo, não tem como ler
+   * como par de olhos.
+   */
+  r(c, x + 10, y + 5, 2, 8, "#141518");
+  r(c, x + 5, y + 16, 12, 1, "#141518");
+
+  // faixa de refrigeração — carrega a cor do estado
+  r(c, x + 5, y + 13, 12, 3, corDoTraco(humor));
+  if (humor === "trabalhando") r(c, x + 5, y + 13, 12, 1, BLINK_AM_CLARO);
+}
+
 export function desenhaBlink(c: Ctx, x: number, y: number, a: Aparencia, opts: PersonagemOpts) {
   const { humor, direcao } = opts;
   const passo = opts.passo ?? 0;
@@ -249,7 +422,9 @@ export function desenhaBlink(c: Ctx, x: number, y: number, a: Aparencia, opts: P
     r(c, x - 1, y - 1, 1, PERSONAGEM_H + 2, luz);
     r(c, x + PERSONAGEM_W, y - 1, 1, PERSONAGEM_H + 2, luz);
   }
-  r(c, x + 4, y + PERSONAGEM_H, 14, 2, "rgba(0,0,0,.22)");
+  // Sentado não projeta sombra no chão: a cadeira já tem a dela, e quem a
+  // desenha é quem desenha a cadeira.
+  if (!opts.sentado) r(c, x + 4, y + PERSONAGEM_H, 14, 2, "rgba(0,0,0,.22)");
 
   // antenas — o capacete e o headset ocupam o lugar delas
   if (!naCabeca) {
@@ -275,43 +450,8 @@ export function desenhaBlink(c: Ctx, x: number, y: number, a: Aparencia, opts: P
     r(c, x + 19, y + 8, 2, 1, BLINK_AM_CLARO);
   }
 
-  // placa do rosto — apagada quando o HUB não tem dado nenhum
-  r(c, x + 5, y + 5, 12, 12, humor === "sem-dados" ? BLINK_APAGADO : BLINK_AMARELO);
-  r(c, x + 6, y + 6, 10, 10, BLINK_PLACA);
-
-  // Olho sempre ABERTO, nos quatro estados. O olho reduzido a uma listra
-  // fazia o BLINK parecer desligado, e "sem dado" não é o mesmo que dormindo.
-  const desvio = direcao === "direita" ? 1 : direcao === "esquerda" ? -1 : 0;
-  const olho =
-    humor === "ocioso" ? BLINK_AM_FOSCO : humor === "sem-dados" ? BLINK_APAGADO_CLARO : BLINK_AMARELO;
-  const alturaOlho = humor === "falha" ? 3 : 3;
-  const topoOlho = humor === "falha" ? y + 9 : y + 8;
-  r(c, x + 7 + desvio, topoOlho, 3, alturaOlho, olho);
-  r(c, x + 12 + desvio, topoOlho, 3, alturaOlho, olho);
-  if (humor === "trabalhando") {
-    r(c, x + 7 + desvio, y + 8, 1, 1, BLINK_AM_CLARO);
-    r(c, x + 12 + desvio, y + 8, 1, 1, BLINK_AM_CLARO);
-  }
-  // sobrancelha inclinada: é o que diz "tem coisa errada" sem fechar o olho
-  if (humor === "falha") {
-    r(c, x + 7, y + 7, 2, 1, olho);
-    r(c, x + 9, y + 8, 1, 1, olho);
-    r(c, x + 13, y + 8, 1, 1, olho);
-    r(c, x + 14, y + 7, 2, 1, olho);
-  }
-
-  // boca
-  if (humor === "falha") {
-    r(c, x + 9, y + 13, 4, 1, olho);
-    r(c, x + 8, y + 14, 1, 1, olho);
-    r(c, x + 13, y + 14, 1, 1, olho);
-  } else if (humor === "sem-dados") {
-    r(c, x + 9, y + 14, 4, 1, olho);
-  } else {
-    r(c, x + 9, y + 14, 4, 1, olho);
-    r(c, x + 8, y + 13, 1, 1, olho);
-    r(c, x + 13, y + 13, 1, 1, olho);
-  }
+  if (direcao === "costas") nuca(c, x, y, humor);
+  else rosto(c, x, y, humor, direcao);
 
   // pescoço e tronco
   r(c, x + 9, y + 20, 4, 1, "#24262b");
@@ -320,8 +460,15 @@ export function desenhaBlink(c: Ctx, x: number, y: number, a: Aparencia, opts: P
   r(c, x + 4, y + 33, 14, 1, cascoE);
   r(c, x + 4, y + 21, 1, 13, cascoE);
   r(c, x + 17, y + 21, 1, 13, cascoE);
-  r(c, x + 8, y + 24, 6, 5, tom(a.casco, 0.85));
-  r(c, x + 9, y + 25, 4, 3, BLINK_AMARELO);
+  if (direcao === "costas") {
+    // Sem emblema: o emblema é do peito. Por trás aparece a coluna do casco.
+    r(c, x + 10, y + 22, 2, 12, cascoE);
+    r(c, x + 7, y + 26, 8, 1, tom(a.casco, 0.9));
+    r(c, x + 7, y + 29, 8, 1, tom(a.casco, 0.9));
+  } else {
+    r(c, x + 8, y + 24, 6, 5, tom(a.casco, 0.85));
+    r(c, x + 9, y + 25, 4, 3, BLINK_AMARELO);
+  }
 
   // braços
   const dy = opts.digitando ? 1 : 0;
@@ -330,15 +477,17 @@ export function desenhaBlink(c: Ctx, x: number, y: number, a: Aparencia, opts: P
   r(c, x + 2, y + 30 - dy, 2, 3, BLINK_CASCO);
   r(c, x + 18, y + 30 - dy, 2, 3, BLINK_CASCO);
 
-  // pernas
-  const p1 = passo === 1 ? 1 : 0;
-  const p2 = passo === 2 ? 1 : 0;
-  r(c, x + 6, y + 34, 4, 9 - p1, BLINK_CASCO);
-  r(c, x + 12, y + 34, 4, 9 - p2, BLINK_CASCO);
-  r(c, x + 5, y + 43 - p1, 6, 3, "#0d0e10");
-  r(c, x + 11, y + 43 - p2, 6, 3, "#0d0e10");
+  // pernas — quem está sentado não tem: o assento está no lugar delas
+  if (!opts.sentado) {
+    const p1 = passo === 1 ? 1 : 0;
+    const p2 = passo === 2 ? 1 : 0;
+    r(c, x + 6, y + 34, 4, 9 - p1, BLINK_CASCO);
+    r(c, x + 12, y + 34, 4, 9 - p2, BLINK_CASCO);
+    r(c, x + 5, y + 43 - p1, 6, 3, "#0d0e10");
+    r(c, x + 11, y + 43 - p2, 6, 3, "#0d0e10");
+  }
 
-  acessorio(c, x, y, a.acessorio);
+  acessorio(c, x, y, a.acessorio, opts);
 }
 
 /* ---------------------------------------------------------- acessórios --- */
@@ -357,7 +506,31 @@ function comContorno(c: Ctx, partes: Parte[], cor: string) {
   for (const [px, py, pw, ph] of partes) r(c, px, py, pw, ph, cor);
 }
 
-function acessorio(c: Ctx, x: number, y: number, tipo: Acessorio) {
+/**
+ * As peças de PEITO — o que existe só na frente do casco.
+ *
+ * Gravata e crachá pendem do peito; desenhá-las nas costas seria uma gravata
+ * saindo da nuca. Some junto com o rosto, e é uma perda real: o acessório é
+ * marca de identidade, não decoração. Quem está de costas se identifica pela
+ * cor do casco e pela etiqueta da mesa.
+ */
+const SO_DE_FRENTE = new Set<Acessorio>(["gravata", "cracha"]);
+
+/**
+ * O que fica na CABEÇA — o único acessório que sobrevive à cadeira.
+ *
+ * Todo o resto é objeto de mão, e mão de quem está sentado está no teclado.
+ * Desenhado, o objeto fica pairando ao lado do braço da cadeira, sem mão
+ * nenhuma o segurando. A identidade de quem está sentado vem da cor do casco
+ * e da etiqueta da mesa, que só aparece quando há alguém nela.
+ */
+const NA_CABECA = new Set<Acessorio>(["capacete", "headset"]);
+
+function acessorio(c: Ctx, x: number, y: number, tipo: Acessorio, opts: PersonagemOpts) {
+  const costas = opts.direcao === "costas";
+  if (costas && SO_DE_FRENTE.has(tipo)) return;
+  if (opts.sentado && !NA_CABECA.has(tipo)) return;
+
   // mão direita: o objeto fica ao lado do corpo, onde nada o encobre
   const bx = x + 20;
   const by = y + 23;
@@ -375,8 +548,11 @@ function acessorio(c: Ctx, x: number, y: number, tipo: Acessorio) {
       comContorno(c, [[x, y + 6, 4, 9], [x + 18, y + 6, 4, 9]], "#3a3f4b");
       r(c, x + 1, y + 8, 2, 5, "#5c6470");
       r(c, x + 19, y + 8, 2, 5, "#5c6470");
-      comContorno(c, [[x + 2, y + 15, 2, 3], [x + 4, y + 17, 5, 2]], "#3a3f4b");
-      comContorno(c, [[x + 9, y + 16, 3, 3]], "#c4463a");
+      // a haste e a espuma do microfone só existem na frente
+      if (!costas) {
+        comContorno(c, [[x + 2, y + 15, 2, 3], [x + 4, y + 17, 5, 2]], "#3a3f4b");
+        comContorno(c, [[x + 9, y + 16, 3, 3]], "#c4463a");
+      }
       break;
     }
     case "gravata": {

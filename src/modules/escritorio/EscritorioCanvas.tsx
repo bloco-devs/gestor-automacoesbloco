@@ -12,6 +12,7 @@ import {
   TILE,
   alerta,
   halo,
+  cadeiraDeTrabalho,
   personagem,
   type Humor,
 } from "./sprites";
@@ -57,6 +58,34 @@ const ROTULO_CURTO: Record<string, string> = {
  * acesos, mas só um tem a tela viva. E "sem-execucao" não vira sinal de
  * problema: quem está com defeito é o vermelho, e ninguém mais.
  */
+/**
+ * ONDE O BLINK SENTADO É DESENHADO, medido do canto do tampo.
+ *
+ * De pé ele fica em `pessoaX/pessoaY`, que é o canto do tile ao lado esquerdo
+ * da mesa — a posição LÓGICA, a que o pathfinding, a colisão e as rotas usam.
+ * Sentar não move ninguém de tile: muda só onde o sprite é pintado, 13 px à
+ * direita para centrar no monitor e 18 px abaixo do tampo para encostar na
+ * mesa sem tapar o teclado.
+ *
+ * Medido nas três alternativas: a +12 a cabeça cobre o teclado, a +24 sobra
+ * um vão entre a cadeira e a mesa, a +18 encosta.
+ */
+const ASSENTO_X = 13;
+const ASSENTO_Y = 18;
+
+/**
+ * Quanto dura o gesto de sentar.
+ *
+ * Sem isso o BLINK teleporta 13 px para o lado e 16 px para baixo no instante
+ * em que a fase vira `mesa`, e um salto desses lê como falha de desenho. Com o
+ * deslizamento, o último passo até a cadeira é o próprio gesto.
+ *
+ * Quem JÁ estava sentado quando a tela abriu não desliza: fazer o andar
+ * inteiro se sentar no primeiro quadro afirmaria que todos acabaram de chegar,
+ * e ninguém chegou — a tela só abriu.
+ */
+const SENTAR_MS = 220;
+
 export const HUMOR: Record<Estado, Humor> = {
   trabalhando: "trabalhando",
   ocioso: "ocioso",
@@ -145,6 +174,13 @@ export function EscritorioCanvas({
    * novo a cada leitura, para sempre — o mesmo defeito que a chave
    * determinística da rajada evita no motor.
    */
+  /*
+   * A transição de sentar vive aqui, e não no motor: sentar é um fato de
+   * DESENHO. O motor continua sabendo apenas que a fase é `mesa`.
+   */
+  const sentouRef = useRef<Map<string, number>>(new Map());
+  const faseRef = useRef<Map<string, string>>(new Map());
+
   const emblemasRef = useRef<{
     vistos: Set<string>;
     ativos: { x: number; y: number; nasceu: number; falhou: boolean }[];
@@ -489,22 +525,62 @@ export function EscritorioCanvas({
         if (e.ativos.length > 40) e.ativos.splice(0, e.ativos.length - 40);
       }
 
-      // profundidade por Y: quem está mais abaixo desenha por último
-      const ordenados = [...personagens]
-        .filter((p) => p.fase !== "oculto")
-        .sort((a, b) => a.y - b.y);
-      for (const p of ordenados) {
-        const parado = p.fase === "mesa";
-        if (parado && p.estado === "trabalhando") {
-          halo(ctx, p.x + PERSONAGEM_W / 2, p.y + 9);
+      /*
+       * Quem acabou de chegar à mesa começa a sentar AGORA. Quem já estava
+       * sentado no primeiro quadro não entra na transição — ver `SENTAR_MS`.
+       */
+      for (const p of personagens) {
+        const antes = faseRef.current.get(p.id);
+        if (p.fase === "mesa" && antes !== undefined && antes !== "mesa") {
+          sentouRef.current.set(p.id, agora);
         }
+        faseRef.current.set(p.id, p.fase);
+      }
+
+      /*
+       * A posição de DESENHO, que não é a posição lógica.
+       *
+       * `p.x/p.y` continuam sendo onde o personagem está para o pathfinding e
+       * para a rota. O que muda aqui é só onde o pincel encosta, e por isso
+       * tudo que acompanha o corpo — halo, balão, ordem por Y, contorno de
+       * seleção — passa por esta função. Ler `p.y` direto em um desses lugares
+       * faria o halo ficar no chão enquanto o BLINK está na cadeira.
+       */
+      const desenhoDe = (p: Personagem) => {
+        const m = p.mesa;
+        if (!m || p.fase !== "mesa") return { x: p.x, y: p.y, sentado: false };
+        const t0 = sentouRef.current.get(p.id);
+        const k = t0 === undefined ? 1 : Math.min(1, (agora - t0) / SENTAR_MS);
+        return {
+          x: p.x + (m.x + ASSENTO_X - p.x) * k,
+          y: p.y + (m.y + ASSENTO_Y - p.y) * k,
+          // a cadeira aparece no fim do gesto: é ela que diz "sentou"
+          sentado: k >= 1,
+        };
+      };
+
+      // profundidade por Y: quem está mais abaixo desenha por último
+      const ordenados = personagens
+        .filter((p) => p.fase !== "oculto")
+        .map((p) => ({ p, d: desenhoDe(p) }))
+        .sort((a, b) => a.d.y - b.d.y);
+      for (const { p, d } of ordenados) {
+        const naMesa = p.fase === "mesa" && !!p.mesa;
+        if (naMesa && p.estado === "trabalhando") {
+          halo(ctx, d.x + PERSONAGEM_W / 2, d.y + 9);
+        }
+        // A cadeira vai na posição PARADA, sem o balanço: móvel não respira.
+        if (d.sentado) cadeiraDeTrabalho(ctx, Math.round(d.x), Math.round(d.y));
         // 1 px de balanço: é o que separa "conversando" de "congelado"
         const balanco = balancoDaConversa(p);
-        personagem(ctx, Math.round(p.x), Math.round(p.y) + balanco, p.id, {
+        personagem(ctx, Math.round(d.x), Math.round(d.y) + balanco, p.id, {
           humor: HUMOR[p.estado],
-          direcao: p.direcao,
+          // Na mesa o corpo TRAVA de costas: o monitor está acima dele, e quem
+          // trabalha olhando para a câmera não está olhando para o monitor.
+          direcao: naMesa ? "costas" : p.direcao,
           passo: passoDe(p),
           digitando: digitando(p),
+          sentado: d.sentado,
           externo: p.tipo === "externo",
           casco: p.tipo === "externo" ? undefined : cascos.get(p.id),
           destacado: hoverRef.current === p.id || selRef.current === p.id,
@@ -573,7 +649,13 @@ export function EscritorioCanvas({
         for (const m of andar.mesas) {
           const p = naMesa.get(m.sistemaId);
           if (!p || p.fase !== "mesa") continue;
-          const t = paraTela(m.x + MESA_W / 2, m.pessoaY + PERSONAGEM_H + 8);
+          /*
+           * A etiqueta fica embaixo do CORPO SENTADO, não embaixo de onde o
+           * personagem está. Medido de `pessoaY` ela caía sobre o encosto da
+           * cadeira e tapava o tronco — o rótulo escondia o BLINK que ele
+           * nomeia.
+           */
+          const t = paraTela(m.x + MESA_W / 2, m.y + ASSENTO_Y + PERSONAGEM_H + 8);
           // Mesa sozinha na fileira pode usar a sala inteira; com vizinha, só
           // o passo entre postos, que na grade de tiles é de 80 px.
           const largura = (temVizinha.has(m.sistemaId) ? 76 : 150) * cam.escala;
@@ -590,7 +672,8 @@ export function EscritorioCanvas({
         // continua dizendo o rótulo real da integração que ele entrega
         const texto = p.fala ?? (p.tipo === "externo" ? p.viagem?.label : undefined);
         if (!texto) continue;
-        const t = paraTela(p.x + PERSONAGEM_W / 2, p.y - 6);
+        const d = desenhoDe(p);
+        const t = paraTela(d.x + PERSONAGEM_W / 2, d.y - 6);
         balao(ctx, t.x, t.y, p.nome, texto, p.estado === "falha", ocupados);
       }
 
@@ -620,7 +703,10 @@ export function EscritorioCanvas({
     (ix: number, iy: number): Mesa | null => {
       for (const m of andar.mesas) {
         const topo = Math.min(m.y, m.pessoaY) - 4;
-        const base = Math.max(m.y + MESA_H, m.pessoaY + PERSONAGEM_H) + 4;
+        // `ASSENTO_Y` porque o BLINK sentado é desenhado ABAIXO de onde ele
+        // está: sem somar isso, o clique na cadeira cai fora da mesa.
+        const base =
+          Math.max(m.y + MESA_H, m.pessoaY + PERSONAGEM_H, m.y + ASSENTO_Y + PERSONAGEM_H) + 4;
         if (ix >= m.x - 4 && ix <= m.x + MESA_W + 4 && iy >= topo && iy <= base) return m;
       }
       return null;
