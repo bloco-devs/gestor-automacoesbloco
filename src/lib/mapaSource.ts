@@ -103,6 +103,17 @@ export interface EcossistemaHubData {
    * continua válida sem ele, e a tela precisa funcionar nos dois casos.
    */
   uso?: Record<string, { ultimo_login: string | null; pessoas_24h: number; pessoas_30d: number }>;
+  /**
+   * Janela recente de execuções, uma linha por acontecimento. Opcional pelo
+   * mesmo motivo que `uso`: é aditivo, e a tela funciona sem.
+   */
+  eventos?: {
+    id: string;
+    created_at: string;
+    origem: string | null;
+    destino: string | null;
+    falhou?: boolean;
+  }[];
 }
 
 export const MAPA_PROVIDERS: Record<CamadaMapa, MapaProvider> = {

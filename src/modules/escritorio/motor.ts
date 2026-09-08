@@ -25,6 +25,7 @@
  */
 
 import {
+  caminhoAtePorta,
   caminhoDaPorta,
   caminhoEntreMesas,
   caminhoEntreTiles,
@@ -549,6 +550,28 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     const b = porId.get(escolha.par.destino);
     if (!a || !b) return false;
 
+    /*
+     * Execução vira ENTREGA, não conversa.
+     *
+     * Conversa exige dois lados ativos e um destinatário que responda. Uma
+     * execução é um fato de mão única — o sistema chamou o serviço —, e o
+     * destino pode ser um conector externo, que não tem mesa e não conversa.
+     * A fala vai no balão da viagem, com a contagem que veio do dado.
+     */
+    if (escolha.evento.tipo === "executou") {
+      const ok = iniciarEntregaDeExecucao(a, b, escolha.evento);
+      anotar({
+        em: relogio,
+        evento: `executou:${a.id}->${b.id}`,
+        origem: a.id,
+        destino: b.id,
+        prioridade: escolha.evento.prioridade,
+        resultado: ok ? "iniciada" : "sem-rota",
+      });
+      if (ok) fila.confirmar(escolha.evento, escolha.par, relogio);
+      return ok;
+    }
+
     const ok = iniciarConversa(a, b, "", escolha.evento);
     anotar({
       em: relogio,
@@ -560,6 +583,32 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     });
     if (ok) fila.confirmar(escolha.evento, escolha.par, relogio);
     return ok;
+  };
+
+  /**
+   * A viagem de uma execução: o sistema vai até quem ele chamou.
+   *
+   * Destino com mesa → para ao lado dela. Destino com porta → para na frente
+   * da porta. Nos dois casos o balão carrega a fala com a contagem real.
+   */
+  const iniciarEntregaDeExecucao = (
+    a: Personagem,
+    b: Personagem,
+    evento: EventoEcossistema,
+  ): boolean => {
+    if (!a.mesa || a.fase !== "mesa" || a.conversa) return false;
+    if (viagensAtivas() + 1 > MAX_VIAGENS) return false;
+
+    const pontos = b.mesa
+      ? caminhoEntreMesas(andar, a.mesa, b.mesa)
+      : b.porta
+        ? caminhoAtePorta(andar, a.mesa, b.porta)
+        : null;
+    if (!pontos || pontos.length < 2) return false;
+
+    const fala = roteirista.dialogoDeEvento(evento, a.nome, b.nome)[0]?.texto ?? "";
+    porRota(a, pontos, b.id, fala);
+    return true;
   };
 
   const avancarConversa = (c: Conversa, dt: number, demo: boolean) => {
@@ -670,6 +719,25 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
    * no ecossistema depois.
    */
   const resolverDestino = (evento: EventoEcossistema): Par | null => {
+    /*
+     * O evento de execução traz o par PRONTO, e não passa pela regra de
+     * "quem está parado não anda".
+     *
+     * Nos outros tipos o destinatário é deduzido do grafo de integrações, e a
+     * elegibilidade vem da saúde agregada. Aqui não: o HUB registrou que a
+     * Gestão Financeira chamou o Sienge às 09:00:38, e esse registro é prova
+     * mais forte do que o agregado — que, medido, subconta o volume em cerca
+     * de doze vezes. Exigir que a saúde também dissesse "trabalhando" faria a
+     * tela ignorar execução que de fato aconteceu.
+     */
+    if (evento.tipo === "executou" && evento.destino) {
+      const a = porId.get(evento.sistema);
+      const b = porId.get(evento.destino);
+      if (!a || !b || !a.mesa) return null;
+      if (a.fase !== "mesa" || a.conversa) return null;
+      return { origem: a.id, destino: b.id };
+    }
+
     const origem = porId.get(evento.sistema);
     if (!disponivel(origem)) return null;
     // quem está em falha PODE avisar da própria falha; ocioso e sem dado, não

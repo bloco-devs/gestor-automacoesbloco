@@ -12,6 +12,7 @@ import { fonteDeDemandas, type EventoEcossistema } from "@/modules/escritorio/ev
 import { useDemands } from "@/modules/demands/hooks";
 import { resumoDeEstados } from "@/modules/escritorio/estado";
 import { resumoDeUso } from "@/modules/escritorio/uso";
+import { agruparExecucoes } from "@/modules/escritorio/eventos";
 
 /** Recarrega o retrato do HUB de tempos em tempos; não é evento a evento. */
 const INTERVALO_RECARGA_MS = 60_000;
@@ -133,6 +134,19 @@ export default function EscritorioPage() {
    */
   const uso = useMemo(() => resumoDeUso(efetivos.sistemas, efetivos.uso), [efetivos]);
 
+  /*
+   * Os dois canais de evento externo, num só lugar.
+   *
+   * Demanda vem do Realtime local; execução vem do HUB, agrupada em rajada. A
+   * fila do motor descarta repetido por id, e a chave da rajada é
+   * determinística — então relerem a mesma janela de dez minutos a cada
+   * refresh não produz viagem repetida.
+   */
+  const eventosDoAndar = useMemo(
+    () => [...eventosDeDemanda, ...agruparExecucoes(efetivos.execucoes)],
+    [eventosDeDemanda, efetivos.execucoes],
+  );
+
   const aproximar = (delta: number) => {
     setAjustar(false);
     setEscala((e) => Math.min(4, Math.max(1, e + delta)));
@@ -213,7 +227,7 @@ export default function EscritorioPage() {
             andar={andar}
             dados={efetivos}
             demo={demo}
-            eventosExternos={eventosDeDemanda}
+            eventosExternos={eventosDoAndar}
             trabalhoPorSistema={trabalhoPorSistema}
             escala={escala}
             onEscala={(e) => { setAjustar(false); setEscala(e); }}

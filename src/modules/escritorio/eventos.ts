@@ -29,7 +29,15 @@ export type TipoEvento =
   | "comecou_a_executar"
   | "demanda_nova"
   | "demanda_avancou"
-  | "demanda_concluida";
+  | "demanda_concluida"
+  /**
+   * Uma RAJADA de execuções de integração, agrupada.
+   *
+   * O único evento que descreve acontecimento em vez de mudança de estado: às
+   * 09:00:38 a Gestão Financeira chamou o Sienge 35 vezes em 14 segundos. Os
+   * outros tipos dizem "algo virou outra coisa"; este diz "isto aconteceu".
+   */
+  | "executou";
 
 /** Único contexto que o retrato sustenta: a falha veio de fora. */
 export type ContextoEvento = "upstream";
@@ -51,6 +59,17 @@ export interface EventoEcossistema {
   integracao?: string;
   severidade?: string;
   status?: string;
+  /* --- só o evento `executou` usa os três abaixo --- */
+  /**
+   * O nó chamado. Nos outros tipos o par é DEDUZIDO do grafo de integrações;
+   * aqui ele vem do fato — o HUB registrou quem chamou quem, e inventar outro
+   * destino seria contrariar o dado.
+   */
+  destino?: string;
+  /** Quantas execuções a rajada juntou. */
+  execucoes?: number;
+  /** Quantas delas falharam. */
+  falhas?: number;
 }
 
 /**
@@ -65,9 +84,89 @@ export const PRIORIDADE: Record<TipoEvento, number> = {
   demanda_concluida: 4,
   demanda_nova: 5,
   voltou_a_reportar: 6,
+  /*
+   * Abaixo de falha e de demanda, acima de "começou a executar".
+   *
+   * É trabalho real acontecendo, e por isso vale mais que o aviso genérico de
+   * quem voltou a rodar. Mas uma rajada bem-sucedida não é notícia urgente:
+   * quando há falha em aberto no andar, o problema fala primeiro.
+   */
+  executou: 6,
   comecou_a_executar: 7,
 };
 export const PRIORIDADE_AMBIENTE = 9;
+
+/** Uma execução de integração, como a rota do HUB devolve. */
+export interface ExecucaoDoHub {
+  id: string;
+  created_at: string;
+  origem: string | null;
+  destino: string | null;
+  falhou?: boolean;
+}
+
+/**
+ * Quanto tempo cabe numa "rajada".
+ *
+ * Às 09:00:38 a Gestão Financeira chamou o Sienge 35 vezes em 14 segundos. Se
+ * cada execução virasse uma viagem, o corredor entupiria com 35 BLINKs em fila
+ * indiana — e ninguém leria nada. Uma viagem representando a rajada, com a
+ * contagem na fala, é ao mesmo tempo verdadeira e legível.
+ */
+export const JANELA_DA_RAJADA_MS = 60_000;
+
+/**
+ * Agrupa execuções em eventos de rajada.
+ *
+ * A CHAVE É DETERMINÍSTICA, e isso não é detalhe: a página relê a mesma janela
+ * de 10 minutos a cada 60 segundos, e a fila descarta evento repetido por id.
+ * Se o id da rajada mudasse a cada leitura — por exemplo, se fosse o id da
+ * execução mais recente do grupo —, a mesma rajada dispararia uma viagem nova
+ * a cada refresh, para sempre.
+ *
+ * Por isso o id é `executou:origem:destino:minuto`: o mesmo grupo produz o
+ * mesmo id em toda leitura, e uma rajada que atravessa a virada do minuto vira
+ * dois eventos — o que é honesto, porque foram dois momentos.
+ *
+ * Execução sem origem é descartada. São as 211 linhas em que quem chamou foi
+ * uma PESSOA, não um sistema: não há BLINK de origem para levantar da mesa, e
+ * inventar um seria animar o que não aconteceu.
+ */
+export function agruparExecucoes(linhas: ExecucaoDoHub[]): EventoEcossistema[] {
+  const grupos = new Map<string, EventoEcossistema>();
+  for (const l of linhas) {
+    const origem = l.origem;
+    const destino = l.destino;
+    if (!origem || !destino || origem === destino) continue;
+    const t = Date.parse(l.created_at);
+    if (Number.isNaN(t)) continue;
+
+    const minuto = Math.floor(t / JANELA_DA_RAJADA_MS);
+    const id = `executou:${origem}:${destino}:${minuto}`;
+    const atual = grupos.get(id);
+    if (!atual) {
+      grupos.set(id, {
+        id,
+        tipo: "executou",
+        sistema: origem,
+        destino,
+        timestamp: t,
+        prioridade: PRIORIDADE.executou,
+        execucoes: 1,
+        falhas: l.falhou ? 1 : 0,
+      });
+      continue;
+    }
+    atual.execucoes = (atual.execucoes ?? 0) + 1;
+    if (l.falhou) atual.falhas = (atual.falhas ?? 0) + 1;
+    // O carimbo do grupo é o da execução mais RECENTE: é o instante que a fila
+    // usa para decidir se o evento ainda vale a pena mostrar.
+    if (t > atual.timestamp) atual.timestamp = t;
+  }
+  // Mais recente primeiro: se a fila cortar por volume, o que se perde é o
+  // mais velho.
+  return [...grupos.values()].sort((a, b) => b.timestamp - a.timestamp);
+}
 
 /** Retrato = o mapa de saúde por sistema, exatamente como o HUB devolve. */
 export type Retrato = Record<string, SaudeSistema>;

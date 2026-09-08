@@ -972,6 +972,27 @@ export function caminhoEntreMesas(andar: Andar, de: Mesa, para: Mesa): Ponto[] {
   return p ?? [{ x: de.pessoaX, y: de.pessoaY }];
 }
 
+/**
+ * Caminho de uma mesa até a porta de um serviço de fora.
+ *
+ * O inverso de `caminhoDaPorta`, e ele passou a ser necessário quando o andar
+ * ganhou os eventos de execução: o HUB registra que a Gestão Financeira
+ * CHAMOU o Sienge, e quem se move nesse fato é o sistema, não o serviço. Antes
+ * só existia o sentido porta → mesa, porque a única viagem possível era o
+ * conector vindo entregar.
+ *
+ * Para na frente da porta (`frenteX/frenteY`), não sobre ela: a célula da
+ * porta é parede com vão, e o BLINK pararia dentro do batente.
+ */
+export function caminhoAtePorta(andar: Andar, de: Mesa, porta: PortaExterna): Ponto[] {
+  const alvo = {
+    x: Math.round(porta.frenteX / TILE),
+    y: Math.round((porta.frenteY + PERSONAGEM_H - TILE) / TILE),
+  };
+  const p = caminhoEntreTiles(andar, { x: de.tileX, y: de.tileY }, alvo);
+  return p ?? [{ x: de.pessoaX, y: de.pessoaY }];
+}
+
 /** Caminho de uma porta externa até a vizinhança da mesa que a consome. */
 export function caminhoDaPorta(andar: Andar, porta: PortaExterna, para: Mesa): Ponto[] {
   const p = rotaAteAMesa(andar, { x: porta.tileX, y: porta.tileY }, para);

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { criarFilaDeEventos, fonteDeDemandas, fonteDeRetratos, PRIORIDADE, type Retrato } from "../eventos";
+import {
+  agruparExecucoes,
+  criarFilaDeEventos,
+  fonteDeDemandas,
+  fonteDeRetratos,
+  PRIORIDADE,
+  type Retrato,
+} from "../eventos";
 import { estadoDoSistema } from "../estado";
 
 const AGORA = Date.parse("2026-09-06T20:00:00Z");
@@ -211,5 +218,117 @@ describe("demandas viram evento sem inventar dono", () => {
     expect(f.emTrabalho()).toBe(1);
     f.observar([{ id: "1", status: "concluido" }], AGORA);
     expect(f.emTrabalho()).toBe(0);
+  });
+});
+
+// ===========================================================================
+/*
+ * A rajada, com o dado real da janela de 09:00 de 08/09/2026:
+ *
+ *   fluxo-caixa → sienge        35 execuções (3 falhas) em 14 segundos
+ *   fluxo-caixa → sienge-bulk    9 execuções
+ *   fluxo-caixa → portfolio      1
+ *   incorporacao → email         1  (duas horas depois)
+ */
+describe("agrupamento da rajada de execuções", () => {
+  const t = (iso: string) => `2026-09-08T${iso}+00:00`;
+  const rajada = [
+    ...Array.from({ length: 35 }, (_, i) => ({
+      id: `a${i}`,
+      created_at: t(`09:00:${String(38 + (i % 14)).padStart(2, "0")}.000`),
+      origem: "fluxo-caixa",
+      destino: "sienge",
+      falhou: i < 3,
+    })),
+    ...Array.from({ length: 9 }, (_, i) => ({
+      id: `b${i}`,
+      created_at: t("09:00:08.000"),
+      origem: "fluxo-caixa",
+      destino: "sienge-bulk",
+      falhou: false,
+    })),
+    { id: "c", created_at: t("09:00:05.000"), origem: "fluxo-caixa", destino: "portfolio", falhou: false },
+    { id: "d", created_at: t("11:00:09.000"), origem: "incorporacao", destino: "email", falhou: false },
+  ];
+
+  it("35 execuções em 14 segundos viram UMA viagem, com a contagem", () => {
+    const eventos = agruparExecucoes(rajada);
+    const sienge = eventos.find((e) => e.destino === "sienge")!;
+    expect(sienge.execucoes).toBe(35);
+    expect(sienge.falhas).toBe(3);
+    expect(sienge.sistema).toBe("fluxo-caixa");
+    expect(sienge.tipo).toBe("executou");
+  });
+
+  it("cada par origem→destino é um evento, não uma soma de tudo", () => {
+    const eventos = agruparExecucoes(rajada);
+    expect(eventos).toHaveLength(4);
+    expect(eventos.map((e) => e.destino).sort()).toEqual([
+      "email", "portfolio", "sienge", "sienge-bulk",
+    ]);
+  });
+
+  /*
+   * A INVARIANTE QUE IMPEDE A TELA DE REPETIR PARA SEMPRE.
+   *
+   * A página relê a mesma janela de 10 minutos a cada 60 s. Se o id mudasse
+   * entre leituras, a mesma rajada viraria viagem nova em todo refresh.
+   */
+  it("reler a mesma janela produz os MESMOS ids", () => {
+    const a = agruparExecucoes(rajada).map((e) => e.id);
+    const b = agruparExecucoes([...rajada].reverse()).map((e) => e.id);
+    expect(a.sort()).toEqual(b.sort());
+    expect(a[0]).toMatch(/^executou:[a-z-]+:[a-z-]+:\d+$/);
+  });
+
+  it("a fila descarta a rajada relida — nenhuma viagem repetida", () => {
+    const fila = criarFilaDeEventos();
+    fila.registrar(agruparExecucoes(rajada), 0);
+    const antes = fila.tamanho();
+    fila.registrar(agruparExecucoes(rajada), 1);
+    expect(fila.tamanho()).toBe(antes);
+  });
+
+  it("rajada que atravessa o minuto vira dois eventos — foram dois momentos", () => {
+    const eventos = agruparExecucoes([
+      { id: "1", created_at: t("09:00:59.000"), origem: "rh", destino: "email", falhou: false },
+      { id: "2", created_at: t("09:01:01.000"), origem: "rh", destino: "email", falhou: false },
+    ]);
+    expect(eventos).toHaveLength(2);
+    expect(eventos.every((e) => e.execucoes === 1)).toBe(true);
+  });
+
+  it("execução sem origem é descartada: é pessoa chamando, não sistema", () => {
+    // As 211 linhas de `ator_tipo = 'usuario'` no HUB caem aqui.
+    expect(agruparExecucoes([
+      { id: "x", created_at: t("09:00:00.000"), origem: null, destino: "sienge", falhou: false },
+    ])).toEqual([]);
+  });
+
+  it("destino ausente ou igual à origem não vira viagem para lugar nenhum", () => {
+    expect(agruparExecucoes([
+      { id: "y", created_at: t("09:00:00.000"), origem: "rh", destino: null, falhou: false },
+      { id: "z", created_at: t("09:00:00.000"), origem: "rh", destino: "rh", falhou: false },
+    ])).toEqual([]);
+  });
+
+  it("carimbo inválido não entra", () => {
+    expect(agruparExecucoes([
+      { id: "w", created_at: "nao-e-data", origem: "rh", destino: "email", falhou: false },
+    ])).toEqual([]);
+  });
+
+  it("o mais recente vem primeiro: se a fila cortar, perde o mais velho", () => {
+    const eventos = agruparExecucoes(rajada);
+    expect(eventos[0].destino).toBe("email"); // 11:00, o mais novo
+    for (let i = 1; i < eventos.length; i++) {
+      expect(eventos[i - 1].timestamp).toBeGreaterThanOrEqual(eventos[i].timestamp);
+    }
+  });
+
+  it("o carimbo do grupo é o da execução mais recente dele", () => {
+    const eventos = agruparExecucoes(rajada);
+    const sienge = eventos.find((e) => e.destino === "sienge")!;
+    expect(sienge.timestamp).toBe(Date.parse(t("09:00:51.000")));
   });
 });

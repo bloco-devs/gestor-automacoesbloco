@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { montarAndar } from "../layout";
+import { agruparExecucoes } from "../eventos";
 import { criarMotor, digitando } from "../motor";
 import { DADOS_SEMENTE, type DadosEscritorio } from "../dados";
 import { PERSONAGEM_W, TILE } from "../sprites";
@@ -25,7 +26,7 @@ const sistemas = [
 const dados: DadosEscritorio = {
   fonte: "hub",
   geradoEm: null,
-  uso: {},
+  uso: {}, execucoes: [],
   sistemas,
   conectores: [{ id: "sienge", nome: "Sienge" }],
   integracoes: [
@@ -254,7 +255,7 @@ const emFalha = { execs: 1000, ok: 700, falhas: 300, ultima: recente };
 const dadosEco: DadosEscritorio = {
   fonte: "hub",
   geradoEm: null,
-  uso: {},
+  uso: {}, execucoes: [],
   sistemas: ecossistema,
   conectores: [],
   integracoes: [
@@ -620,7 +621,7 @@ describe("varredura: todo par que os dados produzem", () => {
   const sisSeed = SISTEMAS_SEED.map((s) => ({ id: s.id, nome: s.nome, grupo: s.grupo }));
   const baseSeed = Object.fromEntries(sisSeed.map((s) => [s.id, saudavel]));
   const dSeed: DadosEscritorio = {
-    fonte: "hub", geradoEm: null, uso: {}, sistemas: sisSeed, conectores: [],
+    fonte: "hub", geradoEm: null, uso: {}, execucoes: [], sistemas: sisSeed, conectores: [],
     integracoes: INTEGRACOES_SEED, saude: baseSeed,
   };
   const andarSeed = montarAndar(dSeed.sistemas, dSeed.conectores);
@@ -722,7 +723,7 @@ describe("duas conversas ao mesmo tempo (fixture de teste)", () => {
   const dadosQuatro: DadosEscritorio = {
     fonte: "hub",
     geradoEm: null,
-    uso: {},
+    uso: {}, execucoes: [],
     sistemas: quatro,
     conectores: [],
     // dois pares SEM aresta cruzada: cada evento só tem um destino possível
@@ -844,7 +845,7 @@ describe("ciclo completo sobre o ecossistema real", () => {
   const dadosReal: DadosEscritorio = {
     fonte: "hub",
     geradoEm: null,
-    uso: {},
+    uso: {}, execucoes: [],
     sistemas: sisReal,
     conectores: [],
     integracoes: INTEGRACOES_SEED,
@@ -1321,5 +1322,109 @@ describe("B · a demonstração dá tempo de ver o ciclo", () => {
       achou = m.conversas.some((c) => c.evento?.tipo === "entrou_em_falha");
     }
     expect(achou).toBe(true);
+  });
+});
+
+// ===========================================================================
+/*
+ * A rajada real de 08/09/2026, 09:00: a Gestão Financeira chamou o Sienge 35
+ * vezes em 14 segundos, 3 com erro. Isto tem de virar UMA viagem, com a
+ * contagem na fala — e a Gestão Financeira aparece no agregado do HUB como
+ * "sem execução", porque o agregado credita ao conector chamado.
+ */
+describe("execução do HUB vira viagem no andar", () => {
+  const sistemas = [
+    { id: "fluxo-caixa", nome: "Gestão Financeira", grupo: "Financeiro" },
+    { id: "portfolio", nome: "Gestor de Portfólio", grupo: "Engenharia" },
+  ];
+  const conectores = [{ id: "sienge", nome: "Sienge ERP" }];
+  const integracoes = [{ origem: "sienge", destino: "fluxo-caixa", label: "erp" }];
+  // O agregado NÃO reporta execução para a Gestão Financeira — é justamente o
+  // caso que o evento existe para corrigir.
+  const dados = {
+    fonte: "hub", geradoEm: null, uso: {}, execucoes: [],
+    sistemas, conectores, integracoes,
+    saude: { "fluxo-caixa": { execs: 0, ok: 0, falhas: 0, ultima: null } },
+  } satisfies DadosEscritorio;
+
+  const rajada = Array.from({ length: 35 }, (_, i) => ({
+    id: `e${i}`,
+    created_at: `2026-09-08T09:00:${String(38 + (i % 14)).padStart(2, "0")}.000+00:00`,
+    origem: "fluxo-caixa",
+    destino: "sienge",
+    falhou: i < 3,
+  }));
+
+  const montar = () => {
+    const andar = montarAndar(sistemas, conectores, 1.9);
+    const m = criarMotor(andar, dados, Date.parse("2026-09-08T09:01:00Z"));
+    return m;
+  };
+
+  it("a rajada tira o sistema da mesa, mesmo com o agregado dizendo zero", () => {
+    const m = montar();
+    const fc = m.porId.get("fluxo-caixa")!;
+    // O agregado o classifica como parado; o evento é prova mais forte.
+    expect(fc.estado).toBe("sem-execucao");
+    expect(fc.fase).toBe("mesa");
+
+    m.registrarEventos(agruparExecucoes(rajada));
+    // Dois segundos: o suficiente para levantar, e pouco para ele ja ter
+    // voltado. Com 30 s o ciclo inteiro cabe e o teste media o fim.
+    rodar(m, 2);
+    expect(fc.fase).not.toBe("mesa");
+  });
+
+  it("35 execuções produzem UMA viagem, não 35", () => {
+    const m = montar();
+    m.registrarEventos(agruparExecucoes(rajada));
+    rodar(m, 300);
+    const viagens = m.registros.filter((r) => r.evento.startsWith("executou"));
+    expect(viagens).toHaveLength(1);
+    expect(viagens[0].origem).toBe("fluxo-caixa");
+    expect(viagens[0].destino).toBe("sienge");
+    expect(viagens[0].resultado).toBe("iniciada");
+  });
+
+  it("a fala carrega os números do dado, e menciona as falhas", () => {
+    const m = montar();
+    m.registrarEventos(agruparExecucoes(rajada));
+    rodar(m, 2);
+    const fc = m.porId.get("fluxo-caixa")!;
+    const texto = fc.viagem?.label ?? "";
+    expect(texto).toContain("35");
+    expect(texto).toContain("3");
+    expect(texto).toContain("Sienge ERP");
+  });
+
+  it("rajada sem falha não fala de erro", () => {
+    const m = montar();
+    m.registrarEventos(agruparExecucoes(rajada.map((e) => ({ ...e, falhou: false }))));
+    rodar(m, 2);
+    const texto = m.porId.get("fluxo-caixa")!.viagem?.label ?? "";
+    expect(texto).toContain("35");
+    expect(texto.toLowerCase()).not.toContain("erro");
+    expect(texto.toLowerCase()).not.toContain("falha");
+  });
+
+  it("reler a mesma janela não gera viagem nova", () => {
+    const m = montar();
+    m.registrarEventos(agruparExecucoes(rajada));
+    rodar(m, 400);
+    const depoisDaPrimeira = m.registros.filter((r) => r.evento.startsWith("executou")).length;
+    // a página relê a cada 60 s; a mesma rajada volta na resposta
+    for (let i = 0; i < 5; i++) {
+      m.registrarEventos(agruparExecucoes(rajada));
+      rodar(m, 120);
+    }
+    const agora = m.registros.filter((r) => r.evento.startsWith("executou")).length;
+    expect(agora).toBe(depoisDaPrimeira);
+  });
+
+  it("ele volta para a mesa depois de entregar", () => {
+    const m = montar();
+    m.registrarEventos(agruparExecucoes(rajada));
+    rodar(m, 600);
+    expect(m.porId.get("fluxo-caixa")!.fase).toBe("mesa");
   });
 });

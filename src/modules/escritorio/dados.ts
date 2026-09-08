@@ -14,6 +14,7 @@ import {
   SISTEMAS_SEED,
 } from "@/lib/ecossistemaSeed";
 import type { SaudeSistema } from "./estado";
+import type { ExecucaoDoHub } from "./eventos";
 
 export interface SistemaEco {
   id: string;
@@ -58,6 +59,11 @@ export interface DadosEscritorio {
   saude: Record<string, SaudeSistema>;
   /** Vazio quando o HUB não manda — a tela não pode depender disto. */
   uso: Record<string, UsoSistema>;
+  /**
+   * Execuções da janela recente, cruas. Quem agrupa em rajada é
+   * `agruparExecucoes`, não este carregador: aqui o dado chega como veio.
+   */
+  execucoes: ExecucaoDoHub[];
 }
 
 export const DADOS_SEMENTE: DadosEscritorio = {
@@ -68,6 +74,7 @@ export const DADOS_SEMENTE: DadosEscritorio = {
   integracoes: [...INTEGRACOES_SEED, ...INTEGRACOES_HUB_SEED],
   saude: {},
   uso: {},
+  execucoes: [],
 };
 
 export async function carregarEscritorio(): Promise<DadosEscritorio> {
@@ -96,6 +103,7 @@ export async function carregarEscritorio(): Promise<DadosEscritorio> {
       integracoes: data.integracoes ?? [],
       saude: (data.saude ?? {}) as Record<string, SaudeSistema>,
       uso: (data.uso ?? {}) as Record<string, UsoSistema>,
+      execucoes: (data.eventos ?? []) as ExecucaoDoHub[],
     };
   } catch (e) {
     console.warn("ecossistema-mapa indisponível; escritório usando o seed.", e);

@@ -234,6 +234,24 @@ export const REGRAS: RegraConversa[] = [
  * chega ao balão: nada de id, contador, timestamp, integração ou payload.
  */
 export const FALAS_DE_EVENTO: Record<TipoEvento, { abre: string[]; responde: string[] }> = {
+  executou: {
+    abre: [
+      "Chamei o {destino} {n} vezes agora.",
+      "{n} chamadas ao {destino} neste minuto.",
+      "Acabei de rodar {n} vezes contra o {destino}.",
+      "Puxei dado do {destino}: {n} chamadas.",
+      "Terminei uma rajada de {n} no {destino}.",
+      "{n} execuções contra o {destino}, agora.",
+    ],
+    responde: [
+      "Recebido.",
+      "Anotado aqui.",
+      "Certo, vou acompanhar o volume.",
+      "Beleza, está registrado.",
+      "Ok, fico de olho.",
+      "Entendido.",
+    ],
+  },
   entrou_em_falha: {
     abre: [
       "O {sistema} entrou em falha.",
@@ -370,6 +388,34 @@ export const FALAS_DE_EVENTO: Record<TipoEvento, { abre: string[]; responde: str
  * Quando o retrato diz que a maioria das falhas veio de fora, o tom muda.
  * NÃO se diz QUAL serviço: esse dado não existe no retrato de hoje.
  */
+/**
+ * A rajada de execuções.
+ *
+ * Os números NÃO são enfeite: `{n}` é a contagem que o HUB registrou e `{f}` a
+ * de falhas. É a diferença entre "o Sienge tem 457 execuções no mês" e "chamei
+ * o Sienge 35 vezes agora, 3 deram erro" — a segunda é um acontecimento, e é
+ * verificável linha por linha em `integracao_execucoes`.
+ *
+ * Uma rajada com falha tem banco próprio, como o upstream: dizer "correu tudo
+ * bem" quando três chamadas falharam seria a animação contradizendo o dado.
+ */
+export const FALAS_EXECUCAO_COM_FALHA = {
+  abre: [
+    "Chamei o {destino} {n} vezes e {f} deram erro.",
+    "{n} chamadas ao {destino}, {f} com falha.",
+    "Rodei {n} vezes contra o {destino}; {f} não passaram.",
+    "Puxei dado do {destino}: {n} chamadas, {f} com erro.",
+    "{f} das {n} chamadas ao {destino} falharam.",
+  ],
+  responde: [
+    "Vou olhar essas que falharam.",
+    "Deixa que eu vejo o erro.",
+    "Vou conferir o que barrou.",
+    "Já vou investigar as que caíram.",
+    "Anotado — vou rastrear a causa.",
+  ],
+};
+
 export const FALAS_UPSTREAM = {
   abre: [
     "A falha do {sistema} parece vir de outro serviço.",
@@ -408,8 +454,16 @@ function sorteiaSemRepetir<T>(
 }
 
 /** Único ponto de interpolação. Recebe o nome, nunca o evento inteiro. */
-function preencher(modelo: string, nomeDoSistema: string): string {
-  return modelo.replace("{sistema}", nomeDoSistema);
+function preencher(
+  modelo: string,
+  nomeDoSistema: string,
+  extras?: { destino?: string; n?: number; f?: number },
+): string {
+  return modelo
+    .replace("{sistema}", nomeDoSistema)
+    .replace("{destino}", extras?.destino ?? "o serviço")
+    .replace("{n}", String(extras?.n ?? 1))
+    .replace("{f}", String(extras?.f ?? 0));
 }
 
 /**
@@ -419,22 +473,36 @@ function preencher(modelo: string, nomeDoSistema: string): string {
  * não vaza para o balão sem alguém mexer aqui de propósito.
  */
 export function dialogoDeEvento(
-  evento: Pick<EventoEcossistema, "tipo" | "contexto">,
+  evento: Pick<EventoEcossistema, "tipo" | "contexto" | "execucoes" | "falhas">,
   nomeDaOrigem: string,
   sorteio: () => number = Math.random,
   memoria: Map<string, number> = new Map(),
+  /** Nome do nó chamado — só o evento `executou` usa. */
+  nomeDoDestino?: string,
 ): Fala[] {
   const upstream =
     evento.contexto === "upstream" &&
     (evento.tipo === "falha_nova" || evento.tipo === "entrou_em_falha");
-  const banco = upstream ? FALAS_UPSTREAM : FALAS_DE_EVENTO[evento.tipo];
-  const chave = upstream ? "upstream" : evento.tipo;
+  // Rajada com falha fala de falha. Silenciar isso seria a animação
+  // contradizendo o número que a própria fala carrega.
+  const comFalha = evento.tipo === "executou" && (evento.falhas ?? 0) > 0;
+  const banco = upstream
+    ? FALAS_UPSTREAM
+    : comFalha
+      ? FALAS_EXECUCAO_COM_FALHA
+      : FALAS_DE_EVENTO[evento.tipo];
+  const chave = upstream ? "upstream" : comFalha ? "executou-falha" : evento.tipo;
   // abertura e resposta guardam índices separados: repetir o par inteiro é
   // tão ruim quanto repetir uma frase
   const abre = sorteiaSemRepetir(banco.abre, memoria, `${chave}:abre`, sorteio);
   const responde = sorteiaSemRepetir(banco.responde, memoria, `${chave}:responde`, sorteio);
+  const extras = {
+    destino: nomeDoDestino,
+    n: evento.execucoes,
+    f: evento.falhas,
+  };
   return [
-    { quem: "a", texto: preencher(abre, nomeDaOrigem) },
+    { quem: "a", texto: preencher(abre, nomeDaOrigem, extras) },
     { quem: "b", texto: responde },
   ];
 }
@@ -477,7 +545,12 @@ export interface Roteirista {
    * diálogo ambiental já tinha. A versão solta em `dialogoDeEvento` não
    * guardava nada, e por isso a mesma frase saía em conversas seguidas.
    */
-  dialogoDeEvento(evento: Pick<EventoEcossistema, "tipo" | "contexto">, nomeDaOrigem: string): Fala[];
+  dialogoDeEvento(
+    evento: Pick<EventoEcossistema, "tipo" | "contexto" | "execucoes" | "falhas">,
+    nomeDaOrigem: string,
+    /** Nome do nó chamado — só o evento `executou` usa. */
+    nomeDoDestino?: string,
+  ): Fala[];
   /** Regra escolhida para o par, ou null quando cai no rótulo da integração. */
   regraDe(a: Interlocutor, b: Interlocutor, agora: number): RegraConversa | null;
 }
@@ -530,6 +603,7 @@ export function criarRoteirista(sorteio: () => number = Math.random): Roteirista
   return {
     dialogoPara,
     regraDe,
-    dialogoDeEvento: (evento, nome) => dialogoDeEvento(evento, nome, sorteio, memoriaDeEvento),
+    dialogoDeEvento: (evento, nome, nomeDestino) =>
+      dialogoDeEvento(evento, nome, sorteio, memoriaDeEvento, nomeDestino),
   };
 }
