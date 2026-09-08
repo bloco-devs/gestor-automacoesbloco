@@ -65,7 +65,8 @@ describe("diff entre retratos", () => {
   it("falha majoritariamente de terceiro marca o contexto, sem dizer qual", () => {
     const fonte = fonteDeRetratos({ rh: saudavel });
     const eventos = fonte.observar(
-      { rh: { execs: 1000, ok: 800, falhas: 200, falhas_upstream: 180, ultima: recente } },
+      // ok + falhas + upstream = execs: os tres campos sao disjuntos no HUB
+      { rh: { execs: 1000, ok: 800, falhas: 20, falhas_upstream: 180, ultima: recente } },
       AGORA,
     );
     expect(eventos[0].contexto).toBe("upstream");

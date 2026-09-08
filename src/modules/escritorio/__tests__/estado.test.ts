@@ -4,6 +4,7 @@ import {
   estaParado,
   estadoDoSistema,
   intervaloEntreViagens,
+  naoConcluiu,
   resumoDeEstados,
   semRegistroNoHub,
 } from "../estado";
@@ -47,9 +48,29 @@ describe("estado do sistema", () => {
     expect(estadoDoSistema({ execs: 1000, ok: 960, falhas: 49, ultima: horasAtras(1) }, AGORA)).toBe("trabalhando");
   });
 
+  /*
+   * OS NÚMEROS DESTE TESTE MUDARAM, e o motivo é uma suposição errada minha.
+   *
+   * Era `{ execs: 100, ok: 80, falhas: 20, falhas_upstream: 18 }` — que soma
+   * 118 e é impossível. O fixture pressupunha que `falhas_upstream` fosse um
+   * SUBCONJUNTO de `falhas` ("18 das 20 vieram de fora"). No retrato real do
+   * HUB os três campos são DISJUNTOS e somam `execs` exatamente: conferido em
+   * autentique (9685+1483+6806=17974), sienge (270+0+24=294), gestao-comercial
+   * (16+0+69=85) e sienge-bulk.
+   *
+   * Por isso existem casos com `falhas: 0` e `falhas_upstream: 30` — chamadas
+   * que não concluíram, nenhuma por defeito próprio. A guarda antiga saía em
+   * `if (!saude.falhas) return false` e ficava cega justamente neles.
+   */
   it("aponta quando a culpa é do outro lado", () => {
-    expect(culpaDeTerceiro({ execs: 100, ok: 80, falhas: 20, falhas_upstream: 18, ultima: null })).toBe(true);
-    expect(culpaDeTerceiro({ execs: 100, ok: 80, falhas: 20, falhas_upstream: 2, ultima: null })).toBe(false);
+    // 20 não concluíram; 18 delas de fora
+    expect(culpaDeTerceiro({ execs: 100, ok: 80, falhas: 2, falhas_upstream: 18, ultima: null })).toBe(true);
+    // 20 não concluíram; só 2 de fora
+    expect(culpaDeTerceiro({ execs: 100, ok: 80, falhas: 18, falhas_upstream: 2, ultima: null })).toBe(false);
+    // o caso do Sienge: nenhuma falha própria, e 100% de fora
+    expect(culpaDeTerceiro({ execs: 294, ok: 270, falhas: 0, falhas_upstream: 24, ultima: null })).toBe(true);
+    // tudo concluiu: não há culpa de ninguém
+    expect(culpaDeTerceiro({ execs: 39, ok: 39, falhas: 0, falhas_upstream: 0, ultima: null })).toBe(false);
   });
 });
 
@@ -257,12 +278,31 @@ describe("os serviços de fora carregam o mesmo estado das mesas", () => {
     expect(culpaDeTerceiro(CONECTORES_HUB.autentique)).toBe(true);
   });
 
-  it("conector com execução recebe o estado da execução dele", () => {
-    expect(estadoDoSistema(CONECTORES_HUB.sienge, NAQUELE_DIA)).toBe("trabalhando");
-    expect(estadoDoSistema(CONECTORES_HUB["sienge-bulk"], NAQUELE_DIA)).toBe("trabalhando");
+  /*
+   * ESTES TRÊS MUDARAM DE ESTADO quando a taxa passou a somar as falhas de
+   * terceiro, e a mudança é o próprio motivo da regra nova:
+   *
+   *   sienge       30 de 387 chamadas não concluíram  ( 7,8%)
+   *   sienge-bulk  29 de 154                          (18,8%)
+   *   lovable-ai    4 de   4                          ( 100%)
+   *
+   * Todos os três apareciam como saudáveis porque `falhas` próprias era zero —
+   * o HUB atribuía tudo a upstream. Para quem olha o andar, a chamada não
+   * chegou; de quem é a culpa é o que o balão diz, não o estado.
+   */
+  it("conector cujas chamadas não concluem aparece em falha, mesmo sem falha própria", () => {
+    expect(estadoDoSistema(CONECTORES_HUB.sienge, NAQUELE_DIA)).toBe("falha");
+    expect(CONECTORES_HUB.sienge.falhas).toBe(0); // nenhuma falha PRÓPRIA
+    expect(culpaDeTerceiro(CONECTORES_HUB.sienge)).toBe(true); // e a fala vai dizer isso
+
+    expect(estadoDoSistema(CONECTORES_HUB["sienge-bulk"], NAQUELE_DIA)).toBe("falha");
+    expect(estadoDoSistema(CONECTORES_HUB["lovable-ai"], NAQUELE_DIA)).toBe("falha");
+  });
+
+  it("conector com todas as chamadas concluídas segue trabalhando", () => {
+    // e-mail: 46 execuções, 46 ok, nenhuma falha de nenhum tipo
     expect(estadoDoSistema(CONECTORES_HUB.email, NAQUELE_DIA)).toBe("trabalhando");
-    // executou em 29/08: tem histórico, mas não nas últimas 24 h
-    expect(estadoDoSistema(CONECTORES_HUB["lovable-ai"], NAQUELE_DIA)).toBe("ocioso");
+    expect(naoConcluiu(CONECTORES_HUB.email)).toBe(0);
   });
 
   it("os oito sem execução em 30 dias são sem-execucao, não sem-dados", () => {
@@ -283,7 +323,10 @@ describe("os serviços de fora carregam o mesmo estado das mesas", () => {
 
   it("o resumo do cabeçalho sai da mesma função do rodapé", () => {
     const r = resumoDeEstados(TREZE, CONECTORES_HUB, NAQUELE_DIA);
-    expect(r).toEqual({ trabalhando: 3, ocioso: 1, falha: 1, semExecucao: 8, semDados: 0 });
+    // Era { trabalhando: 3, ocioso: 1, falha: 1 }. Somar as falhas de terceiro
+    // moveu sienge, sienge-bulk e lovable-ai para falha — 63 chamadas que não
+    // concluíram e apareciam como saudáveis.
+    expect(r).toEqual({ trabalhando: 1, ocioso: 0, falha: 4, semExecucao: 8, semDados: 0 });
     // "Serviços de fora · 1 em falha · 3 trabalhando · 1 ocioso · 8 sem execução"
     expect(r.trabalhando + r.ocioso + r.falha + r.semExecucao + r.semDados).toBe(13);
   });

@@ -38,11 +38,34 @@ export const LIMIAR_FALHA = 0.05;
 /** Sem execução nesta janela, ele fica parado na cadeira. */
 export const JANELA_OCIOSO_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Quantas execuções NÃO concluíram.
+ *
+ * `ok`, `falhas` e `falhas_upstream` são disjuntos e somam `execs` — conferido
+ * em quatro nós do retrato real. Então o que não deu certo é a soma das duas
+ * falhas, e é isso que a taxa tem de medir.
+ *
+ * A REGRA ANTIGA DIVIDIA SÓ `falhas`, E ISSO ESCONDIA O PIOR CASO DO ANDAR.
+ *
+ * Quando o `comercial-leitura` finalmente ganhou dono, em 08/09/2026, a Gestão
+ * Comercial e Marketing apareceu com 85 execuções, 16 bem-sucedidas, ZERO
+ * falhas próprias e 69 de terceiro. Pela regra antiga a taxa era 0/85 = 0% e o
+ * andar dizia "trabalhando" — sobre 16 sucessos em 85 tentativas.
+ *
+ * Defender que "o sistema não está com defeito, a dependência dele está" é
+ * verdade e é irrelevante para quem olha a tela: a leitura não chegou. Quem
+ * diz de quem é a culpa é `culpaDeTerceiro`, e a fala do balão usa isso desde
+ * o começo — o estado diz QUE falhou, o texto diz DE QUEM.
+ */
+export function naoConcluiu(saude: SaudeSistema): number {
+  return saude.falhas + (saude.falhas_upstream ?? 0);
+}
+
 export function estadoDoSistema(saude: SaudeSistema | null | undefined, agora = Date.now()): Estado {
   // ausência de registro e registro zerado se separam AQUI, e só aqui
   if (!saude) return "sem-dados";
   if (!saude.execs) return "sem-execucao";
-  if (saude.falhas / saude.execs >= LIMIAR_FALHA) return "falha";
+  if (naoConcluiu(saude) / saude.execs >= LIMIAR_FALHA) return "falha";
   if (!saude.ultima) return "ocioso";
   const ultima = Date.parse(saude.ultima);
   if (Number.isNaN(ultima)) return "ocioso";
@@ -95,10 +118,23 @@ export function resumoDeEstados(
   return r;
 }
 
-/** Quantas falhas vieram do outro lado da integração, não dele. */
+/**
+ * A maior parte do que não concluiu veio do outro lado?
+ *
+ * Ela abria com `if (!saude?.falhas) return false` — e isso a tornava cega
+ * justamente no caso mais claro. O Sienge tem 30 chamadas não concluídas, TODAS
+ * atribuídas a upstream e ZERO falhas próprias: pela guarda antiga a resposta
+ * era "não é culpa de terceiro", quando é 100% dele.
+ *
+ * Agora a base da conta é o que não concluiu, igual à taxa de falha. O estado
+ * diz QUE falhou; esta função diz DE QUEM, e é ela que escolhe o banco de
+ * falas de upstream.
+ */
 export function culpaDeTerceiro(saude: SaudeSistema | null | undefined): boolean {
-  if (!saude?.falhas) return false;
-  return (saude.falhas_upstream ?? 0) > saude.falhas / 2;
+  if (!saude) return false;
+  const total = naoConcluiu(saude);
+  if (!total) return false;
+  return (saude.falhas_upstream ?? 0) > total / 2;
 }
 
 /**
