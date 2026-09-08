@@ -22,6 +22,22 @@ const HUB_TOKEN = Deno.env.get("BLOCO_ID_TOKEN") ?? "";
  */
 const USO_URL = Deno.env.get("BLOCO_ID_USO_URL")
   ?? "https://blocoid.lovable.app/api/public/ecossistema-uso";
+/*
+ * Eventos execucao por execucao — a diferenca entre retrato e acontecimento.
+ *
+ * `saude` diz "o Sienge executou 457 vezes no mes". Isso e um numero numa
+ * lista. Estes eventos dizem "as 09:00:38 a Gestao Financeira chamou o Sienge,
+ * 200; as 09:00:39, de novo; as 09:00:41, erro 500" — com origem, destino e
+ * desfecho. E o que permite o andar mostrar trabalho acontecendo em vez de
+ * volume acumulado.
+ *
+ * O `id` de cada linha e chave de deduplicacao de verdade: a pagina consulta a
+ * cada 60 s e recebe a mesma janela varias vezes, e a fila do motor descarta
+ * repetido por id. Por isso a rota nao precisa de cursor e esta funcao pode
+ * continuar sem estado.
+ */
+const EVENTOS_URL = Deno.env.get("BLOCO_ID_EVENTOS_URL")
+  ?? "https://blocoid.lovable.app/api/public/ecossistema-eventos";
 
 interface SistemaOut { id: string; nome: string; grupo: string; status?: string | null }
 interface ConectorOut { id: string; nome: string; status?: string | null }
@@ -70,6 +86,85 @@ interface UsoNode {
 
 interface UsoOut {
   [nodeId: string]: UsoNode;
+}
+
+/** Uma execucao de integracao, como o HUB a registrou. */
+interface EventoOut {
+  id: string;
+  created_at: string;
+  /** Slug do sistema que chamou. Nulo quando quem chamou foi uma pessoa. */
+  origem: string | null;
+  /** Slug do no chamado — conector externo, ou o sistema dono do interno. */
+  destino: string | null;
+  metodo: string | null;
+  status_http: number | null;
+  falhou: boolean;
+  duracao_ms: number | null;
+}
+
+/**
+ * Le a janela recente de execucoes.
+ *
+ * Mesma degradacao do `uso`: qualquer problema devolve `undefined` e a resposta
+ * fica identica a de antes. Um evento a menos e uma animacao a menos; um mapa
+ * quebrado e uma tela inutil.
+ */
+async function lerEventos(
+  url: string,
+  token: string,
+  validNodeIds: Set<string>,
+): Promise<EventoOut[] | undefined> {
+  if (!url || !token) return undefined;
+  try {
+    const resp = await fetch(`${url}?minutos=10`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    });
+    if (!resp.ok) {
+      console.warn(`[eventos] a rota respondeu HTTP ${resp.status} ${resp.statusText}.`);
+      return undefined;
+    }
+    const corpo: unknown = await resp.json();
+    const linhas = (corpo as { eventos?: unknown })?.eventos;
+    if (!Array.isArray(linhas)) {
+      console.warn("[eventos] a rota respondeu sem o campo `eventos` como lista.");
+      return undefined;
+    }
+    const fora: EventoOut[] = [];
+    for (const l of linhas as Record<string, unknown>[]) {
+      if (!l?.id || !l?.created_at) continue;
+      const origem = l.origem_slug ? String(l.origem_slug) : null;
+      const destino = l.destino_slug ? String(l.destino_slug) : null;
+      /*
+       * Evento cujo destino o mapa nao conhece nao entra. Nao e filtro de
+       * conveniencia: o motor precisa de uma mesa ou porta para onde andar, e
+       * evento sem no desenhavel viraria viagem para lugar nenhum.
+       */
+      if (!destino || !validNodeIds.has(destino)) continue;
+      fora.push({
+        id: String(l.id),
+        created_at: String(l.created_at),
+        origem: origem && validNodeIds.has(origem) ? origem : null,
+        destino,
+        metodo: l.metodo ? String(l.metodo) : null,
+        status_http: l.status_http == null ? null : Number(l.status_http),
+        falhou: l.falhou === true,
+        duracao_ms: l.duracao_ms == null ? null : Number(l.duracao_ms),
+      });
+    }
+    if (fora.length === 0) {
+      console.warn(
+        `[eventos] a rota devolveu ${linhas.length} linha(s) e nenhuma sobrou apos ` +
+          "casar com o catalogo — sem dado, token recusado, ou destinos desconhecidos.",
+      );
+      return undefined;
+    }
+    console.log(`[eventos] ok: ${fora.length} execucoes na janela.`);
+    return fora;
+  } catch (e) {
+    console.warn(`[eventos] a leitura lancou: ${e instanceof Error ? e.message : String(e)}`);
+    return undefined;
+  }
 }
 
 /**
@@ -333,7 +428,11 @@ Deno.serve(async (req) => {
 
     // Aditivo: quando a leitura falha, `uso` fica de fora e a resposta e a
     // mesma de antes, campo por campo.
-    const uso = await lerUso(USO_URL, HUB_TOKEN, validNodeIds);
+    // Em paralelo: sao duas rotas independentes e nenhuma depende da outra.
+    const [uso, eventos] = await Promise.all([
+      lerUso(USO_URL, HUB_TOKEN, validNodeIds),
+      lerEventos(EVENTOS_URL, HUB_TOKEN, validNodeIds),
+    ]);
 
     return ok(
       {
@@ -344,6 +443,7 @@ Deno.serve(async (req) => {
         integracoes: Array.from(edgeMap.values()),
         saude,
         ...(uso ? { uso } : {}),
+        ...(eventos ? { eventos } : {}),
       },
       cors,
     );
