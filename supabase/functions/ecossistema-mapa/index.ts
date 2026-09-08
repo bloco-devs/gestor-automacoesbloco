@@ -77,7 +77,23 @@ async function lerUso(
       `${hubUrl}/rest/v1/ecossistema_uso?select=slug,ultimo_login,pessoas_24h,pessoas_30d`,
       { headers: { Authorization: `Bearer ${token}`, apikey: token } },
     );
-    if (!resp.ok) return undefined;
+    if (!resp.ok) {
+      /*
+       * Log em vez de campo na resposta.
+       *
+       * A leitura falha em silencio de proposito — nada aqui pode derrubar o
+       * mapa. Mas silencio total tornou impossivel distinguir "a funcao nao
+       * republicou" de "o token nao le a view": as duas hipoteses produzem
+       * exatamente a mesma resposta. Este log aparece em Edge Functions →
+       * ecossistema-mapa → Logs e resolve a duvida em uma olhada.
+       */
+      console.warn(
+        `[uso] leitura da view falhou: HTTP ${resp.status} ${resp.statusText}. ` +
+          "401/403 = o token nao serve para o PostgREST do HUB; " +
+          "404 = a view ecossistema_uso nao existe ou nao esta exposta.",
+      );
+      return undefined;
+    }
     const linhas: unknown = await resp.json();
     if (!Array.isArray(linhas)) return undefined;
     const uso: UsoOut = {};
@@ -92,8 +108,17 @@ async function lerUso(
         pessoas_30d: Number(l.pessoas_30d ?? 0),
       };
     }
-    return Object.keys(uso).length > 0 ? uso : undefined;
-  } catch {
+    if (Object.keys(uso).length === 0) {
+      console.warn(
+        `[uso] a view respondeu com ${linhas.length} linha(s), mas nenhum slug ` +
+          "casou com o catalogo — o `uso` sai da resposta por nao ter dono.",
+      );
+      return undefined;
+    }
+    console.log(`[uso] ok: ${Object.keys(uso).length} sistemas com sinal de acesso.`);
+    return uso;
+  } catch (e) {
+    console.warn(`[uso] leitura da view lancou: ${e instanceof Error ? e.message : String(e)}`);
     return undefined;
   }
 }
