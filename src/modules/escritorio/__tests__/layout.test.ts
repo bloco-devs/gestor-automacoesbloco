@@ -167,13 +167,30 @@ describe("grade de colisão", () => {
 describe("caminhos", () => {
   const mesas = andar.mesas;
 
-  it("sai da mesa de origem e chega na de destino", () => {
-    const pontos = caminhoEntreMesas(andar, mesas[0], mesas[mesas.length - 1]);
+  /*
+   * A entrega para AO LADO da mesa, nunca sobre ela.
+   *
+   * Este teste afirmava o contrário — que o caminho termina exatamente em
+   * `pessoaX/pessoaY` do destino. Só que ali é onde o dono do sistema fica de
+   * pé: quem chegava para entregar parava em cima dele, um sprite cobrindo o
+   * outro. O André viu o E-mail (Resend) sobreposto à Gestão Financeira.
+   *
+   * `pontoDeEncontro` já usava esse recuo para a conversa, com a explicação do
+   * número: a célula vizinha fica a 16 px e o BLINK tem 22 de largura.
+   */
+  it("a entrega termina ao lado da mesa de destino, não sobre ela", () => {
+    const destino = mesas[mesas.length - 1];
+    const pontos = caminhoEntreMesas(andar, mesas[0], destino);
     expect(pontos.length).toBeGreaterThan(1);
     expect(pontos[0]).toEqual({ x: mesas[0].pessoaX, y: mesas[0].pessoaY });
+
     const fim = pontos[pontos.length - 1];
-    expect(fim.x).toBe(mesas[mesas.length - 1].pessoaX);
-    expect(fim.y).toBe(mesas[mesas.length - 1].pessoaY);
+    // Não pode ser a célula do dono.
+    expect(fim.x === destino.pessoaX && fim.y === destino.pessoaY).toBe(false);
+    // E tem de estar longe o suficiente para os dois sprites não se tocarem:
+    // o BLINK tem 22 px de largura, então um tile de 16 px não basta.
+    const dist = Math.abs(fim.x - destino.pessoaX) + Math.abs(fim.y - destino.pessoaY);
+    expect(dist, "distância em px até o dono da mesa").toBeGreaterThanOrEqual(TILE * 2);
   });
 
   it("nenhum trecho passa por célula bloqueada", () => {
@@ -197,15 +214,30 @@ describe("caminhos", () => {
     }
   });
 
-  it("caminho de uma porta externa chega numa mesa", () => {
+  it("o serviço de fora também para ao lado da mesa, não sobre o dono", () => {
     const porta = andar.portas[0];
     const alvo = andar.mesas.find(
       (m) => rotaEmTiles(andar, { x: porta.tileX, y: porta.tileY }, { x: m.tileX, y: m.tileY }) !== null,
     )!;
     const pontos = caminhoDaPorta(andar, porta, alvo);
     const fim = pontos[pontos.length - 1];
-    expect(fim.x).toBe(alvo.pessoaX);
-    expect(fim.y).toBe(alvo.pessoaY);
+    expect(fim.x === alvo.pessoaX && fim.y === alvo.pessoaY).toBe(false);
+    const dist = Math.abs(fim.x - alvo.pessoaX) + Math.abs(fim.y - alvo.pessoaY);
+    expect(dist).toBeGreaterThanOrEqual(TILE * 2);
+  });
+
+  it("o recuo vale para TODAS as mesas alcançáveis, não só para a primeira", () => {
+    // O defeito aparecia numa sala especifica; o teste anterior olhava uma so.
+    const porta = andar.portas[0];
+    let conferidas = 0;
+    for (const m of andar.mesas) {
+      const rota = rotaEmTiles(andar, { x: porta.tileX, y: porta.tileY }, { x: m.tileX, y: m.tileY });
+      if (!rota || rota.length < 4) continue; // mesa colada na porta nao tem recuo possivel
+      const fim = caminhoDaPorta(andar, porta, m).at(-1)!;
+      expect(fim.x === m.pessoaX && fim.y === m.pessoaY, m.nome).toBe(false);
+      conferidas++;
+    }
+    expect(conferidas, "nenhuma mesa alcançável para conferir").toBeGreaterThan(3);
   });
 
   it("os pés ficam na base da célula — nada de cabeça atravessando parede", () => {

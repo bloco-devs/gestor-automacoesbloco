@@ -933,19 +933,48 @@ export function chaveDaCelula(andar: Andar, tx: number, ty: number): number {
   return ty * andar.colunas + tx;
 }
 
-/** Caminho de uma mesa até outra, pela grade de colisão. */
+/** Quantos tiles o visitante para ANTES da mesa. Ver `rotaAteAMesa`. */
+const FOLGA_DE_ENTREGA = 2;
+
+/**
+ * Rota que termina AO LADO da mesa, nunca sobre ela.
+ *
+ * A última célula do caminho até uma mesa é a célula da mesa — e é ali que o
+ * dono do sistema fica de pé. Quem chegava para entregar parava exatamente em
+ * cima dele: dois sprites no mesmo lugar, o de fora cobrindo o de dentro.
+ *
+ * `pontoDeEncontro` já resolvia isso para a conversa, e o comentário dela
+ * explica o número: "a célula vizinha fica a 16 px e o BLINK tem 22 de
+ * largura; colados, os dois sprites se sobrepõem". A entrega nunca herdou a
+ * regra — e o defeito só ficou visível quando o conector externo passou a
+ * entregar de verdade, porque antes ele quase nunca saía pela porta.
+ *
+ * O recuo é feito na rota EM TILES, antes de extrair as dobras: cortar a lista
+ * de dobras removeria uma esquina inteira, que pode ser dez tiles, em vez de
+ * dois passos.
+ */
+function rotaAteAMesa(
+  andar: Andar,
+  de: { x: number; y: number },
+  para: Mesa,
+): Ponto[] | null {
+  const rota = rotaEmTiles(andar, de, { x: para.tileX, y: para.tileY });
+  if (!rota) return null;
+  // `max(1, ...)` mantém pelo menos o ponto de partida: se a mesa estiver a um
+  // passo, o visitante simplesmente não anda em vez de sumir.
+  const corte = Math.max(1, rota.length - FOLGA_DE_ENTREGA);
+  return dobras(rota.slice(0, corte));
+}
+
+/** Caminho de uma mesa até a vizinhança de outra, pela grade de colisão. */
 export function caminhoEntreMesas(andar: Andar, de: Mesa, para: Mesa): Ponto[] {
-  const p = caminhoEntreTiles(andar, { x: de.tileX, y: de.tileY }, { x: para.tileX, y: para.tileY });
+  const p = rotaAteAMesa(andar, { x: de.tileX, y: de.tileY }, para);
   return p ?? [{ x: de.pessoaX, y: de.pessoaY }];
 }
 
-/** Caminho de uma porta externa até a mesa que consome aquele conector. */
+/** Caminho de uma porta externa até a vizinhança da mesa que a consome. */
 export function caminhoDaPorta(andar: Andar, porta: PortaExterna, para: Mesa): Ponto[] {
-  const p = caminhoEntreTiles(
-    andar,
-    { x: porta.tileX, y: porta.tileY },
-    { x: para.tileX, y: para.tileY },
-  );
+  const p = rotaAteAMesa(andar, { x: porta.tileX, y: porta.tileY }, para);
   return p ?? [{ x: porta.frenteX, y: porta.frenteY }];
 }
 
