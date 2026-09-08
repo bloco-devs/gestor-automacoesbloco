@@ -50,7 +50,18 @@ import {
 import type { DadosEscritorio } from "./dados";
 import { PERSONAGEM_H, TILE, type Direcao } from "./sprites";
 
-const VELOCIDADE = 38;          // pixels internos por segundo
+/*
+ * 85 px/s, e nao 38.
+ *
+ * Medido no Munder Difflin, quadro a quadro a 24 fps: 5 px por quadro num
+ * personagem de ~32 px de altura, ou seja 1,9 alturas de corpo por segundo.
+ * Os 38 px/s do nosso BLINK de 46 px davam 0,83 — ele passeava. 85 px/s
+ * coloca a gente na mesma proporcao (1,85).
+ *
+ * O ciclo de pernas nao muda: `passoDe` ja alterna a 6 Hz, e o video nem tem
+ * animacao de membros. A fluidez de la vem de velocidade, e era so isso.
+ */
+const VELOCIDADE = 85;          // pixels internos por segundo
 const SEG_FALANDO = 1.8;
 const SEG_FALA = 2.6;           // cada linha da conversa
 const SEG_ENCARAR = 1.0;        // param, se viram, e só então falam
@@ -958,6 +969,34 @@ export function balancoDaConversa(p: Personagem): number {
     case "despedindo":
       return Math.floor(p.papelT * 6) % 2 === 0 ? -1 : 0;
     default:
-      return 0;
+      /*
+       * NA MESA, QUEM TEM SINAL RESPIRA.
+       *
+       * No Munder Difflin a cabeca de quem esta sentado sobe e desce: medi
+       * 4 px alternando a cada ~470 ms, cerca de 1 Hz. E o que impede um
+       * escritorio parado de parecer morto — e o nosso ficava congelado nas
+       * horas em que ninguem anda, que sao a maioria.
+       *
+       * A amplitude aqui e 1 px, nao 4: o comentario acima ja dizia que 2
+       * parece tremor neste sprite, e nao vou contrariar o que ja foi
+       * calibrado na tela.
+       *
+       * QUEM respira e a parte que importa. So quem tem sinal real: executou
+       * nas ultimas 24 h, executou agora, ou tem demanda em trabalho. Fazer
+       * as onze salas "sem execucao" respirarem seria sugerir atividade onde
+       * o dado nao sustenta — o mesmo erro que ja corrigimos tres vezes.
+       */
+      if (p.fase !== "mesa") return 0;
+      if (!respira(p)) return 0;
+      return Math.floor(p.digitaT * 1.1) % 2 === 0 ? 0 : -1;
   }
+}
+
+/** Tem sinal real para justificar o balanço em repouso? */
+function respira(p: Personagem): boolean {
+  return (
+    p.estado === "trabalhando" ||
+    !!p.executando ||
+    (p.demandasEmTrabalho ?? 0) > 0
+  );
 }

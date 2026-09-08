@@ -18,7 +18,12 @@ import {
 import type { Estado } from "./estado";
 import { pessoasAgora } from "./uso";
 import { obterSprite, type SpriteId } from "./mobiliario";
-import { portaAtiva, type AtividadeDoNo, type EventoEcossistema } from "./eventos";
+import {
+  portaAtiva,
+  type AtividadeDoNo,
+  type EventoEcossistema,
+  type ExecucaoDoHub,
+} from "./eventos";
 
 const ESCALA_MIN = 1;
 const ESCALA_MAX = 4;
@@ -93,6 +98,11 @@ export interface EscritorioCanvasProps {
    * inclusive quando quem chamou foi uma pessoa e não há viagem a mostrar.
    */
   atividade?: Map<string, AtividadeDoNo>;
+  /**
+   * As execuções cruas, uma por linha. Cada uma solta um emblema que sobe do
+   * nó chamado: verde quando concluiu, vermelho quando não.
+   */
+  execucoes?: ExecucaoDoHub[];
 }
 
 interface Camera {
@@ -116,11 +126,29 @@ export function EscritorioCanvas({
   onApontar,
   eventosExternos,
   atividade,
+  execucoes,
   trabalhoPorSistema,
 }: EscritorioCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fundoRef = useRef<HTMLCanvasElement | null>(null);
   const motorRef = useRef<Motor | null>(null);
+  /*
+   * OS EMBLEMAS QUE SOBEM DA MESA.
+   *
+   * No Munder Difflin cada trabalho concluído solta um símbolo que sobe e
+   * apaga — visto verde quando deu certo, marca vermelha quando não. É o que
+   * dá vida ao andar sem ninguém precisar andar, e encaixa exatamente no dado
+   * que já chega: cada execução tem `falhou`.
+   *
+   * `vistos` guarda os ids já animados. A página relê a mesma janela de 60
+   * minutos a cada refresh; sem isso, as mesmas execuções soltariam emblema de
+   * novo a cada leitura, para sempre — o mesmo defeito que a chave
+   * determinística da rajada evita no motor.
+   */
+  const emblemasRef = useRef<{
+    vistos: Set<string>;
+    ativos: { x: number; y: number; nasceu: number; falhou: boolean }[];
+  }>({ vistos: new Set(), ativos: [] });
   const camRef = useRef<Camera>({ x: 0, y: 0, escala, alvoX: 0, alvoY: 0, alvoEscala: escala });
   const hoverRef = useRef<string | null>(null);
   const demoRef = useRef(demo);
@@ -185,6 +213,50 @@ export function EscritorioCanvas({
   useEffect(() => {
     if (eventosExternos?.length) motorRef.current?.registrarEventos(eventosExternos);
   }, [eventosExternos]);
+
+  useEffect(() => {
+    if (!execucoes?.length) return;
+    const e = emblemasRef.current;
+    const agora = performance.now();
+    /*
+     * TETO DE OITO POR LEITURA, e não um emblema por execução.
+     *
+     * Uma rajada real tem 35 chamadas em 14 segundos. Trinta e cinco emblemas
+     * subindo ao mesmo tempo viram uma cortina, não informação. Oito já lê
+     * como "muita coisa aconteceu aqui", e as falhas entram PRIMEIRO: se
+     * houver erro na rajada, ele não pode ser o que sobra de fora do teto.
+     */
+    const novos = execucoes.filter((x) => x.id && !e.vistos.has(x.id));
+    if (!novos.length) return;
+    novos.sort((a, b) => Number(!!b.falhou) - Number(!!a.falhou));
+    for (const x of novos) e.vistos.add(x.id);
+    // a memória não cresce sem fim: guarda o suficiente para a janela do HUB
+    if (e.vistos.size > 2000) {
+      e.vistos = new Set([...e.vistos].slice(-1000));
+    }
+    let n = 0;
+    for (const x of novos) {
+      if (n >= 8) break;
+      const destino = x.destino;
+      if (!destino) continue;
+      const mesa = andar.mesaPorSistema.get(destino);
+      const porta = andar.portaPorConector.get(destino);
+      const alvo = mesa
+        ? { x: mesa.monitorX + 8, y: mesa.monitorY }
+        : porta
+          ? { x: porta.x + 21, y: porta.y }
+          : null;
+      if (!alvo) continue;
+      e.ativos.push({
+        x: alvo.x,
+        y: alvo.y,
+        // escalonado: 90 ms entre um e outro, para subirem em fila e não em bloco
+        nasceu: agora + n * 90,
+        falhou: !!x.falhou,
+      });
+      n++;
+    }
+  }, [execucoes, andar]);
 
   useEffect(() => {
     if (!trabalhoPorSistema) return;
@@ -396,6 +468,25 @@ export function EscritorioCanvas({
           ctx.fillStyle = "#d8f7e8";
           ctx.fillRect(lx + 1, ly + 1, 2, 1);
         }
+      }
+
+      /*
+       * Os emblemas sobem ANTES dos personagens no mundo, para passarem por
+       * trás de quem estiver de pé na frente da mesa — a mesma ordem por Y que
+       * vale para todo o resto.
+       */
+      {
+        const e = emblemasRef.current;
+        const t = performance.now();
+        for (let i = e.ativos.length - 1; i >= 0; i--) {
+          const m = e.ativos[i];
+          const vida = (t - m.nasceu) / DURACAO_EMBLEMA;
+          if (vida >= 1) { e.ativos.splice(i, 1); continue; }
+          if (vida < 0) continue;   // ainda escalonado, não nasceu
+          emblema(ctx, m.x, m.y, vida, m.falhou);
+        }
+        // teto de segurança: nada justifica centenas na tela
+        if (e.ativos.length > 40) e.ativos.splice(0, e.ativos.length - 40);
       }
 
       // profundidade por Y: quem está mais abaixo desenha por último
@@ -640,6 +731,49 @@ function seloDeGente(ctx: CanvasRenderingContext2D, x: number, cy: number, n: nu
   ctx.fillRect(px, y + 10, 5, 4);
   ctx.fillStyle = "#f2efe6";
   ctx.fillText(txt, Math.round(x) + 13, y + 14);
+}
+
+/** Quanto tempo o emblema leva para subir e apagar. */
+const DURACAO_EMBLEMA = 1100;
+
+/**
+ * O emblema que sobe da mesa: verde concluiu, vermelho não.
+ *
+ * Desenhado em pixels do MUNDO, não da tela, para subir junto com o zoom e
+ * ficar ancorado no monitor. Sobe 14 px em 1,1 s desacelerando, e desaparece
+ * nos últimos 35% — a saída suave é o que evita o corte seco que denuncia
+ * animação barata.
+ *
+ * Não usa `sprites.ts`: são cinco retângulos. Um visto em duas diagonais para
+ * o verde, um quadrado cheio para o vermelho — as mesmas formas do vídeo, que
+ * são legíveis a 5 px porque não tentam ser desenho.
+ */
+function emblema(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  vida: number,
+  falhou: boolean,
+) {
+  const subida = 14 * (1 - (1 - vida) ** 2);   // desacelera no fim
+  const py = Math.round(y - 4 - subida);
+  const px = Math.round(x - 3);
+  const alfa = vida < 0.65 ? 1 : 1 - (vida - 0.65) / 0.35;
+  const antes = ctx.globalAlpha;
+  ctx.globalAlpha = Math.max(0, Math.min(1, alfa));
+
+  // fundo claro, como o envelope do vídeo: destaca sobre mesa e piso
+  ctx.fillStyle = "#f4f1e8";
+  ctx.fillRect(px, py, 7, 6);
+  ctx.fillStyle = falhou ? "#c9352a" : "#2f9e5f";
+  if (falhou) {
+    ctx.fillRect(px + 2, py + 1, 3, 4);
+  } else {
+    ctx.fillRect(px + 1, py + 2, 2, 2);
+    ctx.fillRect(px + 3, py + 3, 1, 1);
+    ctx.fillRect(px + 4, py + 1, 2, 2);
+  }
+  ctx.globalAlpha = antes;
 }
 
 /* ---------------------------------------------------------------- HUD --- */

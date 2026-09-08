@@ -242,6 +242,7 @@ export default function EscritorioPage() {
             demo={demo}
             eventosExternos={eventosDoAndar}
             atividade={atividadeNasPortas}
+            execucoes={efetivos.execucoes}
             trabalhoPorSistema={trabalhoPorSistema}
             escala={escala}
             onEscala={(e) => { setAjustar(false); setEscala(e); }}
