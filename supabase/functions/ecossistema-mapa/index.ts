@@ -38,6 +38,11 @@ const USO_URL = Deno.env.get("BLOCO_ID_USO_URL")
  */
 const EVENTOS_URL = Deno.env.get("BLOCO_ID_EVENTOS_URL")
   ?? "https://blocoid.lovable.app/api/public/ecossistema-eventos";
+/** A rota aceita ate 60. Em env var para poder afinar sem novo deploy. */
+const JANELA_DE_EVENTOS_MIN = Math.min(
+  60,
+  Math.max(1, Number(Deno.env.get("BLOCO_ID_EVENTOS_MINUTOS") ?? 60)),
+);
 
 interface SistemaOut { id: string; nome: string; grupo: string; status?: string | null }
 interface ConectorOut { id: string; nome: string; status?: string | null }
@@ -116,7 +121,19 @@ async function lerEventos(
 ): Promise<EventoOut[] | undefined> {
   if (!url || !token) return undefined;
   try {
-    const resp = await fetch(`${url}?minutos=10`, {
+    /*
+     * SESSENTA minutos, nao dez.
+     *
+     * Dez foi escolha minha, supondo fluxo continuo. Medido no HUB: as rajadas
+     * acontecem em dois instantes do dia, e numa janela de dez minutos havia
+     * ZERO execucao contra 10 na ultima hora. O recurso ficava invisivel —
+     * apareceria so para quem abrisse a pagina nos dez minutos seguintes a uma
+     * rajada.
+     *
+     * A fala passou a dizer a HORA do registro em vez de "agora", justamente
+     * para a janela poder ser larga sem a animacao mentir sobre quando foi.
+     */
+    const resp = await fetch(`${url}?minutos=${JANELA_DE_EVENTOS_MIN}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     });

@@ -234,14 +234,24 @@ export const REGRAS: RegraConversa[] = [
  * chega ao balão: nada de id, contador, timestamp, integração ou payload.
  */
 export const FALAS_DE_EVENTO: Record<TipoEvento, { abre: string[]; responde: string[] }> = {
+  /*
+   * A HORA, e não "agora".
+   *
+   * As falas diziam "agora", "neste minuto", "acabei de". Isso só era verdade
+   * numa janela de dez minutos — e medido no HUB, dez minutos quase sempre
+   * estão vazios, porque as rajadas acontecem em dois instantes do dia. Para a
+   * janela poder ser de uma hora sem a animação mentir, a fala carrega o
+   * carimbo do registro. É o mesmo princípio que já corrigiu "sem execução em
+   * 30 dias" e "trabalhando": a frase diz exatamente o que o dado sustenta.
+   */
   executou: {
     abre: [
-      "Chamei o {destino} {n} vezes agora.",
-      "{n} chamadas ao {destino} neste minuto.",
-      "Acabei de rodar {n} vezes contra o {destino}.",
-      "Puxei dado do {destino}: {n} chamadas.",
-      "Terminei uma rajada de {n} no {destino}.",
-      "{n} execuções contra o {destino}, agora.",
+      "Chamei o {destino} {n} vezes às {hora}.",
+      "{n} chamadas ao {destino} às {hora}.",
+      "Rodei {n} vezes contra o {destino}, {hora}.",
+      "Puxei dado do {destino} às {hora}: {n} chamadas.",
+      "Rajada de {n} no {destino}, às {hora}.",
+      "{n} execuções contra o {destino} às {hora}.",
     ],
     responde: [
       "Recebido.",
@@ -401,11 +411,11 @@ export const FALAS_DE_EVENTO: Record<TipoEvento, { abre: string[]; responde: str
  */
 export const FALAS_EXECUCAO_COM_FALHA = {
   abre: [
-    "Chamei o {destino} {n} vezes e {f} deram erro.",
-    "{n} chamadas ao {destino}, {f} com falha.",
-    "Rodei {n} vezes contra o {destino}; {f} não passaram.",
-    "Puxei dado do {destino}: {n} chamadas, {f} com erro.",
-    "{f} das {n} chamadas ao {destino} falharam.",
+    "Chamei o {destino} {n} vezes às {hora} e {f} deram erro.",
+    "{n} chamadas ao {destino} às {hora}, {f} com falha.",
+    "Rodei {n} vezes contra o {destino} às {hora}; {f} não passaram.",
+    "Puxei dado do {destino} às {hora}: {n} chamadas, {f} com erro.",
+    "{f} das {n} chamadas ao {destino} falharam, às {hora}.",
   ],
   responde: [
     "Vou olhar essas que falharam.",
@@ -457,13 +467,29 @@ function sorteiaSemRepetir<T>(
 function preencher(
   modelo: string,
   nomeDoSistema: string,
-  extras?: { destino?: string; n?: number; f?: number },
+  extras?: { destino?: string; n?: number; f?: number; hora?: string },
 ): string {
   return modelo
     .replace("{sistema}", nomeDoSistema)
     .replace("{destino}", extras?.destino ?? "o serviço")
     .replace("{n}", String(extras?.n ?? 1))
-    .replace("{f}", String(extras?.f ?? 0));
+    .replace("{f}", String(extras?.f ?? 0))
+    .replace("{hora}", extras?.hora ?? "há pouco");
+}
+
+/**
+ * Hora do relógio a partir do carimbo do evento.
+ *
+ * Fuso do navegador de propósito: quem lê está no escritório, e "16:31" tem de
+ * ser 16:31 para ele. Sem carimbo — o que acontece nos outros tipos de evento
+ * — devolve nulo, e `preencher` usa "há pouco" em vez de inventar uma hora.
+ */
+function horaDo(timestamp: number | undefined): string | undefined {
+  if (typeof timestamp !== "number" || !Number.isFinite(timestamp)) return undefined;
+  return new Date(timestamp).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 /**
@@ -473,7 +499,9 @@ function preencher(
  * não vaza para o balão sem alguém mexer aqui de propósito.
  */
 export function dialogoDeEvento(
-  evento: Pick<EventoEcossistema, "tipo" | "contexto" | "execucoes" | "falhas">,
+  evento: Pick<EventoEcossistema, "tipo" | "contexto" | "execucoes" | "falhas"> & {
+    timestamp?: number;
+  },
   nomeDaOrigem: string,
   sorteio: () => number = Math.random,
   memoria: Map<string, number> = new Map(),
@@ -500,6 +528,7 @@ export function dialogoDeEvento(
     destino: nomeDoDestino,
     n: evento.execucoes,
     f: evento.falhas,
+    hora: horaDo(evento.timestamp),
   };
   return [
     { quem: "a", texto: preencher(abre, nomeDaOrigem, extras) },
@@ -546,7 +575,9 @@ export interface Roteirista {
    * guardava nada, e por isso a mesma frase saía em conversas seguidas.
    */
   dialogoDeEvento(
-    evento: Pick<EventoEcossistema, "tipo" | "contexto" | "execucoes" | "falhas">,
+    evento: Pick<EventoEcossistema, "tipo" | "contexto" | "execucoes" | "falhas"> & {
+      timestamp?: number;
+    },
     nomeDaOrigem: string,
     /** Nome do nó chamado — só o evento `executou` usa. */
     nomeDoDestino?: string,

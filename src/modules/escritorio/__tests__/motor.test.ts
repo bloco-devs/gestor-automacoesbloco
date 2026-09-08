@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { montarAndar } from "../layout";
 import { agruparExecucoes } from "../eventos";
+import { dialogoDeEvento } from "../conversas";
 import { criarMotor, digitando } from "../motor";
 import { DADOS_SEMENTE, type DadosEscritorio } from "../dados";
 import { PERSONAGEM_W, TILE } from "../sprites";
@@ -1426,5 +1427,84 @@ describe("execução do HUB vira viagem no andar", () => {
     m.registrarEventos(agruparExecucoes(rajada));
     rodar(m, 600);
     expect(m.porId.get("fluxo-caixa")!.fase).toBe("mesa");
+  });
+});
+
+// ===========================================================================
+/*
+ * A janela passou de 10 para 60 minutos porque, medido no HUB, dez minutos
+ * quase sempre estão vazios: 0 execuções nos últimos 10 min contra 10 na
+ * última hora. E é justamente por isso que a fala tem de dizer a HORA — numa
+ * janela de uma hora, "agora" seria mentira na maior parte do tempo.
+ */
+describe("a fala da execução diz a hora, não 'agora'", () => {
+  const sistemas = [{ id: "fluxo-caixa", nome: "Gestão Financeira", grupo: "Financeiro" }];
+  const conectores = [{ id: "sienge", nome: "Sienge ERP" }];
+  const dados = {
+    fonte: "hub", geradoEm: null, uso: {}, execucoes: [],
+    sistemas, conectores,
+    integracoes: [{ origem: "sienge", destino: "fluxo-caixa", label: "erp" }],
+    saude: { "fluxo-caixa": { execs: 0, ok: 0, falhas: 0, ultima: null } },
+  } satisfies DadosEscritorio;
+
+  /** 09:00:38 local, para a hora do relógio ser previsível no teste. */
+  const quando = new Date(2026, 8, 8, 9, 0, 38).getTime();
+  const hhmm = new Date(quando).toLocaleTimeString("pt-BR", {
+    hour: "2-digit", minute: "2-digit",
+  });
+
+  const rajada = (falhas: number) =>
+    Array.from({ length: 35 }, (_, i) => ({
+      id: `x${i}`,
+      created_at: new Date(quando + i * 400).toISOString(),
+      origem: "fluxo-caixa",
+      destino: "sienge",
+      falhou: i < falhas,
+    }));
+
+  const falaDe = (falhas: number) => {
+    const andar = montarAndar(sistemas, conectores, 1.9);
+    const m = criarMotor(andar, dados, quando + 120_000);
+    m.registrarEventos(agruparExecucoes(rajada(falhas)));
+    rodar(m, 2);
+    return m.porId.get("fluxo-caixa")!.viagem?.label ?? "";
+  };
+
+  it("a hora do registro aparece na fala", () => {
+    const t = falaDe(0);
+    expect(t).toContain(hhmm);
+    expect(t).toContain("35");
+    expect(t).toContain("Sienge ERP");
+  });
+
+  it("não diz 'agora' nem 'acabei de' — a rajada pode ser de 50 minutos atrás", () => {
+    for (let i = 0; i < 12; i++) {
+      const t = falaDe(0).toLowerCase();
+      expect(t).not.toContain("agora");
+      expect(t).not.toContain("acabei de");
+      expect(t).not.toContain("neste minuto");
+    }
+  });
+
+  it("com falha, a fala diz a hora E o número de erros", () => {
+    const t = falaDe(3);
+    expect(t).toContain(hhmm);
+    expect(t).toContain("3");
+    expect(t.toLowerCase()).toMatch(/erro|falha|passaram/);
+  });
+
+  it("evento sem carimbo não inventa hora", () => {
+    // Os outros tipos de evento não têm `timestamp` no diálogo; a frase deles
+    // não menciona hora, e o preenchimento cai em "há pouco".
+    const falas = dialogoDeEvento(
+      { tipo: "executou", execucoes: 2, falhas: 0 },
+      "Gestão Financeira",
+      () => 0,
+      new Map(),
+      "Sienge ERP",
+    );
+    expect(falas[0].texto).toContain("há pouco");
+    expect(falas[0].texto).not.toContain("NaN");
+    expect(falas[0].texto).not.toContain("Invalid");
   });
 });
