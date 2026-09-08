@@ -473,7 +473,7 @@ export function SelecaoDeProjetos() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      /*
+      {/*
        * `top-11`, nao `top-0`.
        *
        * O header do app e `sticky top-0 z-30 h-11` (AppLayout). Com esta
@@ -482,7 +482,7 @@ export function SelecaoDeProjetos() {
        * do titulo do projeto, cortadas no meio da letra. Colar em 11 (a
        * altura do header) empilha as duas em vez de sobrepor. No mobile o
        * header nao e sticky, entao lá `top-0` continua certo.
-       */
+       */}
       <div className="surface-glass sticky top-0 z-20 border-b md:top-11">
         <div className="flex h-10 w-full items-center gap-3 px-4 md:px-6">
           <div className="relative w-56">
