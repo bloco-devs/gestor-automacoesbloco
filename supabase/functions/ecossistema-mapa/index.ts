@@ -6,22 +6,22 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 const HUB_URL = (Deno.env.get("BLOCO_ID_HUB_URL") ?? "").replace(/\/+$/, "");
 const HUB_TOKEN = Deno.env.get("BLOCO_ID_TOKEN") ?? "";
 /*
- * Credencial SEPARADA, e para uma coisa so: ler a view de uso pelo PostgREST
- * do HUB.
+ * O uso NAO vem do PostgREST — vem de uma rota do proprio app do HUB.
  *
- * O `BLOCO_ID_TOKEN` nao serve. Ele e validado pela propria
- * `ecossistema-catalogo`, que e uma function — o PostgREST nao o reconhece e
- * responde 401. Isso ficou registrado no log em 08/09/2026, depois de tres
- * rodadas tentando adivinhar por que `uso` nao chegava.
+ * A tentativa anterior lia a view `ecossistema_uso` direto pelo PostgREST e
+ * levava 401. O log mostrou por que, e a lista de segredos do HUB confirmou: a
+ * autenticacao dele e por `SISTEMA_TOKEN_<SISTEMA>`, um segredo compartilhado
+ * por sistema — nao chave do Supabase. E o que identifica quem chamou, e por
+ * isso as execucoes aparecem atribuidas a `automacoes` no HUB.
  *
- * A chave esperada aqui e a `anon` do projeto do HUB: ela e publica por
- * natureza (todo front-end do HUB a embarca) e, sozinha, nao abre nada — quem
- * decide o que ela le e o GRANT. Concedemos SELECT apenas na view
- * `ecossistema_uso`, que expoe agregados e nenhuma pessoa identificada.
+ * Entao a rota `/api/public/ecossistema-uso` foi criada no HUB com a MESMA
+ * autenticacao do catalogo, e e ela que lemos aqui — com o token que ja
+ * tinhamos. Nenhuma credencial nova.
  *
- * Ausente, o `uso` simplesmente nao vem e o mapa segue igual.
+ * Em env var, e nao chumbado, para poder mudar de endereco sem novo deploy.
  */
-const HUB_ANON = Deno.env.get("BLOCO_ID_HUB_ANON_KEY") ?? "";
+const USO_URL = Deno.env.get("BLOCO_ID_USO_URL")
+  ?? "https://blocoid.lovable.app/api/public/ecossistema-uso";
 
 interface SistemaOut { id: string; nome: string; grupo: string; status?: string | null }
 interface ConectorOut { id: string; nome: string; status?: string | null }
@@ -85,46 +85,44 @@ interface UsoOut {
  *      antes. Nada aqui pode derrubar o mapa.
  */
 async function lerUso(
-  hubUrl: string,
+  url: string,
   token: string,
   validNodeIds: Set<string>,
 ): Promise<UsoOut | undefined> {
-  if (!token) {
-    console.warn(
-      "[uso] BLOCO_ID_HUB_ANON_KEY nao configurado — a leitura da view nem foi " +
-        "tentada. Cadastre o segredo para o sinal de uso humano aparecer.",
-    );
+  if (!url || !token) {
+    console.warn("[uso] sem URL ou sem token — a leitura nem foi tentada.");
     return undefined;
   }
   try {
-    const resp = await fetch(
-      `${hubUrl}/rest/v1/ecossistema_uso?select=slug,ultimo_login,pessoas_24h,pessoas_30d`,
-      { headers: { Authorization: `Bearer ${token}`, apikey: token } },
-    );
+    const resp = await fetch(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    });
     if (!resp.ok) {
-      /*
-       * Log em vez de campo na resposta.
-       *
-       * A leitura falha em silencio de proposito — nada aqui pode derrubar o
-       * mapa. Mas silencio total tornou impossivel distinguir "a funcao nao
-       * republicou" de "o token nao le a view": as duas hipoteses produzem
-       * exatamente a mesma resposta. Este log aparece em Edge Functions →
-       * ecossistema-mapa → Logs e resolve a duvida em uma olhada.
-       */
-      console.warn(
-        `[uso] leitura da view falhou: HTTP ${resp.status} ${resp.statusText}. ` +
-          "401/403 = o token nao serve para o PostgREST do HUB; " +
-          "404 = a view ecossistema_uso nao existe ou nao esta exposta.",
-      );
+      console.warn(`[uso] a rota respondeu HTTP ${resp.status} ${resp.statusText}.`);
       return undefined;
     }
-    const linhas: unknown = await resp.json();
-    if (!Array.isArray(linhas)) return undefined;
+    const corpo: unknown = await resp.json();
+    const linhas = (corpo as { uso?: unknown })?.uso;
+    if (!Array.isArray(linhas)) {
+      console.warn("[uso] a rota respondeu sem o campo `uso` como lista.");
+      return undefined;
+    }
+    /*
+     * A rota devolve 200 com lista vazia tambem quando o token e invalido — foi
+     * combinado assim para que ninguem quebre por causa disso. O efeito
+     * colateral e que "vazio" nao distingue "nao ha dado" de "nao autorizado",
+     * e por isso o log diz explicitamente que os dois casos caem aqui.
+     */
+    if (linhas.length === 0) {
+      console.warn("[uso] a rota devolveu lista vazia — sem dado, ou token recusado.");
+      return undefined;
+    }
     const uso: UsoOut = {};
     for (const l of linhas as Record<string, unknown>[]) {
       const slug = l?.slug ? String(l.slug) : null;
-      // Slug que nao existe no catalogo nao entra: o mapa nao desenha node que
-      // ele nao conhece, e uma chave orfa aqui viraria dado sem dono.
+      // Slug fora do catalogo nao entra: o mapa nao desenha node que nao
+      // conhece, e chave orfa aqui seria dado sem dono.
       if (!slug || !validNodeIds.has(slug)) continue;
       uso[slug] = {
         ultimo_login: l.ultimo_login ? String(l.ultimo_login) : null,
@@ -134,15 +132,15 @@ async function lerUso(
     }
     if (Object.keys(uso).length === 0) {
       console.warn(
-        `[uso] a view respondeu com ${linhas.length} linha(s), mas nenhum slug ` +
-          "casou com o catalogo — o `uso` sai da resposta por nao ter dono.",
+        `[uso] a rota devolveu ${linhas.length} linha(s), mas nenhum slug casou ` +
+          "com o catalogo — o `uso` sai da resposta por nao ter dono.",
       );
       return undefined;
     }
     console.log(`[uso] ok: ${Object.keys(uso).length} sistemas com sinal de acesso.`);
     return uso;
   } catch (e) {
-    console.warn(`[uso] leitura da view lancou: ${e instanceof Error ? e.message : String(e)}`);
+    console.warn(`[uso] a leitura lancou: ${e instanceof Error ? e.message : String(e)}`);
     return undefined;
   }
 }
@@ -335,7 +333,7 @@ Deno.serve(async (req) => {
 
     // Aditivo: quando a leitura falha, `uso` fica de fora e a resposta e a
     // mesma de antes, campo por campo.
-    const uso = await lerUso(HUB_URL, HUB_ANON, validNodeIds);
+    const uso = await lerUso(USO_URL, HUB_TOKEN, validNodeIds);
 
     return ok(
       {
