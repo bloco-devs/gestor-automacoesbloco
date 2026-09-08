@@ -716,9 +716,10 @@ function fundoDaPagina(canvas: HTMLCanvasElement): string {
  * espaco de TELA — legivel em qualquer zoom, como as placas.
  */
 function seloDeGente(ctx: CanvasRenderingContext2D, x: number, cy: number, n: number) {
-  ctx.font = '700 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+  const fonte = '700 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.font = fonte;
   const txt = String(n);
-  const w = ctx.measureText(txt).width + 20;
+  const w = largura(ctx, txt, fonte) + 20;
   const y = Math.round(cy - 10);
   ctx.fillStyle = "#1d2b22";
   ctx.fillRect(Math.round(x), y, w, 19);
@@ -794,9 +795,10 @@ function placa(
   externa = false,
   larguraMax = Infinity,
 ): number {
-  ctx.font = '700 11px ui-monospace, SFMono-Regular, Menlo, monospace';
-  const t = cortar(ctx, texto.toUpperCase(), larguraMax === Infinity ? Infinity : larguraMax - 16);
-  const w = ctx.measureText(t).width + 22;
+  const fonte = '700 11px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.font = fonte;
+  const t = cortar(ctx, texto.toUpperCase(), larguraMax === Infinity ? Infinity : larguraMax - 16, fonte);
+  const w = largura(ctx, t, fonte) + 22;
   const x = Math.round(cx - w / 2);
   const y = Math.round(cy - 10);
   ctx.fillStyle = externa ? "#3a3326" : "#242830";
@@ -812,11 +814,68 @@ function placa(
  * Corta o nome no espaço que a mesa tem. Sem isso, "Gestor de Portfólio" e
  * "Gestão de Incorporação" se atropelam quando as duas mesas são vizinhas.
  */
-function cortar(ctx: CanvasRenderingContext2D, texto: string, limite: number): string {
-  if (limite <= 0 || ctx.measureText(texto).width <= limite) return texto;
+/*
+ * MEDIR TEXTO É CARO, E A GENTE MEDIA O MESMO TEXTO SESSENTA VEZES POR SEGUNDO.
+ *
+ * `cortar` encurta o nome caractere por caractere, chamando `measureText` a
+ * cada passo. "Gerador de Contratos Nakhon" reduzido a dez caracteres são
+ * dezessete medições — e havia cerca de quarenta etiquetas na tela (nove
+ * salas, treze portas, dezesseis mesas). A 60 fps isso passava de mil
+ * `measureText` por segundo, recalculando sempre o MESMO corte, do MESMO
+ * texto, no MESMO limite.
+ *
+ * A chave inclui a fonte porque a largura depende dela, e o limite arredondado
+ * para pixel inteiro: o limite varia com o zoom, e diferença de fração de
+ * pixel não muda onde a palavra é cortada.
+ *
+ * Nenhum destes caches invalida, e não precisa: as chaves são o conteúdo. Um
+ * nome que mude gera chave nova; o antigo vira lixo e cai no teto abaixo.
+ */
+const TETO_CACHE = 600;
+
+/*
+ * As fontes viram constantes porque agora elas são CHAVE de cache. Repetir a
+ * string em dois lugares e divergir num deles produziria medida certa e cache
+ * errado — o pior tipo de defeito, porque a tela fica sutilmente torta.
+ */
+const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
+const FONTE_ESTADO = `600 10px ${MONO}`;
+const FONTE_ROTULO = `600 11px ${MONO}`;
+
+const larguras = new Map<string, number>();
+
+function largura(ctx: CanvasRenderingContext2D, texto: string, fonte: string): number {
+  const chave = `${fonte}\u0000${texto}`;
+  const guardada = larguras.get(chave);
+  if (guardada !== undefined) return guardada;
+  ctx.font = fonte;
+  const w = ctx.measureText(texto).width;
+  if (larguras.size > TETO_CACHE) larguras.clear();
+  larguras.set(chave, w);
+  return w;
+}
+
+const cortes = new Map<string, string>();
+
+function cortar(
+  ctx: CanvasRenderingContext2D,
+  texto: string,
+  limite: number,
+  fonte: string,
+): string {
+  if (limite <= 0 || largura(ctx, texto, fonte) <= limite) return texto;
+  const chave = `${fonte}\u0000${Math.round(limite)}\u0000${texto}`;
+  const pronto = cortes.get(chave);
+  if (pronto !== undefined) return pronto;
+
   let corte = texto;
-  while (corte.length > 1 && ctx.measureText(corte + "…").width > limite) corte = corte.slice(0, -1);
-  return corte.trimEnd() + "…";
+  while (corte.length > 1 && largura(ctx, corte + "…", fonte) > limite) {
+    corte = corte.slice(0, -1);
+  }
+  const resultado = corte.trimEnd() + "…";
+  if (cortes.size > TETO_CACHE) cortes.clear();
+  cortes.set(chave, resultado);
+  return resultado;
 }
 
 function etiqueta(
@@ -835,13 +894,18 @@ function etiqueta(
     ? '600 10px ui-monospace, SFMono-Regular, Menlo, monospace'
     : '600 12px ui-monospace, SFMono-Regular, Menlo, monospace';
   const cor = CORES[estado] ?? CORES.ocioso;
-  ctx.font = '600 10px ui-monospace, SFMono-Regular, Menlo, monospace';
-  const larguraEstado = ctx.measureText(estado).width + 14;
+  ctx.font = FONTE_ESTADO;
+  const larguraEstado = largura(ctx, estado, FONTE_ESTADO) + 14;
   const comChip = !compacto && (larguraMax === Infinity || larguraMax > larguraEstado + 70);
   const we = comChip ? larguraEstado : 0;
   ctx.font = fonteNome;
-  const nome = cortar(ctx, nomeCompleto, larguraMax === Infinity ? Infinity : larguraMax - we - 8);
-  const wn = ctx.measureText(nome).width;
+  const nome = cortar(
+    ctx,
+    nomeCompleto,
+    larguraMax === Infinity ? Infinity : larguraMax - we - 8,
+    fonteNome,
+  );
+  const wn = largura(ctx, nome, fonteNome);
   const total = wn + (comChip ? 8 + we : 0);
   const x = Math.round(cx - total / 2);
   const y = Math.round(cy);
@@ -870,13 +934,19 @@ function etiqueta(
  * Cortar com reticências escondia justamente o que interessa: "Análises de
  * viabilidade apr…" não diz nada. Quebrado em duas linhas, cabe inteiro.
  */
-function quebrar(ctx: CanvasRenderingContext2D, texto: string, limite: number, maxLinhas: number): string[] {
+function quebrar(
+  ctx: CanvasRenderingContext2D,
+  texto: string,
+  limite: number,
+  maxLinhas: number,
+  fonte: string,
+): string[] {
   const palavras = texto.split(/\s+/);
   const linhas: string[] = [];
   let atual = "";
   for (const palavra of palavras) {
     const tentativa = atual ? `${atual} ${palavra}` : palavra;
-    if (ctx.measureText(tentativa).width <= limite || !atual) {
+    if (largura(ctx, tentativa, fonte) <= limite || !atual) {
       atual = tentativa;
     } else {
       linhas.push(atual);
@@ -887,7 +957,9 @@ function quebrar(ctx: CanvasRenderingContext2D, texto: string, limite: number, m
   if (linhas.length < maxLinhas && atual) linhas.push(atual);
   // sobrou palavra: a última linha avisa com reticências, mas só nesse caso
   const usadas = linhas.join(" ").split(/\s+/).length;
-  if (usadas < palavras.length) linhas[linhas.length - 1] = cortar(ctx, linhas[linhas.length - 1] + " …", limite);
+  if (usadas < palavras.length) {
+    linhas[linhas.length - 1] = cortar(ctx, linhas[linhas.length - 1] + " …", limite, fonte);
+  }
   return linhas;
 }
 
@@ -902,12 +974,13 @@ function balao(
 ) {
   const LARGURA_MAX = 230;
   const ALTURA_LINHA = 14;
-  ctx.font = '600 11px ui-monospace, SFMono-Regular, Menlo, monospace';
-  const linhas = quebrar(ctx, rotulo, LARGURA_MAX, 3);
-  const larguraRotulo = Math.max(...linhas.map((l) => ctx.measureText(l).width));
-  ctx.font = '600 9px ui-monospace, SFMono-Regular, Menlo, monospace';
-  const nomeCurto = cortar(ctx, nome, LARGURA_MAX);
-  const w = Math.max(ctx.measureText(nomeCurto).width, larguraRotulo) + 14;
+  ctx.font = FONTE_ROTULO;
+  const linhas = quebrar(ctx, rotulo, LARGURA_MAX, 3, FONTE_ROTULO);
+  const larguraRotulo = Math.max(...linhas.map((l) => largura(ctx, l, FONTE_ROTULO)));
+  const fonteNome = '600 9px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.font = fonteNome;
+  const nomeCurto = cortar(ctx, nome, LARGURA_MAX, fonteNome);
+  const w = Math.max(largura(ctx, nomeCurto, fonteNome), larguraRotulo) + 14;
   const h = 14 + linhas.length * ALTURA_LINHA;
 
   const limite = ctx.canvas.width / (ctx.getTransform().a || 1);
