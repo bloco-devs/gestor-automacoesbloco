@@ -290,7 +290,17 @@ function BarraDeTrabalhoImpl({
   const temQualquerFiltro = busca || filtroMembros.length > 0 || filtrosEtiquetas.length > 0;
 
   return (
-    <div className="surface-glass sticky top-0 z-20 border-b">
+    /*
+       * `top-11`, nao `top-0`.
+       *
+       * O header do app e `sticky top-0 z-30 h-11` (AppLayout). Com esta
+       * barra tambem em `top-0`, as duas colam no MESMO ponto e a de z
+       * menor passa por baixo: as abas ("Todas", "Minhas", ...) somem atras
+       * do titulo do projeto, cortadas no meio da letra. Colar em 11 (a
+       * altura do header) empilha as duas em vez de sobrepor. No mobile o
+       * header nao e sticky, entao lá `top-0` continua certo.
+       */
+      <div className="surface-glass sticky top-0 z-20 border-b md:top-11">
       <div className="flex h-10 w-full items-center gap-1 px-4 md:px-6">
         {/* Filas */}
         <nav aria-label="Fila" className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
