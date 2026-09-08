@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  atividadePorNo,
+  portaAtiva,
+  JANELA_DE_PORTA_MS,
   agruparExecucoes,
   criarFilaDeEventos,
   fonteDeDemandas,
@@ -330,5 +333,68 @@ describe("agrupamento da rajada de execuções", () => {
     const eventos = agruparExecucoes(rajada);
     const sienge = eventos.find((e) => e.destino === "sienge")!;
     expect(sienge.timestamp).toBe(Date.parse(t("09:00:51.000")));
+  });
+});
+
+// ===========================================================================
+/*
+ * As dez execuções da última hora, medidas em 08/09/2026: TODAS com origem
+ * nula — pessoas chamando o Autentique, duas por minuto entre 13:27 e 13:31.
+ * Nenhuma vira viagem, e todas as dez são atividade real na porta.
+ */
+describe("atividade na porta, inclusive quando quem chamou foi pessoa", () => {
+  const AGORA = Date.parse("2026-09-08T13:32:00Z");
+  const reais = [
+    ...Array.from({ length: 10 }, (_, i) => ({
+      id: `p${i}`,
+      created_at: `2026-09-08T13:${27 + Math.floor(i / 2)}:${i % 2 ? "40" : "10"}.000Z`,
+      origem: null,
+      destino: "autentique",
+      falhou: false,
+    })),
+  ];
+
+  it("execução por pessoa não vira viagem, mas conta na porta", () => {
+    expect(agruparExecucoes(reais)).toEqual([]);
+    const a = atividadePorNo(reais).get("autentique")!;
+    expect(a.execucoes).toBe(10);
+    expect(a.falhas).toBe(0);
+  });
+
+  it("o carimbo é o da execução mais recente", () => {
+    const a = atividadePorNo(reais).get("autentique")!;
+    expect(a.ultimo).toBe(Date.parse("2026-09-08T13:31:40.000Z"));
+  });
+
+  it("a porta acende dentro da janela e apaga depois", () => {
+    const a = atividadePorNo(reais).get("autentique");
+    expect(portaAtiva(a, AGORA)).toBe(true);
+    expect(portaAtiva(a, a!.ultimo + JANELA_DE_PORTA_MS - 1)).toBe(true);
+    expect(portaAtiva(a, a!.ultimo + JANELA_DE_PORTA_MS + 1)).toBe(false);
+  });
+
+  it("nó sem execução nenhuma não acende", () => {
+    expect(portaAtiva(atividadePorNo(reais).get("sienge"), AGORA)).toBe(false);
+    expect(portaAtiva(undefined, AGORA)).toBe(false);
+  });
+
+  it("execução de SISTEMA conta nos dois: viagem e porta", () => {
+    // São dois fatos do mesmo registro, não uma escolha entre eles.
+    const doSistema = [
+      { id: "s1", created_at: "2026-09-08T13:31:00.000Z", origem: "fluxo-caixa", destino: "sienge", falhou: false },
+      { id: "s2", created_at: "2026-09-08T13:31:10.000Z", origem: "fluxo-caixa", destino: "sienge", falhou: true },
+    ];
+    expect(agruparExecucoes(doSistema)).toHaveLength(1);
+    const a = atividadePorNo(doSistema).get("sienge")!;
+    expect(a.execucoes).toBe(2);
+    expect(a.falhas).toBe(1);
+  });
+
+  it("destino ausente não entra, e carimbo torto não quebra", () => {
+    const m = atividadePorNo([
+      { id: "a", created_at: "2026-09-08T13:31:00.000Z", origem: null, destino: null, falhou: false },
+      { id: "b", created_at: "torto", origem: null, destino: "sienge", falhou: false },
+    ]);
+    expect(m.size).toBe(0);
   });
 });

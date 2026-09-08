@@ -176,7 +176,20 @@ async function lerEventos(
       );
       return undefined;
     }
-    console.log(`[eventos] ok: ${fora.length} execucoes na janela.`);
+    /*
+     * DUAS contagens, e a segunda e a que importa.
+     *
+     * `ok: 10` me enganou: as dez execucoes chegaram, e todas as dez tinham
+     * origem nula — chamadas feitas por PESSOA, nao por sistema. Sem origem
+     * nao ha BLINK para levantar da mesa, entao nenhuma virou viagem, e o log
+     * dizia "ok" enquanto o andar ficava parado. Agora ele separa o que
+     * chegou do que vira movimento.
+     */
+    const comOrigem = fora.filter((e) => e.origem !== null).length;
+    console.log(
+      `[eventos] ok: ${fora.length} execucoes na janela, ${comOrigem} com origem de ` +
+        `sistema (viram viagem); ${fora.length - comOrigem} por pessoa (acendem a porta).`,
+    );
     return fora;
   } catch (e) {
     console.warn(`[eventos] a leitura lancou: ${e instanceof Error ? e.message : String(e)}`);

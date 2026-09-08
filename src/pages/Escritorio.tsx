@@ -12,7 +12,7 @@ import { fonteDeDemandas, type EventoEcossistema } from "@/modules/escritorio/ev
 import { useDemands } from "@/modules/demands/hooks";
 import { resumoDeEstados } from "@/modules/escritorio/estado";
 import { resumoDeUso } from "@/modules/escritorio/uso";
-import { agruparExecucoes } from "@/modules/escritorio/eventos";
+import { agruparExecucoes, atividadePorNo } from "@/modules/escritorio/eventos";
 
 /** Recarrega o retrato do HUB de tempos em tempos; não é evento a evento. */
 const INTERVALO_RECARGA_MS = 60_000;
@@ -146,6 +146,19 @@ export default function EscritorioPage() {
     () => [...eventosDeDemanda, ...agruparExecucoes(efetivos.execucoes)],
     [eventosDeDemanda, efetivos.execucoes],
   );
+  /*
+   * O MESMO registro, lido de outro jeito.
+   *
+   * `agruparExecucoes` só aproveita o que tem origem de sistema, porque sem
+   * origem não há BLINK para levantar da mesa. Isto aproveita o resto: o
+   * DESTINO é conhecido em toda execução, então a porta do serviço chamado
+   * acende — inclusive nas chamadas feitas por pessoa, que na última hora
+   * medida eram 100% delas.
+   */
+  const atividadeNasPortas = useMemo(
+    () => atividadePorNo(efetivos.execucoes),
+    [efetivos.execucoes],
+  );
 
   const aproximar = (delta: number) => {
     setAjustar(false);
@@ -228,6 +241,7 @@ export default function EscritorioPage() {
             dados={efetivos}
             demo={demo}
             eventosExternos={eventosDoAndar}
+            atividade={atividadeNasPortas}
             trabalhoPorSistema={trabalhoPorSistema}
             escala={escala}
             onEscala={(e) => { setAjustar(false); setEscala(e); }}

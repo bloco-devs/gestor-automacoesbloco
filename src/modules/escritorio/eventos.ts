@@ -168,6 +168,67 @@ export function agruparExecucoes(linhas: ExecucaoDoHub[]): EventoEcossistema[] {
   return [...grupos.values()].sort((a, b) => b.timestamp - a.timestamp);
 }
 
+/**
+ * Atividade recente em cada nó chamado, venha de quem vier.
+ *
+ * POR QUE ISTO EXISTE SEPARADO DA VIAGEM
+ *
+ * Das dez execuções da última hora medidas em 08/09/2026, TODAS tinham origem
+ * nula: eram pessoas chamando o Autentique, duas por minuto. `agruparExecucoes`
+ * descarta essas — e com razão, porque `ator_ref` de uma pessoa é o id dela, e
+ * não existe BLINK de origem para levantar da mesa. Inventar um seria animar o
+ * que não aconteceu.
+ *
+ * Mas jogar o fato fora inteiro também é errado: alguém chamou o Autentique
+ * duas vezes às 13:31, e isso é atividade real. O que dá para afirmar sem
+ * inventar é o DESTINO — a porta daquele serviço teve movimento. A lâmpada
+ * acende, e nenhum BLINK anda.
+ *
+ * Vale para execução de sistema também: se a Gestão Financeira chamou o
+ * Sienge, a porta do Sienge teve movimento, além da viagem. São dois fatos do
+ * mesmo registro.
+ */
+export interface AtividadeDoNo {
+  execucoes: number;
+  falhas: number;
+  /** Carimbo da execução mais recente, em ms. */
+  ultimo: number;
+}
+
+/**
+ * Quanto tempo uma execução mantém a lâmpada acesa.
+ *
+ * Três minutos, e não os dois da janela de atividade da saúde: aquela compara
+ * dois retratos de 60 s e precisa da folga; esta olha carimbo de execução
+ * direto, então pode ser mais curta e ainda cobrir o intervalo entre duas
+ * leituras da página.
+ */
+export const JANELA_DE_PORTA_MS = 180_000;
+
+export function atividadePorNo(linhas: ExecucaoDoHub[]): Map<string, AtividadeDoNo> {
+  const mapa = new Map<string, AtividadeDoNo>();
+  for (const l of linhas) {
+    const destino = l.destino;
+    if (!destino) continue;
+    const t = Date.parse(l.created_at);
+    if (Number.isNaN(t)) continue;
+    const atual = mapa.get(destino);
+    if (!atual) {
+      mapa.set(destino, { execucoes: 1, falhas: l.falhou ? 1 : 0, ultimo: t });
+      continue;
+    }
+    atual.execucoes += 1;
+    if (l.falhou) atual.falhas += 1;
+    if (t > atual.ultimo) atual.ultimo = t;
+  }
+  return mapa;
+}
+
+/** A porta teve movimento agora? */
+export function portaAtiva(a: AtividadeDoNo | undefined, agora: number): boolean {
+  return !!a && agora - a.ultimo <= JANELA_DE_PORTA_MS;
+}
+
 /** Retrato = o mapa de saúde por sistema, exatamente como o HUB devolve. */
 export type Retrato = Record<string, SaudeSistema>;
 

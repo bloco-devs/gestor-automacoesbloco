@@ -18,7 +18,7 @@ import {
 import type { Estado } from "./estado";
 import { pessoasAgora } from "./uso";
 import { obterSprite, type SpriteId } from "./mobiliario";
-import type { EventoEcossistema } from "./eventos";
+import { portaAtiva, type AtividadeDoNo, type EventoEcossistema } from "./eventos";
 
 const ESCALA_MIN = 1;
 const ESCALA_MAX = 4;
@@ -88,6 +88,11 @@ export interface EscritorioCanvasProps {
   eventosExternos?: EventoEcossistema[];
   /** Demandas em trabalho por BLINK responsável visual. */
   trabalhoPorSistema?: Record<string, number>;
+  /**
+   * Execuções recentes por nó chamado, do registro do HUB. Acende a porta —
+   * inclusive quando quem chamou foi uma pessoa e não há viagem a mostrar.
+   */
+  atividade?: Map<string, AtividadeDoNo>;
 }
 
 interface Camera {
@@ -110,6 +115,7 @@ export function EscritorioCanvas({
   ajustar,
   onApontar,
   eventosExternos,
+  atividade,
   trabalhoPorSistema,
 }: EscritorioCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -358,12 +364,32 @@ export function EscritorioCanvas({
         if (!servico || servico.estado === "sem-dados") continue;
         const lx = porta.x + 21;
         const ly = porta.y + 3;
-        const pulso = !!servico.executando && Math.floor(agora / 700) % 2 === 0;
+        /*
+         * A EXECUÇÃO REGISTRADA MANDA MAIS QUE A SAÚDE AGREGADA.
+         *
+         * `servico.executando` vem do retrato: compara dois `ultima` a cada
+         * 60 s. Agora existe sinal melhor — o carimbo da execução, por nó.
+         * Das dez execuções da última hora, todas foram chamadas por PESSOA:
+         * não geram viagem (não há origem para levantar da mesa), mas a porta
+         * teve movimento e é verdade dizer isso.
+         *
+         * Quando há execução recente a lâmpada acende mesmo que o agregado
+         * classifique o serviço como "sem execução" — o agregado subconta o
+         * volume em cerca de doze vezes, e o registro é o fato.
+         */
+        const atv = atividade?.get(porta.conectorId);
+        const chamadoAgora = portaAtiva(atv, agora);
+        const pulso = (chamadoAgora || !!servico.executando) && Math.floor(agora / 700) % 2 === 0;
         ctx.fillStyle = "#14201a";
         ctx.fillRect(lx - 1, ly - 1, 8, 6);
-        if (servico.estado === "sem-execucao") continue; // soquete sem luz
+        // soquete sem luz só quando NÃO houve execução registrada agora
+        if (servico.estado === "sem-execucao" && !chamadoAgora) continue;
         const cor =
-          servico.estado === "falha" ? "#e04a3c" : servico.executando ? "#3ecf8e" : "#5c5346";
+          servico.estado === "falha"
+            ? "#e04a3c"
+            : chamadoAgora || servico.executando
+              ? "#3ecf8e"
+              : "#5c5346";
         ctx.fillStyle = cor;
         ctx.fillRect(lx, ly, 6, 4);
         if (pulso) {
