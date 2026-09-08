@@ -29,6 +29,75 @@ interface SaudeOut {
   [nodeId: string]: SaudeNode;
 }
 
+/**
+ * USO HUMANO — sinal diferente de `saude`, e por isso campo separado.
+ *
+ * `saude` vem de `integracao_execucoes`/`sincronizacao_execucoes`: mede
+ * MAQUINA. Ela nunca teve como responder "tem gente usando este sistema", e a
+ * tela do Escritorio afirmava o contrario sem querer — o Gestor de Automacoes
+ * aparecia sem execucao justamente enquanto era usado.
+ *
+ * Os dois sinais sao quase complementares. Medido no HUB em 08/09/2026: o
+ * sistema com mais gente (`processos`, 7 pessoas em 24 h) tinha ZERO execucao
+ * de integracao, e o unico com execucao (`portfolio`) nao tinha ninguem
+ * dentro havia mais de um dia.
+ *
+ * Vem da view `ecossistema_uso`, criada no HUB — agregados por sistema, sem
+ * nenhuma pessoa identificada.
+ */
+interface UsoNode {
+  ultimo_login: string | null;
+  pessoas_24h: number;
+  pessoas_30d: number;
+}
+
+interface UsoOut {
+  [nodeId: string]: UsoNode;
+}
+
+/**
+ * Le a view de uso do HUB por PostgREST.
+ *
+ * SEPARADA da chamada do catalogo, e com degradacao propria, de proposito:
+ *
+ *   1. A `ecossistema-catalogo` e consumida pelo Diagrama e pelo
+ *      `match-ecossistema` alem daqui. Nao alterar o formato dela e o que
+ *      garante que este campo novo nao possa quebrar os outros dois.
+ *   2. Se o token nao tiver permissao de leitura na view, ou a view nao
+ *      existir, `uso` volta indefinido e a resposta fica EXATAMENTE como era
+ *      antes. Nada aqui pode derrubar o mapa.
+ */
+async function lerUso(
+  hubUrl: string,
+  token: string,
+  validNodeIds: Set<string>,
+): Promise<UsoOut | undefined> {
+  try {
+    const resp = await fetch(
+      `${hubUrl}/rest/v1/ecossistema_uso?select=slug,ultimo_login,pessoas_24h,pessoas_30d`,
+      { headers: { Authorization: `Bearer ${token}`, apikey: token } },
+    );
+    if (!resp.ok) return undefined;
+    const linhas: unknown = await resp.json();
+    if (!Array.isArray(linhas)) return undefined;
+    const uso: UsoOut = {};
+    for (const l of linhas as Record<string, unknown>[]) {
+      const slug = l?.slug ? String(l.slug) : null;
+      // Slug que nao existe no catalogo nao entra: o mapa nao desenha node que
+      // ele nao conhece, e uma chave orfa aqui viraria dado sem dono.
+      if (!slug || !validNodeIds.has(slug)) continue;
+      uso[slug] = {
+        ultimo_login: l.ultimo_login ? String(l.ultimo_login) : null,
+        pessoas_24h: Number(l.pessoas_24h ?? 0),
+        pessoas_30d: Number(l.pessoas_30d ?? 0),
+      };
+    }
+    return Object.keys(uso).length > 0 ? uso : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function ok(body: unknown, cors: Record<string, string>) {
   return new Response(JSON.stringify(body), {
     status: 200,
@@ -215,6 +284,10 @@ Deno.serve(async (req) => {
       if (sistemaNode !== conectorNode) addSaude(sistemaNode, h);
     }
 
+    // Aditivo: quando a leitura falha, `uso` fica de fora e a resposta e a
+    // mesma de antes, campo por campo.
+    const uso = await lerUso(HUB_URL, HUB_TOKEN, validNodeIds);
+
     return ok(
       {
         fonte: "hub",
@@ -223,6 +296,7 @@ Deno.serve(async (req) => {
         conectoresExternos,
         integracoes: Array.from(edgeMap.values()),
         saude,
+        ...(uso ? { uso } : {}),
       },
       cors,
     );
