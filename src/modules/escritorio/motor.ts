@@ -307,11 +307,22 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
      */
     if (estaParado(p.estado)) return Infinity;
     /*
-     * O serviço externo só atravessa a porta quando EXECUTOU de verdade desde
-     * a última leitura. Antes bastava a saúde dizer "trabalhando", que aceita
-     * uma execução de 24 h atrás — e a entrega virava animação sem fato.
+     * A PORTA SEGUE A JANELA DE 24 H, NÃO A DE 2 MINUTOS.
+     *
+     * Ela exigia `executando` — execução nos últimos 120 segundos. Parecia a
+     * regra mais honesta e na prática era precisão que o HUB não sustenta: ele
+     * reporta em blocos (09:00, 11:00), e a página lê um retrato. Medido com o
+     * dado real de 08/09: a janela de 2 minutos coincidia com o retrato em UM
+     * conector, e as outras doze portas ficavam fechadas o dia inteiro — com o
+     * Sienge tendo executado 457 vezes no mês.
+     *
+     * A afirmação passa a ser "este serviço executou hoje", que é verdade e é
+     * o que o retrato tem como sustentar. `estaParado` acima já barrou quem
+     * não executou em 24 h, quem tem registro zerado e quem o HUB não conhece
+     * — nada disso anda. `executando` deixa de ser porteiro e passa a ser
+     * ritmo: quem rodou agora sai mais vezes.
      */
-    if (p.tipo === "externo") return p.executando ? 26 + Math.random() * 40 : Infinity;
+    if (p.tipo === "externo") return (p.executando ? 26 : 70) + Math.random() * 40;
     const execs = saudeDe(p.id)?.execs ?? 0;
     const base = execs > 0 ? intervaloEntreViagens(execs, maiorExecs) : 45;
     /*
@@ -341,17 +352,42 @@ export function criarMotor(andar: Andar, dados: DadosEscritorio, agora = Date.no
     }
     const escolha = opcoes[Math.floor(Math.random() * opcoes.length)];
 
-    // dois sistemas se encontram e conversam; um conector externo só entrega
+    // dois sistemas se encontram e conversam; quem não tem par vai entregar
     if (p.tipo === "sistema" && p.mesa) {
       const outro = porId.get(escolha.destino.sistemaId);
       if (outro && iniciarConversa(p, outro, escolha.label, undefined, demo)) return;
+      /*
+       * SEM PAR ELEGÍVEL, ELE ENTREGA — não fica sentado.
+       *
+       * Conversa exige os DOIS lados ativos, e é justo: uma troca precisa de
+       * quem responde. Entrega não. Ela afirma "quem saiu executou e levou
+       * dado adiante", e isso depende só de quem sai — é a mesma regra pela
+       * qual o conector externo sempre pôde entregar numa mesa parada.
+       *
+       * Sem isto, medido com o dado real de 08/09: o Portfólio era o único
+       * sistema ativo dos dezesseis, tentava sair, não achava parceiro em
+       * nenhuma das cinco integrações dele, e desistia — dezenas de vezes em
+       * dez minutos, sem nunca levantar da cadeira.
+       */
+      if (outro && !demo && viagensAtivas() + 1 <= MAX_VIAGENS) {
+        const pontos = caminhoEntreMesas(andar, p.mesa, escolha.destino);
+        if (pontos) {
+          porRota(p, pontos, escolha.destino.sistemaId, escolha.label);
+          return;
+        }
+      }
       // destino ocupado ou sem rota: tenta de novo daqui a pouco
       p.proxima = 4 + Math.random() * 6;
       return;
     }
 
     const pontos = p.porta ? caminhoDaPorta(andar, p.porta, escolha.destino) : null;
-    if (!pontos) return;
+    if (!pontos) {
+      // Sem reagendar, `proxima` fica em zero e ele tenta de novo a cada
+      // quadro — trinta tentativas por segundo, para sempre.
+      p.proxima = 4 + Math.random() * 6;
+      return;
+    }
     porRota(p, pontos, escolha.destino.sistemaId, escolha.label);
   };
 

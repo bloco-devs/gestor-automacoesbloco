@@ -1137,7 +1137,7 @@ describe("trabalho de demanda aparece sem falsificar saúde", () => {
   });
 });
 
-describe("serviço só entrega quando executou de verdade", () => {
+describe("serviço entrega quando executou HOJE, e o ritmo vem da atividade", () => {
   const conectores = [{ id: "n8n", nome: "n8n" }];
   const base = {
     ...dadosEco,
@@ -1150,29 +1150,65 @@ describe("serviço só entrega quando executou de verdade", () => {
     const m = criarMotor(andarServ, { ...base, saude }, AGORA);
     const p = m.porId.get("n8n")!;
     let saiu = false;
+    let viagens = 0;
+    let anterior = p.fase;
     for (let i = 0; i < 30 * 600; i++) {
       m.atualizar(1 / 30, false);
-      if (p.fase === "indo") saiu = true;
+      if (p.fase === "indo") {
+        saiu = true;
+        if (anterior !== "indo") viagens++;
+      }
+      anterior = p.fase;
     }
-    return { p, saiu };
+    return { p, saiu, viagens };
   };
 
-  it("saúde de 24 h NÃO basta para o serviço sair pela porta", () => {
+  /*
+   * ESTA REGRA MUDOU, E O MOTIVO ESTÁ MEDIDO.
+   *
+   * A porta exigia execução nos últimos 120 segundos. Parecia a leitura mais
+   * honesta e era precisão que o HUB não sustenta: ele reporta em blocos
+   * (09:00, 11:00) e a página lê um retrato. Com o dado real de 08/09, a
+   * janela de 2 minutos coincidia com o retrato em UM conector; as outras doze
+   * portas ficavam fechadas o dia inteiro, com o Sienge tendo executado 457
+   * vezes no mês. O andar mostrava um escritório vazio sobre um ecossistema
+   * que rodou 18.500 vezes em trinta dias.
+   *
+   * A afirmação passou a ser "este serviço executou hoje" — verdade que o
+   * retrato tem como sustentar. O que NÃO mudou é o piso: quem não executou em
+   * 24 h, quem tem registro zerado e quem o HUB não conhece continuam sem sair
+   * do lugar, e é isso que os dois últimos casos protegem.
+   */
+  it("executou nas últimas 24 h: a porta abre", () => {
     const { p, saiu } = rodar(new Date(AGORA - 20 * 3_600_000).toISOString());
-    expect(p.estado, "a saúde continua trabalhando").toBe("trabalhando");
-    expect(p.executando, "mas não executou agora").toBe(false);
+    expect(p.estado, "a saúde diz trabalhando").toBe("trabalhando");
+    expect(p.executando, "e não executou nos últimos 2 minutos").toBe(false);
+    expect(saiu, "ainda assim entrega: executou hoje").toBe(true);
+  });
+
+  it("executou agora: entrega também, e com mais frequência", () => {
+    const agorinha = rodar(new Date(AGORA - 30_000).toISOString());
+    expect(agorinha.p.executando).toBe(true);
+    expect(agorinha.saiu).toBe(true);
+    // `executando` deixou de ser porteiro e passou a ser ritmo: 26 s de base
+    // contra 70 s. Em dez minutos isso tem de aparecer como mais viagens.
+    const ontem = rodar(new Date(AGORA - 20 * 3_600_000).toISOString());
+    expect(agorinha.viagens).toBeGreaterThan(ontem.viagens);
+  });
+
+  it("sem carimbo de execução, a porta continua fechada", () => {
+    // 900 execuções no mês e nenhuma data: tem histórico, então é `ocioso`,
+    // não `sem-execucao`. Ocioso não anda — a porta segue fechada.
+    const { p, saiu } = rodar(null);
+    expect(p.estado).toBe("ocioso");
+    expect(p.executando).toBe(false);
     expect(saiu).toBe(false);
   });
 
-  it("execução dentro da janela faz o serviço entregar", () => {
-    const { p, saiu } = rodar(new Date(AGORA - 30_000).toISOString());
-    expect(p.executando).toBe(true);
-    expect(saiu).toBe(true);
-  });
-
-  it("sem carimbo de execução, nem estado nem saída", () => {
-    const { p, saiu } = rodar(null);
-    expect(p.executando).toBe(false);
+  it("execução velha demais também não abre a porta", () => {
+    // Quatro dias: fora da janela de 24 h, então `ocioso` — e ocioso não anda.
+    const { p, saiu } = rodar(new Date(AGORA - 4 * 86_400_000).toISOString());
+    expect(p.estado).toBe("ocioso");
     expect(saiu).toBe(false);
   });
 });
