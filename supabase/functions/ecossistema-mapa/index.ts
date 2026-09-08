@@ -5,6 +5,23 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 
 const HUB_URL = (Deno.env.get("BLOCO_ID_HUB_URL") ?? "").replace(/\/+$/, "");
 const HUB_TOKEN = Deno.env.get("BLOCO_ID_TOKEN") ?? "";
+/*
+ * Credencial SEPARADA, e para uma coisa so: ler a view de uso pelo PostgREST
+ * do HUB.
+ *
+ * O `BLOCO_ID_TOKEN` nao serve. Ele e validado pela propria
+ * `ecossistema-catalogo`, que e uma function — o PostgREST nao o reconhece e
+ * responde 401. Isso ficou registrado no log em 08/09/2026, depois de tres
+ * rodadas tentando adivinhar por que `uso` nao chegava.
+ *
+ * A chave esperada aqui e a `anon` do projeto do HUB: ela e publica por
+ * natureza (todo front-end do HUB a embarca) e, sozinha, nao abre nada — quem
+ * decide o que ela le e o GRANT. Concedemos SELECT apenas na view
+ * `ecossistema_uso`, que expoe agregados e nenhuma pessoa identificada.
+ *
+ * Ausente, o `uso` simplesmente nao vem e o mapa segue igual.
+ */
+const HUB_ANON = Deno.env.get("BLOCO_ID_HUB_ANON_KEY") ?? "";
 
 interface SistemaOut { id: string; nome: string; grupo: string; status?: string | null }
 interface ConectorOut { id: string; nome: string; status?: string | null }
@@ -72,6 +89,13 @@ async function lerUso(
   token: string,
   validNodeIds: Set<string>,
 ): Promise<UsoOut | undefined> {
+  if (!token) {
+    console.warn(
+      "[uso] BLOCO_ID_HUB_ANON_KEY nao configurado — a leitura da view nem foi " +
+        "tentada. Cadastre o segredo para o sinal de uso humano aparecer.",
+    );
+    return undefined;
+  }
   try {
     const resp = await fetch(
       `${hubUrl}/rest/v1/ecossistema_uso?select=slug,ultimo_login,pessoas_24h,pessoas_30d`,
@@ -311,7 +335,7 @@ Deno.serve(async (req) => {
 
     // Aditivo: quando a leitura falha, `uso` fica de fora e a resposta e a
     // mesma de antes, campo por campo.
-    const uso = await lerUso(HUB_URL, HUB_TOKEN, validNodeIds);
+    const uso = await lerUso(HUB_URL, HUB_ANON, validNodeIds);
 
     return ok(
       {
