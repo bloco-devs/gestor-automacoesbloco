@@ -50,3 +50,13 @@ verify_jwt = true
 # role key no Authorization, que passa na verificação como qualquer outro JWT.
 [functions.notificacao-email-fila]
 verify_jwt = true
+
+# --- Sistema RPA Bloco (onda O0) ---
+# verify_jwt = false porque quem chama e o gateway do HUB, nao um usuario logado.
+# As duas se autenticam sozinhas comparando o campo `token` do corpo com o secret
+# HUB_RPA_TOKEN, em tempo constante. Ver bloco-rpa/edges/README.md.
+[functions.rpa-registrar]
+verify_jwt = false
+
+[functions.rpa-evidencia-url]
+verify_jwt = false
