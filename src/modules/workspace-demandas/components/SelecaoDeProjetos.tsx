@@ -473,7 +473,7 @@ export function SelecaoDeProjetos() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="surface-glass sticky top-0 z-20 border-b">
+      <div className="surface-glass sticky top-0 z-20 border-b md:top-11">
         <div className="flex h-10 w-full items-center gap-3 px-4 md:px-6">
           <div className="relative w-56">
             <Search
