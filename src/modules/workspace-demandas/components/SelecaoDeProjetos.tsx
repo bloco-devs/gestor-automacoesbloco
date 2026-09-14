@@ -473,7 +473,26 @@ export function SelecaoDeProjetos() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="surface-glass sticky top-0 z-20 border-b md:top-11">
+      {/*
+        NÃO ACRESCENTE `md:top-11` AQUI. Já voltou duas vezes.
+
+        `top-11` são 44px, e eram a altura da barra de abas
+        "Hoje · Demandas · Builder · DevTools" que o `WorkspaceShell` tinha —
+        e que foi REMOVIDA de propósito (o motivo está no comentário dele: era
+        uma segunda cópia da sidebar). Não há mais nada de 44px acima desta
+        barra: o `WorkspaceShell` já desconta o header global na própria altura
+        (`100vh - var(--app-header-h)`).
+
+        O estrago não é só a faixa vazia. `position: sticky` desloca o elemento
+        sem empurrar os irmãos, então a barra desce 44px e passa a COBRIR os
+        primeiros 44px da lista abaixo — que é exatamente a linha "Caixa de
+        Entrada" (~42px). Ela não some: fica atrás desta barra. Foi assim que
+        um usuário relatou "a caixa de entrada sumiu".
+
+        Se o problema que você está tentando resolver é aba cortada, ele é na
+        tela das lentes (`WorkspaceDemandas`), não aqui.
+      */}
+      <div className="surface-glass sticky top-0 z-20 border-b">
         <div className="flex h-10 w-full items-center gap-3 px-4 md:px-6">
           <div className="relative w-56">
             <Search
