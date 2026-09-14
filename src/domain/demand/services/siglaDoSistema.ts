@@ -37,6 +37,11 @@ export const SISTEMAS_ECOSSISTEMA_BLOCO_ID: Record<string, { sigla: string; nome
   automacoes: { sigla: "AUTO", nome: "Gestor de Automações" },
   portfolio: { sigla: "PORT", nome: "Gestor de Portfólio" },
   "sucesso-cliente": { sigla: "CS", nome: "Sucesso do Cliente" },
+  // `viabilidade` e o slug que o HUB realmente usa; `viab`/`viabuilder` sao
+  // apelidos que estavam aqui sem o nome de verdade ao lado. Sem esta linha,
+  // `nomeDoSistemaPeloSlug("viabilidade")` devolvia nulo e o ViaBuilder Pro
+  // aparecia como "nao identificado" no relatorio, com sistema cadastrado.
+  viabilidade: { sigla: "VIAB", nome: "ViaBuilder Pro" },
   viab: { sigla: "VIAB", nome: "ViaBuilder Pro" },
   viabuilder: { sigla: "VIAB", nome: "ViaBuilder Pro" },
   sienge: { sigla: "SIENGE", nome: "Sienge" },

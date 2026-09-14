@@ -1,3 +1,5 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   formatarReferenciaComSigla,
@@ -207,5 +209,73 @@ describe("Tecnologia não é um sistema, e o Escritório não pode vê-la", () =
     const lista = comDestinosFora([{ id: "tecnologia", nome: "Tecnologia (do HUB)" }]);
     expect(lista).toHaveLength(1);
     expect(lista[0].nome).toBe("Tecnologia (do HUB)");
+  });
+});
+
+/*
+ * O MAPA DO BANCO E O CATALOGO DO FRONT TEM DE DIZER A MESMA COISA
+ *
+ * Duas regras decidiam o codigo do chamado e nunca se falaram: o banco casava
+ * por familia de palavras (%obra%, %financ%) e o front por catalogo de slug.
+ * Como os slugs sao nomes internos — `locacao`, `fluxo-caixa`,
+ * `produtividade` —, quase nenhum casava, e 81 das 95 demandas nasceram com o
+ * prefixo generico `REQ` mesmo tendo sistema gravado ao lado. A tela
+ * disfarcava, reescrevendo o prefixo na exibicao.
+ *
+ * A migration passou o banco para mapa exato. Este teste existe para os dois
+ * mapas nao divergirem de novo: ele LE o SQL e compara com o catalogo daqui.
+ */
+describe("o prefixo do banco combina com a sigla do front", () => {
+  /** A migration mais recente que define `demand_prefixo_slug`. */
+  function mapaDoBanco(): Array<[string, string]> {
+    const dir = join(process.cwd(), "supabase/migrations");
+    const arquivo = readdirSync(dir)
+      .filter((n) => n.endsWith(".sql"))
+      .sort()
+      .reverse()
+      .find((n) => readFileSync(join(dir, n), "utf8").includes("FUNCTION public.demand_prefixo_slug"));
+    if (!arquivo) throw new Error("migration de demand_prefixo_slug nao encontrada");
+    const sql = readFileSync(join(dir, arquivo), "utf8");
+    return [...sql.matchAll(/WHEN\s+'([a-z0-9-]+)'\s+THEN\s+'([A-Z]+)'/g)].map(
+      (m) => [m[1], m[2]] as [string, string],
+    );
+  }
+
+  /*
+   * As duas divergencias DELIBERADAS, e o motivo de cada uma.
+   *
+   * Sao os prefixos que as demandas desses sistemas ja carregam e que ja
+   * circulam citados. O catalogo daqui os chama de SGPO e AUTO, mas essa sigla
+   * so serve para a COR do cracha: codigo com prefixo real nunca e reescrito
+   * na exibicao. Alinhar por alinhar quebraria citacao viva.
+   */
+  const PREFIXO_HISTORICO: Record<string, string> = {
+    processos: "GP",
+    automacoes: "AUT",
+  };
+
+  const mapa = mapaDoBanco();
+
+  it("o SQL foi lido e tem os sistemas do ecossistema", () => {
+    expect(mapa.length).toBeGreaterThanOrEqual(16);
+  });
+
+  it("cada slug do banco devolve a sigla que o front usaria", () => {
+    const divergentes = mapa
+      .map(([slug, siglaSql]) => {
+        const esperada = PREFIXO_HISTORICO[slug] ?? siglaDoSistema(slug);
+        return siglaSql === esperada ? null : `${slug}: SQL=${siglaSql} front=${esperada}`;
+      })
+      .filter(Boolean);
+    expect(divergentes).toEqual([]);
+  });
+
+  it("todo slug do banco tem nome proprio para o relatorio", () => {
+    // Sem nome, a coluna Sistema mostra "nao identificado" para um sistema que
+    // esta cadastrado — foi o caso do `viabilidade`.
+    const semNome = mapa
+      .map(([slug]) => slug)
+      .filter((slug) => slug !== "tecnologia" && !nomeDoSistemaPeloSlug(slug));
+    expect(semNome).toEqual([]);
   });
 });
