@@ -3,7 +3,6 @@
  * Feature-flagged por `ux.rewrite`. Aditivo, não altera navegação legada.
  */
 import {
-  FolderKanban,
   Home,
   Inbox as InboxIcon,
   BookOpen,
@@ -64,46 +63,26 @@ const WORKSPACE: NavigationSchema = {
       label: "Workspace",
       items: [
         { id: "ws.hoje", label: "Hoje", route: "/workspace", icon: Home, aliases: ["/dashboard", "/workspace/hoje"] },
-        /*
-         * "Demandas" leva ao que CHEGOU; "Projetos" leva ao que está sendo
-         * construído. A ordem é a do fluxo, e a separação existe porque ela
-         * faltava: havia um único item chamado "Demandas" que abria a tela de
-         * Projetos (os quadros), e quem procurava as demandas recebidas
-         * clicava nele, via uma lista de quadros e concluía que a caixa de
-         * entrada tinha sumido.
-         *
-         * São tabelas diferentes, não duas vistas da mesma coisa: `demands`
-         * guarda o que a conversa com o Blink criou, `atividades_boards` os
-         * quadros. Um rótulo só para as duas não tinha como estar certo.
-         */
         {
           id: "ws.demandas",
           label: "Demandas",
-          route: "/admin/demandas",
-          icon: InboxIcon,
-          aliases: ["/board-demandas"],
-        },
-        {
-          id: "ws.projetos",
-          label: "Projetos",
           route: "/workspace/demandas",
-          icon: FolderKanban,
+          icon: ListTodo,
           aliases: [
             "/atividades",
             "/solicitacoes",
             "/solicitacoes/kanban",
             "/kanban",
+            "/board-demandas",
+            "/admin/demandas",
           ],
         },
         { id: "ws.builder", label: "Builder", route: "/workspace/builder", icon: Wrench, aliases: ["/admin/workflows", "/studio"] },
         { id: "ws.devtools", label: "DevTools", route: "/workspace/devtools", icon: Terminal, aliases: ["/developer"] },
-        /*
-         * O "Inbox" continua fora, e agora por um motivo verificado em vez de
-         * herdado: ele lista `solicitacoes` — a tabela do fluxo antigo —, não
-         * `demands`. Recolocá-lo como atalho para "ver o que chegou" mostraria
-         * outra coisa. Quem precisar da tela continua chegando por /trabalho
-         * /inbox ou pela busca (⌘K).
-         */
+        // "Inbox" saiu do menu: era a central de trabalho do fluxo antigo de
+        // Solicitações, que não existe mais como conceito (a demanda nasce
+        // direto pela conversa). A tela e a rota continuam existindo — quem
+        // precisar chega por busca (⌘K) — só o atalho de exploração some.
       ],
     },
   ],

@@ -8,39 +8,12 @@ describe("Workspace navigation (FEATURE 026.3)", () => {
     expect(ws.home).toBe("/workspace");
   });
 
-  it("expõe exatamente Hoje, Demandas, Projetos, Builder e DevTools", () => {
-    // "Inbox" continua fora do menu, e o motivo agora é verificado: ele lista
-    // `solicitacoes`, a tabela do fluxo antigo, e não `demands`. Como atalho
-    // para "ver o que chegou" ele mostraria outra coisa. A rota
-    // /trabalho/inbox continua existindo e alcançável pela busca (⌘K).
+  it("expõe exatamente Hoje, Demandas, Builder e DevTools", () => {
+    // "Inbox" saiu do menu — era a central de trabalho do fluxo antigo de
+    // Solicitações. A rota /trabalho/inbox continua existindo e reachable
+    // por busca (⌘K); só o item de exploração no menu foi removido.
     const labels = ws.groups.flatMap((g) => g.items.map((i) => i.label));
-    expect(labels).toEqual(["Hoje", "Demandas", "Projetos", "Builder", "DevTools"]);
-  });
-
-  /*
-   * O DEFEITO QUE ESTE TESTE TRANCA
-   *
-   * Havia um item só, chamado "Demandas", apontando para /workspace/demandas —
-   * que é a tela de PROJETOS (os quadros). Quem procurava as demandas
-   * recebidas clicava nele, via uma lista de quadros e concluía que a caixa
-   * de entrada tinha sumido.
-   *
-   * São tabelas diferentes: `demands` guarda o que a conversa com o Blink
-   * criou; `atividades_boards`, os quadros. Um rótulo só não tinha como estar
-   * certo para as duas.
-   */
-  it("Demandas e Projetos são destinos diferentes, e o rótulo casa com a tela", () => {
-    const itens = ws.groups.flatMap((g) => g.items);
-    const demandas = itens.find((i) => i.label === "Demandas");
-    const projetos = itens.find((i) => i.label === "Projetos");
-    expect(demandas?.route).toBe("/admin/demandas");
-    expect(projetos?.route).toBe("/workspace/demandas");
-    expect(demandas?.route).not.toBe(projetos?.route);
-  });
-
-  it("quem digita o caminho do board de demandas cai em Demandas, não em Projetos", () => {
-    const aliases = listAliases();
-    expect(aliases.find((a) => a.from === "/board-demandas")?.to).toBe("/admin/demandas");
+    expect(labels).toEqual(["Hoje", "Demandas", "Builder", "DevTools"]);
   });
 
   it("/atividades vira alias para /workspace/demandas", () => {
