@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -304,6 +304,8 @@ export type Database = {
           arquivado: boolean
           arquivado_em: string | null
           background: string | null
+          concluido_em: string | null
+          concluido_por: string | null
           cor: string | null
           cover_url: string | null
           created_at: string
@@ -322,6 +324,8 @@ export type Database = {
           arquivado?: boolean
           arquivado_em?: string | null
           background?: string | null
+          concluido_em?: string | null
+          concluido_por?: string | null
           cor?: string | null
           cover_url?: string | null
           created_at?: string
@@ -340,6 +344,8 @@ export type Database = {
           arquivado?: boolean
           arquivado_em?: string | null
           background?: string | null
+          concluido_em?: string | null
+          concluido_por?: string | null
           cor?: string | null
           cover_url?: string | null
           created_at?: string
@@ -1279,6 +1285,41 @@ export type Database = {
           },
         ]
       }
+      demanda_conversa: {
+        Row: {
+          created_at: string
+          demanda_id: string
+          id: string
+          ordem: number
+          papel: string
+          texto: string
+        }
+        Insert: {
+          created_at?: string
+          demanda_id: string
+          id?: string
+          ordem: number
+          papel: string
+          texto: string
+        }
+        Update: {
+          created_at?: string
+          demanda_id?: string
+          id?: string
+          ordem?: number
+          papel?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demanda_conversa_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demanda_melhorias: {
         Row: {
           data: string
@@ -1923,6 +1964,991 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      relatorio_capacidade: {
+        Row: {
+          capacidade: string
+          concedida_em: string
+          concedida_por: string | null
+          concedida_por_email: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          capacidade: string
+          concedida_em?: string
+          concedida_por?: string | null
+          concedida_por_email?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          capacidade?: string
+          concedida_em?: string
+          concedida_por?: string | null
+          concedida_por_email?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      relatorio_ciclo: {
+        Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          created_at: string
+          fechado_em: string | null
+          fechado_por: string | null
+          fim: string
+          fuso: string
+          id: string
+          inicio: string
+          meta_pontos: number
+          observacoes: string | null
+          referencia: string
+          rotulo: string
+          situacao: string
+          updated_at: string
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          created_at?: string
+          fechado_em?: string | null
+          fechado_por?: string | null
+          fim: string
+          fuso?: string
+          id?: string
+          inicio: string
+          meta_pontos: number
+          observacoes?: string | null
+          referencia: string
+          rotulo: string
+          situacao?: string
+          updated_at?: string
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          created_at?: string
+          fechado_em?: string | null
+          fechado_por?: string | null
+          fim?: string
+          fuso?: string
+          id?: string
+          inicio?: string
+          meta_pontos?: number
+          observacoes?: string | null
+          referencia?: string
+          rotulo?: string
+          situacao?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      relatorio_ciclo_item: {
+        Row: {
+          autoclassificada: boolean
+          ciclo_id: string
+          classificacao: string
+          classificacao_rotulo: string | null
+          classificada_por: string | null
+          concluida_em: string
+          congelado_em: string
+          demanda_id: string | null
+          id: string
+          justificativa: string | null
+          minutos_lancados: number
+          pessoa_email: string | null
+          pessoa_id: string
+          pessoa_nome: string | null
+          pontos: number
+          projeto_id: string | null
+          sistema_slug: string | null
+          ticket_code: string
+          titulo: string
+        }
+        Insert: {
+          autoclassificada?: boolean
+          ciclo_id: string
+          classificacao: string
+          classificacao_rotulo?: string | null
+          classificada_por?: string | null
+          concluida_em: string
+          congelado_em?: string
+          demanda_id?: string | null
+          id?: string
+          justificativa?: string | null
+          minutos_lancados?: number
+          pessoa_email?: string | null
+          pessoa_id: string
+          pessoa_nome?: string | null
+          pontos: number
+          projeto_id?: string | null
+          sistema_slug?: string | null
+          ticket_code: string
+          titulo: string
+        }
+        Update: {
+          autoclassificada?: boolean
+          ciclo_id?: string
+          classificacao?: string
+          classificacao_rotulo?: string | null
+          classificada_por?: string | null
+          concluida_em?: string
+          congelado_em?: string
+          demanda_id?: string | null
+          id?: string
+          justificativa?: string | null
+          minutos_lancados?: number
+          pessoa_email?: string | null
+          pessoa_id?: string
+          pessoa_nome?: string | null
+          pontos?: number
+          projeto_id?: string | null
+          sistema_slug?: string | null
+          ticket_code?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorio_ciclo_item_ciclo_id_fkey"
+            columns: ["ciclo_id"]
+            isOneToOne: false
+            referencedRelation: "relatorio_ciclo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorio_ciclo_item_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: true
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorio_ciclo_item_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorio_ciclo_item_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relatorio_ciclo_resultado: {
+        Row: {
+          ciclo_id: string
+          congelado_em: string
+          dificil: number
+          entregas: number
+          facil: number
+          faixa_id: string | null
+          faixa_indefinida: boolean
+          faixa_rotulo: string | null
+          media: number
+          meta_pontos: number | null
+          percentual: number | null
+          pessoa_email: string | null
+          pessoa_id: string | null
+          pessoa_nome: string | null
+          pontos: number
+          valor_reais: number | null
+        }
+        Insert: {
+          ciclo_id: string
+          congelado_em?: string
+          dificil?: number
+          entregas: number
+          facil?: number
+          faixa_id?: string | null
+          faixa_indefinida?: boolean
+          faixa_rotulo?: string | null
+          media?: number
+          meta_pontos?: number | null
+          percentual?: number | null
+          pessoa_email?: string | null
+          pessoa_id?: string | null
+          pessoa_nome?: string | null
+          pontos: number
+          valor_reais?: number | null
+        }
+        Update: {
+          ciclo_id?: string
+          congelado_em?: string
+          dificil?: number
+          entregas?: number
+          facil?: number
+          faixa_id?: string | null
+          faixa_indefinida?: boolean
+          faixa_rotulo?: string | null
+          media?: number
+          meta_pontos?: number | null
+          percentual?: number | null
+          pessoa_email?: string | null
+          pessoa_id?: string | null
+          pessoa_nome?: string | null
+          pontos?: number
+          valor_reais?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorio_ciclo_resultado_ciclo_id_fkey"
+            columns: ["ciclo_id"]
+            isOneToOne: false
+            referencedRelation: "relatorio_ciclo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relatorio_classificacao: {
+        Row: {
+          autoclassificada: boolean
+          classificacao: string
+          definido_em: string
+          definido_por: string
+          definido_por_email: string | null
+          demanda_id: string
+          justificativa: string
+          pontos: number
+          updated_at: string
+        }
+        Insert: {
+          autoclassificada?: boolean
+          classificacao: string
+          definido_em?: string
+          definido_por: string
+          definido_por_email?: string | null
+          demanda_id: string
+          justificativa: string
+          pontos: number
+          updated_at?: string
+        }
+        Update: {
+          autoclassificada?: boolean
+          classificacao?: string
+          definido_em?: string
+          definido_por?: string
+          definido_por_email?: string | null
+          demanda_id?: string
+          justificativa?: string
+          pontos?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorio_classificacao_classificacao_fkey"
+            columns: ["classificacao"]
+            isOneToOne: false
+            referencedRelation: "relatorio_classificacao_tipo"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "relatorio_classificacao_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: true
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relatorio_classificacao_historico: {
+        Row: {
+          alterado_em: string
+          alterado_por: string
+          alterado_por_email: string | null
+          autoclassificada: boolean
+          classificacao_de: string | null
+          classificacao_para: string
+          demanda_id: string
+          id: string
+          justificativa: string
+          motivo_da_alteracao: string | null
+          origem: string
+          pontos_de: number | null
+          pontos_para: number
+        }
+        Insert: {
+          alterado_em?: string
+          alterado_por: string
+          alterado_por_email?: string | null
+          autoclassificada?: boolean
+          classificacao_de?: string | null
+          classificacao_para: string
+          demanda_id: string
+          id?: string
+          justificativa: string
+          motivo_da_alteracao?: string | null
+          origem: string
+          pontos_de?: number | null
+          pontos_para: number
+        }
+        Update: {
+          alterado_em?: string
+          alterado_por?: string
+          alterado_por_email?: string | null
+          autoclassificada?: boolean
+          classificacao_de?: string | null
+          classificacao_para?: string
+          demanda_id?: string
+          id?: string
+          justificativa?: string
+          motivo_da_alteracao?: string | null
+          origem?: string
+          pontos_de?: number | null
+          pontos_para?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorio_classificacao_historico_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relatorio_classificacao_projeto: {
+        Row: {
+          autoclassificada: boolean
+          classificacao: string
+          definido_em: string
+          definido_por: string
+          definido_por_email: string | null
+          justificativa: string
+          pontos: number
+          projeto_id: string
+          updated_at: string
+        }
+        Insert: {
+          autoclassificada?: boolean
+          classificacao: string
+          definido_em?: string
+          definido_por: string
+          definido_por_email?: string | null
+          justificativa: string
+          pontos: number
+          projeto_id: string
+          updated_at?: string
+        }
+        Update: {
+          autoclassificada?: boolean
+          classificacao?: string
+          definido_em?: string
+          definido_por?: string
+          definido_por_email?: string | null
+          justificativa?: string
+          pontos?: number
+          projeto_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorio_classificacao_projeto_classificacao_fkey"
+            columns: ["classificacao"]
+            isOneToOne: false
+            referencedRelation: "relatorio_classificacao_tipo"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "relatorio_classificacao_projeto_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: true
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorio_classificacao_projeto_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: true
+            referencedRelation: "atividades_boards_resumo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relatorio_classificacao_projeto_historico: {
+        Row: {
+          alterado_em: string
+          alterado_por: string
+          alterado_por_email: string | null
+          autoclassificada: boolean
+          classificacao_de: string | null
+          classificacao_para: string
+          id: string
+          justificativa: string
+          motivo_da_alteracao: string | null
+          origem: string
+          pontos_de: number | null
+          pontos_para: number
+          projeto_id: string
+        }
+        Insert: {
+          alterado_em?: string
+          alterado_por: string
+          alterado_por_email?: string | null
+          autoclassificada?: boolean
+          classificacao_de?: string | null
+          classificacao_para: string
+          id?: string
+          justificativa: string
+          motivo_da_alteracao?: string | null
+          origem: string
+          pontos_de?: number | null
+          pontos_para: number
+          projeto_id: string
+        }
+        Update: {
+          alterado_em?: string
+          alterado_por?: string
+          alterado_por_email?: string | null
+          autoclassificada?: boolean
+          classificacao_de?: string | null
+          classificacao_para?: string
+          id?: string
+          justificativa?: string
+          motivo_da_alteracao?: string | null
+          origem?: string
+          pontos_de?: number | null
+          pontos_para?: number
+          projeto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorio_classificacao_projeto_historico_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorio_classificacao_projeto_historico_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relatorio_classificacao_tipo: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          ordem: number
+          pontos: number
+          rotulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          ordem: number
+          pontos: number
+          rotulo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          ordem?: number
+          pontos?: number
+          rotulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      relatorio_conclusao: {
+        Row: {
+          data_conclusao: string | null
+          demanda_id: string
+          evidencia_descricao: string | null
+          evidencia_ref: string | null
+          evidencia_tipo: string | null
+          motivo: string | null
+          procedencia: string
+          resolvido_em: string
+          resolvido_por: string | null
+        }
+        Insert: {
+          data_conclusao?: string | null
+          demanda_id: string
+          evidencia_descricao?: string | null
+          evidencia_ref?: string | null
+          evidencia_tipo?: string | null
+          motivo?: string | null
+          procedencia: string
+          resolvido_em?: string
+          resolvido_por?: string | null
+        }
+        Update: {
+          data_conclusao?: string | null
+          demanda_id?: string
+          evidencia_descricao?: string | null
+          evidencia_ref?: string | null
+          evidencia_tipo?: string | null
+          motivo?: string | null
+          procedencia?: string
+          resolvido_em?: string
+          resolvido_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorio_conclusao_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: true
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relatorio_faixa: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          definido_por: string | null
+          id: string
+          percentual_max: number | null
+          percentual_min: number
+          rotulo: string | null
+          updated_at: string
+          valor_reais: number | null
+          vigencia_fim: string | null
+          vigencia_inicio: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          definido_por?: string | null
+          id?: string
+          percentual_max?: number | null
+          percentual_min: number
+          rotulo?: string | null
+          updated_at?: string
+          valor_reais?: number | null
+          vigencia_fim?: string | null
+          vigencia_inicio: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          definido_por?: string | null
+          id?: string
+          percentual_max?: number | null
+          percentual_min?: number
+          rotulo?: string | null
+          updated_at?: string
+          valor_reais?: number | null
+          vigencia_fim?: string | null
+          vigencia_inicio?: string
+        }
+        Relationships: []
+      }
+      relatorio_fechamento_tecnico: {
+        Row: {
+          banco_alterado: string | null
+          created_at: string
+          data_conclusao_declarada: string | null
+          data_inicio: string | null
+          demanda_id: string
+          evidencias_links: string[]
+          funcionalidades_implementadas: string | null
+          integracoes_realizadas: string | null
+          o_que_foi_alterado: string | null
+          o_que_foi_solicitado: string | null
+          observacoes: string | null
+          origem: string
+          preenchido_por: string | null
+          preenchido_por_email: string | null
+          problema_identificado: string | null
+          resultado_obtido: string | null
+          seguranca_rls: string | null
+          sistemas_afetados: string[]
+          situacao: string
+          solucao_implementada: string | null
+          testes_realizados: string | null
+          updated_at: string
+        }
+        Insert: {
+          banco_alterado?: string | null
+          created_at?: string
+          data_conclusao_declarada?: string | null
+          data_inicio?: string | null
+          demanda_id: string
+          evidencias_links?: string[]
+          funcionalidades_implementadas?: string | null
+          integracoes_realizadas?: string | null
+          o_que_foi_alterado?: string | null
+          o_que_foi_solicitado?: string | null
+          observacoes?: string | null
+          origem?: string
+          preenchido_por?: string | null
+          preenchido_por_email?: string | null
+          problema_identificado?: string | null
+          resultado_obtido?: string | null
+          seguranca_rls?: string | null
+          sistemas_afetados?: string[]
+          situacao?: string
+          solucao_implementada?: string | null
+          testes_realizados?: string | null
+          updated_at?: string
+        }
+        Update: {
+          banco_alterado?: string | null
+          created_at?: string
+          data_conclusao_declarada?: string | null
+          data_inicio?: string | null
+          demanda_id?: string
+          evidencias_links?: string[]
+          funcionalidades_implementadas?: string | null
+          integracoes_realizadas?: string | null
+          o_que_foi_alterado?: string | null
+          o_que_foi_solicitado?: string | null
+          observacoes?: string | null
+          origem?: string
+          preenchido_por?: string | null
+          preenchido_por_email?: string | null
+          problema_identificado?: string | null
+          resultado_obtido?: string | null
+          seguranca_rls?: string | null
+          sistemas_afetados?: string[]
+          situacao?: string
+          solucao_implementada?: string | null
+          testes_realizados?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorio_fechamento_tecnico_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: true
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relatorio_intervalo: {
+        Row: {
+          created_at: string
+          demanda_id: string
+          fim: string
+          id: string
+          inicio: string
+          observacao: string | null
+          pessoa_id: string
+          registrado_por: string | null
+        }
+        Insert: {
+          created_at?: string
+          demanda_id: string
+          fim: string
+          id?: string
+          inicio: string
+          observacao?: string | null
+          pessoa_id: string
+          registrado_por?: string | null
+        }
+        Update: {
+          created_at?: string
+          demanda_id?: string
+          fim?: string
+          id?: string
+          inicio?: string
+          observacao?: string | null
+          pessoa_id?: string
+          registrado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorio_intervalo_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relatorio_projeto_responsavel: {
+        Row: {
+          definido_em: string
+          definido_por: string | null
+          ordem: number
+          pessoa_id: string
+          projeto_id: string
+        }
+        Insert: {
+          definido_em?: string
+          definido_por?: string | null
+          ordem?: number
+          pessoa_id: string
+          projeto_id: string
+        }
+        Update: {
+          definido_em?: string
+          definido_por?: string | null
+          ordem?: number
+          pessoa_id?: string
+          projeto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorio_projeto_responsavel_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relatorio_projeto_responsavel_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_boards_resumo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rpa_execucoes: {
+        Row: {
+          codigo_anomalia: string | null
+          criado_em: string
+          disparo: Database["public"]["Enums"]["rpa_exec_disparo"]
+          duracao_s: number | null
+          evidencias_url: string | null
+          finalizado_em: string | null
+          id: string
+          iniciado_em: string
+          modo: string
+          passo_falha: string | null
+          passos_ok: number | null
+          passos_total: number | null
+          resumo_json: Json | null
+          robo_id: string
+          robo_slug: string
+          run_id: string
+          status: Database["public"]["Enums"]["rpa_exec_status"]
+          versao: number
+        }
+        Insert: {
+          codigo_anomalia?: string | null
+          criado_em?: string
+          disparo?: Database["public"]["Enums"]["rpa_exec_disparo"]
+          duracao_s?: number | null
+          evidencias_url?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          modo?: string
+          passo_falha?: string | null
+          passos_ok?: number | null
+          passos_total?: number | null
+          resumo_json?: Json | null
+          robo_id: string
+          robo_slug: string
+          run_id: string
+          status?: Database["public"]["Enums"]["rpa_exec_status"]
+          versao: number
+        }
+        Update: {
+          codigo_anomalia?: string | null
+          criado_em?: string
+          disparo?: Database["public"]["Enums"]["rpa_exec_disparo"]
+          duracao_s?: number | null
+          evidencias_url?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          modo?: string
+          passo_falha?: string | null
+          passos_ok?: number | null
+          passos_total?: number | null
+          resumo_json?: Json | null
+          robo_id?: string
+          robo_slug?: string
+          run_id?: string
+          status?: Database["public"]["Enums"]["rpa_exec_status"]
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rpa_execucoes_robo_id_fkey"
+            columns: ["robo_id"]
+            isOneToOne: false
+            referencedRelation: "rpa_robos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rpa_incidentes: {
+        Row: {
+          aberto_em: string
+          acao: string | null
+          custo_brl: number
+          desfecho: string | null
+          diagnostico: string | null
+          execucao_id: string
+          id: string
+          resolvido_em: string | null
+          robo_slug: string
+          tempo_resolucao_min: number | null
+          tipo: string
+          tokens_in: number
+          tokens_out: number
+        }
+        Insert: {
+          aberto_em?: string
+          acao?: string | null
+          custo_brl?: number
+          desfecho?: string | null
+          diagnostico?: string | null
+          execucao_id: string
+          id?: string
+          resolvido_em?: string | null
+          robo_slug: string
+          tempo_resolucao_min?: number | null
+          tipo: string
+          tokens_in?: number
+          tokens_out?: number
+        }
+        Update: {
+          aberto_em?: string
+          acao?: string | null
+          custo_brl?: number
+          desfecho?: string | null
+          diagnostico?: string | null
+          execucao_id?: string
+          id?: string
+          resolvido_em?: string | null
+          robo_slug?: string
+          tempo_resolucao_min?: number | null
+          tipo?: string
+          tokens_in?: number
+          tokens_out?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rpa_incidentes_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "rpa_execucoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rpa_robos: {
+        Row: {
+          agenda: string | null
+          atualizado_em: string
+          canal_alerta: string
+          criado_em: string
+          criticidade: Database["public"]["Enums"]["rpa_criticidade"]
+          dono: string | null
+          healing: Database["public"]["Enums"]["rpa_healing_politica"]
+          id: string
+          nome: string
+          objetivo: string | null
+          retries: number
+          sistema_alvo: string
+          slug: string
+          status: Database["public"]["Enums"]["rpa_robo_status"]
+          tempo_manual_estimado_min: number
+          timeout_min: number
+          versao_ativa: number
+        }
+        Insert: {
+          agenda?: string | null
+          atualizado_em?: string
+          canal_alerta?: string
+          criado_em?: string
+          criticidade?: Database["public"]["Enums"]["rpa_criticidade"]
+          dono?: string | null
+          healing?: Database["public"]["Enums"]["rpa_healing_politica"]
+          id?: string
+          nome: string
+          objetivo?: string | null
+          retries?: number
+          sistema_alvo: string
+          slug: string
+          status?: Database["public"]["Enums"]["rpa_robo_status"]
+          tempo_manual_estimado_min?: number
+          timeout_min?: number
+          versao_ativa?: number
+        }
+        Update: {
+          agenda?: string | null
+          atualizado_em?: string
+          canal_alerta?: string
+          criado_em?: string
+          criticidade?: Database["public"]["Enums"]["rpa_criticidade"]
+          dono?: string | null
+          healing?: Database["public"]["Enums"]["rpa_healing_politica"]
+          id?: string
+          nome?: string
+          objetivo?: string | null
+          retries?: number
+          sistema_alvo?: string
+          slug?: string
+          status?: Database["public"]["Enums"]["rpa_robo_status"]
+          tempo_manual_estimado_min?: number
+          timeout_min?: number
+          versao_ativa?: number
+        }
+        Relationships: []
+      }
+      rpa_versoes: {
+        Row: {
+          aprovado_por: string | null
+          criado_em: string
+          hash_sha256: string
+          id: string
+          manifesto_url: string | null
+          motivo: string | null
+          origem: Database["public"]["Enums"]["rpa_versao_origem"]
+          resumo_diff: string | null
+          robo_id: string
+          robo_slug: string
+          versao: number
+        }
+        Insert: {
+          aprovado_por?: string | null
+          criado_em?: string
+          hash_sha256: string
+          id?: string
+          manifesto_url?: string | null
+          motivo?: string | null
+          origem?: Database["public"]["Enums"]["rpa_versao_origem"]
+          resumo_diff?: string | null
+          robo_id: string
+          robo_slug: string
+          versao: number
+        }
+        Update: {
+          aprovado_por?: string | null
+          criado_em?: string
+          hash_sha256?: string
+          id?: string
+          manifesto_url?: string | null
+          motivo?: string | null
+          origem?: Database["public"]["Enums"]["rpa_versao_origem"]
+          resumo_diff?: string | null
+          robo_id?: string
+          robo_slug?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rpa_versoes_robo_id_fkey"
+            columns: ["robo_id"]
+            isOneToOne: false
+            referencedRelation: "rpa_robos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       setores: {
         Row: {
@@ -2947,10 +3973,447 @@ export type Database = {
           role: string
         }[]
       }
+      pode_ver_remuneracao_de: { Args: { _pessoa: string }; Returns: boolean }
+      relatorio_apuracao_do_ciclo: {
+        Args: { _ciclo_id: string }
+        Returns: {
+          classificadas: number
+          dificil: number
+          entregas: number
+          facil: number
+          media: number
+          pessoa_email: string
+          pessoa_id: string
+          pessoa_nome: string
+          pontos: number
+          sem_classificacao: number
+          sem_fechamento: number
+        }[]
+      }
+      relatorio_autoclassificadas: {
+        Args: { _ciclo_id?: string }
+        Returns: {
+          classificacao: string
+          concluida_em: string
+          definido_em: string
+          definido_por: string
+          demanda_id: string
+          justificativa: string
+          minutos_lancados: number
+          pontos: number
+          responsavel_nome: string
+          rotulo: string
+          sistema_slug: string
+          ticket_code: string
+          titulo: string
+          vezes_alterada: number
+        }[]
+      }
+      relatorio_ciclo_de: { Args: { _momento: string }; Returns: string }
+      relatorio_ciclo_janela: {
+        Args: { _fuso?: string; _referencia: string }
+        Returns: {
+          fim: string
+          inicio: string
+        }[]
+      }
+      relatorio_ciclos_administraveis: {
+        Args: never
+        Returns: {
+          aprovado_em: string
+          classificadas: number
+          com_fechamento: number
+          concluidas: number
+          congelado: boolean
+          editavel: boolean
+          elegiveis: number
+          faixa_indefinida: boolean
+          faixa_rotulo: string
+          fechado_em: string
+          fechado_por_email: string
+          fim: string
+          id: string
+          inicio: string
+          meta_pontos: number
+          observacoes: string
+          percentual: number
+          pontos: number
+          referencia: string
+          rotulo: string
+          sem_classificacao: number
+          sem_data_confiavel: number
+          sem_fechamento: number
+          situacao: string
+          valor_reais: number
+        }[]
+      }
+      relatorio_classificar: {
+        Args: {
+          _classificacao: string
+          _demanda_id: string
+          _justificativa: string
+          _motivo?: string
+        }
+        Returns: {
+          autoclassificada: boolean
+          classificacao: string
+          definido_em: string
+          definido_por: string
+          definido_por_email: string | null
+          demanda_id: string
+          justificativa: string
+          pontos: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "relatorio_classificacao"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      relatorio_classificar_projeto: {
+        Args: {
+          _classificacao: string
+          _justificativa: string
+          _motivo?: string
+          _projeto_id: string
+        }
+        Returns: {
+          autoclassificada: boolean
+          classificacao: string
+          definido_em: string
+          definido_por: string
+          definido_por_email: string | null
+          justificativa: string
+          pontos: number
+          projeto_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "relatorio_classificacao_projeto"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      relatorio_concluir_projeto: {
+        Args: { _projeto_id: string; _responsaveis: string[] }
+        Returns: string
+      }
+      relatorio_criar_ciclo: {
+        Args: {
+          _fim: string
+          _inicio: string
+          _meta: number
+          _referencia: string
+          _rotulo: string
+        }
+        Returns: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          created_at: string
+          fechado_em: string | null
+          fechado_por: string | null
+          fim: string
+          fuso: string
+          id: string
+          inicio: string
+          meta_pontos: number
+          observacoes: string | null
+          referencia: string
+          rotulo: string
+          situacao: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "relatorio_ciclo"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      relatorio_editar_ciclo: {
+        Args: {
+          _ciclo_id: string
+          _fim: string
+          _inicio: string
+          _meta: number
+          _referencia: string
+          _rotulo: string
+        }
+        Returns: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          created_at: string
+          fechado_em: string | null
+          fechado_por: string | null
+          fim: string
+          fuso: string
+          id: string
+          inicio: string
+          meta_pontos: number
+          observacoes: string | null
+          referencia: string
+          rotulo: string
+          situacao: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "relatorio_ciclo"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      relatorio_faixa_para: {
+        Args: { _em?: string; _percentual: number }
+        Returns: {
+          ativo: boolean
+          created_at: string
+          definido_por: string | null
+          id: string
+          percentual_max: number | null
+          percentual_min: number
+          rotulo: string | null
+          updated_at: string
+          valor_reais: number | null
+          vigencia_fim: string | null
+          vigencia_inicio: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "relatorio_faixa"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      relatorio_fechar_ciclo: { Args: { _ciclo_id: string }; Returns: number }
+      relatorio_filtros: {
+        Args: { _fim: string; _inicio: string }
+        Returns: {
+          quantidade: number
+          rotulo: string
+          tipo: string
+          valor: string
+        }[]
+      }
+      relatorio_implementacoes: {
+        Args: {
+          _busca?: string
+          _classificacao?: string
+          _fechamento?: string
+          _fim: string
+          _inicio: string
+          _responsavel?: string
+          _sistema?: string
+        }
+        Returns: {
+          anexos: number
+          ciclo_rotulo: string
+          classificacao: string
+          classificacao_rotulo: string
+          classificada_em: string
+          classificada_por: string
+          comentarios: number
+          complexidade: string
+          concluida_em: string
+          criada_em: string
+          demanda_id: string
+          descricao: string
+          evidencia: string
+          fechamento: string
+          fechamento_alterado: string
+          fechamento_banco: string
+          fechamento_em: string
+          fechamento_evidencias: string[]
+          fechamento_funcionalidades: string
+          fechamento_integracoes: string
+          fechamento_observacoes: string
+          fechamento_por: string
+          fechamento_problema: string
+          fechamento_resultado: string
+          fechamento_seguranca: string
+          fechamento_sistemas: string[]
+          fechamento_solicitado: string
+          fechamento_solucao: string
+          fechamento_testes: string
+          justificativa: string
+          minutos_lancados: number
+          pontos: number
+          prioridade: string
+          procedencia: string
+          responsavel_email: string
+          responsavel_id: string
+          responsavel_nome: string
+          sistema_slug: string
+          solicitante_email: string
+          solicitante_id: string
+          solicitante_nome: string
+          status: string
+          tarefas_feitas: number
+          tarefas_total: number
+          ticket_code: string
+          tipo: string
+          titulo: string
+        }[]
+      }
+      relatorio_pendencias_de_classificacao: {
+        Args: never
+        Returns: {
+          alterado: string
+          anexos: number
+          autoclassificada: boolean
+          classificacao: string
+          classificada_em: string
+          classificada_por: string
+          concluida_em: string
+          demanda_id: string
+          falas_no_fio: number
+          fechamento: string
+          ja_classificada: boolean
+          justificativa: string
+          minutos_lancados: number
+          pontos: number
+          problema: string
+          responsavel_id: string
+          responsavel_nome: string
+          resultado: string
+          rotulo: string
+          sistema_slug: string
+          solucao: string
+          tarefas_feitas: number
+          tarefas_total: number
+          testes: string
+          ticket_code: string
+          titulo: string
+          vezes_alterada: number
+        }[]
+      }
+      relatorio_pendencias_de_fechamento: {
+        Args: { _pessoa?: string }
+        Returns: {
+          concluida_em: string
+          demanda_id: string
+          dias_parada: number
+          minutos_lancados: number
+          no_ciclo_aberto: boolean
+          responsavel_id: string
+          responsavel_nome: string
+          sistema_slug: string
+          situacao: string
+          ticket_code: string
+          titulo: string
+        }[]
+      }
+      relatorio_pendencias_do_ciclo: {
+        Args: { _ciclo_id: string }
+        Returns: {
+          classificadas: number
+          com_fechamento: number
+          concluidas_no_ciclo: number
+          elegiveis: number
+          projetos_concluidos: number
+          projetos_elegiveis: number
+          projetos_sem_classificacao: number
+          sem_classificacao: number
+          sem_data_confiavel: number
+          sem_fechamento: number
+        }[]
+      }
+      relatorio_projetos_para_classificar: {
+        Args: never
+        Returns: {
+          apurado_no_ciclo: string
+          autoclassificada: boolean
+          cartoes: number
+          classificacao: string
+          classificado_em: string
+          classificado_por: string
+          concluido_em: string
+          concluido_por: string
+          ja_classificado: boolean
+          justificativa: string
+          nome: string
+          pontos: number
+          pontos_por_pessoa: number
+          projeto_id: string
+          responsaveis: number
+          responsavel_nomes: string
+          rotulo: string
+          slug: string
+          vezes_alterada: number
+        }[]
+      }
+      relatorio_reabrir_ciclo: {
+        Args: { _ciclo_id: string; _motivo: string }
+        Returns: undefined
+      }
+      relatorio_reabrir_projeto: {
+        Args: { _projeto_id: string }
+        Returns: undefined
+      }
+      relatorio_resolucao_do_fio: {
+        Args: { _demanda_id: string }
+        Returns: {
+          autor_email: string
+          autor_nome: string
+          comentario_id: string
+          escrito_em: string
+          interna: boolean
+          texto: string
+        }[]
+      }
+      relatorio_resolver_conclusao: {
+        Args: { _demanda_id: string }
+        Returns: {
+          data_conclusao: string | null
+          demanda_id: string
+          evidencia_descricao: string | null
+          evidencia_ref: string | null
+          evidencia_tipo: string | null
+          motivo: string | null
+          procedencia: string
+          resolvido_em: string
+          resolvido_por: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "relatorio_conclusao"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      relatorio_resolver_conclusoes_pendentes: {
+        Args: { _limite?: number }
+        Returns: number
+      }
+      relatorio_resultado_do_ciclo: {
+        Args: { _ciclo_id: string }
+        Returns: {
+          ciclo_rotulo: string
+          congelado: boolean
+          dificil: number
+          entregas: number
+          facil: number
+          faixa_indefinida: boolean
+          faixa_rotulo: string
+          fim: string
+          inicio: string
+          media: number
+          mensagem: string
+          meta_pontos: number
+          percentual: number
+          pontos: number
+          situacao: string
+          valor_reais: number
+        }[]
+      }
       rotulo_humano_status: {
         Args: { s: Database["public"]["Enums"]["demand_status"] }
         Returns: string
       }
+      tem_capacidade: { Args: { _capacidade: string }; Returns: boolean }
       uuid_ou_nulo: { Args: { _texto: string }; Returns: string }
     }
     Enums: {
@@ -2978,6 +4441,17 @@ export type Database = {
         | "refatoracao"
         | "infraestrutura"
         | "automacao"
+      rpa_criticidade: "A" | "B" | "C"
+      rpa_exec_disparo: "agenda" | "manual" | "retry"
+      rpa_exec_status:
+        | "em_execucao"
+        | "ok"
+        | "falha"
+        | "healed"
+        | "aguardando_aprovacao"
+      rpa_healing_politica: "auto" | "aprovar" | "nunca"
+      rpa_robo_status: "ativo" | "pausado" | "observacao"
+      rpa_versao_origem: "humano" | "ia"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2993,12 +4467,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3022,11 +4496,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3047,11 +4521,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3072,11 +4546,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3089,11 +4563,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3132,6 +4606,18 @@ export const Constants = {
         "infraestrutura",
         "automacao",
       ],
+      rpa_criticidade: ["A", "B", "C"],
+      rpa_exec_disparo: ["agenda", "manual", "retry"],
+      rpa_exec_status: [
+        "em_execucao",
+        "ok",
+        "falha",
+        "healed",
+        "aguardando_aprovacao",
+      ],
+      rpa_healing_politica: ["auto", "aprovar", "nunca"],
+      rpa_robo_status: ["ativo", "pausado", "observacao"],
+      rpa_versao_origem: ["humano", "ia"],
     },
   },
 } as const
