@@ -21,13 +21,15 @@ const SYSTEM = `Você é um analista de priorização de demandas de automação
 Regras de classificação:
 - "ajuste_existente": melhoria/correção em capacidade que provavelmente já existe em um sistema do ecossistema.
 - "novo_modulo": capacidade NOVA dentro de um sistema já existente (escolha o sistema-alvo).
-- "novo_sistema": não cabe em NENHUM sistema do ecossistema.
+- "novo_sistema": não cabe em NENHUM sistema do ecossistema. Vale tanto para um sistema novo a construir quanto para trabalho fora dos sistemas — nos dois casos o sistema_alvo_slug vira "tecnologia".
 
 IDENTIFICAÇÃO DO SISTEMA (campo sistema_alvo_slug) — regra prioritária:
 - Analise o texto do usuário para identificar o sistema ou a área afetada (ex.: RH, Recursos Humanos, Processos, Obras, Suprimentos, Financeiro, Comercial, Projetos, Contratos, Portfólio) e mapeie para o slug MAIS PRÓXIMO da lista SISTEMAS.
 - O campo sistema_alvo_slug NÃO DEVE ser null se houver QUALQUER menção a uma área, setor, processo ou software que corresponda a um item da lista.
 - O casamento é semântico, não literal: sigla, nome parcial, sinônimo e nome do setor valem. Exemplos: "RH"/"recursos humanos"/"folha"/"admissão" → o slug de RH; "obra"/"obras"/"canteiro" → o slug de obra; "SGPO"/"processo" → o slug de processos; "compras" → suprimentos; "vendas" → comercial.
-- Só use null quando a demanda realmente não tiver relação com nenhum sistema da lista.
+- Quando NENHUM sistema da lista tiver relação com a demanda, use o slug "tecnologia" se ele estiver na lista. É o destino do trabalho que não acontece dentro de um sistema da Bloco: automação no n8n, o site e suas campanhas, integração com ferramenta de fora, rede, planilha, carga de dados.
+- "tecnologia" é a ÚLTIMA opção, nunca o atalho. Toda demanda deste time é "de tecnologia" no sentido amplo; havendo sistema que sirva, é o sistema que vence. Só use "tecnologia" depois de percorrer a lista inteira sem achar nada que tenha a ver.
+- Use null apenas se "tecnologia" não estiver na lista fornecida.
 - NUNCA invente slug fora da lista SISTEMAS.
 - Se a lista de SISTEMAS não foi fornecida, defina tipo_demanda e sistema_alvo_slug como null.
 Regras gerais: números inteiros entre 0 e 10. Se a descrição for vaga, escolha valores medianos plausíveis e diga isso na justificativa. Nada além do JSON.`;
@@ -75,6 +77,15 @@ const APELIDOS_BASE: Record<string, string[]> = {
   automacoes: ["automacoes", "automacao", "gestor de automacoes"],
   viabuilder: ["viabuilder", "viabilidade"],
   "hub-bloco-id": ["bloco id", "hub", "sso", "login"],
+  /*
+   * Só termos que NOMEIAM a ferramenta, e nenhuma palavra genérica.
+   *
+   * "site", "planilha" e "integracao" ficaram de fora de propósito: aparecem
+   * em demanda de sistema o tempo todo ("o site do RH", "a planilha de
+   * medição") e mandariam para a gaveta do resto o que tem dono. Quando há
+   * empate, o desempate por termo mais longo já faz o sistema vencer o n8n.
+   */
+  tecnologia: ["n8n", "zapier"],
 };
 
 /** Escapa metacaracteres para uso dentro de RegExp. */

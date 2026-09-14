@@ -123,3 +123,89 @@ describe("siglaDoSistema — Catálogo Completo dos 16 Sistemas do HUB Bloco ID"
     });
   });
 });
+
+/*
+ * O DESTINO "TECNOLOGIA", E POR QUE ELE PRECISA DE TESTE
+ *
+ * O caso real que o originou, de 14/09/2026:
+ *
+ *   "Solicitada a tabela nova de leads do site, que sejam da campanha de
+ *    google e site direto"
+ *
+ * Sem destino, ela nascia com `sistema_slug` nulo e a tela adivinhava o código
+ * pelo título: a palavra "leads" está na lista da Captação, então uma demanda
+ * de n8n aparecia como CAP- e, ao lado, como "não identificado".
+ *
+ * O que estes testes trancam são as duas metades do acerto: que o destino
+ * existe de verdade (código e nome próprios) e que ele NÃO rouba demanda de
+ * sistema — ele é a última opção, não um atalho.
+ */
+describe("Tecnologia: a gaveta de quem não é de nenhum sistema", () => {
+  const PEDIDO_REAL =
+    "Solicitada a tabela nova de leads do site, que sejam da campanha de google e site direto";
+
+  it("tem código e nome próprios, como qualquer destino", () => {
+    expect(siglaDoSistema("tecnologia")).toBe("TEC");
+    expect(nomeDoSistemaPeloSlug("tecnologia")).toBe("Tecnologia");
+  });
+
+  it("o pedido real deixa de pegar emprestado o código da Captação", () => {
+    // Antes: sem slug, "leads" levava a demanda para CAP.
+    expect(siglaDoSistema(null, PEDIDO_REAL)).toBe("CAP");
+    // Agora, registrada como Tecnologia, o slug vence o palpite do título.
+    expect(formatarReferenciaComSigla("REQ-2609-0012", "tecnologia", "id", PEDIDO_REAL)).toBe(
+      "TEC-2609-0012",
+    );
+  });
+
+  it("nunca vence um sistema de verdade, mesmo com palavra de tecnologia no título", () => {
+    // A regra que o André pediu: só vale quando NENHUM sistema reconhece.
+    const titulo = "Integrar o n8n para puxar os dados";
+    expect(siglaDoSistema("produtividade", titulo)).toBe("OBRA");
+    expect(siglaDoSistema("rh", titulo)).toBe("RH");
+    expect(siglaDoSistema("fluxo-caixa", titulo)).toBe("FIN");
+  });
+
+  it("não inventa Tecnologia para quem não a escolheu", () => {
+    // Demanda antiga, sem slug: continua como estava. O destino não é um
+    // fallback silencioso — alguém, pessoa ou triagem, tem de tê-lo escolhido.
+    expect(siglaDoSistema(null, "Erro ao salvar contrato")).not.toBe("TEC");
+  });
+
+  it("um código já emitido não é reescrito para TEC", () => {
+    // Código é referência que as pessoas citam. Só prefixo genérico é trocado.
+    expect(formatarReferenciaComSigla("RH-2607-0001", "tecnologia", "id", PEDIDO_REAL)).toBe(
+      "RH-2607-0001",
+    );
+  });
+});
+
+describe("Tecnologia não é um sistema, e o Escritório não pode vê-la", () => {
+  it("fica fora do catálogo do HUB", async () => {
+    const { SISTEMAS_SEED } = await import("@/lib/ecossistemaSeed");
+    const { SLUGS_FORA_DO_ECOSSISTEMA } = await import(
+      "../services/destinosForaDoEcossistema"
+    );
+    // O seed é o espelho do HUB, e é dele que o andar tira mesa, monitor e
+    // porta. Um destino local ali dentro viraria um sistema desenhado na tela.
+    for (const s of SISTEMAS_SEED) {
+      expect(SLUGS_FORA_DO_ECOSSISTEMA.has(s.id), `${s.id} vazou para o seed`).toBe(false);
+    }
+  });
+
+  it("entra por último na lista, que é onde se considera o resto", async () => {
+    const { comDestinosFora } = await import("../services/destinosForaDoEcossistema");
+    const lista = comDestinosFora([
+      { id: "rh", nome: "Gestão de RH" },
+      { id: "produtividade", nome: "Gestão de Obra" },
+    ]);
+    expect(lista.map((s) => s.id)).toEqual(["rh", "produtividade", "tecnologia"]);
+  });
+
+  it("não duplica se algum dia o HUB passar a declarar o mesmo slug", async () => {
+    const { comDestinosFora } = await import("../services/destinosForaDoEcossistema");
+    const lista = comDestinosFora([{ id: "tecnologia", nome: "Tecnologia (do HUB)" }]);
+    expect(lista).toHaveLength(1);
+    expect(lista[0].nome).toBe("Tecnologia (do HUB)");
+  });
+});

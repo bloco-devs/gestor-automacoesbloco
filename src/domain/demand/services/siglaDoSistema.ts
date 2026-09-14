@@ -6,7 +6,17 @@
  * através da análise conjunta do nome do sistema, slug e palavras-chave do título.
  */
 
+import { DESTINOS_FORA_DO_ECOSSISTEMA } from "./destinosForaDoEcossistema";
+
 export const SISTEMAS_ECOSSISTEMA_BLOCO_ID: Record<string, { sigla: string; nome: string }> = {
+  /*
+   * Os destinos que NÃO são sistema entram aqui pela constante, nunca
+   * copiados: este catálogo e o do seletor respondem à mesma pergunta, e
+   * duas listas mantidas à mão é como as siglas erradas nasceram.
+   */
+  ...Object.fromEntries(
+    DESTINOS_FORA_DO_ECOSSISTEMA.map((d) => [d.slug, { sigla: d.sigla, nome: d.nome }]),
+  ),
   "crm-house": { sigla: "CRM", nome: "Bloco.CRM HOUSE" },
   "desenvolvimento-produto": { sigla: "PROD", nome: "Desenvolvimento Produto" },
   "nakhon-contratos": { sigla: "CONT", nome: "Gerador de Contratos Nakhon" },
@@ -241,6 +251,20 @@ export const ESTILOS_DE_COR_DOS_SISTEMAS: Record<string, { bg: string; border: s
     text: "text-amber-600 dark:text-amber-400",
     badgeClass: "bg-amber-600/15 border-amber-600/40 text-amber-600 dark:text-amber-400",
   },
+};
+
+/*
+ * TEC é cinza, e não uma cor a mais.
+ *
+ * Todas as outras siglas são sistemas, e a cor os identifica entre si. Dar a
+ * "Tecnologia" mais uma cor do arco-íris a faria parecer o décimo-sétimo
+ * sistema. Neutra, ela lê como o que é: trabalho que não está num sistema.
+ */
+ESTILOS_DE_COR_DOS_SISTEMAS.TEC = {
+  bg: "bg-slate-500/15",
+  border: "border-slate-500/40",
+  text: "text-slate-600 dark:text-slate-300",
+  badgeClass: "bg-slate-500/15 border-slate-500/40 text-slate-600 dark:text-slate-300",
 };
 
 export function obterEstiloDoSistema(siglaOuNome?: string | null, codigoOuTitulo?: string | null) {

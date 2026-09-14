@@ -247,9 +247,13 @@ export function CreateDemandDialog({ open, onOpenChange }: Props) {
                 </SelectTrigger>
                 <SelectContent>
                   {/* "Não identificado" em vez de "Nenhum": descreve o estado
-                      real. Toda demanda pertence a algum sistema — o que pode
-                      faltar é saber qual, e o rótulo deve dizer isso para a
-                      pessoa perceber que há algo por preencher. */}
+                      real. É a falta de uma resposta, não uma resposta — quem
+                      escolhe aqui está dizendo que ainda não sabe qual, e o
+                      rótulo deve deixar isso visível como algo por preencher.
+
+                      Não é o mesmo que "Tecnologia", que aparece no fim da
+                      lista: aquela é a resposta de quem já sabe que a demanda
+                      não é de sistema nenhum — n8n, site, rede, dados. */}
                   <SelectItem value="none">Não identificado</SelectItem>
                   {sistemas.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
