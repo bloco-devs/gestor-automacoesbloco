@@ -24,11 +24,22 @@ Regras de classificação:
 - "novo_sistema": não cabe em NENHUM sistema do ecossistema. Vale tanto para um sistema novo a construir quanto para trabalho fora dos sistemas — nos dois casos o sistema_alvo_slug vira "tecnologia".
 
 IDENTIFICAÇÃO DO SISTEMA (campo sistema_alvo_slug) — regra prioritária:
-- Analise o texto do usuário para identificar o sistema ou a área afetada (ex.: RH, Recursos Humanos, Processos, Obras, Suprimentos, Financeiro, Comercial, Projetos, Contratos, Portfólio) e mapeie para o slug MAIS PRÓXIMO da lista SISTEMAS.
-- O campo sistema_alvo_slug NÃO DEVE ser null se houver QUALQUER menção a uma área, setor, processo ou software que corresponda a um item da lista.
-- O casamento é semântico, não literal: sigla, nome parcial, sinônimo e nome do setor valem. Exemplos: "RH"/"recursos humanos"/"folha"/"admissão" → o slug de RH; "obra"/"obras"/"canteiro" → o slug de obra; "SGPO"/"processo" → o slug de processos; "compras" → suprimentos; "vendas" → comercial.
-- Quando NENHUM sistema da lista tiver relação com a demanda, use o slug "tecnologia" se ele estiver na lista. É o destino do trabalho que não acontece dentro de um sistema da Bloco: automação no n8n, o site e suas campanhas, integração com ferramenta de fora, rede, planilha, carga de dados.
-- "tecnologia" é a ÚLTIMA opção, nunca o atalho. Toda demanda deste time é "de tecnologia" no sentido amplo; havendo sistema que sirva, é o sistema que vence. Só use "tecnologia" depois de percorrer a lista inteira sem achar nada que tenha a ver.
+
+A PERGUNTA QUE DECIDE é ONDE a mudança acontece, não que assunto o texto lembra:
+
+  O que vai ser mexido é uma TELA ou CAPACIDADE DENTRO de um sistema da lista,
+  ou é um DADO, FLUXO ou FERRAMENTA FORA deles?
+
+- Se é dentro de um sistema: escolha aquele sistema.
+- Se é fora de todos: escolha "tecnologia" (quando o slug estiver na lista). É o destino do trabalho que não acontece dentro de um sistema da Bloco: automação no n8n, o site e suas campanhas, integração com ferramenta de fora, rede, planilha, carga de dados.
+- Citar um assunto NÃO é o mesmo que ser do sistema daquele assunto. "leads", "obra", "folha", "vendas" são assuntos; só valem como sistema se a mudança for numa tela daquele sistema. Exemplos que separam as duas coisas:
+  - "Tabela nova com os leads que vêm do site, separando campanha de Google e acesso direto" → tecnologia. O assunto é comercial, mas nenhuma tela de sistema muda: o pedido é sobre o site e uma base de dados.
+  - "No funil do Gestão Comercial, o lead não aparece depois de cadastrado" → o slug do comercial. A mudança é numa tela dele.
+  - "Erro ao lançar férias do colaborador" → o slug de RH. A tela de férias é do RH.
+  - "Wi-Fi do canteiro cai toda tarde" → tecnologia. É obra no assunto, mas rede não é tela de sistema.
+- Escolhido o caminho "dentro de um sistema", o casamento é semântico, não literal: sigla, nome parcial, sinônimo e nome do setor valem. "RH"/"recursos humanos"/"folha"/"admissão" → o slug de RH; "obra"/"obras"/"canteiro" → o slug de obra; "SGPO"/"processo" → o slug de processos; "compras" → suprimentos; "vendas" → comercial.
+- Não devolva null por falta de esforço: percorra a lista inteira, e se a mudança é dentro de um sistema escolha o sistema, se é fora escolha "tecnologia".
+- "tecnologia" não é atalho para quando está difícil decidir. Toda demanda deste time é "de tecnologia" no sentido amplo. Ela é a resposta certa apenas quando a mudança de fato não acontece dentro de nenhum sistema da lista.
 - Use null apenas se "tecnologia" não estiver na lista fornecida.
 - NUNCA invente slug fora da lista SISTEMAS.
 - Se a lista de SISTEMAS não foi fornecida, defina tipo_demanda e sistema_alvo_slug como null.

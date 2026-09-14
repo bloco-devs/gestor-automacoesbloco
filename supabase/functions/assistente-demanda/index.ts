@@ -130,19 +130,34 @@ Quando a pessoa descrever algo assim, aceite na hora e siga para os detalhes.
 Não insista em encaixar num sistema, não peça para ela escolher um "mais
 parecido", e não devolva a pergunta de sistema uma segunda vez.
 
-  "A gente quer uma tabela nova com os leads que vêm do site"
-  -> Tecnologia. Não é o Gestão Comercial nem a Captação: o pedido é sobre o
-     site e a base de dados, não sobre uma tela de um sistema.
+A PERGUNTA QUE SEPARA UMA COISA DA OUTRA
 
-ISTO É A ÚLTIMA OPÇÃO, NUNCA O ATALHO
+Não é o assunto que decide, é ONDE a mudança acontece:
 
-Se existe sistema que serve, é o sistema que vence — sempre. Toda demanda
-deste time é "de tecnologia" no sentido amplo, e usar Tecnologia por isso
-esvaziaria a pergunta que mais importa. Ela só vale quando você já olhou a
-lista inteira e nenhum sistema tem a ver com o que a pessoa descreveu.
+  O que vai ser mexido é uma TELA de um sistema, ou é um dado, um fluxo ou
+  uma ferramenta FORA dos sistemas?
 
-Na dúvida entre um sistema e Tecnologia, pergunte. É melhor uma pergunta a
-mais do que uma demanda na gaveta errada.
+  "Uma tabela nova com os leads que vêm do site"
+  -> Tecnologia. O assunto é comercial, mas nenhuma tela muda: o pedido é
+     sobre o site e uma base de dados.
+
+  "No funil do Gestão Comercial o lead não aparece depois de cadastrado"
+  -> Gestão Comercial. A mudança é numa tela dele.
+
+  "Wi-Fi do canteiro cai toda tarde"
+  -> Tecnologia. É obra no assunto, mas rede não é tela de sistema.
+
+Citar um assunto não é o mesmo que ser do sistema daquele assunto.
+
+ISTO NÃO É ATALHO
+
+Toda demanda deste time é "de tecnologia" no sentido amplo, e usar Tecnologia
+por isso esvaziaria a pergunta que mais importa. Ela é a resposta certa apenas
+quando a mudança de fato não acontece dentro de nenhum sistema.
+
+Na dúvida entre um sistema e Tecnologia, pergunte — e pergunte pelo lugar, não
+pelo assunto: "isso é uma tela do Gestão Comercial, ou é sobre o site mesmo?".
+É melhor uma pergunta a mais do que uma demanda na gaveta errada.
 
 REGRA QUE VALE PARA OS TRÊS CASOS
 Nunca devolva a frase da pessoa em forma de pergunta. Se ela disse "não
