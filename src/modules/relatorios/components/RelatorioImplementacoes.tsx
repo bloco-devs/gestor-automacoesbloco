@@ -169,6 +169,11 @@ function RelatorioImplementacoesImpl() {
       "Como foi resolvido": l.fechamento_solucao ?? "",
       "O que foi alterado": l.fechamento_alterado ?? "",
       "Resultado obtido": l.fechamento_resultado ?? "",
+      // OS LINKS. A tela mostra as evidências e o PDF imprime; só o CSV não
+      // levava — e é o CSV que vira a planilha que sai para o RH. Sem eles a
+      // linha diz o que foi entregue e não deixa ninguém ir conferir.
+      Evidências: (l.fechamento_evidencias ?? []).join(" | "),
+      "Link da demanda": `${window.location.origin}/demandas/${l.demanda_id}`,
       Ciclo: l.ciclo_rotulo ?? "Fora de ciclo",
       "Fechamento técnico": l.fechamento === "concluido" ? "Registrado" : "Pendente",
       Responsável: l.responsavel_nome ?? "Sem responsável",
