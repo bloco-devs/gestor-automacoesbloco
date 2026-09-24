@@ -5,75 +5,135 @@ import {
   esperaAntesDaTentativa,
   montarMensagem,
   truncar,
-  FRASE_COLUNA,
+  FRASE_AVANCO,
+  FRASE_VOLTA,
   LIMITE_RESOLUCAO,
+  ORDEM_COLUNA,
   ROTULO_COLUNA,
+  type Evento,
 } from "../../../../supabase/functions/_shared/whatsapp";
 
 const opts = { link: "https://app/demandas/x", appUrl: "https://app" };
 const base = { ticket_code: "OBRA-2609-0012", titulo: "Mapa interativo", nome: "Carla" };
+const mover = (status: string, status_antes: string, responsavel: string | null = "Nielson") =>
+  montarMensagem("coluna_mudou", { ...base, status, status_antes, responsavel }, opts);
 
 /**
- * A edge function roda em Deno e não alcança src/, então carrega uma cópia
- * dos nomes das colunas. Este teste é o que impede a cópia de envelhecer: se
- * alguém renomear uma coluna no quadro, o WhatsApp não pode continuar
- * mandando o nome antigo para quem pediu.
+ * A edge function roda em Deno e não alcança src/, então carrega cópias do
+ * quadro. Estes testes impedem as cópias de envelhecer: renomear uma coluna,
+ * ou mudar a ordem delas, tem que quebrar aqui — a ordem é o que decide se o
+ * Blink diz "assumiu" ou "voltou para um ajuste".
  */
-describe("os nomes das colunas no WhatsApp são os do quadro", () => {
-  it("ROTULO_COLUNA espelha STATUS_META", () => {
+describe("o WhatsApp conhece o quadro como ele é", () => {
+  it("ROTULO_COLUNA espelha os nomes de STATUS_META", () => {
     const doQuadro = Object.fromEntries(Object.entries(STATUS_META).map(([k, v]) => [k, v.rotulo]));
     expect(ROTULO_COLUNA).toEqual(doQuadro);
   });
 
-  it("toda coluna, menos a conclusão, tem uma frase para o solicitante", () => {
+  it("ORDEM_COLUNA espelha a ordem de STATUS_META", () => {
+    const doQuadro = Object.fromEntries(Object.entries(STATUS_META).map(([k, v]) => [k, v.ordem]));
+    expect(ORDEM_COLUNA).toEqual(doQuadro);
+  });
+
+  it("toda coluna, menos a conclusão, tem frase de avanço e de volta", () => {
     const semConcluido = Object.keys(STATUS_META).filter((s) => s !== "concluido").sort();
-    expect(Object.keys(FRASE_COLUNA).sort()).toEqual(semConcluido);
+    expect(Object.keys(FRASE_AVANCO).sort()).toEqual(semConcluido);
+    expect(Object.keys(FRASE_VOLTA).sort()).toEqual(semConcluido);
   });
 });
 
-describe("montarMensagem", () => {
-  it("o recibo se apresenta como Blink e explica o que vem depois", () => {
+describe("o Blink acompanha com gentileza", () => {
+  it("o recibo se apresenta e tranquiliza sobre o acompanhamento", () => {
     const m = montarMensagem("demanda_criada", { ...base, status: "backlog" }, opts);
-    expect(m).toContain("Oi, Carla!");
-    expect(m).toContain("Blink");
+    expect(m).toContain("Oi, Carla! 😊");
+    expect(m).toContain("Aqui é o Blink");
     expect(m).toContain("*OBRA-2609-0012* — Mapa interativo");
-    expect(m).toContain("cada vez que ela mudar de etapa");
+    expect(m).toContain("a cada passo que ela der, eu te conto");
   });
 
-  it("mudança de coluna diz de onde saiu, para onde foi, e o que isso quer dizer", () => {
-    const m = montarMensagem("coluna_mudou", { ...base, status: "em_testes", status_antes: "em_desenvolvimento" }, opts);
-    expect(m).toContain("passou de _Em desenvolvimento_ para *Em testes*");
-    expect(m).toContain(FRASE_COLUNA.em_testes);
+  it("toda mensagem cumprimenta pelo nome", () => {
+    for (const ev of ["demanda_criada", "coluna_mudou", "demanda_concluida"] as Evento[]) {
+      expect(montarMensagem(ev, { ...base, status: "a_fazer" }, opts)).toContain("Oi, Carla!");
+    }
   });
 
-  it("homologação é a única que pede ação, e o link diz isso", () => {
-    const m = montarMensagem("coluna_mudou", { ...base, status: "homologacao", status_antes: "em_testes" }, opts);
-    expect(m).toContain("*Homologação*");
+  it("diz QUEM assumiu, pelo nome", () => {
+    const m = mover("em_desenvolvimento", "a_fazer");
+    expect(m).toContain("Nielson assumiu sua solicitação e já está trabalhando nela");
+    expect(m).toContain("Etapa atual: *Em desenvolvimento*");
+  });
+
+  it("sem responsável, fala da equipe sem inventar nome", () => {
+    const m = mover("em_desenvolvimento", "a_fazer", null);
+    expect(m).toContain("Uma pessoa da equipe assumiu");
+    expect(m).not.toContain("null");
+  });
+
+  it("VOLTAR não é assumir: testes → desenvolvimento é um ajuste", () => {
+    const m = mover("em_desenvolvimento", "em_testes");
+    expect(m).toContain("Nielson encontrou um ajuste para fazer");
+    expect(m).not.toContain("assumiu");
+  });
+
+  it("voltar para a fila de análise é dito com calma", () => {
+    const m = mover("backlog", "a_fazer");
+    expect(m).toContain("voltou para a fila de análise");
+    expect(m).toContain("eu te conto");
+  });
+
+  it("homologação comemora e é a única que pede ação", () => {
+    const m = mover("homologacao", "em_testes");
+    expect(m).toContain("Ficou pronta! 🎉");
+    expect(m).toContain("só falta você");
     expect(m).toContain("Validar agora: https://app/demandas/x");
-    const outra = montarMensagem("coluna_mudou", { ...base, status: "a_fazer", status_antes: "backlog" }, opts);
-    expect(outra).not.toContain("Validar agora");
+    expect(mover("a_fazer", "backlog")).not.toContain("Validar agora");
   });
 
-  it("a conclusão leva o que foi feito", () => {
-    const m = montarMensagem("demanda_concluida", { ...base, status: "concluido" }, { ...opts, resolucao: "Criado o mapa por pavimento." });
-    expect(m).toContain("✅");
+  it("a conclusão conta o que foi feito, quem cuidou, e agradece", () => {
+    const m = montarMensagem(
+      "demanda_concluida",
+      { ...base, status: "concluido", responsavel: "Nielson" },
+      { ...opts, resolucao: "Criado o mapa por pavimento." },
+    );
+    expect(m).toContain("Prontinho — sua solicitação foi concluída! ✅");
     expect(m).toContain("*O que foi feito:*\nCriado o mapa por pavimento.");
+    expect(m).toContain("Quem cuidou dela foi Nielson.");
+    expect(m).toContain("Obrigado pela paciência!");
   });
 
   it("sem relato, a conclusão não inventa resumo", () => {
     const m = montarMensagem("demanda_concluida", { ...base, status: "concluido" }, { ...opts, resolucao: null });
     expect(m).toContain("foi concluída");
     expect(m).not.toContain("O que foi feito");
+    expect(m).toContain("O registro do que foi feito fica aqui");
+  });
+
+  /**
+   * O sistema não sabe o gênero de ninguém. "O Nielson assumiu" ou "fique
+   * tranquila" numa mensagem pessoal, errados, soam piores do que a frase
+   * neutra. Esta varredura passa por TODAS as combinações de etapa.
+   */
+  it("nenhuma frase usa artigo antes do nome nem adjetivo de gênero", () => {
+    const status = Object.keys(ROTULO_COLUNA);
+    const textos: string[] = [];
+    for (const para of status) for (const de of status) if (para !== de) textos.push(mover(para, de));
+    textos.push(montarMensagem("demanda_concluida", { ...base, responsavel: "Nielson" }, { ...opts, resolucao: "x" }));
+    textos.push(montarMensagem("demanda_criada", base, opts));
+    for (const m of textos) {
+      expect(m).not.toMatch(/\b[oa] Nielson\b/i);
+      expect(m).not.toMatch(/\b(tranquil[oa]|bem-vind[oa]|preocupad[oa]|obrigada)\b/i);
+    }
   });
 
   it("toda mensagem ensina a parar de receber", () => {
-    for (const ev of ["demanda_criada", "coluna_mudou", "demanda_concluida"] as const) {
+    for (const ev of ["demanda_criada", "coluna_mudou", "demanda_concluida"] as Evento[]) {
       expect(montarMensagem(ev, { ...base, status: "a_fazer" }, opts)).toContain("https://app/preferencias");
     }
   });
 
-  it("sem código e sem título ainda sai uma mensagem legível", () => {
+  it("sem código, sem título e sem nome ainda sai uma mensagem legível", () => {
     const m = montarMensagem("coluna_mudou", { status: "a_fazer" }, opts);
+    expect(m).toContain("Oi! 😊");
     expect(m).toContain("*sua solicitação*");
     expect(m).not.toContain("undefined");
     expect(m).not.toContain("null");

@@ -18,7 +18,14 @@ export type Status =
 export interface DadosMensagem {
   ticket_code?: string | null;
   titulo?: string | null;
+  /** Primeiro nome de quem pediu. */
   nome?: string | null;
+  /**
+   * Primeiro nome de quem está com a demanda (`demands.assigned_to`). Não vem
+   * do trigger: a edge function busca na hora do envio, para a mensagem dizer
+   * quem está cuidando AGORA, e não quem estava quando o cartão se moveu.
+   */
+  responsavel?: string | null;
   status?: string | null;
   status_antes?: string | null;
 }
@@ -28,9 +35,9 @@ export interface DadosMensagem {
  *
  * Cópia de `STATUS_META` em src/domain/demand/mappers/fromDemands.ts — a edge
  * function roda em Deno e não alcança o src/. O teste
- * `src/modules/notificacao-whatsapp/__tests__/texto.test.ts` trava as duas
- * listas juntas: se alguém renomear uma coluna lá, o CI quebra aqui, e não na
- * mensagem que chega no celular de alguém.
+ * `src/modules/notificacao-whatsapp/__tests__/texto.test.ts` trava as cópias
+ * juntas: se alguém renomear ou reordenar uma coluna lá, o CI quebra aqui, e
+ * não na mensagem que chega no celular de alguém.
  */
 export const ROTULO_COLUNA: Record<Status, string> = {
   backlog: "Backlog",
@@ -41,20 +48,70 @@ export const ROTULO_COLUNA: Record<Status, string> = {
   concluido: "Concluída",
 };
 
+/** A ordem das colunas no quadro. É o que separa "avançou" de "voltou". */
+export const ORDEM_COLUNA: Record<Status, number> = {
+  backlog: 0,
+  a_fazer: 1,
+  em_desenvolvimento: 2,
+  em_testes: 3,
+  homologacao: 4,
+  concluido: 5,
+};
+
 /**
- * O que a coluna significa para quem pediu.
+ * O QUE O BLINK DIZ EM CADA ETAPA
  *
- * O nome da coluna é vocabulário da equipe. "Em testes" diz algo para quem
- * desenvolve; para quem pediu, o que importa é "ainda não chegou até mim, mas
- * está perto". Cada mensagem leva as duas coisas: o nome, para bater com o que
- * a pessoa vê se abrir o sistema, e a frase, para ela não precisar abrir.
+ * O tom é o de alguém que está acompanhando o pedido junto com a pessoa: diz o
+ * que aconteceu, quem está cuidando, e o que vem depois. Cada frase recebe o
+ * primeiro nome do responsável quando existe — "Nielson assumiu" é outra
+ * mensagem, bem mais humana, que "alguém da equipe assumiu".
+ *
+ * AVANÇAR E VOLTAR SÃO FRASES DIFERENTES. O cartão que sai de "Em testes" e
+ * volta para "Em desenvolvimento" não foi "assumido": alguém achou um ajuste.
+ * Mandar "assumiu sua solicitação" de novo seria o Blink contando uma coisa
+ * que não aconteceu. A volta é dita como ela é, e dita com calma — voltar uma
+ * etapa para acertar é cuidado, não problema.
+ *
+ * SEM GÊNERO. Nenhuma frase usa artigo antes do nome ("o Nielson") nem
+ * adjetivo para quem lê ("fique tranquilo"): o sistema não sabe o gênero de
+ * ninguém, e errar isso numa mensagem pessoal é pior do que a frase ficar um
+ * pouco menos coloquial.
  */
-export const FRASE_COLUNA: Record<Exclude<Status, "concluido">, string> = {
-  backlog: "Ela voltou para a fila de análise da equipe.",
-  a_fazer: "Ela já está na fila de trabalho da equipe.",
-  em_desenvolvimento: "Alguém da equipe já está trabalhando nela.",
-  em_testes: "Está sendo testada antes de chegar até você.",
-  homologacao: "Ficou pronta e agora precisa de você: confira se está como esperava.",
+type Frase = (responsavel: string | null) => string;
+
+export const FRASE_AVANCO: Record<Exclude<Status, "concluido">, Frase> = {
+  backlog: () =>
+    "Sua solicitação está na fila de análise da equipe. Assim que ela andar, eu te conto.",
+  a_fazer: () =>
+    "Boa notícia: sua solicitação foi analisada e já entrou na fila de trabalho. Em breve alguém da equipe assume. 👍",
+  em_desenvolvimento: (r) =>
+    r
+      ? `${r} assumiu sua solicitação e já está trabalhando nela. 🙌`
+      : "Uma pessoa da equipe assumiu sua solicitação e já está trabalhando nela. 🙌",
+  em_testes: (r) =>
+    r
+      ? `${r} terminou a parte principal e agora está testando tudo com cuidado antes de te entregar. 🔍`
+      : "A parte principal ficou pronta e agora está sendo testada com cuidado antes de chegar até você. 🔍",
+  homologacao: (r) =>
+    r
+      ? `Ficou pronta! 🎉 ${r} terminou, e agora só falta você: dá uma olhada e me conta se ficou como esperava.`
+      : "Ficou pronta! 🎉 Agora só falta você: dá uma olhada e me conta se ficou como esperava.",
+};
+
+export const FRASE_VOLTA: Record<Exclude<Status, "concluido">, Frase> = {
+  backlog: () =>
+    "Sua solicitação voltou para a fila de análise. Às vezes a equipe precisa entender melhor o pedido antes de seguir — assim que ela andar, eu te conto.",
+  a_fazer: () =>
+    "Sua solicitação voltou para a fila de trabalho. Nada se perdeu: ela segue assim que alguém da equipe puder assumir.",
+  em_desenvolvimento: (r) =>
+    r
+      ? `${r} encontrou um ajuste para fazer e voltou a trabalhar nela. Melhor acertar agora do que te entregar pela metade. 🛠️`
+      : "A equipe encontrou um ajuste para fazer e voltou a trabalhar nela. Melhor acertar agora do que te entregar pela metade. 🛠️",
+  em_testes: (r) =>
+    r
+      ? `${r} fez um ajuste e voltou a testar antes de te entregar de novo. 🔍`
+      : "A equipe fez um ajuste e voltou a testar antes de te entregar de novo. 🔍",
+  homologacao: (r) => FRASE_AVANCO.homologacao(r),
 };
 
 /**
@@ -71,8 +128,8 @@ function temValor(s: string | null | undefined): s is string {
   return typeof s === "string" && s.trim().length > 0;
 }
 
-function rotulo(status: string | null | undefined): string | null {
-  return status && status in ROTULO_COLUNA ? ROTULO_COLUNA[status as Status] : null;
+function ehStatus(s: string | null | undefined): s is Status {
+  return !!s && s in ROTULO_COLUNA;
 }
 
 /** Corta no fim de uma palavra, nunca no meio dela. */
@@ -90,6 +147,10 @@ function cabecalho(d: DadosMensagem): string {
   return temValor(d.ticket_code) ? `*${d.ticket_code.trim()}* — ${titulo}` : `*${titulo}*`;
 }
 
+function saudacao(d: DadosMensagem): string {
+  return temValor(d.nome) ? `Oi, ${d.nome.trim()}! 😊` : "Oi! 😊";
+}
+
 /**
  * A mensagem inteira, pronta para o campo `text` da Uazapi.
  *
@@ -103,51 +164,49 @@ export function montarMensagem(
 ): string {
   const partes: string[] = [];
   const link = opts.link;
+  const resp = temValor(d.responsavel) ? d.responsavel.trim() : null;
 
   if (evento === "demanda_criada") {
-    const nome = temValor(d.nome) ? `, ${d.nome.trim()}` : "";
-    partes.push(`Oi${nome}! Aqui é o Blink, do Gestor de Automações. 👋`);
-    partes.push(`Recebi sua solicitação:\n${cabecalho(d)}`);
+    partes.push(`${saudacao(d)} Aqui é o Blink, do Gestor de Automações.`);
+    partes.push(`Recebi sua solicitação e já deixei tudo registrado:\n${cabecalho(d)}`);
     partes.push(
-      "A partir de agora eu te aviso por aqui cada vez que ela mudar de etapa, até ficar pronta.",
+      "Vou te acompanhando por aqui: a cada passo que ela der, eu te conto. Não precisa ficar conferindo o sistema.",
     );
-    if (link) partes.push(`Acompanhe quando quiser: ${link}`);
+    if (link) partes.push(`Se quiser dar uma espiada: ${link}`);
   } else if (evento === "demanda_concluida") {
-    partes.push(`✅ ${cabecalho(d)}`);
+    partes.push(saudacao(d));
+    partes.push(`Prontinho — sua solicitação foi concluída! ✅\n${cabecalho(d)}`);
     if (temValor(opts.resolucao)) {
-      partes.push("Sua solicitação foi concluída.");
       partes.push(`*O que foi feito:*\n${truncar(opts.resolucao)}`);
-      if (link) partes.push(`Detalhes: ${link}`);
-    } else {
-      // Sem o relato, a mensagem não inventa um resumo: diz que acabou e
-      // aponta para onde o registro vai estar.
-      partes.push(
-        link
-          ? `Sua solicitação foi concluída. O registro do que foi feito fica aqui: ${link}`
-          : "Sua solicitação foi concluída.",
-      );
+    }
+    if (resp) partes.push(`Quem cuidou dela foi ${resp}.`);
+    partes.push(
+      "Obrigado pela paciência! Se precisar de mais alguma coisa, é só abrir uma nova solicitação. 💙",
+    );
+    if (link) {
+      // Sem o relato, o link é onde o registro do que foi feito vai estar. A
+      // mensagem não inventa um resumo que ninguém escreveu.
+      partes.push(temValor(opts.resolucao) ? `Detalhes: ${link}` : `O registro do que foi feito fica aqui: ${link}`);
     }
   } else {
-    const para = rotulo(d.status) ?? "uma nova etapa";
-    const de = rotulo(d.status_antes);
-    const frase =
-      d.status && d.status in FRASE_COLUNA
-        ? FRASE_COLUNA[d.status as keyof typeof FRASE_COLUNA]
-        : null;
+    const para: Status | null = ehStatus(d.status) ? d.status : null;
+    const de: Status | null = ehStatus(d.status_antes) ? d.status_antes : null;
+    const voltou = para !== null && de !== null && ORDEM_COLUNA[para] < ORDEM_COLUNA[de];
 
+    partes.push(saudacao(d));
+    if (para && para !== "concluido") {
+      partes.push((voltou ? FRASE_VOLTA : FRASE_AVANCO)[para](resp));
+    }
     partes.push(cabecalho(d));
-    partes.push(
-      de ? `Sua solicitação passou de _${de}_ para *${para}*.` : `Sua solicitação foi para *${para}*.`,
-    );
-    if (frase) partes.push(frase);
+    partes.push(`Etapa atual: *${para ? ROTULO_COLUNA[para] : "atualizada"}*`);
     if (link) {
       // Só uma etapa pede ação. Nas outras o link é conveniência; nesta ele é
       // o ponto da mensagem inteira.
-      partes.push(d.status === "homologacao" ? `Validar agora: ${link}` : link);
+      partes.push(para === "homologacao" ? `Validar agora: ${link}` : link);
     }
   }
 
-  partes.push(`_Para parar de receber estes avisos: ${opts.appUrl}/preferencias_`);
+  partes.push(`_Se preferir não receber estes avisos, é só desligar aqui: ${opts.appUrl}/preferencias_`);
   return partes.join("\n\n");
 }
 

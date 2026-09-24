@@ -162,17 +162,31 @@ Deno.serve(async (req) => {
       }
     }
 
-    // O trigger roda AFTER INSERT; se o código do chamado ainda não existia
-    // naquele instante, busca agora.
-    if (!dados.ticket_code && linha.demanda_id) {
+    // A demanda como ela está AGORA. Duas razões para não confiar só no que o
+    // trigger gravou: o código do chamado pode não existir ainda no instante
+    // do INSERT, e o responsável é quem está com a demanda na hora do aviso —
+    // "Nielson assumiu" tem que ser verdade quando chega no celular.
+    if (linha.demanda_id) {
       const { data: dem } = await supabase
         .from("demands")
-        .select("ticket_code, title")
+        .select("ticket_code, title, assigned_to")
         .eq("id", linha.demanda_id)
         .maybeSingle();
-      const d = dem as { ticket_code?: string | null; title?: string | null } | null;
-      dados.ticket_code = d?.ticket_code ?? null;
+      const d = dem as { ticket_code?: string | null; title?: string | null; assigned_to?: string | null } | null;
+      dados.ticket_code = dados.ticket_code ?? d?.ticket_code ?? null;
       dados.titulo = dados.titulo ?? d?.title ?? null;
+
+      // No recibo não há responsável ainda, e a busca seria à toa.
+      if (d?.assigned_to && linha.evento !== "demanda_criada") {
+        const { data: perfil } = await supabase
+          .from("profiles")
+          .select("nome")
+          .eq("id", d.assigned_to)
+          .maybeSingle();
+        const nome = (perfil as { nome?: string | null } | null)?.nome?.trim();
+        // Primeiro nome só, como a saudação: é assim que se fala de alguém.
+        dados.responsavel = nome ? nome.split(/\s+/)[0] : null;
+      }
     }
 
     // --- Reserva ------------------------------------------------------------
