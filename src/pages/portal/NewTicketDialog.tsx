@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, MessageCircle, Upload, X } from "lucide-react";
 import { useEcossistemaSistemas } from "@/hooks/useEcossistemaSistemas";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { KnowledgeSuggestions } from "@/modules/knowledge";
@@ -26,6 +27,12 @@ import {
 } from "@/modules/demands/hooks";
 import { ACEITA_NO_SELETOR, enviarVarios, validarArquivo } from "@/modules/demands/anexos";
 import { useEffect } from "react";
+import {
+  formatarTelefoneBR,
+  getWhatsapp,
+  normalizarTelefoneBR,
+  salvarWhatsapp,
+} from "@/modules/notificacao-whatsapp";
 
 interface Props {
   open: boolean;
@@ -52,6 +59,43 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [acknowledgedSuggestions, setAcknowledgedSuggestions] = useState(false);
+
+  /**
+   * ACOMPANHAR PELO WHATSAPP
+   *
+   * A preferência é da PESSOA, não da demanda: vale para todas as solicitações
+   * dela, e é a mesma que aparece em Preferências. Por isso a caixa já vem
+   * marcada para quem já aceitou antes, e o texto diz que vale para todas.
+   *
+   * `whatsSalvo` guarda o que está no banco, para gravar só se mudou.
+   */
+  const [acompanharWhats, setAcompanharWhats] = useState(false);
+  const [telefone, setTelefone] = useState("");
+  const [whatsSalvo, setWhatsSalvo] = useState<{ ativo: boolean; telefone: string | null }>({
+    ativo: false,
+    telefone: null,
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    let vivo = true;
+    getWhatsapp()
+      .then((w) => {
+        if (!vivo) return;
+        setWhatsSalvo({ ativo: w.whatsapp_ativo, telefone: w.whatsapp_telefone });
+        setAcompanharWhats(w.whatsapp_ativo);
+        setTelefone(w.whatsapp_telefone ? formatarTelefoneBR(w.whatsapp_telefone) : "");
+      })
+      .catch(() => {
+        /* sem preferência legível: a caixa começa desmarcada, que é o padrão */
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [open]);
+
+  const telefoneNormalizado = normalizarTelefoneBR(telefone);
+  const telefoneInvalido = acompanharWhats && telefone.trim() !== "" && !telefoneNormalizado;
 
   /**
    * Mesmo conserto do diálogo da equipe: o seletor passa a oferecer o catálogo
@@ -97,8 +141,45 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
       toast({ title: "Título obrigatório", variant: "destructive" });
       return;
     }
+    // Pediu WhatsApp com número que não serve: para AQUI, antes de criar.
+    // Depois de criada, a pessoa descobriria que não vai receber nada só
+    // quando o primeiro aviso não chegasse.
+    if (acompanharWhats && !telefoneNormalizado) {
+      toast({
+        title: "Confira o número do WhatsApp",
+        description: "Use DDD + número, por exemplo (11) 98765-4321.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
+      /**
+       * A PREFERÊNCIA ANTES DA DEMANDA, e sem poder derrubá-la.
+       *
+       * Antes, porque o recibo sai do trigger de INSERT em `demands`: gravada
+       * depois, o trigger roda sem saber do aceite e o "recebi sua
+       * solicitação" nunca é enviado.
+       *
+       * Sem derrubar, pela mesma regra dos anexos logo abaixo: a demanda é o
+       * que a pessoa veio fazer. Se o WhatsApp falhar, ela é criada do mesmo
+       * jeito e o aviso diz o que não deu certo.
+       */
+      let avisoWhats: string | null = null;
+      const mudouWhats =
+        acompanharWhats !== whatsSalvo.ativo ||
+        (acompanharWhats && telefoneNormalizado !== whatsSalvo.telefone);
+      if (mudouWhats) {
+        try {
+          await salvarWhatsapp({ ativo: acompanharWhats, telefone: telefoneNormalizado });
+          setWhatsSalvo({ ativo: acompanharWhats, telefone: telefoneNormalizado });
+        } catch {
+          avisoWhats = acompanharWhats
+            ? "Não consegui ativar os avisos por WhatsApp — tente de novo em Preferências."
+            : "Não consegui desligar os avisos por WhatsApp — tente de novo em Preferências.";
+        }
+      }
+
       const demand = await create.mutateAsync({
         title: title.trim(),
         description: description.trim() || null,
@@ -123,11 +204,17 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
 
       toast({
         title: "Demanda registrada!",
-        description:
+        description: [
           falhas.length > 0
             ? `${anexados} de ${files.length} anexos enviados. ${falhas[0]} Você pode reenviar pela tela da demanda.`
-            : "Você poderá acompanhá-la no portal.",
-        variant: falhas.length > 0 ? "destructive" : undefined,
+            : acompanharWhats && !avisoWhats
+              ? "O Blink vai te avisar pelo WhatsApp a cada etapa."
+              : "Você poderá acompanhá-la no portal.",
+          avisoWhats,
+        ]
+          .filter(Boolean)
+          .join(" "),
+        variant: falhas.length > 0 || avisoWhats ? "destructive" : undefined,
       });
 
       // Aciona Agente Autônomo IA Nível 1 (portal sempre cria sem responsável).
@@ -278,11 +365,58 @@ export function NewTicketDialog({ open, onOpenChange }: Props) {
             )}
           </div>
 
+          <div className="space-y-2 rounded-md border border-border p-3">
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="p-whats"
+                checked={acompanharWhats}
+                onCheckedChange={(v) => setAcompanharWhats(v === true)}
+                disabled={submitting}
+                className="mt-0.5"
+              />
+              <div className="space-y-0.5">
+                <Label htmlFor="p-whats" className="flex items-center gap-1.5 cursor-pointer">
+                  <MessageCircle className="size-4" aria-hidden />
+                  Acompanhar pelo WhatsApp
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  O Blink te avisa cada vez que a solicitação muda de etapa, até a conclusão.
+                  Vale para todas as suas solicitações, e você desliga quando quiser em Preferências.
+                </p>
+              </div>
+            </div>
+            {acompanharWhats && (
+              <div className="space-y-1 pl-6">
+                <Label htmlFor="p-telefone" className="text-xs">
+                  Número do WhatsApp
+                </Label>
+                <Input
+                  id="p-telefone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="(11) 98765-4321"
+                  value={telefone}
+                  onChange={(e) => setTelefone(e.target.value)}
+                  onBlur={() => telefoneNormalizado && setTelefone(formatarTelefoneBR(telefoneNormalizado))}
+                  aria-invalid={telefoneInvalido || undefined}
+                  disabled={submitting}
+                />
+                {telefoneInvalido && (
+                  <p className="text-xs text-destructive">Use DDD + número, por exemplo (11) 98765-4321.</p>
+                )}
+              </div>
+            )}
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={submitting || !title.trim()}>
+            <Button
+              type="submit"
+              disabled={submitting || !title.trim() || (acompanharWhats && !telefoneNormalizado)}
+            >
               {submitting ? (
                 <>
                   <Loader2 className="mr-1 size-4 animate-spin" /> Enviando…

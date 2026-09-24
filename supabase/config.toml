@@ -51,6 +51,10 @@ verify_jwt = true
 [functions.notificacao-email-fila]
 verify_jwt = true
 
+# Mesmo motivo da fila de email: chamada pelo cron com a service role key.
+[functions.notificacao-whatsapp-fila]
+verify_jwt = true
+
 # --- Sistema RPA Bloco (onda O0) ---
 # verify_jwt = false porque quem chama e o gateway do HUB, nao um usuario logado.
 # As duas se autenticam sozinhas comparando o campo `token` do corpo com o secret

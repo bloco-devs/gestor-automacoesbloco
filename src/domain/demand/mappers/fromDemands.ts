@@ -40,7 +40,7 @@ export const CAPACIDADES_DEMANDS: Capacidades = {
  * mapeamento é explícito, sem heurística. `homologacao` conta como espera
  * porque a bola está com outra pessoa: a equipe não está trabalhando nela.
  */
-const STATUS_META: Record<DemandStatus, { rotulo: string; categoria: StatusCategoria; ordem: number }> = {
+export const STATUS_META: Record<DemandStatus, { rotulo: string; categoria: StatusCategoria; ordem: number }> = {
   backlog: { rotulo: "Backlog", categoria: "aberta", ordem: 0 },
   a_fazer: { rotulo: "A fazer", categoria: "aberta", ordem: 1 },
   em_desenvolvimento: { rotulo: "Em desenvolvimento", categoria: "andamento", ordem: 2 },
