@@ -33,6 +33,12 @@ export interface Demand {
 
   description: string | null;
   system_id: string | null;
+  /**
+   * Slug do ecossistema (`processos`, `produtividade`...). É dele que o banco
+   * monta o código do chamado. O `select("*")` sempre trouxe este campo; só
+   * não estava declarado aqui — e o que não é declarado, o mapper não copia.
+   */
+  sistema_slug?: string | null;
   status: DemandStatus;
   priority: DemandPriority;
   type: DemandType;

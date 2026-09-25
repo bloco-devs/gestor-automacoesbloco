@@ -115,7 +115,8 @@ export function fromDemands({
 
     return {
       id: d.id,
-      referencia: formatarReferenciaComSigla(d.ticket_code, sistema?.nome || d.system_id, d.id, d.title),
+      // O slug primeiro: e dele que o banco monta o codigo do chamado.
+      referencia: formatarReferenciaComSigla(d.ticket_code, d.sistema_slug || sistema?.nome || d.system_id, d.id, d.title),
       titulo: d.title,
       descricao: d.description ?? "",
 
@@ -124,6 +125,7 @@ export function fromDemands({
       tipo: d.type,
       complexidade: d.complexity,
       sistema,
+      sistemaSlug: d.sistema_slug ?? null,
 
       responsaveis: responsavel ? [responsavel] : [],
       autor: autor ?? null,

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   COMPLEXIDADE_ROTULO,
   participantes,
+  sistemaDaDemanda,
   type Capacidades,
   type Demanda,
   type Evento,
@@ -162,7 +163,11 @@ function ContextoImpl({
         {capacidades.complexidade && d.complexidade && (
           <Linha rotulo="Complexidade">{COMPLEXIDADE_ROTULO[d.complexidade]}</Linha>
         )}
-        {d.sistema && <Linha rotulo="Sistema">{d.sistema.nome}</Linha>}
+        {/* O sistema registrado: slug primeiro, depois o catalogo antigo. */}
+        {(() => {
+          const s = sistemaDaDemanda(d);
+          return s.nome && !s.palpite ? <Linha rotulo="Sistema">{s.nome}</Linha> : null;
+        })()}
 
         <Linha rotulo="Responsável">
           {d.responsaveis.length > 0 ? (

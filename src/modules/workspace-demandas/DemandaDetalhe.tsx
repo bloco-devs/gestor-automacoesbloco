@@ -36,8 +36,7 @@ import {
   montarFio,
   obterEstiloDoSistema,
   formatarReferenciaComSigla,
-  siglaDoSistema,
-  nomeDoSistemaPelaSigla,
+  sistemaDaDemanda,
   type AcaoSugerida,
   type Pessoa,
 } from "@/domain/demand";
@@ -370,6 +369,8 @@ export default function DemandaDetalhe() {
    * distingue esta demanda. Cada item desaparece quando a fonte não sabe
    * respondê-lo — ausência é mais honesta que um traço.
    */
+  const sistemaExibido = sistemaDaDemanda(d, briefing.oQuePedem);
+
   const identidade = [
     capacidades.tipo && d.tipo ? TIPO_ROTULO[d.tipo] : null,
     d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
@@ -392,14 +393,23 @@ export default function DemandaDetalhe() {
           </Button>
           <div className="min-w-0 flex-1">
             {(() => {
-              const sig = siglaDoSistema(d.sistema?.nome, d.titulo, briefing.oQuePedem);
-              const nomeSistema = nomeDoSistemaPelaSigla(sig) || d.sistema?.nome;
-              if (!nomeSistema) return null;
-              const est = obterEstiloDoSistema(sig || d.sistema?.nome, d.titulo);
+              // O slug gravado primeiro — o mesmo de onde sai o código do
+              // chamado. Ver `sistemaDaDemanda`: a tag e o código não podem
+              // mais se contradizer.
+              if (!sistemaExibido.nome) return null;
+              const est = obterEstiloDoSistema(sistemaExibido.sigla || sistemaExibido.nome, d.titulo);
               return (
                 <div className="mb-1 flex items-center gap-2">
-                  <span className={cn("inline-flex items-center rounded-md border px-2.5 py-0.5 text-[11px] font-bold tracking-tight shadow-2xs", est.badgeClass)}>
-                    Sistema: {nomeSistema}
+                  <span
+                    className={cn("inline-flex items-center rounded-md border px-2.5 py-0.5 text-[11px] font-bold tracking-tight shadow-2xs", est.badgeClass)}
+                    title={
+                      sistemaExibido.palpite
+                        ? "Nenhum sistema registrado nesta demanda: deduzido pelo texto."
+                        : undefined
+                    }
+                  >
+                    {/* Palpite não é afirmado: diz que é provável. */}
+                    {sistemaExibido.palpite ? "Sistema provável" : "Sistema"}: {sistemaExibido.nome}
                   </span>
                 </div>
               );
@@ -407,8 +417,8 @@ export default function DemandaDetalhe() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h1 className="flex min-w-0 flex-1 items-baseline gap-2">
                 {(() => {
-                  const refCalculada = formatarReferenciaComSigla(d.referencia, d.sistema?.nome, d.id, d.titulo, briefing.oQuePedem);
-                  const estRef = obterEstiloDoSistema(d.sistema?.nome, refCalculada || d.titulo);
+                  const refCalculada = formatarReferenciaComSigla(d.referencia, d.sistemaSlug || d.sistema?.nome, d.id, d.titulo, briefing.oQuePedem);
+                  const estRef = obterEstiloDoSistema(sistemaExibido.sigla || d.sistema?.nome, refCalculada || d.titulo);
                   return (
                     <span className={cn("shrink-0 font-mono text-[12px] font-bold border px-2 py-0.5 rounded-md tracking-tight", estRef.badgeClass)}>
                       {refCalculada}
@@ -659,7 +669,9 @@ export default function DemandaDetalhe() {
                 titulo: d.titulo,
                 pedido: d.descricao,
                 relato: resumo,
-                sistemas: d.sistema?.nome ? [d.sistema.nome] : [],
+                // O sistema registrado, nunca o palpite: a IA que sugere a
+                // classificacao nao pode receber como fato o que a tela adivinhou.
+                sistemas: sistemaExibido.nome && !sistemaExibido.palpite ? [sistemaExibido.nome] : [],
               });
             }}
             onClassificar={async (codigo, justificativa) => {

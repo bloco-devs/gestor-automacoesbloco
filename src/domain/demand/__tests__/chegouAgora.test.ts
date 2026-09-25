@@ -24,6 +24,7 @@ function demanda(patch: Partial<Demanda> = {}): Demanda {
     tipo: null,
     complexidade: null,
     sistema: null,
+    sistemaSlug: null,
     responsaveis: [],
     autor: null,
     criadaEm: "2026-07-28T09:00:00Z",

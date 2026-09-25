@@ -30,7 +30,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { obterEstiloDoSistema } from "@/domain/demand";
+import { obterEstiloDoSistema, sistemaDaDemanda } from "@/domain/demand";
 
 import { labelColorStyle } from "@/lib/atividades";
 import {
@@ -262,7 +262,15 @@ export function Cartao({
   const [labelsExpanded, alternarLabels] = useEtiquetasExpandidas();
   const responsavel = d.responsaveis[0];
 
-  const sistemaNome = sinais.sistema ? d.sistema?.nome ?? null : null;
+  /**
+   * Só o que foi REGISTRADO — slug ou catálogo antigo. Antes o cartão lia só
+   * `d.sistema` (do system_id), vazio nas demandas novas: a tag sumia mesmo
+   * com o sistema gravado no slug. Palpite pelo texto fica de fora aqui: o
+   * cartão é compacto demais para dizer "provável", e afirmar um palpite foi
+   * exatamente o defeito do detalhe.
+   */
+  const sistemaExibido = sistemaDaDemanda(d);
+  const sistemaNome = sinais.sistema && !sistemaExibido.palpite ? sistemaExibido.nome : null;
 
   const meta = [
     sinais.prioridade && d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
@@ -475,7 +483,7 @@ export function Cartao({
               title={`Sistema: ${sistemaNome}`}
               className={cn(
                 "mb-1 inline-flex max-w-full items-center truncate rounded px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-tight border",
-                obterEstiloDoSistema(d.sistema?.nome || sistemaNome, d.referencia || d.titulo).badgeClass
+                obterEstiloDoSistema(sistemaExibido.sigla || sistemaNome, d.referencia || d.titulo).badgeClass
               )}
             >
               {sistemaNome}

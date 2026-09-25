@@ -6,6 +6,7 @@ import {
   PRIORIDADE_ROTULO,
   RISCO_ROTULO,
   chegouAgora,
+  sistemaDaDemanda,
   type Capacidades,
   type Demanda,
   type SinaisUteis,
@@ -70,9 +71,12 @@ interface Props {
 function DemandaRowImpl({ demanda: d, capacidades, sinais, onAbrir, mostrarStatus }: Props) {
   const responsavel = d.responsaveis[0];
 
+  // So o sistema registrado (slug ou catalogo antigo), nunca o palpite pelo
+  // texto: a linha da lista nao tem como dizer "provavel".
+  const sistema = sistemaDaDemanda(d);
   const meta = [
     mostrarStatus ? d.status.rotulo : null,
-    sinais.sistema ? (d.sistema?.nome ?? null) : null,
+    sinais.sistema && !sistema.palpite ? sistema.nome : null,
     capacidades.tipo && d.tipo ? d.tipo.replace(/_/g, " ") : null,
     sinais.prioridade && d.prioridade ? PRIORIDADE_ROTULO[d.prioridade] : null,
   ].filter(Boolean) as string[];

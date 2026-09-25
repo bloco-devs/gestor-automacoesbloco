@@ -155,6 +155,8 @@ export function fromAtividades({
       tipo: null,
       complexidade: null,
       sistema: solucao ? { id: solucao.id, nome: solucao.titulo } : null,
+      // Cartao de projeto nao tem slug do ecossistema.
+      sistemaSlug: null,
 
       responsaveis: pessoas,
       autor: null,

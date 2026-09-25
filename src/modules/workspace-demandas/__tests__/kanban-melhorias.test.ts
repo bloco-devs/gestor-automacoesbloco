@@ -18,6 +18,7 @@ function criarDemanda(override: Partial<Demanda>): Demanda {
     tipo: "melhoria",
     complexidade: "facil",
     sistema: { id: "s1", nome: "Sienge" },
+    sistemaSlug: null,
     responsaveis: [],
     autor: null,
     criadaEm: "2026-08-20T10:00:00Z",

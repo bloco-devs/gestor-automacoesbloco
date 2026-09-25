@@ -24,6 +24,7 @@ function demanda(id: string, concluida = false): Demanda {
     tipo: null,
     complexidade: null,
     sistema: null,
+    sistemaSlug: null,
     responsaveis: [],
     autor: null,
     criadaEm: "2026-07-01",

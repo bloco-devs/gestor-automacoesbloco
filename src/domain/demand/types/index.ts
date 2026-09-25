@@ -188,6 +188,17 @@ export interface Demanda {
   tipo: TipoDemanda | null;
   complexidade: Complexidade | null;
   sistema: Sistema | null;
+  /**
+   * O slug do ecossistema gravado em `demands.sistema_slug` — é DELE que o
+   * banco monta o código do chamado (`processos` → GP-, `produtividade` →
+   * OBRA-). Nulo para cartão de projeto e para demanda antiga sem slug.
+   *
+   * Não confundir com `sistema`, que vem de `system_id`, um catálogo mais
+   * antigo. Sem este campo a tela só via `sistema` — nulo nas demandas novas —
+   * e caía no palpite pelo texto: a GP-2609-0001, de Processos, saiu com a
+   * tag "Gestão de Obra" porque a descrição falava em "planejamento".
+   */
+  sistemaSlug: string | null;
 
   responsaveis: Pessoa[];
   autor: Pessoa | null;

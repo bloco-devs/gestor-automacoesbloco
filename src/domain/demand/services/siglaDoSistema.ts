@@ -366,3 +366,90 @@ export function nomeDoSistemaPelaSigla(sigla: string | null): string | null {
   }
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// O sistema de uma demanda, para mostrar na tela
+// ---------------------------------------------------------------------------
+
+export interface SistemaExibido {
+  sigla: string | null;
+  nome: string | null;
+  /**
+   * Verdadeiro quando NADA foi registrado na demanda e o sistema saiu do
+   * texto dela. A tela deve dizer "provável", não afirmar.
+   */
+  palpite: boolean;
+}
+
+function semAcentoMinusculo(s: string): string {
+  return s.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+/**
+ * A sigla de um NOME registrado (o `system_id` antigo), sem olhar título nem
+ * descrição, e sem o último recurso de `siglaDoSistema` que pega as quatro
+ * primeiras letras de qualquer texto — com ele, um sistema "Portal XYZ" virava
+ * PORT, que é a sigla do Gestor de Portfólio. Nome não reconhecido fica sem
+ * sigla, e a tela mostra o nome como está.
+ */
+function siglaPeloNomeRegistrado(nome: string): string | null {
+  const chave = nome.trim().toLowerCase();
+  if (SISTEMAS_ECOSSISTEMA_BLOCO_ID[chave]) return SISTEMAS_ECOSSISTEMA_BLOCO_ID[chave].sigla;
+  const texto = semAcentoMinusculo(nome);
+  for (const info of Object.values(SISTEMAS_ECOSSISTEMA_BLOCO_ID)) {
+    if (semAcentoMinusculo(info.nome) === texto) return info.sigla;
+  }
+  for (const item of PALAVRAS_CHAVE) {
+    if (item.palavras.some((p) => contemPalavra(texto, p))) return item.sigla;
+  }
+  return null;
+}
+
+/**
+ * QUAL É O SISTEMA DESTA DEMANDA — a resposta única para toda tela.
+ *
+ * Em ordem, e o primeiro que existir responde:
+ *
+ *   1. O SLUG GRAVADO (`demands.sistema_slug`). É dele que o banco monta o
+ *      código do chamado, então a tag e o código nunca mais se contradizem.
+ *   2. O sistema do catálogo antigo (`system_id` → `d.sistema.nome`).
+ *   3. Só se nada foi registrado: o palpite pelo título e pela descrição —
+ *      marcado como `palpite`, para a tela não afirmar o que adivinhou.
+ *
+ * POR QUE EXISTE. O detalhe da demanda chamava
+ * `siglaDoSistema(d.sistema?.nome, título, descrição)`. As demandas novas têm
+ * slug e não têm `system_id`, então o primeiro argumento vinha vazio e TODA
+ * tag saía do palpite. A GP-2609-0001 — slug `processos`, código GP- certo —
+ * mostrava "Gestão de Obra", porque a descrição dizia "planejamento" e essa é
+ * a primeira palavra-chave da lista. Ajustar a heurística só trocaria o erro:
+ * o título dela fala em "Atividades", que é palavra de outro sistema. O
+ * conserto é olhar o dado.
+ */
+export function sistemaDaDemanda(
+  d: {
+    sistemaSlug?: string | null;
+    sistema?: { nome?: string | null } | null;
+    titulo?: string | null;
+  },
+  textoExtra?: string | null,
+): SistemaExibido {
+  const slug = (d.sistemaSlug ?? "").trim();
+  if (slug) {
+    const doCatalogo = SISTEMAS_ECOSSISTEMA_BLOCO_ID[slug.toLowerCase()];
+    if (doCatalogo) return { sigla: doCatalogo.sigla, nome: doCatalogo.nome, palpite: false };
+    // Slug gravado fora do catálogo é dado, não palpite: aparece cru, e é
+    // assim que um sistema não cadastrado fica visível.
+    return { sigla: null, nome: slug, palpite: false };
+  }
+
+  const nomeRegistrado = d.sistema?.nome?.trim();
+  if (nomeRegistrado) {
+    const sigla = siglaPeloNomeRegistrado(nomeRegistrado);
+    const canonico = sigla ? nomeDoSistemaPelaSigla(sigla) : null;
+    return { sigla: canonico ? sigla : null, nome: canonico ?? nomeRegistrado, palpite: false };
+  }
+
+  const sigla = siglaDoSistema(null, d.titulo, textoExtra);
+  const nome = nomeDoSistemaPelaSigla(sigla);
+  return nome ? { sigla, nome, palpite: true } : { sigla: null, nome: null, palpite: false };
+}
