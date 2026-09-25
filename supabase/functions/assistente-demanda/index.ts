@@ -379,7 +379,7 @@ O rótulo de cada seção vai em MAIÚSCULAS, sozinho na linha, e o conteúdo na
 linha de baixo. Deixe uma linha em branco entre uma seção e a próxima.
 
 NÃO use asteriscos, cerquilha, traços de lista nem qualquer marcação: a tela
-mostra o texto como ele vem, e um `**` vira dois asteriscos na cara de quem
+mostra o texto como ele vem, e um "**" vira dois asteriscos na cara de quem
 lê. Quebra de linha é a única formatação que funciona aqui.
 
 O QUE ACONTECEU?
