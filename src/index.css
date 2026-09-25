@@ -472,12 +472,29 @@
 .parachute-loader .wind-6 { left: 39%; height: 26px; animation-delay: 2.1s; animation-duration: 2.3s; }
 .parachute-loader .wind-7 { left: 70%; height: 38px; animation-delay: 0.9s; animation-duration: 2.1s; }
 
+/* A SILHUETA DE NUVEM, NÃO A PEGADA DE PATA.
+   A tentativa anterior somava radiais com pico no PRÓPRIO centro e cauda
+   longa (`0% opaco → 72% transparente`). Isso não funde: cada gradiente
+   continua com um miolo mais claro que o resto, e o conjunto lê como um
+   conjunto de manchas redondas — pegada de pata — em vez de uma forma só.
+   Aqui a lógica é outra: cada elipse fica quase CHAPADA por dentro (opaca até
+   62% do raio, sem gradiente relevante) e só then cai para transparente. Sem
+   miolo mais claro, não sobra ponto para o olho separar. A costura entre as
+   elipses quem apaga é o `blur` do elemento inteiro — ele funde onde as
+   bordas duras se encontram, exatamente como funde a borda externa. */
 .parachute-loader .cloud {
   position: absolute;
   background:
-    radial-gradient(ellipse 44% 58% at 26% 64%, hsl(var(--foreground)) 0%, transparent 72%),
-    radial-gradient(ellipse 40% 82% at 52% 44%, hsl(var(--foreground)) 0%, transparent 72%),
-    radial-gradient(ellipse 42% 54% at 78% 66%, hsl(var(--foreground)) 0%, transparent 72%);
+    /* A barriga: larga e achatada, é a base da nuvem. */
+    radial-gradient(ellipse 92% 46% at 50% 78%, hsl(var(--foreground)) 62%, transparent 64%),
+    /* Três solaços no topo, tamanhos desiguais — irregular lê como nuvem;
+       igual lê como carimbo repetido. */
+    radial-gradient(ellipse 36% 44% at 24% 40%, hsl(var(--foreground)) 62%, transparent 64%),
+    radial-gradient(ellipse 44% 54% at 52% 26%, hsl(var(--foreground)) 62%, transparent 64%),
+    radial-gradient(ellipse 32% 42% at 76% 42%, hsl(var(--foreground)) 62%, transparent 64%);
+  /* Suave o bastante para fundir a costura das quatro elipses; de menos e
+     elas voltam a se separar, de mais e a nuvem vira mancha sem contorno. */
+  filter: blur(7px);
   bottom: -20%;
   animation: moveCloudsUp 3s linear infinite;
 }
