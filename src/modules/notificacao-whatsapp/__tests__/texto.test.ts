@@ -128,7 +128,10 @@ describe("o Blink acompanha com gentileza", () => {
 
   it("nenhuma mensagem convida a desligar os avisos", () => {
     // Decisão do produto. A saída existe em Preferências, só não é anunciada.
-    for (const ev of ["demanda_criada", "coluna_mudou", "demanda_concluida", "dev_demanda_nova", "mensagem_chat"] as Evento[]) {
+    for (const ev of [
+      "demanda_criada", "coluna_mudou", "demanda_concluida",
+      "dev_demanda_nova", "mensagem_chat", "demanda_parada",
+    ] as Evento[]) {
       const m = montarMensagem(ev, { ...base, status: "a_fazer" }, opts);
       expect(m).not.toContain("/preferencias");
       expect(m).not.toMatch(/desligar|parar de receber/i);
@@ -264,6 +267,49 @@ describe("o Blink avisa quando alguém escreve no chat", () => {
       chat({ papel: "participante", interno: true }),
     ];
     for (const m of todas) expect(m).not.toMatch(/\b[oa] (Nielson|Thaísa)\b/i);
+  });
+});
+
+describe("o Blink avisa demanda parada — um resumo, não um por demanda", () => {
+  const item = (over: Partial<{ demanda_id: string; ticket_code: string; titulo: string; dias: number }> = {}) => ({
+    demanda_id: "abc-1", ticket_code: "OBRA-2609-0001", titulo: "Mapa de produtividade", dias: 3, ...over,
+  });
+
+  it("dev: fala do próprio trabalho parado, no singular quando é só uma", () => {
+    const m = montarMensagem(
+      "demanda_parada",
+      { nome: "Nielson", papelParada: "dev", totalParadas: 1, itensParados: [item()] },
+      opts,
+    );
+    expect(m).toContain("Oi, Nielson! 📋");
+    expect(m).toContain("Uma demanda sua está parada");
+    expect(m).toContain("1. *OBRA-2609-0001* — Mapa de produtividade (3 dias úteis parada)");
+    expect(m).toContain("https://app/demandas/abc-1");
+  });
+
+  it("solicitante: fala de validar, não de trabalho parado", () => {
+    const m = montarMensagem(
+      "demanda_parada",
+      { nome: "Thaísa", papelParada: "solicitante", totalParadas: 2, itensParados: [item(), item({ demanda_id: "abc-2", dias: 1 })] },
+      opts,
+    );
+    expect(m).toContain("2 solicitações suas estão em homologação");
+    expect(m).toContain("esperando você validar");
+    expect(m).toContain("1 dia útil parada"); // singular de dias, plural de itens
+  });
+
+  it("lista cortada avisa quantas ficaram de fora", () => {
+    const m = montarMensagem(
+      "demanda_parada",
+      { nome: "Nielson", papelParada: "dev", totalParadas: 5, itensParados: [item()] },
+      opts,
+    );
+    expect(m).toContain("E mais 4.");
+  });
+
+  it("sem itens cortados, não menciona 'e mais'", () => {
+    const m = montarMensagem("demanda_parada", { nome: "Nielson", papelParada: "dev", totalParadas: 1, itensParados: [item()] }, opts);
+    expect(m).not.toContain("E mais");
   });
 });
 

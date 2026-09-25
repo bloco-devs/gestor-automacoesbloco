@@ -12,7 +12,9 @@ export type Evento =
   /** Para a equipe: chegou demanda sem responsável. */
   | "dev_demanda_nova"
   /** Para quem o sininho avisaria: alguém escreveu no chat da demanda. */
-  | "mensagem_chat";
+  | "mensagem_chat"
+  /** Resumo diário: um evento, várias demandas paradas da mesma pessoa. */
+  | "demanda_parada";
 
 export type Status =
   | "backlog"
@@ -49,6 +51,18 @@ export interface DadosMensagem {
   interno?: boolean | null;
   /** "dono" é quem abriu a demanda — para ele, é "sua solicitação". */
   papel?: "dono" | "participante" | null;
+
+  // demanda_parada
+  itensParados?: Array<{
+    demanda_id: string;
+    ticket_code?: string | null;
+    titulo?: string | null;
+    dias: number;
+  }> | null;
+  /** Quantas ao todo — pode ser maior que itensParados.length (lista cortada). */
+  totalParadas?: number | null;
+  /** "dev": é o trabalho dele. "solicitante": é ele quem precisa validar. */
+  papelParada?: "dev" | "solicitante" | null;
 }
 
 /**
@@ -279,6 +293,35 @@ export function montarMensagem(
     const desc = citar(d.descricao);
     if (desc) partes.push(desc);
     if (link) partes.push(`Quem puder assumir: ${link}`);
+  } else if (evento === "demanda_parada") {
+    const itens = d.itensParados ?? [];
+    const total = d.totalParadas ?? itens.length;
+    const singular = total === 1;
+
+    partes.push(saudacao(d, "📋"));
+    partes.push(
+      d.papelParada === "solicitante"
+        ? singular
+          ? "Uma solicitação sua está em homologação há alguns dias, esperando você validar:"
+          : `${total} solicitações suas estão em homologação há alguns dias, esperando você validar:`
+        : singular
+          ? "Uma demanda sua está parada há alguns dias:"
+          : `${total} demandas suas estão paradas há alguns dias:`,
+    );
+
+    const linhas = itens.map((it, i) => {
+      const codigo = temValor(it.ticket_code) ? `*${it.ticket_code.trim()}*` : "";
+      const titulo = temValor(it.titulo) ? it.titulo.trim() : "sem título";
+      const dias = `${it.dias} ${it.dias === 1 ? "dia útil" : "dias úteis"} parada`;
+      const url = it.demanda_id ? `${opts.appUrl}/demandas/${it.demanda_id}` : null;
+      const cab = [codigo, titulo].filter(Boolean).join(" — ");
+      return `${i + 1}. ${cab} (${dias})${url ? `\n${url}` : ""}`;
+    });
+    if (linhas.length) partes.push(linhas.join("\n\n"));
+
+    if (total > itens.length) {
+      partes.push(`E mais ${total - itens.length}. Dá uma olhada no sistema para ver a lista inteira.`);
+    }
   } else if (evento === "mensagem_chat") {
     const autor = nomeParaSaudacao(d.autor) ?? "Alguém";
     const trecho = citar(d.trecho);

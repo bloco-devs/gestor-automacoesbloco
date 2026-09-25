@@ -151,7 +151,18 @@ Deno.serve(async (req) => {
   let paradaPor: string | null = null;
 
   for (const linha of (data ?? []) as LinhaFila[]) {
-    const dados: DadosMensagem = { ...(linha.dados ?? {}) };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bruto = (linha.dados ?? {}) as any;
+    const dados: DadosMensagem = { ...bruto };
+
+    // O resumo diário guarda os campos com o nome que o SQL usa
+    // (enfileirar_resumo_demandas_paradas): papel/total/itens em
+    // snake_case, sem o sufixo que os desambigua no tipo compartilhado.
+    if (linha.evento === "demanda_parada") {
+      dados.papelParada = bruto.papel ?? null;
+      dados.totalParadas = bruto.total ?? null;
+      dados.itensParados = bruto.itens ?? null;
+    }
 
     // --- A resolução, para a mensagem de conclusão -------------------------
     let resolucao: string | null = null;
