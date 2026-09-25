@@ -83,7 +83,7 @@ export const SISTEMAS_CONHECIDOS: SistemaConhecido[] = [
     ],
   },
   {
-    slug: "obra",
+    slug: "produtividade",
     faz: "Registra a producao diaria da obra e organiza planejamento, folha por producao, qualidade e seguranca.",
     palavras: [
       "produtividade", "captura", "levantamento", "curto prazo", "medio prazo",
@@ -95,7 +95,7 @@ export const SISTEMAS_CONHECIDOS: SistemaConhecido[] = [
     ],
   },
   {
-    slug: "suprimentos",
+    slug: "locacao",
     faz: "Pedido, cotacao, aprovacao, recebimento, estoque e devolucao dos equipamentos alugados das obras.",
     palavras: [
       "locacao", "solicitacao de locacao", "proposta vencedora",
@@ -105,7 +105,7 @@ export const SISTEMAS_CONHECIDOS: SistemaConhecido[] = [
     ],
   },
   {
-    slug: "financeiro",
+    slug: "fluxo-caixa",
     faz: "Fluxo de caixa das SPEs, cobranca de inadimplentes e entregas contabeis de cada empresa.",
     palavras: [
       "SPE", "inadimplencia", "regua de cobranca", "recebivel", "recebiveis",
@@ -136,7 +136,7 @@ export const SISTEMAS_CONHECIDOS: SistemaConhecido[] = [
     ],
   },
   {
-    slug: "viabuilder",
+    slug: "viabilidade",
     faz: "Diz se um terreno vale a pena virar predio e monta o fluxo de caixa e o funding do projeto.",
     palavras: [
       "viabuilder", "analise preliminar", "viabilidade dinamica",
@@ -171,7 +171,7 @@ export const SISTEMAS_CONHECIDOS: SistemaConhecido[] = [
     ],
   },
   {
-    slug: "nakhon",
+    slug: "nakhon-contratos",
     faz: "Monta o fluxo de pagamento de uma unidade e gera o contrato/proposta do comprador.",
     palavras: [
       "gerador de fluxo", "gerador de contratos", "nakhon", "manaira",
@@ -181,7 +181,7 @@ export const SISTEMAS_CONHECIDOS: SistemaConhecido[] = [
     ],
   },
   {
-    slug: "gestao-projetos",
+    slug: "desenvolvimento-produto",
     faz: "Leva um empreendimento do briefing do terreno aos documentos para investidores.",
     palavras: [
       "desenvolvimento de produto", "briefing", "mix de unidades", "tipologia",

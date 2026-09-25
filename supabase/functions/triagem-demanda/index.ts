@@ -38,6 +38,7 @@ A PERGUNTA QUE DECIDE é ONDE a mudança acontece, não que assunto o texto lemb
   - "Erro ao lançar férias do colaborador" → o slug de RH. A tela de férias é do RH.
   - "Wi-Fi do canteiro cai toda tarde" → tecnologia. É obra no assunto, mas rede não é tela de sistema.
 - Escolhido o caminho "dentro de um sistema", o casamento é semântico, não literal: sigla, nome parcial, sinônimo e nome do setor valem. "RH"/"recursos humanos"/"folha"/"admissão" → o slug de RH; "obra"/"obras"/"canteiro" → o slug de obra; "SGPO"/"processo" → o slug de processos; "compras" → suprimentos; "vendas" → comercial.
+- NOME DE TELA NÃO É NOME DE SISTEMA. Vários sistemas têm áreas com nomes parecidos: a Gestão de Obra tem uma área de atividades, e o Gestor de Atividades Líderes é outro sistema — o que recebe pelo WhatsApp o que cada líder está fazendo. Uma palavra em comum com o nome de um sistema não basta. Decida pelo que cada sistema FAZ, descrito na lista ao lado de cada slug.
 - Não devolva null por falta de esforço: percorra a lista inteira, e se a mudança é dentro de um sistema escolha o sistema, se é fora escolha "tecnologia".
 - "tecnologia" não é atalho para quando está difícil decidir. Toda demanda deste time é "de tecnologia" no sentido amplo. Ela é a resposta certa apenas quando a mudança de fato não acontece dentro de nenhum sistema da lista.
 - Use null apenas se "tecnologia" não estiver na lista fornecida.
@@ -75,18 +76,40 @@ function normalizar(texto: string): string {
 const APELIDOS_BASE: Record<string, string[]> = {
   rh: ["rh", "recursos humanos", "recurso humano", "departamento pessoal", "dp", "folha", "folha de pagamento", "admissao", "admissoes", "ferias", "colaboradores"],
   processos: ["processos", "processo", "sgpo"],
-  obra: ["obra", "obras", "canteiro", "canteiro de obras"],
-  suprimentos: ["suprimentos", "compras", "almoxarifado", "estoque"],
-  financeiro: ["financeiro", "financas", "contas a pagar", "contas a receber", "tesouraria"],
+  /*
+   * AS CHAVES SÃO OS SLUGS DO HUB — os mesmos de `demand_prefixo_slug`.
+   *
+   * Estavam `obra`, `suprimentos`, `financeiro`, `nakhon`, `viabuilder` e
+   * `gestao-projetos`, que não existem no HUB (lá são `produtividade`,
+   * `locacao`, `fluxo-caixa`, `nakhon-contratos`, `viabilidade` e
+   * `desenvolvimento-produto`). `inferirSistema` percorre os slugs do HUB e
+   * busca APELIDOS[slug]: com a chave errada, os apelidos desses seis sistemas
+   * nunca eram lidos. Numa dúvida entre Obra e Atividades, só Atividades
+   * tinha apelidos funcionando. O teste em
+   * src/modules/triagem/__tests__/slugs-do-hub.test.ts trava isso.
+   */
+  produtividade: ["obra", "obras", "canteiro", "canteiro de obras"],
+  locacao: ["suprimentos", "compras", "almoxarifado", "estoque"],
+  "fluxo-caixa": ["financeiro", "financas", "contas a pagar", "contas a receber", "tesouraria"],
   "gestao-comercial": ["comercial", "vendas"],
   "crm-house": ["crm"],
-  portfolio: ["portfolio", "empreendimentos"],
+  // "empreendimentos" saiu: é palavra de quase todo sistema daqui (o topo de
+  // _shared/vocabulario.ts já a lista entre as genéricas).
+  portfolio: ["portfolio"],
   incorporacao: ["incorporacao", "incorporadora"],
-  "gestao-projetos": ["projetos", "projeto"],
-  nakhon: ["contratos", "contrato", "nakhon"],
-  atividades: ["atividades", "quadro", "kanban"],
+  // "projeto" e "contrato" não entram: estavam mortos pela chave errada, e
+  // acordariam com o slug certo apontando quase toda demanda para cá.
+  "desenvolvimento-produto": ["desenvolvimento de produto", "desenvolvimento produto"],
+  "nakhon-contratos": ["nakhon", "gerador de contratos", "contratos nakhon"],
+  /*
+   * Nada de "atividades", "quadro" ou "kanban": a Gestão de Obra tem uma área
+   * de atividades, e quase todo sistema tem quadro. Com esses termos, a
+   * ATIV-2609-0001 — "Seletor de empreendimento no menu lateral", da Obra —
+   * nasceu no Gestor de Atividades Líderes. Só o que nomeia ESTE sistema.
+   */
+  atividades: ["gestor de atividades", "atividades dos lideres", "atividades lideres"],
   automacoes: ["automacoes", "automacao", "gestor de automacoes"],
-  viabuilder: ["viabuilder", "viabilidade"],
+  viabilidade: ["viabuilder", "viabilidade"],
   "hub-bloco-id": ["bloco id", "hub", "sso", "login"],
   /*
    * Só termos que NOMEIAM a ferramenta, e nenhuma palavra genérica.
@@ -98,6 +121,17 @@ const APELIDOS_BASE: Record<string, string[]> = {
    */
   tecnologia: ["n8n", "zapier"],
 };
+
+/**
+ * Slugs que são palavra comum e, sozinhos, não identificam o sistema.
+ *
+ * `inferirSistema` usa o próprio slug como termo de busca: `processos` acha o
+ * SGPO, `produtividade` acha a Obra. Mas `atividades` é palavra de qualquer
+ * sistema — a Gestão de Obra tem uma área com esse nome — e virava sinônimo
+ * do Gestor de Atividades Líderes. O sistema continua reconhecido pelo nome
+ * completo e pelos apelidos específicos.
+ */
+const SLUGS_GENERICOS = new Set(["atividades"]);
 
 /** Escapa metacaracteres para uso dentro de RegExp. */
 function escaparRegex(s: string): string {
@@ -133,7 +167,9 @@ function inferirSistema(
   const candidatos: Array<{ slug: string; termo: string }> = [];
 
   for (const s of sistemas) {
-    const termos = [s.slug.replace(/-/g, " "), s.nome, ...(APELIDOS[s.slug] ?? [])];
+    // O slug vira termo de busca — menos quando o slug é uma palavra comum.
+    const doSlug = SLUGS_GENERICOS.has(s.slug) ? [] : [s.slug.replace(/-/g, " ")];
+    const termos = [...doSlug, s.nome, ...(APELIDOS[s.slug] ?? [])];
     const re = construirRegex(termos);
     if (!re) continue;
     const m = norm.match(re);
@@ -154,6 +190,9 @@ function inferirSistema(
 }
 
 
+
+/** O que cada sistema faz, em uma frase — vai junto do slug no prompt. */
+const FAZ_POR_SLUG = new Map(SISTEMAS_CONHECIDOS.map((s) => [s.slug, s.faz]));
 
 /** Funde os apelidos locais com o vocabulario compartilhado. */
 const APELIDOS: Record<string, string[]> = (() => {
@@ -239,7 +278,13 @@ Deno.serve(async (req) => {
 
     const sistemasBloco = sistemas.length
       ? `\nSISTEMAS (escolha EXATAMENTE um destes slugs em sistema_alvo_slug):\n${sistemas
-          .map((s) => `- ${s.slug} — ${s.nome}${s.grupo ? ` (área: ${s.grupo})` : ""}`)
+          // Com o que o sistema FAZ. Só com slug e nome, o modelo desempatava
+          // pela palavra: "atividades" casava com "Gestor de Atividades
+          // Líderes" mesmo quando a tela de atividades era da Obra.
+          .map((s) => {
+            const faz = FAZ_POR_SLUG.get(s.slug);
+            return `- ${s.slug} — ${s.nome}${s.grupo ? ` (área: ${s.grupo})` : ""}${faz ? `: ${faz}` : ""}`;
+          })
           .join("\n")}\nLembrete: se o texto mencionar qualquer uma dessas áreas ou sistemas (mesmo por sigla ou apelido), devolva o slug correspondente em vez de null.`
       : `\nSISTEMAS: (não fornecidos — devolva tipo_demanda e sistema_alvo_slug como null)`;
 
