@@ -187,8 +187,9 @@ Deno.serve(async (req) => {
       dados.ticket_code = dados.ticket_code ?? d?.ticket_code ?? null;
       dados.titulo = dados.titulo ?? d?.title ?? null;
 
-      // No recibo não há responsável ainda, e a busca seria à toa.
-      if (d?.assigned_to && linha.evento !== "demanda_criada") {
+      // Só as mensagens de etapa falam do responsável; nas outras a busca
+      // seria à toa.
+      if (d?.assigned_to && (linha.evento === "coluna_mudou" || linha.evento === "demanda_concluida")) {
         const { data: perfil } = await supabase
           .from("profiles")
           .select("nome")

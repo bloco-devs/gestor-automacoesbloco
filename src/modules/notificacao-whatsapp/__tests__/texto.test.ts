@@ -126,11 +126,13 @@ describe("o Blink acompanha com gentileza", () => {
     }
   });
 
-  it("o descadastro vai na primeira e na última mensagem, não nas do meio", () => {
-    const tem = (ev: Evento) => montarMensagem(ev, { ...base, status: "a_fazer" }, opts).includes("https://app/preferencias");
-    expect(tem("demanda_criada")).toBe(true);
-    expect(tem("demanda_concluida")).toBe(true);
-    expect(tem("coluna_mudou")).toBe(false);
+  it("nenhuma mensagem convida a desligar os avisos", () => {
+    // Decisão do produto. A saída existe em Preferências, só não é anunciada.
+    for (const ev of ["demanda_criada", "coluna_mudou", "demanda_concluida", "dev_demanda_nova", "mensagem_chat"] as Evento[]) {
+      const m = montarMensagem(ev, { ...base, status: "a_fazer" }, opts);
+      expect(m).not.toContain("/preferencias");
+      expect(m).not.toMatch(/desligar|parar de receber/i);
+    }
   });
 
   it("mudança de coluna leva um link só", () => {
@@ -185,6 +187,83 @@ describe("nomeParaSaudacao — cumprimenta gente, não setor", () => {
     const m = montarMensagem("demanda_criada", { ...base, nome: "Tecnologiabloco" }, opts);
     expect(m.startsWith("Oi! 😊")).toBe(true);
     expect(m).not.toContain("Tecnologiabloco");
+  });
+});
+
+describe("o Blink avisa a equipe", () => {
+  const nova = (extra: Record<string, unknown> = {}) =>
+    montarMensagem(
+      "dev_demanda_nova",
+      { ...base, nome: "Nielson", solicitante: "Thaísa", prioridade: "alta", descricao: "Os anexos do RH sumiram.", ...extra },
+      opts,
+    );
+
+  it("demanda nova diz que está sem dono, quem abriu, a prioridade e o pedido", () => {
+    const m = nova();
+    expect(m).toContain("Oi, Nielson! 👋");
+    expect(m).toContain("ainda está sem responsável");
+    expect(m).toContain("Aberta por: Thaísa");
+    expect(m).toContain("Prioridade: alta 🟠");
+    expect(m).toContain("“Os anexos do RH sumiram.”");
+    expect(m).toContain("Quem puder assumir: https://app/demandas/x");
+  });
+
+  it("sem solicitante, prioridade ou descrição, some a linha — não sai 'null'", () => {
+    const m = nova({ solicitante: null, prioridade: null, descricao: "" });
+    expect(m).not.toMatch(/Aberta por|Prioridade|null|undefined|“/);
+    expect(m).toContain("Quem puder assumir");
+  });
+
+  it("descrição longa é cortada", () => {
+    const m = nova({ descricao: "palavra ".repeat(200) });
+    expect(m).toContain("…”");
+  });
+});
+
+describe("o Blink avisa quando alguém escreve no chat", () => {
+  const chat = (extra: Record<string, unknown>) =>
+    montarMensagem("mensagem_chat", { ...base, autor: "Nielson", trecho: "Pode me mandar um print?", ...extra }, opts);
+
+  it("para quem abriu a demanda, é 'sua solicitação'", () => {
+    const m = chat({ nome: "Thaísa", papel: "dono" });
+    expect(m).toContain("Oi, Thaísa! 💬");
+    expect(m).toContain("Nielson escreveu no chat da sua solicitação:");
+    expect(m).toContain("“Pode me mandar um print?”");
+    expect(m).toContain("Responder: https://app/demandas/x");
+  });
+
+  it("para a equipe, não é 'sua solicitação'", () => {
+    const m = chat({ nome: "Carla", autor: "Thaísa", papel: "participante" });
+    expect(m).toContain("Thaísa escreveu no chat:");
+    expect(m).not.toContain("sua solicitação");
+  });
+
+  it("nota interna é anunciada como nota interna", () => {
+    const m = chat({ nome: "Carla", papel: "participante", interno: true });
+    expect(m).toContain("Oi, Carla! 📝");
+    expect(m).toContain("Nielson deixou uma nota interna:");
+    expect(m).toContain("Ver: https://app/demandas/x");
+    expect(m).not.toContain("Responder");
+  });
+
+  it("autor com nome de setor vira 'Alguém'", () => {
+    expect(chat({ autor: "Tecnologiabloco", papel: "dono" })).toContain("Alguém escreveu no chat");
+  });
+
+  it("mensagem só com anexo não fica vazia", () => {
+    const m = chat({ trecho: "", papel: "dono" });
+    expect(m).toContain("sem texto — pode ser um anexo");
+    expect(m).not.toContain("“”");
+  });
+
+  it("nenhum aviso para a equipe usa artigo antes do nome", () => {
+    const todas = [
+      montarMensagem("dev_demanda_nova", { ...base, nome: "Nielson", solicitante: "Thaísa", prioridade: "alta" }, opts),
+      chat({ papel: "dono" }),
+      chat({ papel: "participante" }),
+      chat({ papel: "participante", interno: true }),
+    ];
+    for (const m of todas) expect(m).not.toMatch(/\b[oa] (Nielson|Thaísa)\b/i);
   });
 });
 

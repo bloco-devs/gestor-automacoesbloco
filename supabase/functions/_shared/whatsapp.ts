@@ -5,7 +5,14 @@
 // que dá para errar sem perceber — texto, rótulo de coluna, decisão de repetir
 // um envio — e por isso é aqui que fica o que é testado.
 
-export type Evento = "demanda_criada" | "coluna_mudou" | "demanda_concluida";
+export type Evento =
+  | "demanda_criada"
+  | "coluna_mudou"
+  | "demanda_concluida"
+  /** Para a equipe: chegou demanda sem responsável. */
+  | "dev_demanda_nova"
+  /** Para quem o sininho avisaria: alguém escreveu no chat da demanda. */
+  | "mensagem_chat";
 
 export type Status =
   | "backlog"
@@ -28,6 +35,20 @@ export interface DadosMensagem {
   responsavel?: string | null;
   status?: string | null;
   status_antes?: string | null;
+
+  // dev_demanda_nova
+  /** Primeiro nome de quem abriu a demanda. */
+  solicitante?: string | null;
+  prioridade?: string | null;
+  descricao?: string | null;
+
+  // mensagem_chat
+  /** Primeiro nome de quem escreveu no chat. */
+  autor?: string | null;
+  trecho?: string | null;
+  interno?: boolean | null;
+  /** "dono" é quem abriu a demanda — para ele, é "sua solicitação". */
+  papel?: "dono" | "participante" | null;
 }
 
 /**
@@ -190,9 +211,23 @@ export function nomeParaSaudacao(nome: string | null | undefined): string | null
   return primeiro.charAt(0).toUpperCase() + primeiro.slice(1);
 }
 
-function saudacao(d: DadosMensagem): string {
+function saudacao(d: DadosMensagem, emoji = "😊"): string {
   const nome = nomeParaSaudacao(d.nome);
-  return nome ? `Oi, ${nome}! 😊` : "Oi! 😊";
+  return nome ? `Oi, ${nome}! ${emoji}` : `Oi! ${emoji}`;
+}
+
+const PRIORIDADE: Record<string, string> = {
+  critica: "crítica 🔴",
+  alta: "alta 🟠",
+  media: "média",
+  baixa: "baixa",
+};
+
+/** Limite do trecho citado (descrição, mensagem do chat) dentro do aviso. */
+export const LIMITE_TRECHO = 300;
+
+function citar(texto: string | null | undefined): string | null {
+  return temValor(texto) ? `“${truncar(texto, LIMITE_TRECHO)}”` : null;
 }
 
 /**
@@ -232,6 +267,36 @@ export function montarMensagem(
       // mensagem não inventa um resumo que ninguém escreveu.
       partes.push(temValor(opts.resolucao) ? `Detalhes: ${link}` : `O registro do que foi feito fica aqui: ${link}`);
     }
+  } else if (evento === "dev_demanda_nova") {
+    // Para a equipe. O ponto da mensagem é alguém assumir — por isso a
+    // descrição vem junto: dá para decidir pelo celular se é com você.
+    const quem = nomeParaSaudacao(d.solicitante);
+    const prio = d.prioridade ? PRIORIDADE[d.prioridade] : undefined;
+    partes.push(saudacao(d, "👋"));
+    partes.push(`Chegou uma solicitação nova, e ela ainda está sem responsável:\n${cabecalho(d)}`);
+    const ficha = [quem ? `Aberta por: ${quem}` : null, prio ? `Prioridade: ${prio}` : null].filter(Boolean);
+    if (ficha.length) partes.push(ficha.join("\n"));
+    const desc = citar(d.descricao);
+    if (desc) partes.push(desc);
+    if (link) partes.push(`Quem puder assumir: ${link}`);
+  } else if (evento === "mensagem_chat") {
+    const autor = nomeParaSaudacao(d.autor) ?? "Alguém";
+    const trecho = citar(d.trecho);
+    if (d.interno) {
+      // Só chega aqui para a equipe: o trigger não enfileira nota interna para
+      // quem abriu a demanda nem para quem não é da equipe.
+      partes.push(saudacao(d, "📝"));
+      partes.push(`${autor} deixou uma nota interna:\n${cabecalho(d)}`);
+    } else {
+      partes.push(saudacao(d, "💬"));
+      partes.push(
+        d.papel === "dono"
+          ? `${autor} escreveu no chat da sua solicitação:\n${cabecalho(d)}`
+          : `${autor} escreveu no chat:\n${cabecalho(d)}`,
+      );
+    }
+    partes.push(trecho ?? "Mandou uma mensagem sem texto — pode ser um anexo.");
+    if (link) partes.push(`${d.interno ? "Ver" : "Responder"}: ${link}`);
   } else {
     const para: Status | null = ehStatus(d.status) ? d.status : null;
     const de: Status | null = ehStatus(d.status_antes) ? d.status_antes : null;
@@ -250,13 +315,11 @@ export function montarMensagem(
     }
   }
 
-  // O descadastro vai na primeira mensagem, quando a pessoa começa a receber,
-  // e na última, quando o ciclo daquela solicitação fecha. As de mudança de
-  // coluna são as mais frequentes, e dois links compridos em cada uma viravam
-  // mais link do que mensagem. O caminho continua a um toque em Preferências.
-  if (evento !== "coluna_mudou") {
-    partes.push(`_Se preferir não receber estes avisos, é só desligar aqui: ${opts.appUrl}/preferencias_`);
-  }
+  // SEM RODAPÉ DE DESCADASTRO, por decisão do produto: o objetivo é que a
+  // pessoa acompanhe, e convidar a desligar em toda mensagem trabalhava contra
+  // isso. A saída continua existindo — o cartão do WhatsApp em Preferências —,
+  // só não é anunciada. Não remover aquele cartão: quem quer parar e não acha
+  // como tende a bloquear e denunciar o número, e denúncia derruba número novo.
   return partes.join("\n\n");
 }
 
