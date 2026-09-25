@@ -230,14 +230,15 @@ CREATE TRIGGER trg_demanda_whatsapp
 -- ---------------------------------------------------------------------------
 -- 4. O cron — rodado à mão, uma vez
 -- ---------------------------------------------------------------------------
--- Não é criado aqui pela mesma razão do email: a chamada leva a
--- SUPABASE_SERVICE_ROLE_KEY no header, e segredo não entra em SQL versionado.
+-- Criado em 2026-09-25 (job 3), no SQL Editor do projeto cgbhpenkytibgiosksrb,
+-- depois dos secrets UAZAPI_URL e UAZAPI_TOKEN.
 --
--- Rodar UMA VEZ no SQL Editor do projeto cgbhpenkytibgiosksrb (o Gestor de
--- Automações), trocando <SERVICE_ROLE_KEY>, e só DEPOIS de configurar os
--- secrets UAZAPI_URL e UAZAPI_TOKEN da edge function. Sem os secrets a função
--- responde 503 e nada sai da fila — que é o comportamento certo, mas o cron
--- ficaria batendo à toa.
+-- COM A CHAVE PÚBLICA (anon), NÃO COM A SERVICE ROLE. O email usa a service
+-- role no header, e por isso o cron dele não pode ser versionado. Esta função
+-- só exige um JWT válido do projeto (verify_jwt = true) e acessa o banco com a
+-- credencial dela mesma; a anon é JWT válido, já é pública (está no bundle do
+-- site) e não dá a quem a tem nada além de "processe a fila agora". Resultado:
+-- nenhum segredo gravado em cron.job.
 --
 --   select cron.schedule(
 --     'notificacao-whatsapp-fila',
@@ -247,14 +248,17 @@ CREATE TRIGGER trg_demanda_whatsapp
 --         url := 'https://cgbhpenkytibgiosksrb.supabase.co/functions/v1/notificacao-whatsapp-fila',
 --         headers := jsonb_build_object(
 --           'Content-Type','application/json',
---           'Authorization','Bearer <SERVICE_ROLE_KEY>'
+--           'Authorization','Bearer <ANON_KEY — a de src/integrations/supabase/client.ts>'
 --         ),
 --         body := '{}'::jsonb
 --       );
 --     $cron$
 --   );
 --
--- Para conferir:  select * from cron.job;
+-- Para conferir:  select * from cron.job where jobname = 'notificacao-whatsapp-fila';
+-- A resposta da função a cada minuto (processados, enviados, falhas...):
+--   select created, status_code, content from net._http_response
+--   order by created desc limit 5;
 -- Para desligar:  select cron.unschedule('notificacao-whatsapp-fila');
 -- Para ver o que ficou em dúvida:
 --   select id, telefone, evento, ultimo_erro, reservado_em
