@@ -4,6 +4,7 @@ import {
   classificarResposta,
   esperaAntesDaTentativa,
   montarMensagem,
+  nomeParaSaudacao,
   truncar,
   FRASE_AVANCO,
   FRASE_VOLTA,
@@ -48,7 +49,7 @@ describe("o Blink acompanha com gentileza", () => {
     expect(m).toContain("Oi, Carla! 😊");
     expect(m).toContain("Aqui é o Blink");
     expect(m).toContain("*OBRA-2609-0012* — Mapa interativo");
-    expect(m).toContain("a cada passo que ela der, eu te conto");
+    expect(m).toContain("Vou te acompanhar por aqui: a cada passo que ela der, eu te conto");
   });
 
   it("toda mensagem cumprimenta pelo nome", () => {
@@ -125,10 +126,16 @@ describe("o Blink acompanha com gentileza", () => {
     }
   });
 
-  it("toda mensagem ensina a parar de receber", () => {
-    for (const ev of ["demanda_criada", "coluna_mudou", "demanda_concluida"] as Evento[]) {
-      expect(montarMensagem(ev, { ...base, status: "a_fazer" }, opts)).toContain("https://app/preferencias");
-    }
+  it("o descadastro vai na primeira e na última mensagem, não nas do meio", () => {
+    const tem = (ev: Evento) => montarMensagem(ev, { ...base, status: "a_fazer" }, opts).includes("https://app/preferencias");
+    expect(tem("demanda_criada")).toBe(true);
+    expect(tem("demanda_concluida")).toBe(true);
+    expect(tem("coluna_mudou")).toBe(false);
+  });
+
+  it("mudança de coluna leva um link só", () => {
+    const m = mover("em_desenvolvimento", "a_fazer");
+    expect(m.match(/https:\/\//g)?.length).toBe(1);
   });
 
   it("sem código, sem título e sem nome ainda sai uma mensagem legível", () => {
@@ -137,6 +144,47 @@ describe("o Blink acompanha com gentileza", () => {
     expect(m).toContain("*sua solicitação*");
     expect(m).not.toContain("undefined");
     expect(m).not.toContain("null");
+  });
+});
+
+/**
+ * A primeira mensagem de verdade chegou como "Oi, Tecnologiabloco!": o nome
+ * vinha de um e-mail de setor. Estes casos travam o conserto — e, igualmente
+ * importante, travam que ele não apague nome de gente.
+ */
+describe("nomeParaSaudacao — cumprimenta gente, não setor", () => {
+  it.each([
+    ["Tecnologiabloco", null],
+    ["tecnologiabloco", null],
+    ["Financeiro", null],
+    ["Rh", null],
+    ["TI", null],
+    ["Atendimento Nakhon", null],
+    ["contato2", null],
+    ["fulano@grupobloco.com.br", null],
+    ["", null],
+    [null, null],
+  ])("%s → sem nome", (entrada, esperado) => {
+    expect(nomeParaSaudacao(entrada)).toBe(esperado);
+  });
+
+  it.each([
+    ["Thaísa", "Thaísa"],
+    ["thaisa", "Thaisa"],
+    ["João Silva", "João"],
+    ["joao.silva", "Joao"],
+    // "ti" é setor só como nome inteiro. Por substring, estes três sumiriam.
+    ["Tiago", "Tiago"],
+    ["Tatiana", "Tatiana"],
+    ["Cristina", "Cristina"],
+  ])("%s → %s", (entrada, esperado) => {
+    expect(nomeParaSaudacao(entrada)).toBe(esperado);
+  });
+
+  it("mensagem para conta de setor cumprimenta sem nome", () => {
+    const m = montarMensagem("demanda_criada", { ...base, nome: "Tecnologiabloco" }, opts);
+    expect(m.startsWith("Oi! 😊")).toBe(true);
+    expect(m).not.toContain("Tecnologiabloco");
   });
 });
 

@@ -56,14 +56,25 @@ interface RespostaUazapi {
   retryAfter?: number | null;
 }
 
-async function enviar(numero: string, texto: string): Promise<RespostaUazapi> {
+async function enviar(numero: string, texto: string, trackId: string): Promise<RespostaUazapi> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
     const res = await fetch(`${UAZAPI_URL}/send/text`, {
       method: "POST",
       headers: { "Content-Type": "application/json", token: UAZAPI_TOKEN },
-      body: JSON.stringify({ number: numero, text: texto }),
+      body: JSON.stringify({
+        number: numero,
+        text: texto,
+        // Sem isto a Uazapi gera o cartão de pré-visualização do primeiro link,
+        // e o cartão era a tela de LOGIN do sistema — ocupando metade da
+        // conversa acima da mensagem de verdade.
+        linkPreview: false,
+        // Cruza o envio com a linha da fila no painel da Uazapi. Não é chave de
+        // idempotência (a documentação avisa que aceita repetido); é só rastro.
+        track_source: "gestor-automacoes",
+        track_id: trackId,
+      }),
       signal: ctrl.signal,
     });
 
@@ -202,7 +213,7 @@ Deno.serve(async (req) => {
 
     const link = linha.demanda_id ? `${APP_URL}/demandas/${linha.demanda_id}` : null;
     const texto = montarMensagem(linha.evento, dados, { link, appUrl: APP_URL, resolucao });
-    const r = await enviar(linha.telefone, texto);
+    const r = await enviar(linha.telefone, texto, linha.id);
     const desfecho = classificarResposta(r.status);
     const tentativas = linha.tentativas + 1;
 

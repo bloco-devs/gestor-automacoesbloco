@@ -147,8 +147,52 @@ function cabecalho(d: DadosMensagem): string {
   return temValor(d.ticket_code) ? `*${d.ticket_code.trim()}* — ${titulo}` : `*${titulo}*`;
 }
 
+/**
+ * PALAVRAS QUE DENUNCIAM CAIXA DE SETOR, E NÃO PESSOA.
+ *
+ * `bulk-create-requesters` cria o nome a partir do e-mail
+ * (`tecnologiabloco@` vira "Tecnologiabloco"), e o trigger cai no prefixo do
+ * e-mail quando o perfil não tem nome. O resultado, na primeira mensagem que
+ * alguém recebeu, foi "Oi, Tecnologiabloco!" — o Blink cumprimentando um
+ * departamento.
+ *
+ * Só entram palavras longas, e por substring: "tecnologiabloco" é uma palavra
+ * só. As curtas (rh, ti, dp) só contam se forem o nome inteiro — por
+ * substring, "ti" apagaria Tiago, Tatiana e Cristina.
+ */
+const SETOR_LONGO = [
+  "tecnologia", "bloco", "financeiro", "comercial", "contato", "administrativo",
+  "suporte", "obras", "compras", "juridico", "marketing", "atendimento",
+  "recepcao", "diretoria", "nakhon", "incorporacao", "projetos", "engenharia",
+  "fiscal", "contabil", "sistema", "empresa", "grupo", "noreply", "naoresponda",
+];
+const SETOR_CURTO = new Set(["rh", "ti", "dp", "adm", "cs", "ceo", "time", "equipe"]);
+
+function semAcento(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * O primeiro nome, se ele parecer nome de gente. Senão, nulo — e a saudação
+ * vira só "Oi!". Cumprimentar sem nome é neutro; cumprimentar um setor pelo
+ * nome é o tipo de coisa que faz a mensagem parecer robô.
+ */
+export function nomeParaSaudacao(nome: string | null | undefined): string | null {
+  if (!temValor(nome)) return null;
+  // "joao.silva" vem do prefixo de e-mail: o primeiro pedaço é o nome.
+  const primeiro = nome.trim().split(/[\s._-]+/)[0] ?? "";
+  if (!primeiro || /[@\d]/.test(primeiro)) return null;
+
+  const chave = semAcento(primeiro).toLowerCase();
+  if (SETOR_CURTO.has(chave)) return null;
+  if (SETOR_LONGO.some((p) => chave.includes(p))) return null;
+
+  return primeiro.charAt(0).toUpperCase() + primeiro.slice(1);
+}
+
 function saudacao(d: DadosMensagem): string {
-  return temValor(d.nome) ? `Oi, ${d.nome.trim()}! 😊` : "Oi! 😊";
+  const nome = nomeParaSaudacao(d.nome);
+  return nome ? `Oi, ${nome}! 😊` : "Oi! 😊";
 }
 
 /**
@@ -170,7 +214,7 @@ export function montarMensagem(
     partes.push(`${saudacao(d)} Aqui é o Blink, do Gestor de Automações.`);
     partes.push(`Recebi sua solicitação e já deixei tudo registrado:\n${cabecalho(d)}`);
     partes.push(
-      "Vou te acompanhando por aqui: a cada passo que ela der, eu te conto. Não precisa ficar conferindo o sistema.",
+      "Vou te acompanhar por aqui: a cada passo que ela der, eu te conto. Não precisa ficar conferindo o sistema.",
     );
     if (link) partes.push(`Se quiser dar uma espiada: ${link}`);
   } else if (evento === "demanda_concluida") {
@@ -206,7 +250,13 @@ export function montarMensagem(
     }
   }
 
-  partes.push(`_Se preferir não receber estes avisos, é só desligar aqui: ${opts.appUrl}/preferencias_`);
+  // O descadastro vai na primeira mensagem, quando a pessoa começa a receber,
+  // e na última, quando o ciclo daquela solicitação fecha. As de mudança de
+  // coluna são as mais frequentes, e dois links compridos em cada uma viravam
+  // mais link do que mensagem. O caminho continua a um toque em Preferências.
+  if (evento !== "coluna_mudou") {
+    partes.push(`_Se preferir não receber estes avisos, é só desligar aqui: ${opts.appUrl}/preferencias_`);
+  }
   return partes.join("\n\n");
 }
 
