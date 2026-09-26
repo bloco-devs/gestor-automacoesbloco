@@ -1815,6 +1815,9 @@ export type Database = {
           email_mudanca_status: boolean
           updated_at: string
           user_id: string
+          whatsapp_ativo: boolean
+          whatsapp_consentido_em: string | null
+          whatsapp_telefone: string | null
         }
         Insert: {
           created_at?: string
@@ -1824,6 +1827,9 @@ export type Database = {
           email_mudanca_status?: boolean
           updated_at?: string
           user_id: string
+          whatsapp_ativo?: boolean
+          whatsapp_consentido_em?: string | null
+          whatsapp_telefone?: string | null
         }
         Update: {
           created_at?: string
@@ -1833,8 +1839,70 @@ export type Database = {
           email_mudanca_status?: boolean
           updated_at?: string
           user_id?: string
+          whatsapp_ativo?: boolean
+          whatsapp_consentido_em?: string | null
+          whatsapp_telefone?: string | null
         }
         Relationships: []
+      }
+      notificacao_whatsapp_fila: {
+        Row: {
+          created_at: string
+          dados: Json
+          demanda_id: string | null
+          destinatario_id: string | null
+          enviado_em: string | null
+          evento: string
+          id: string
+          provedor_mensagem_id: string | null
+          proxima_tentativa_em: string | null
+          reservado_em: string | null
+          situacao: string
+          telefone: string
+          tentativas: number
+          ultimo_erro: string | null
+        }
+        Insert: {
+          created_at?: string
+          dados?: Json
+          demanda_id?: string | null
+          destinatario_id?: string | null
+          enviado_em?: string | null
+          evento: string
+          id?: string
+          provedor_mensagem_id?: string | null
+          proxima_tentativa_em?: string | null
+          reservado_em?: string | null
+          situacao?: string
+          telefone: string
+          tentativas?: number
+          ultimo_erro?: string | null
+        }
+        Update: {
+          created_at?: string
+          dados?: Json
+          demanda_id?: string | null
+          destinatario_id?: string | null
+          enviado_em?: string | null
+          evento?: string
+          id?: string
+          provedor_mensagem_id?: string | null
+          proxima_tentativa_em?: string | null
+          reservado_em?: string | null
+          situacao?: string
+          telefone?: string
+          tentativas?: number
+          ultimo_erro?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacao_whatsapp_fila_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demands"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notificacoes: {
         Row: {
@@ -3919,6 +3987,12 @@ export type Database = {
       }
       demand_prefixo: { Args: { _system_id: string }; Returns: string }
       demand_prefixo_slug: { Args: { _slug: string }; Returns: string }
+      dias_uteis_entre: {
+        Args: { _fim: string; _inicio: string }
+        Returns: number
+      }
+      eh_da_equipe: { Args: { _user_id: string }; Returns: boolean }
+      enfileirar_resumo_demandas_paradas: { Args: never; Returns: number }
       get_my_role: { Args: never; Returns: string }
       get_user_workloads: {
         Args: never
